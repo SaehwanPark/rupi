@@ -1,12 +1,12 @@
 # Reconciliation resume/replay review follow-up
 
 Change: reconciliation-resume-replay-review
-Status: investigating; follow-up review findings under verification
+Status: regression coverage added; PR #127 review/merge pending
 Base: `main` at `305706e` (Round 6 PR #126 merged)
 
 ## Scope
 
-Verify and close two review claims about durable mutating-Unknown reconciliation: model-visible confirmation across process restart, and replay branch planning after a durable safe resolution. Prefer regression coverage when the current implementation already provides the required behavior; change runtime/store/replay code only if the tests expose a gap.
+Verify and close two review claims about durable mutating-Unknown reconciliation: model-visible confirmation across process restart, and replay branch planning after a durable safe resolution. The current StoreTrace implementation already persists the reconciliation message and the replay fold already applies matching safe observations; focused regression tests now verify the process-restart path and mismatched-observation safety.
 
 ## Acceptance criteria
 
@@ -17,4 +17,4 @@ Verify and close two review claims about durable mutating-Unknown reconciliation
 
 ## Review context
 
-The current main branch already contains `StoreTrace::emit_message` persistence and a replay reconciliation fold. Validate these complete paths rather than assuming the forwarded line-level claims reflect current code.
+The current main branch already contains `StoreTrace::emit_message` persistence and a replay reconciliation fold. The end-to-end restart test passes through `StoreTrace`, `Store::restore`, and a resumed provider request with no intervening user turn. Replay tests cover blocked branches before resolution, unblocking after a matching safe resolution, and ignoring a mismatched request identity.

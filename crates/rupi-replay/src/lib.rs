@@ -1798,8 +1798,21 @@ mod tests {
       }),
     );
     let unknown_event_id = unknown.envelope.meta.event_id.clone();
-    let manual = entry(
+    let mismatched = entry(
       4,
+      AgentEvent::ToolReconciliationObserved(ToolReconciliationObserved {
+        call_id: call_id.clone(),
+        name: "write".into(),
+        request_event_id: EventId::new(),
+        unknown_event_id: unknown_event_id.clone(),
+        status: ReconciliationStatus::Committed {
+          details: "this observation belongs to a different request".into(),
+        },
+        source: ToolReconciliationSource::Operator,
+      }),
+    );
+    let manual = entry(
+      5,
       AgentEvent::ToolReconciliationObserved(ToolReconciliationObserved {
         call_id: call_id.clone(),
         name: "write".into(),
@@ -1812,7 +1825,7 @@ mod tests {
       }),
     );
     let resolved = entry(
-      5,
+      6,
       AgentEvent::ToolReconciliationObserved(ToolReconciliationObserved {
         call_id,
         name: "write".into(),
@@ -1824,9 +1837,9 @@ mod tests {
         source: ToolReconciliationSource::Operator,
       }),
     );
-    let trace = vec![request, started, unknown, manual, resolved];
+    let trace = vec![request, started, unknown, mismatched, manual, resolved];
 
-    for seq in [3, 4] {
+    for seq in [3, 4, 5] {
       let plan = plan_historical_branch(&trace, &[], HistoricalTarget::Seq(EventSeq(seq))).unwrap();
       assert_eq!(plan.blocked_tools.len(), 1);
       assert_eq!(
@@ -1834,7 +1847,7 @@ mod tests {
         HistoricalToolDecision::ReconcileBeforeReplay
       );
     }
-    let plan = plan_historical_branch(&trace, &[], HistoricalTarget::Seq(EventSeq(5))).unwrap();
+    let plan = plan_historical_branch(&trace, &[], HistoricalTarget::Seq(EventSeq(6))).unwrap();
     assert!(plan.blocked_tools.is_empty());
 
     let entries: Vec<_> = trace.iter().collect();
