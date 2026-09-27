@@ -10,7 +10,7 @@
 //! state itself. The runtime owns durability; the registry owns decisions.
 
 use std::collections::BTreeMap;
-use std::sync::{Arc, RwLock};
+use std::sync::{Arc, Mutex, RwLock};
 
 use rupi_core::{
   CancelToken, ReplayDecision, Tool, ToolChunk, ToolError, ToolExecutionContext,
@@ -149,10 +149,15 @@ struct RegisteredTool {
   metadata: ToolMetadata,
   schema: Arc<Value>,
   sampling_constraint: Option<ToolSamplingConstraint>,
+  generation: u128,
 }
 
 impl RegisteredTool {
-  fn new(tool: Arc<dyn Tool>, sampling_constraint: Option<ToolSamplingConstraint>) -> Self {
+  fn new(
+    tool: Arc<dyn Tool>,
+    sampling_constraint: Option<ToolSamplingConstraint>,
+    generation: u128,
+  ) -> Self {
     let metadata = tool.metadata();
     let schema = Arc::new(tool.arguments_schema());
     Self {
@@ -160,6 +165,7 @@ impl RegisteredTool {
       metadata,
       schema,
       sampling_constraint,
+      generation,
     }
   }
 
@@ -173,9 +179,44 @@ impl RegisteredTool {
   }
 }
 
+/// Identity and immutable registration revision for one advertised tool definition.
+///
+/// The generation changes on every registration, including removal followed by re-addition;
+/// it binds the exact implementation, metadata, risk class, and schema captured for a request.
+#[derive(Debug, Clone, PartialEq, Eq)]
+pub struct ToolBinding {
+  registry_id: String,
+  name: String,
+  generation: u128,
+  read_only: bool,
+}
+
+impl ToolBinding {
+  pub fn name(&self) -> &str {
+    &self.name
+  }
+
+  pub fn generation(&self) -> u128 {
+    self.generation
+  }
+
+  pub fn read_only(&self) -> bool {
+    self.read_only
+  }
+}
+
+/// One permitted spec and the registry binding that produced it, captured atomically.
+#[derive(Debug, Clone, PartialEq, Eq)]
+pub struct BoundToolSpec {
+  pub spec: rupi_core::ToolSpec,
+  pub binding: ToolBinding,
+}
+
 /// The set of tools the runtime provides.
 pub struct ToolRegistry {
   runtime: Runtime,
+  registry_id: String,
+  next_generation: Mutex<u128>,
   tools: RwLock<BTreeMap<String, RegisteredTool>>,
   allow: Vec<String>,
   deny: Vec<String>,
@@ -195,6 +236,8 @@ impl ToolRegistry {
   pub fn new(workspace: Workspace) -> Self {
     Self {
       runtime: Runtime::new(workspace),
+      registry_id: rupi_core::uuidv7(),
+      next_generation: Mutex::new(0),
       tools: RwLock::new(BTreeMap::new()),
       allow: Vec::new(),
       deny: Vec::new(),
@@ -258,7 +301,8 @@ impl ToolRegistry {
     sampling_constraint: Option<ToolSamplingConstraint>,
   ) -> &mut Self {
     let tool: Arc<dyn Tool> = tool.into();
-    let registered = RegisteredTool::new(tool, sampling_constraint);
+    let generation = self.allocate_generation();
+    let registered = RegisteredTool::new(tool, sampling_constraint, generation);
     let name = registered.metadata.name.clone();
     self.tools.write().unwrap().insert(name, registered);
     self
@@ -279,9 +323,18 @@ impl ToolRegistry {
     sampling_constraint: Option<ToolSamplingConstraint>,
   ) {
     let tool: Arc<dyn Tool> = tool.into();
-    let registered = RegisteredTool::new(tool, sampling_constraint);
+    let generation = self.allocate_generation();
+    let registered = RegisteredTool::new(tool, sampling_constraint, generation);
     let name = registered.metadata.name.clone();
     self.tools.write().unwrap().insert(name, registered);
+  }
+
+  fn allocate_generation(&self) -> u128 {
+    let mut generation = self.next_generation.lock().unwrap();
+    *generation = generation
+      .checked_add(1)
+      .expect("tool definition generation space is exhausted");
+    *generation
   }
 
   /// Unregister a tool by name via a shared reference.
@@ -368,16 +421,52 @@ impl ToolRegistry {
       .collect()
   }
 
-  /// Metadata for permitted tools, in registration order.
-  pub fn specs(&self) -> Vec<rupi_core::ToolSpec> {
+  /// Specs and immutable bindings for permitted tools from one registry snapshot.
+  pub fn bound_specs(&self) -> Vec<BoundToolSpec> {
     self
       .tools
       .read()
       .unwrap()
       .iter()
       .filter(|(name, _)| self.is_allowed(name))
-      .map(|(_, tool)| tool.spec())
+      .map(|(_, tool)| BoundToolSpec {
+        spec: tool.spec(),
+        binding: self.binding_for_registered(tool),
+      })
       .collect()
+  }
+
+  /// Metadata for permitted tools, in registration order.
+  pub fn specs(&self) -> Vec<rupi_core::ToolSpec> {
+    self
+      .bound_specs()
+      .into_iter()
+      .map(|bound| bound.spec)
+      .collect()
+  }
+
+  fn binding_for_registered(&self, tool: &RegisteredTool) -> ToolBinding {
+    ToolBinding {
+      registry_id: self.registry_id.clone(),
+      name: tool.metadata.name.clone(),
+      generation: tool.generation,
+      read_only: tool.metadata.read_only,
+    }
+  }
+
+  fn binding_matches(&self, binding: &ToolBinding, tool: &RegisteredTool) -> bool {
+    binding.registry_id == self.registry_id
+      && binding.name == tool.metadata.name
+      && binding.generation == tool.generation
+      && binding.read_only == tool.metadata.read_only
+  }
+
+  /// Metadata only when this exact request binding remains current and permitted.
+  pub fn metadata_for_binding(&self, binding: &ToolBinding) -> Option<ToolMetadata> {
+    let tools = self.tools.read().unwrap();
+    let tool = tools.get(binding.name())?;
+    (self.is_allowed(binding.name()) && self.binding_matches(binding, tool))
+      .then(|| tool.metadata.clone())
   }
 
   /// Metadata for permitted tools, for capability reporting and prompts.
@@ -480,11 +569,11 @@ impl ToolRegistry {
     match self.default_gate {
       DefaultGate::Allow => {
         let mut approve = AutoApprove;
-        self.dispatch(request, progress, cancel, &mut approve, on_started)
+        self.dispatch(request, progress, cancel, &mut approve, None, on_started)
       }
       DefaultGate::Deny => {
         let mut refuse = DenyMutating;
-        self.dispatch(request, progress, cancel, &mut refuse, on_started)
+        self.dispatch(request, progress, cancel, &mut refuse, None, on_started)
       }
     }
   }
@@ -502,7 +591,24 @@ impl ToolRegistry {
     gate: &mut dyn ApprovalGate,
     on_started: &mut dyn FnMut() -> Result<(), rupi_core::SinkError>,
   ) -> Result<Executed, rupi_core::SinkError> {
-    self.dispatch(request, progress, cancel, gate, on_started)
+    self.dispatch(request, progress, cancel, gate, None, on_started)
+  }
+
+  /// Execute only if the exact definition advertised for this request remains current.
+  ///
+  /// Replacement or removal after model exposure is a proven no-start failure. The binding
+  /// is checked again while the durable start observer runs, closing the race with shared
+  /// registration immediately before `ToolStarted`.
+  pub fn execute_observed_with_gate_and_binding(
+    &self,
+    request: &ToolRequest,
+    binding: &ToolBinding,
+    progress: &mut dyn ToolProgress,
+    cancel: &CancelToken,
+    gate: &mut dyn ApprovalGate,
+    on_started: &mut dyn FnMut() -> Result<(), rupi_core::SinkError>,
+  ) -> Result<Executed, rupi_core::SinkError> {
+    self.dispatch(request, progress, cancel, gate, Some(binding), on_started)
   }
 
   /// Execute one call, answering a mutating call with `gate` instead of the
@@ -519,7 +625,7 @@ impl ToolRegistry {
   ) -> Executed {
     let mut started = || Ok(());
     self
-      .dispatch(request, progress, cancel, gate, &mut started)
+      .dispatch(request, progress, cancel, gate, None, &mut started)
       .expect("the interactive execution-start observer is infallible")
   }
 
@@ -535,6 +641,7 @@ impl ToolRegistry {
     progress: &mut dyn ToolProgress,
     cancel: &CancelToken,
     gate: &mut dyn ApprovalGate,
+    expected_binding: Option<&ToolBinding>,
     on_started: &mut dyn FnMut() -> Result<(), rupi_core::SinkError>,
   ) -> Result<Executed, rupi_core::SinkError> {
     if let Some(error) = &self.configuration_error {
@@ -560,11 +667,18 @@ impl ToolRegistry {
     let (tool, metadata, arguments_schema) = {
       let tools = self.tools.read().unwrap();
       let Some(tool) = tools.get(&request.name) else {
+        let reason = expected_binding.map_or_else(
+          || unknown_tool(&request.name, &self.allowed_names()),
+          |_| stale_binding_reason(&request.name),
+        );
+        return Ok(Executed::refused(request.clone(), reason));
+      };
+      if expected_binding.is_some_and(|binding| !self.binding_matches(binding, tool)) {
         return Ok(Executed::refused(
           request.clone(),
-          unknown_tool(&request.name, &self.allowed_names()),
+          stale_binding_reason(&request.name),
         ));
-      };
+      }
       (
         Arc::clone(&tool.tool),
         tool.metadata.clone(),
@@ -594,7 +708,26 @@ impl ToolRegistry {
       }
     }
 
-    on_started()?;
+    if let Some(binding) = expected_binding {
+      // Keep replacement blocked until the durable start boundary commits. Once it does,
+      // executing the already selected Arc is safe even if the registry later changes.
+      let tools = self.tools.read().unwrap();
+      let Some(current) = tools.get(&request.name) else {
+        return Ok(Executed::refused(
+          request.clone(),
+          stale_binding_reason(&request.name),
+        ));
+      };
+      if !self.binding_matches(binding, current) || !self.is_allowed(&request.name) {
+        return Ok(Executed::refused(
+          request.clone(),
+          stale_binding_reason(&request.name),
+        ));
+      }
+      on_started()?;
+    } else {
+      on_started()?;
+    }
     let mut sink = Sink {
       inner: progress,
       forwarded: false,
@@ -684,6 +817,12 @@ impl ToolProgress for Sink<'_> {
 /// was observed is not believed: the write may have been half-applied. A tool
 /// that claims `Requested` or `Started` as terminal is wrong by contract, so it
 /// becomes `Unknown`.
+fn stale_binding_reason(name: &str) -> String {
+  format!(
+    "tool definition '{name}' changed or is no longer permitted since this request; it was not executed. Request the tool again using the current tool catalog."
+  )
+}
+
 fn coerce_state(
   claimed: ToolExecutionState,
   metadata: &ToolMetadata,

@@ -31,9 +31,10 @@ use crate::{
 ///
 /// Version 2 adds the `reduction` semantic record and canonical sequence
 /// bounds on compaction records. Version 3 adds the checkpoint context epoch;
-/// readers continue to accept older headers because the field is optional and
-/// legacy state derives the epoch from later durable compaction records.
-pub const SESSION_SCHEMA_VERSION: u32 = 3;
+/// version 4 persists message origin independently of provider role. Older
+/// messages without origin decode as `ImportedLegacy` rather than acquiring
+/// user authority from their wire role.
+pub const SESSION_SCHEMA_VERSION: u32 = 4;
 
 /// One line of `session.jsonl`.
 #[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize)]
@@ -269,7 +270,7 @@ mod tests {
     });
     let line = serde_json::to_string(&header).unwrap();
     assert!(line.contains("\"type\":\"header\""), "{line}");
-    assert!(line.contains("\"version\":3"), "{line}");
+    assert!(line.contains("\"version\":4"), "{line}");
     assert_eq!(
       serde_json::from_str::<SessionRecord>(&line).unwrap(),
       header

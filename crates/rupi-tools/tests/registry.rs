@@ -5,7 +5,17 @@
 //! this file checks the decisions the registry makes *about* tools, which is the
 //! part that has to be right for safety.
 
-use std::{fs, path::Path};
+use std::{
+  fs,
+  path::Path,
+  sync::{
+    Arc,
+    atomic::{AtomicUsize, Ordering},
+    mpsc,
+  },
+  thread,
+  time::Duration,
+};
 
 use rupi_core::ToolExecutionState as State;
 use rupi_core::{
@@ -94,6 +104,89 @@ fn fixture() -> TempDir {
   fs::write(dir.path().join("src/main.rs"), "fn main() {\n  run();\n}\n").unwrap();
   fs::write(dir.path().join("README.md"), "# Title\n\nbody text\n").unwrap();
   dir
+}
+
+struct ProbeTool {
+  metadata: ToolMetadata,
+  schema: Value,
+  starts: Arc<AtomicUsize>,
+  label: &'static str,
+}
+
+impl rupi_core::Tool for ProbeTool {
+  fn metadata(&self) -> ToolMetadata {
+    self.metadata.clone()
+  }
+
+  fn arguments_schema(&self) -> Value {
+    self.schema.clone()
+  }
+
+  fn execute(
+    &self,
+    _request: &ToolRequest,
+    _progress: &mut dyn ToolProgress,
+  ) -> Result<ToolOutcome, rupi_core::ToolError> {
+    self.starts.fetch_add(1, Ordering::SeqCst);
+    Ok(ToolOutcome::succeeded(self.label))
+  }
+}
+
+fn probe_tool(
+  name: &str,
+  read_only: bool,
+  schema: Value,
+  starts: Arc<AtomicUsize>,
+  label: &'static str,
+) -> Box<dyn rupi_core::Tool> {
+  let metadata = if read_only {
+    ToolMetadata::read_only(name, label)
+  } else {
+    ToolMetadata::mutating(name, label, false)
+  };
+  Box::new(ProbeTool {
+    metadata,
+    schema,
+    starts,
+    label,
+  })
+}
+
+fn bound_tool(registry: &ToolRegistry, name: &str) -> rupi_tools::ToolBinding {
+  registry
+    .bound_specs()
+    .into_iter()
+    .find(|entry| entry.spec.name == name)
+    .expect("tool is permitted and registered")
+    .binding
+}
+
+fn execute_bound(
+  registry: &ToolRegistry,
+  binding: &rupi_tools::ToolBinding,
+  name: &str,
+) -> (Executed, usize, Vec<String>) {
+  let mut sink = Sink::new();
+  let mut gate = RecordingGate {
+    allow: true,
+    asked: Vec::new(),
+  };
+  let mut starts = 0;
+  let mut on_started = || {
+    starts += 1;
+    Ok(())
+  };
+  let executed = registry
+    .execute_observed_with_gate_and_binding(
+      &request(name, json!({})),
+      binding,
+      &mut sink,
+      &CancelToken::new(),
+      &mut gate,
+      &mut on_started,
+    )
+    .unwrap();
+  (executed, starts, gate.asked)
 }
 
 #[test]
@@ -589,6 +682,234 @@ fn replacing_a_builtin_is_allowed() {
   );
   let executed = run(&reg, "read", json!({"path": "anything"}));
   assert_eq!(executed.outcome.text, "override");
+}
+
+#[test]
+fn a_read_only_request_cannot_rebind_to_a_mutating_replacement() {
+  let dir = fixture();
+  let registry = ToolRegistry::new(workspace(dir.path()));
+  let old_starts = Arc::new(AtomicUsize::new(0));
+  let new_starts = Arc::new(AtomicUsize::new(0));
+  registry.register_shared(probe_tool(
+    "inspect_target",
+    true,
+    json!({"type":"object"}),
+    Arc::clone(&old_starts),
+    "read-only v1",
+  ));
+  let advertised = bound_tool(&registry, "inspect_target");
+  registry.register_shared(probe_tool(
+    "inspect_target",
+    false,
+    json!({"type":"object"}),
+    Arc::clone(&new_starts),
+    "mutating v2",
+  ));
+
+  let (executed, started_events, approvals) =
+    execute_bound(&registry, &advertised, "inspect_target");
+  assert_eq!(executed.state, State::Failed);
+  assert!(!executed.started);
+  assert_eq!(started_events, 0);
+  assert!(
+    approvals.is_empty(),
+    "stale calls are not approval candidates"
+  );
+  assert_eq!(old_starts.load(Ordering::SeqCst), 0);
+  assert_eq!(new_starts.load(Ordering::SeqCst), 0);
+  assert!(executed.outcome.text.contains("not executed"));
+}
+
+#[test]
+fn a_mutating_request_cannot_rebind_to_a_read_only_replacement() {
+  let dir = fixture();
+  let registry = ToolRegistry::new(workspace(dir.path()));
+  let old_starts = Arc::new(AtomicUsize::new(0));
+  let new_starts = Arc::new(AtomicUsize::new(0));
+  registry.register_shared(probe_tool(
+    "inspect_target",
+    false,
+    json!({"type":"object"}),
+    Arc::clone(&old_starts),
+    "mutating v1",
+  ));
+  let advertised = bound_tool(&registry, "inspect_target");
+  registry.register_shared(probe_tool(
+    "inspect_target",
+    true,
+    json!({"type":"object"}),
+    Arc::clone(&new_starts),
+    "read-only v2",
+  ));
+
+  let (executed, started_events, approvals) =
+    execute_bound(&registry, &advertised, "inspect_target");
+  assert_eq!(executed.state, State::Failed);
+  assert!(!executed.started);
+  assert_eq!(started_events, 0);
+  assert!(approvals.is_empty());
+  assert_eq!(old_starts.load(Ordering::SeqCst), 0);
+  assert_eq!(new_starts.load(Ordering::SeqCst), 0);
+}
+
+#[test]
+fn a_same_risk_schema_replacement_requires_a_new_request_binding() {
+  let dir = fixture();
+  let registry = ToolRegistry::new(workspace(dir.path()));
+  let old_starts = Arc::new(AtomicUsize::new(0));
+  let new_starts = Arc::new(AtomicUsize::new(0));
+  registry.register_shared(probe_tool(
+    "inspect_target",
+    true,
+    json!({"type":"object","properties":{"path":{"type":"string"}}}),
+    Arc::clone(&old_starts),
+    "schema v1",
+  ));
+  let advertised = bound_tool(&registry, "inspect_target");
+  registry.register_shared(probe_tool(
+    "inspect_target",
+    true,
+    json!({"type":"object","properties":{"query":{"type":"string"}}}),
+    Arc::clone(&new_starts),
+    "schema v2",
+  ));
+
+  let (stale, started_events, _) = execute_bound(&registry, &advertised, "inspect_target");
+  assert_eq!(stale.state, State::Failed);
+  assert!(!stale.started);
+  assert_eq!(started_events, 0);
+  assert_eq!(old_starts.load(Ordering::SeqCst), 0);
+  assert_eq!(new_starts.load(Ordering::SeqCst), 0);
+
+  let current = bound_tool(&registry, "inspect_target");
+  let (fresh, starts, _) = execute_bound(&registry, &current, "inspect_target");
+  assert_eq!(fresh.outcome.text, "schema v2");
+  assert_eq!(starts, 1);
+  assert_eq!(new_starts.load(Ordering::SeqCst), 1);
+}
+
+#[test]
+fn removed_and_readded_name_does_not_resurrect_an_old_binding() {
+  let dir = fixture();
+  let registry = ToolRegistry::new(workspace(dir.path()));
+  let old_starts = Arc::new(AtomicUsize::new(0));
+  let new_starts = Arc::new(AtomicUsize::new(0));
+  registry.register_shared(probe_tool(
+    "inspect_target",
+    true,
+    json!({"type":"object"}),
+    Arc::clone(&old_starts),
+    "old",
+  ));
+  let advertised = bound_tool(&registry, "inspect_target");
+  assert!(registry.unregister_shared("inspect_target"));
+  registry.register_shared(probe_tool(
+    "inspect_target",
+    true,
+    json!({"type":"object"}),
+    Arc::clone(&new_starts),
+    "re-added",
+  ));
+
+  let (executed, started_events, _) = execute_bound(&registry, &advertised, "inspect_target");
+  assert_eq!(executed.state, State::Failed);
+  assert!(!executed.started);
+  assert_eq!(started_events, 0);
+  assert_eq!(old_starts.load(Ordering::SeqCst), 0);
+  assert_eq!(new_starts.load(Ordering::SeqCst), 0);
+}
+
+#[test]
+fn binding_is_linearized_through_the_durable_start_observer() {
+  let dir = fixture();
+  let registry = Arc::new(ToolRegistry::new(workspace(dir.path())));
+  let old_starts = Arc::new(AtomicUsize::new(0));
+  let new_starts = Arc::new(AtomicUsize::new(0));
+  registry.register_shared(probe_tool(
+    "inspect_target",
+    true,
+    json!({"type":"object"}),
+    Arc::clone(&old_starts),
+    "old implementation",
+  ));
+  let binding = bound_tool(&registry, "inspect_target");
+  let (started_tx, started_rx) = mpsc::channel();
+  let (release_tx, release_rx) = mpsc::channel();
+  let execution_registry = Arc::clone(&registry);
+  let execution = thread::spawn(move || {
+    let mut sink = Sink::new();
+    let mut gate = RecordingGate {
+      allow: true,
+      asked: Vec::new(),
+    };
+    let mut on_started = || {
+      started_tx.send(()).unwrap();
+      release_rx.recv().unwrap();
+      Ok(())
+    };
+    execution_registry.execute_observed_with_gate_and_binding(
+      &request("inspect_target", json!({})),
+      &binding,
+      &mut sink,
+      &CancelToken::new(),
+      &mut gate,
+      &mut on_started,
+    )
+  });
+
+  started_rx
+    .recv_timeout(Duration::from_secs(2))
+    .expect("the exact binding passes its final check before ToolStarted");
+  let replacement_registry = Arc::clone(&registry);
+  let replacement_starts = Arc::clone(&new_starts);
+  let (replaced_tx, replaced_rx) = mpsc::channel();
+  let replacement = thread::spawn(move || {
+    replacement_registry.register_shared(probe_tool(
+      "inspect_target",
+      false,
+      json!({"type":"object"}),
+      replacement_starts,
+      "new implementation",
+    ));
+    replaced_tx.send(()).unwrap();
+  });
+  assert!(
+    replaced_rx.recv_timeout(Duration::from_millis(25)).is_err(),
+    "replacement cannot cross the durable start boundary"
+  );
+  release_tx.send(()).unwrap();
+  let executed = execution.join().unwrap().unwrap();
+  replaced_rx
+    .recv_timeout(Duration::from_secs(2))
+    .expect("registration proceeds after the start observer commits");
+  replacement.join().unwrap();
+  assert_eq!(executed.state, State::Succeeded);
+  assert_eq!(executed.outcome.text, "old implementation");
+  assert_eq!(old_starts.load(Ordering::SeqCst), 1);
+  assert_eq!(new_starts.load(Ordering::SeqCst), 0);
+}
+
+#[test]
+fn a_registry_binding_cannot_be_replayed_against_a_different_registry() {
+  let dir = fixture();
+  let first = ToolRegistry::new(workspace(dir.path()));
+  let second = ToolRegistry::new(workspace(dir.path()));
+  let starts = Arc::new(AtomicUsize::new(0));
+  for registry in [&first, &second] {
+    registry.register_shared(probe_tool(
+      "inspect_target",
+      true,
+      json!({"type":"object"}),
+      Arc::clone(&starts),
+      "same name",
+    ));
+  }
+  let foreign_binding = bound_tool(&first, "inspect_target");
+  let (executed, started_events, _) = execute_bound(&second, &foreign_binding, "inspect_target");
+  assert_eq!(executed.state, State::Failed);
+  assert!(!executed.started);
+  assert_eq!(started_events, 0);
+  assert_eq!(starts.load(Ordering::SeqCst), 0);
 }
 
 #[test]

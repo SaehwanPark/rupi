@@ -267,23 +267,49 @@ impl Decoder {
     let tools = std::mem::take(&mut self.tools);
     // A decoded tool call is output the provider produced, even though a user
     // would not call it an answer. Build the complete batch before emitting any
-    // call: a duplicate provider id makes result correlation ambiguous, and
-    // exposing only the first call would let the runtime execute a partial batch.
+    // call: duplicate IDs are detectable only after the full response is known,
+    // and every colliding call must be rejected rather than partially executed.
     let produced_a_call = !tools.is_empty();
-    let mut decoded = Vec::with_capacity(tools.len());
-    let mut ids = std::collections::BTreeSet::new();
-    for (_, builder) in tools {
-      let id = builder
-        .id
-        .filter(|id| !id.trim().is_empty())
-        .map(ToolCallId::from_string)
-        .unwrap_or(builder.internal_id);
-      if !ids.insert(id.clone()) {
-        return Err(decode_failure(format!(
-          "duplicate tool call id {} in one provider response",
-          id.as_str()
-        )));
+    let duplicate_ids: std::collections::BTreeSet<String> = {
+      let mut counts = std::collections::BTreeMap::<String, usize>::new();
+      for builder in tools.values() {
+        if let Some(id) = builder.id.as_ref().filter(|id| !id.trim().is_empty()) {
+          *counts.entry(id.clone()).or_default() += 1;
+        }
       }
+      counts
+        .into_iter()
+        .filter_map(|(id, count)| (count > 1).then_some(id))
+        .collect()
+    };
+    let mut decoded = Vec::with_capacity(tools.len());
+    let mut ids: std::collections::BTreeSet<ToolCallId> = tools
+      .values()
+      .filter_map(|builder| {
+        builder
+          .id
+          .as_ref()
+          .filter(|id| !duplicate_ids.contains(*id))
+          .map(|id| ToolCallId::from_string(id.clone()))
+      })
+      .collect();
+    for (_, builder) in tools {
+      let duplicate_provider_id = builder.id.as_ref().filter(|id| duplicate_ids.contains(*id));
+      let id = if duplicate_provider_id.is_some() {
+        let mut local_id = builder.internal_id;
+        while !ids.insert(local_id.clone()) {
+          local_id = ToolCallId::new();
+        }
+        local_id
+      } else {
+        let id = builder
+          .id
+          .clone()
+          .map(ToolCallId::from_string)
+          .unwrap_or(builder.internal_id);
+        ids.insert(id.clone());
+        id
+      };
       let (mut arguments, argument_error) = if builder.arguments.trim().is_empty() {
         (Value::Object(serde_json::Map::new()), None)
       } else {
@@ -304,11 +330,18 @@ impl Decoder {
       {
         restore_omitted_optional_arguments(&mut arguments, schema);
       }
-      let reason = match (builder.correlation_error, argument_error) {
-        (Some(correlation), Some(arguments)) => Some(format!("{correlation}; {arguments}")),
-        (Some(reason), None) | (None, Some(reason)) => Some(reason),
-        (None, None) => None,
-      };
+      let reason = [
+        duplicate_provider_id.map(|provider_id| {
+          format!(
+            "provider response reused tool-call id '{provider_id}'; no colliding call was executed, resend with unique identities"
+          )
+        }),
+        builder.correlation_error,
+        argument_error,
+      ]
+      .into_iter()
+      .flatten()
+      .reduce(|left, right| format!("{left}; {right}"));
       let call = ToolCallBlock {
         id: id.clone(),
         name: builder.name,
@@ -1082,7 +1115,7 @@ mod tests {
   }
 
   #[test]
-  fn duplicate_tool_ids_in_one_response_are_rejected_before_emission() {
+  fn duplicate_tool_ids_in_one_response_are_rejected_for_model_correction() {
     let mut collector = Collector::default();
     let mut decoder = Decoder::new(ReasoningExposure::None);
     decoder
@@ -1096,15 +1129,23 @@ mod tests {
         &mut collector,
       )
       .unwrap();
-    let failure = decoder
+    decoder
       .finish(StreamEnd::DoneSentinel, &mut collector)
-      .expect_err("one provider response cannot contain two invocations with one id");
-    assert_eq!(failure.kind, ModelFailureKind::Protocol);
-    assert!(failure.message.contains("duplicate tool call id call_1"));
-    assert!(
-      collector.events().is_empty(),
-      "the ambiguous batch must not partially escape the decoder"
-    );
+      .expect("malformed model generation is recoverable output, not provider failure");
+    assert_eq!(collector.events().len(), 2);
+    let mut ids = std::collections::BTreeSet::new();
+    for (event, expected_name) in collector.events().iter().zip(["read", "grep"]) {
+      let ProviderEvent::ToolCallRejected { id, name, reason } = event else {
+        panic!("a colliding provider call must never be executable: {event:?}");
+      };
+      assert_eq!(name, expected_name);
+      assert!(reason.contains("reused tool-call id 'call_1'"));
+      assert!(
+        ids.insert(id.clone()),
+        "local rejected lifecycle ids are unique"
+      );
+      assert_ne!(id.as_str(), "call_1");
+    }
   }
 
   #[test]

@@ -677,6 +677,9 @@ pub struct NewExecutionBoundary {
 /// Last observed lifecycle state for one historical tool call.
 #[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize)]
 pub struct ToolReplayState {
+  /// Causal invocation identity: the durable event that opened this lifecycle.
+  pub request_event_id: EventId,
+  /// Provider correlation id, which is scoped to one assistant response and may be reused.
   pub call_id: ToolCallId,
   pub name: String,
   pub state: ToolExecutionState,
@@ -950,17 +953,28 @@ fn timing_fact(entry: &TraceEntry) -> Option<TimingFact> {
 }
 
 fn tool_replay_states_from_entries(entries: &[&TraceEntry]) -> Vec<ToolReplayState> {
-  let mut states: BTreeMap<ToolCallId, ToolReplayState> = BTreeMap::new();
-  let mut request_event_ids: BTreeMap<ToolCallId, EventId> = BTreeMap::new();
-  let mut unknown_event_ids: BTreeMap<ToolCallId, EventId> = BTreeMap::new();
+  let mut states: BTreeMap<EventId, ToolReplayState> = BTreeMap::new();
+  let mut request_order = Vec::new();
+  let mut invocations = ToolInvocationIndex::default();
+  let mut unknown_event_ids: BTreeMap<EventId, EventId> = BTreeMap::new();
+
   for entry in entries {
     match &entry.envelope.event {
       AgentEvent::ToolRequested(event) => {
-        request_event_ids.insert(event.call_id.clone(), entry.envelope.meta.event_id.clone());
-        unknown_event_ids.remove(&event.call_id);
+        let request_event_id = entry.envelope.meta.event_id.clone();
+        request_order.push(request_event_id.clone());
+        invocations
+          .event_to_request
+          .insert(request_event_id.clone(), request_event_id.clone());
+        invocations
+          .open_by_call
+          .entry(event.call_id.clone())
+          .or_default()
+          .insert(request_event_id.clone());
         states.insert(
-          event.call_id.clone(),
+          request_event_id.clone(),
           ToolReplayState {
+            request_event_id,
             call_id: event.call_id.clone(),
             name: event.name.clone(),
             state: ToolExecutionState::Requested,
@@ -976,49 +990,66 @@ fn tool_replay_states_from_entries(entries: &[&TraceEntry]) -> Vec<ToolReplaySta
           },
         );
       }
-      AgentEvent::ToolStarted(event) => update_tool_state(
-        &mut states,
-        entry,
-        &event.call_id,
-        &event.name,
-        ToolExecutionState::Started,
-        None,
-      ),
-      AgentEvent::ToolCompleted(event) => update_tool_state(
-        &mut states,
-        entry,
-        &event.call_id,
-        &event.name,
-        event.state,
-        None,
-      ),
-      AgentEvent::ToolFailed(event) => update_tool_state(
-        &mut states,
-        entry,
-        &event.call_id,
-        &event.name,
-        ToolExecutionState::Failed,
-        None,
-      ),
-      AgentEvent::ToolUnknown(event) => {
-        update_tool_state(
+      AgentEvent::ToolStarted(event) => {
+        update_tool_invocation(
+          entry,
+          &event.call_id,
+          &event.name,
+          ToolExecutionState::Started,
+          None,
           &mut states,
+          &mut invocations,
+        );
+      }
+      AgentEvent::ToolCompleted(event) => {
+        if let Some(request_event_id) = update_tool_invocation(
+          entry,
+          &event.call_id,
+          &event.name,
+          event.state,
+          None,
+          &mut states,
+          &mut invocations,
+        ) {
+          close_tool_invocation(&request_event_id, &states, &mut invocations);
+        }
+      }
+      AgentEvent::ToolFailed(event) => {
+        if let Some(request_event_id) = update_tool_invocation(
+          entry,
+          &event.call_id,
+          &event.name,
+          ToolExecutionState::Failed,
+          None,
+          &mut states,
+          &mut invocations,
+        ) {
+          close_tool_invocation(&request_event_id, &states, &mut invocations);
+        }
+      }
+      AgentEvent::ToolUnknown(event) => {
+        if let Some(request_event_id) = update_tool_invocation(
           entry,
           &event.call_id,
           &event.name,
           ToolExecutionState::Unknown,
           Some(!event.mutating),
-        );
-        unknown_event_ids.insert(event.call_id.clone(), entry.envelope.meta.event_id.clone());
+          &mut states,
+          &mut invocations,
+        ) {
+          unknown_event_ids.insert(
+            request_event_id.clone(),
+            entry.envelope.meta.event_id.clone(),
+          );
+          close_tool_invocation(&request_event_id, &states, &mut invocations);
+        }
       }
       AgentEvent::ToolReconciliationObserved(observed) => {
-        let matching_request =
-          request_event_ids.get(&observed.call_id) == Some(&observed.request_event_id);
         let matching_unknown =
-          unknown_event_ids.get(&observed.call_id) == Some(&observed.unknown_event_id);
-        if matching_request
-          && matching_unknown
-          && let Some(state) = states.get_mut(&observed.call_id)
+          unknown_event_ids.get(&observed.request_event_id) == Some(&observed.unknown_event_id);
+        if matching_unknown
+          && let Some(state) = states.get_mut(&observed.request_event_id)
+          && state.call_id == observed.call_id
           && state.name == observed.name
           && state.state == ToolExecutionState::Unknown
           && !state.read_only
@@ -1037,28 +1068,47 @@ fn tool_replay_states_from_entries(entries: &[&TraceEntry]) -> Vec<ToolReplaySta
       _ => {}
     }
   }
-  states.into_values().collect()
+  request_order
+    .into_iter()
+    .filter_map(|request_event_id| states.remove(&request_event_id))
+    .collect()
 }
 
-fn update_tool_state(
-  states: &mut BTreeMap<ToolCallId, ToolReplayState>,
+#[derive(Default)]
+struct ToolInvocationIndex {
+  event_to_request: BTreeMap<EventId, EventId>,
+  open_by_call: BTreeMap<ToolCallId, BTreeSet<EventId>>,
+}
+
+fn update_tool_invocation(
   entry: &TraceEntry,
   call_id: &ToolCallId,
   name: &str,
-  state: ToolExecutionState,
+  execution_state: ToolExecutionState,
   read_only_override: Option<bool>,
-) {
-  let existing_read_only = states
-    .get(call_id)
-    .map(|state| state.read_only)
-    .unwrap_or(false);
-  let read_only = read_only_override.unwrap_or(existing_read_only);
-  let mutating_unknown = !read_only
+  states: &mut BTreeMap<EventId, ToolReplayState>,
+  invocations: &mut ToolInvocationIndex,
+) -> Option<EventId> {
+  let request_event_id = match entry.envelope.meta.parent_event_id.as_ref() {
+    Some(parent) => invocations.event_to_request.get(parent).cloned(),
+    None => {
+      let open = invocations.open_by_call.get(call_id)?;
+      (open.len() == 1).then(|| open.iter().next().expect("one open request").clone())
+    }
+  }?;
+  let state = states.get_mut(&request_event_id)?;
+  if state.call_id != *call_id || state.name != name {
+    return None;
+  }
+  let read_only = read_only_override.unwrap_or(state.read_only);
+  state.state = execution_state;
+  state.read_only = read_only;
+  state.mutating_unknown = !read_only
     && matches!(
-      state,
+      execution_state,
       ToolExecutionState::Started | ToolExecutionState::Unknown
     );
-  let decision = match state {
+  state.decision = match execution_state {
     ToolExecutionState::Succeeded | ToolExecutionState::Failed => {
       HistoricalToolDecision::ReuseCommittedResult
     }
@@ -1077,19 +1127,32 @@ fn update_tool_state(
       }
     }
   };
-  states.insert(
-    call_id.clone(),
-    ToolReplayState {
-      call_id: call_id.clone(),
-      name: name.to_string(),
-      state,
-      read_only,
-      mutating_unknown,
-      reconciliation_status: None,
-      reference: HistoricalEventRef::from_entry(entry),
-      decision,
-    },
+  state.reference = HistoricalEventRef::from_entry(entry);
+  invocations.event_to_request.insert(
+    entry.envelope.meta.event_id.clone(),
+    request_event_id.clone(),
   );
+  Some(request_event_id)
+}
+
+fn close_tool_invocation(
+  request_event_id: &EventId,
+  states: &BTreeMap<EventId, ToolReplayState>,
+  invocations: &mut ToolInvocationIndex,
+) {
+  let Some(state) = states.get(request_event_id) else {
+    return;
+  };
+  let call_id = state.call_id.clone();
+  let remove_set = if let Some(open) = invocations.open_by_call.get_mut(&call_id) {
+    open.remove(request_event_id);
+    open.is_empty()
+  } else {
+    false
+  };
+  if remove_set {
+    invocations.open_by_call.remove(&call_id);
+  }
 }
 
 fn model_epoch_timeline_from_entries(entries: &[&TraceEntry]) -> Vec<ModelEpochTimelineEntry> {
@@ -1368,8 +1431,8 @@ mod tests {
     ContextCompactionEpoch, ContextCompactionStarted, EventEnvelope, EventMeta,
     ExternalContextSource, ModelEpochStarted, ModelFailover, ModelRequestCompleted,
     ModelRequestStarted, ModelRetry, ReasoningDelta, SessionCompactionRecord, SessionHeader,
-    SessionId, SessionStarted, ToolReconciliationObserved, ToolReconciliationSource, ToolRequested,
-    ToolStarted, ToolUnknown, TraceId, TurnId, UserMessage,
+    SessionId, SessionStarted, ToolCompleted, ToolReconciliationObserved, ToolReconciliationSource,
+    ToolRequested, ToolStarted, ToolUnknown, TraceId, TurnId, UserMessage,
     context::{CAPSULE_SCHEMA_VERSION, CapsuleDecision},
     failure::ModelFailureKind,
     message::ContentBlock,
@@ -1401,6 +1464,11 @@ mod tests {
       raw_ref: None,
       externalized: Vec::new(),
     }
+  }
+
+  fn with_parent(mut entry: TraceEntry, parent_event_id: EventId) -> TraceEntry {
+    entry.envelope.meta.parent_event_id = Some(parent_event_id);
+    entry
   }
 
   fn session_message(seq: u64, role: Role, message: Message) -> SessionRecord {
@@ -1865,6 +1933,175 @@ mod tests {
       &state.reconciliation_status,
       Some(ReconciliationStatus::Committed { .. })
     ));
+  }
+
+  #[test]
+  fn reused_provider_call_ids_keep_distinct_causal_invocations() {
+    let call_id = ToolCallId::from_string("call_1");
+    let first_request = entry(
+      1,
+      AgentEvent::ToolRequested(ToolRequested {
+        call_id: call_id.clone(),
+        name: "read".into(),
+        arguments: serde_json::json!({}),
+        read_only: true,
+      }),
+    );
+    let first_request_id = first_request.envelope.meta.event_id.clone();
+    let first_complete = with_parent(
+      entry(
+        2,
+        AgentEvent::ToolCompleted(ToolCompleted {
+          call_id: call_id.clone(),
+          name: "read".into(),
+          state: ToolExecutionState::Succeeded,
+          duration_ms: 1,
+          status: None,
+          reduced: false,
+          blob: None,
+          visible_bytes: 0,
+        }),
+      ),
+      first_request_id,
+    );
+
+    let second_request = entry(
+      3,
+      AgentEvent::ToolRequested(ToolRequested {
+        call_id: call_id.clone(),
+        name: "grep".into(),
+        arguments: serde_json::json!({}),
+        read_only: true,
+      }),
+    );
+    let second_request_id = second_request.envelope.meta.event_id.clone();
+    let second_failed = with_parent(
+      entry(
+        4,
+        AgentEvent::ToolFailed(rupi_core::ToolFailed {
+          call_id: call_id.clone(),
+          name: "grep".into(),
+          message: "search failed".into(),
+          duration_ms: 1,
+          status: None,
+        }),
+      ),
+      second_request_id,
+    );
+
+    let third_request = entry(
+      5,
+      AgentEvent::ToolRequested(ToolRequested {
+        call_id: call_id.clone(),
+        name: "write".into(),
+        arguments: serde_json::json!({}),
+        read_only: false,
+      }),
+    );
+    let third_request_id = third_request.envelope.meta.event_id.clone();
+    let third_started = with_parent(
+      entry(
+        6,
+        AgentEvent::ToolStarted(ToolStarted {
+          call_id: call_id.clone(),
+          name: "write".into(),
+        }),
+      ),
+      third_request_id.clone(),
+    );
+    let third_started_id = third_started.envelope.meta.event_id.clone();
+    let third_unknown = with_parent(
+      entry(
+        7,
+        AgentEvent::ToolUnknown(ToolUnknown {
+          call_id: call_id.clone(),
+          name: "write".into(),
+          why: "completion not observed".into(),
+          mutating: true,
+        }),
+      ),
+      third_started_id,
+    );
+    let third_unknown_id = third_unknown.envelope.meta.event_id.clone();
+    let third_reconciled = entry(
+      8,
+      AgentEvent::ToolReconciliationObserved(ToolReconciliationObserved {
+        call_id: call_id.clone(),
+        name: "write".into(),
+        request_event_id: third_request_id.clone(),
+        unknown_event_id: third_unknown_id,
+        related_turn_id: None,
+        status: ReconciliationStatus::Committed {
+          details: "write already committed".into(),
+        },
+        source: ToolReconciliationSource::Operator,
+      }),
+    );
+
+    let trace = [
+      first_request,
+      first_complete,
+      second_request,
+      second_failed,
+      third_request,
+      third_started,
+      third_unknown,
+      third_reconciled,
+    ];
+    let entries = trace.iter().collect::<Vec<_>>();
+    let states = tool_replay_states_from_entries(&entries);
+    assert_eq!(states.len(), 3);
+    assert!(states.iter().all(|state| state.call_id == call_id));
+    assert_eq!(states[0].name, "read");
+    assert_eq!(states[0].state, ToolExecutionState::Succeeded);
+    assert_eq!(states[1].name, "grep");
+    assert_eq!(states[1].state, ToolExecutionState::Failed);
+    assert_eq!(states[2].name, "write");
+    assert_eq!(states[2].state, ToolExecutionState::Unknown);
+    assert_eq!(states[2].request_event_id, third_request_id);
+    assert_eq!(states[2].decision, HistoricalToolDecision::Reconciled);
+  }
+
+  #[test]
+  fn parentless_legacy_lifecycle_matches_only_one_open_invocation() {
+    let call_id = ToolCallId::from_string("call_1");
+    let first = entry(
+      1,
+      AgentEvent::ToolRequested(ToolRequested {
+        call_id: call_id.clone(),
+        name: "read".into(),
+        arguments: serde_json::json!({}),
+        read_only: true,
+      }),
+    );
+    let second = entry(
+      2,
+      AgentEvent::ToolRequested(ToolRequested {
+        call_id: call_id.clone(),
+        name: "read".into(),
+        arguments: serde_json::json!({}),
+        read_only: true,
+      }),
+    );
+    let ambiguous_terminal = entry(
+      3,
+      AgentEvent::ToolFailed(rupi_core::ToolFailed {
+        call_id,
+        name: "read".into(),
+        message: "legacy result".into(),
+        duration_ms: 1,
+        status: None,
+      }),
+    );
+    let trace = [first, second, ambiguous_terminal];
+    let entries = trace.iter().collect::<Vec<_>>();
+    let states = tool_replay_states_from_entries(&entries);
+    assert_eq!(states.len(), 2);
+    assert!(
+      states
+        .iter()
+        .all(|state| state.state == ToolExecutionState::Requested)
+    );
   }
 
   #[test]
