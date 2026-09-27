@@ -459,9 +459,12 @@ impl Store {
     // Tool side effects are process state, not checkpoint-scoped history. Scan
     // the complete canonical lifecycle before hiding pre-checkpoint events, so
     // a started mutating call can never disappear behind a later capsule.
-    let lifecycle = scan_tool_lifecycles(&trace.items)?;
-    let interrupted_tools = interrupted_tool_calls(lifecycle.pending)?;
-    let unresolved_side_effects = lifecycle.unresolved_side_effects;
+    let ScannedToolLifecycles {
+      pending: pending_tools,
+      unresolved_side_effects,
+      started_by_terminal,
+    } = scan_tool_lifecycles(&trace.items)?;
+    let interrupted_tools = interrupted_tool_calls(pending_tools)?;
     // Keep the full trace for integrity and lifecycle checks. Checkpoint
     // filtering belongs only to model-visible projection reconstruction; hiding
     // older canonical events before validation would let a damaged prefix pass.
@@ -475,6 +478,7 @@ impl Store {
       session,
       restored.header.version,
       restored.checkpoint_seq,
+      &started_by_terminal,
     )?;
     if restored.header.version < rupi_core::session::SESSION_SCHEMA_VERSION {
       recover_legacy_message_origins(&mut restored.messages, &trace.items, &blobs, session)?;
@@ -3011,6 +3015,7 @@ fn validate_projection_alignment(
   session: &SessionId,
   schema_version: u32,
   _checkpoint_seq: Option<EventSeq>,
+  started_by_terminal: &BTreeMap<EventId, bool>,
 ) -> Result<(), StoreError> {
   let linked = |record: &SessionRecord| match record {
     SessionRecord::Message(message) => message.seq,
@@ -3067,31 +3072,18 @@ fn validate_projection_alignment(
           return Err(fail(entry));
         }
       }
-      AgentEvent::ToolFailed(failed) => {
-        // The runtime records a failed, never-started request without a
-        // ToolResult message when a provider response itself fails. Once a
-        // ToolStarted boundary exists, however, a terminal failure must carry
-        // its model-visible projection.
-        let started = entries.iter().any(|candidate| {
-          candidate.envelope.meta.seq < entry.envelope.meta.seq
-            && matches!(
-              &candidate.envelope.event,
-              AgentEvent::ToolStarted(started) if started.call_id == failed.call_id
-            )
-        });
-        if started && !has_message(&entry.envelope.meta.event_id) {
-          return Err(fail(entry));
-        }
-      }
-      AgentEvent::ToolUnknown(unknown) => {
-        let started = entries.iter().any(|candidate| {
-          candidate.envelope.meta.seq < entry.envelope.meta.seq
-            && matches!(
-              &candidate.envelope.event,
-              AgentEvent::ToolStarted(started) if started.call_id == unknown.call_id
-            )
-        });
-        if started && !has_message(&entry.envelope.meta.event_id) {
+      AgentEvent::ToolFailed(_) | AgentEvent::ToolUnknown(_) => {
+        // Lifecycle validation has already resolved the terminal event to its
+        // causal request. Provider call IDs may be reused in later responses.
+        let started = started_by_terminal
+          .get(&entry.envelope.meta.event_id)
+          .ok_or_else(|| {
+            StoreError::Invalid(format!(
+              "session {session} terminal tool event {} has no validated lifecycle; resume requires recovery",
+              entry.envelope.meta.event_id
+            ))
+          })?;
+        if *started && !has_message(&entry.envelope.meta.event_id) {
           return Err(fail(entry));
         }
       }
@@ -4018,6 +4010,8 @@ fn valid_tool_definition_fingerprint(
 struct ScannedToolLifecycles {
   pending: Vec<PendingToolLifecycle>,
   unresolved_side_effects: Vec<UnresolvedSideEffect>,
+  /// Whether each failed/unknown terminal belongs to a request that crossed `ToolStarted`.
+  started_by_terminal: BTreeMap<EventId, bool>,
 }
 
 fn scan_tool_lifecycles(
@@ -4027,6 +4021,7 @@ fn scan_tool_lifecycles(
   let mut ordered = Vec::<EventId>::new();
   let mut unresolved = BTreeMap::<EventId, UnresolvedSideEffect>::new();
   let mut unresolved_order = Vec::<EventId>::new();
+  let mut started_by_terminal = BTreeMap::<EventId, bool>::new();
 
   for entry in entries {
     match &entry.envelope.event {
@@ -4154,6 +4149,7 @@ fn scan_tool_lifecycles(
             "tool failure disagrees with its request",
           ));
         }
+        started_by_terminal.insert(entry.envelope.meta.event_id.clone(), call.started);
       }
       AgentEvent::ToolUnknown(unknown) => {
         let request_id = resolve_pending_tool(&pending, entry, &unknown.call_id)
@@ -4178,6 +4174,7 @@ fn scan_tool_lifecycles(
             "tool unknown result disagrees with its request",
           ));
         }
+        started_by_terminal.insert(entry.envelope.meta.event_id.clone(), call.started);
         if unknown.mutating {
           let turn_id = call
             .request
@@ -4250,6 +4247,7 @@ fn scan_tool_lifecycles(
       .into_iter()
       .filter_map(|event_id| unresolved.remove(&event_id))
       .collect(),
+    started_by_terminal,
   })
 }
 
@@ -6009,6 +6007,220 @@ mod tests {
       migrated.messages[0].message.origin,
       MessageOrigin::ImportedLegacy
     );
+  }
+
+  #[test]
+  fn trace_only_failure_validation_uses_the_exact_tool_invocation() {
+    let tmp = TempDir::new("store-tool-id-reuse-projection");
+    let opened = store(&tmp);
+    let call_id = ToolCallId::from_string("call_1");
+
+    for start_later_call in [false, true] {
+      let id = SessionId::from_string(uuidv7());
+      let turn = TurnId::new();
+      let mut session = opened.begin(header(&id)).unwrap();
+
+      let mut first_request = EventEnvelope::new(
+        meta(&id, &turn),
+        AgentEvent::ToolRequested(ToolRequested {
+          call_id: call_id.clone(),
+          name: "write_probe".into(),
+          arguments: serde_json::json!({}),
+          read_only: false,
+          definition_fingerprint: None,
+        }),
+      );
+      session.emit(&mut first_request).unwrap();
+      let mut first_start = EventEnvelope::new(
+        meta(&id, &turn),
+        AgentEvent::ToolStarted(ToolStarted {
+          call_id: call_id.clone(),
+          name: "write_probe".into(),
+        }),
+      );
+      first_start.meta.parent_event_id = Some(first_request.meta.event_id.clone());
+      session.emit(&mut first_start).unwrap();
+      let mut first_terminal = EventEnvelope::new(
+        meta(&id, &turn),
+        AgentEvent::ToolCompleted(ToolCompleted {
+          call_id: call_id.clone(),
+          name: "write_probe".into(),
+          state: ToolExecutionState::Succeeded,
+          duration_ms: 1,
+          status: None,
+          reduced: false,
+          blob: None,
+          visible_bytes: 2,
+        }),
+      );
+      first_terminal.meta.parent_event_id = Some(first_start.meta.event_id.clone());
+      session
+        .emit_message(
+          &mut first_terminal,
+          &Message::new(
+            Role::Tool,
+            vec![ContentBlock::ToolResult(ToolResultBlock {
+              id: call_id.clone(),
+              name: "write_probe".into(),
+              state: ToolExecutionState::Succeeded,
+              text: "ok".into(),
+              is_error: false,
+              reduced: false,
+              recovery_ref: None,
+            })],
+          ),
+        )
+        .unwrap();
+
+      let mut later_request = EventEnvelope::new(
+        meta(&id, &turn),
+        AgentEvent::ToolRequested(ToolRequested {
+          call_id: call_id.clone(),
+          name: "write_probe".into(),
+          arguments: serde_json::json!({}),
+          read_only: false,
+          definition_fingerprint: None,
+        }),
+      );
+      session.emit(&mut later_request).unwrap();
+      let mut terminal_parent = later_request.meta.event_id.clone();
+      if start_later_call {
+        let mut later_start = EventEnvelope::new(
+          meta(&id, &turn),
+          AgentEvent::ToolStarted(ToolStarted {
+            call_id: call_id.clone(),
+            name: "write_probe".into(),
+          }),
+        );
+        later_start.meta.parent_event_id = Some(later_request.meta.event_id.clone());
+        session.emit(&mut later_start).unwrap();
+        terminal_parent = later_start.meta.event_id.clone();
+      }
+      let mut later_failure = EventEnvelope::new(
+        meta(&id, &turn),
+        AgentEvent::ToolFailed(ToolFailed {
+          call_id: call_id.clone(),
+          name: "write_probe".into(),
+          message: "response ended before execution".into(),
+          duration_ms: 0,
+          status: None,
+        }),
+      );
+      later_failure.meta.parent_event_id = Some(terminal_parent);
+      session.emit(&mut later_failure).unwrap();
+      session.finish().unwrap();
+
+      let restored = opened.restore(&id);
+      if start_later_call {
+        let error = restored.expect_err("a started invocation needs a result projection");
+        assert!(
+          error.to_string().contains("canonical tool_failed event"),
+          "{error}"
+        );
+      } else {
+        restored.expect("a previous call_1 start does not start this invocation");
+      }
+    }
+  }
+
+  #[test]
+  fn schema_migration_preserves_history_under_a_stricter_redaction_policy() {
+    let tmp = TempDir::new("store-migration-redaction");
+    let original_store = store(&tmp);
+    let id = SessionId::from_string(uuidv7());
+    let old_turn = TurnId::new();
+    let literal = "project-token-abcdef123456";
+    let old_text = format!("deploy using {literal}");
+    {
+      let mut session = original_store.begin(header(&id)).unwrap();
+      let mut input = EventEnvelope::new(
+        meta(&id, &old_turn),
+        AgentEvent::UserInput(UserMessage {
+          text: old_text.clone(),
+          attachments: 0,
+        }),
+      );
+      session
+        .emit_message(&mut input, &Message::user(&old_text))
+        .unwrap();
+      session.finish().unwrap();
+    }
+
+    let session_path = original_store.layout().session_path(&id);
+    let mut records = SessionLog::read(&session_path).unwrap().items;
+    let SessionRecord::Header(header) = &mut records[0] else {
+      panic!("session header is first");
+    };
+    header.version = 4;
+    let lines = records
+      .iter()
+      .map(|record| serde_json::to_string(record).unwrap())
+      .collect::<Vec<_>>()
+      .join("\n");
+    std::fs::write(&session_path, format!("{lines}\n")).unwrap();
+
+    let stricter = Store::open(
+      tmp.path(),
+      WritePolicy {
+        redaction: rupi_core::RedactionPolicy {
+          enabled: true,
+          min_secret_len: 8,
+          literals: vec![literal.into()],
+          scan_environment: false,
+        },
+        ..WritePolicy::default()
+      },
+    )
+    .unwrap();
+    stricter
+      .resume(&id)
+      .expect("migration must not re-redact historical projections")
+      .finish()
+      .unwrap();
+    let migrated = stricter
+      .restore(&id)
+      .expect("canonical history still aligns");
+    assert_eq!(migrated.messages[0].message.text(), old_text);
+
+    let new_turn = TurnId::new();
+    let new_text = format!("deploy again using {literal}");
+    let mut session = stricter.resume(&id).unwrap();
+    let mut input = EventEnvelope::new(
+      meta(&id, &new_turn),
+      AgentEvent::UserInput(UserMessage {
+        text: new_text,
+        attachments: 0,
+      }),
+    );
+    session
+      .emit_message(
+        &mut input,
+        &Message::user(format!("deploy again using {literal}")),
+      )
+      .unwrap();
+    session.finish().unwrap();
+
+    let restored = stricter
+      .restore(&id)
+      .expect("new writes follow current policy");
+    assert_eq!(restored.messages[0].message.text(), old_text);
+    assert_eq!(
+      restored.messages[1].message.text(),
+      "deploy again using [redacted:field]"
+    );
+    let trace = TraceJournal::read(&stricter.layout.trace_path(&id)).unwrap();
+    assert!(trace.items.iter().any(|entry| {
+      matches!(
+        &entry.envelope.event,
+        AgentEvent::UserInput(input) if input.text == old_text
+      )
+    }));
+    assert!(trace.items.iter().any(|entry| {
+      matches!(
+        &entry.envelope.event,
+        AgentEvent::UserInput(input) if input.text == "deploy again using [redacted:field]"
+      )
+    }));
   }
 
   #[test]

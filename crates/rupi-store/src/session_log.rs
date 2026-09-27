@@ -9,8 +9,10 @@
 //! Every line is written durably. Unlike trace deltas, a lost message is not a
 //! cosmetic loss: it silently changes what the next model request believes
 //! happened. Bounding resume cost is the checkpoint barrier's job, not the
-//! writer's. Every new header and semantic record is sanitized by the store's
-//! configured redaction policy immediately before serialization.
+//! writer's. New headers and semantic records are sanitized by the store's
+//! configured redaction policy immediately before serialization; schema migration
+//! preserves already-durable semantic values so the projection stays aligned with
+//! its append-only canonical trace.
 
 use std::{
   collections::HashSet,
@@ -180,8 +182,9 @@ impl SessionLog {
   /// Migrate an older semantic session to the current schema before opening an
   /// append handle. The complete validated semantic log is rewritten to a
   /// sibling temporary file, synced, and atomically replaced in place. Existing
-  /// records are preserved except for origins reconstructed from linked canonical
-  /// events and values removed by the active redaction policy.
+  /// values are preserved; migration only updates schema-owned fields and origins
+  /// reconstructed from linked canonical events. The supplied redaction policy is
+  /// retained for API compatibility but is applied only to new durable writes.
   pub fn migrate_to_current(path: &Path, redaction: RedactionPolicy) -> Result<bool, StoreError> {
     Self::migrate_to_current_with_trace(path, redaction, &[])
   }
@@ -190,7 +193,7 @@ impl SessionLog {
   /// Ambiguous `UserMessage` events remain `ImportedLegacy`.
   pub fn migrate_to_current_with_trace(
     path: &Path,
-    redaction: RedactionPolicy,
+    _redaction: RedactionPolicy,
     trace: &[TraceEntry],
   ) -> Result<bool, StoreError> {
     recover_append_tail(path)?;
@@ -217,10 +220,6 @@ impl SessionLog {
     };
     validate_header(&header, path)?;
     header.version = SESSION_SCHEMA_VERSION;
-    let sanitized_header = sanitize_record(&SessionRecord::Header(header), &redaction)?;
-    let SessionRecord::Header(header) = sanitized_header else {
-      unreachable!("sanitizing a header preserves its record variant");
-    };
 
     let mut migrated = Vec::with_capacity(report.items.len());
     migrated.push(SessionRecord::Header(header));
@@ -234,7 +233,7 @@ impl SessionLog {
           .and_then(origin_for_canonical_message)
           .unwrap_or(MessageOrigin::ImportedLegacy);
       }
-      migrated.push(sanitize_record(&record, &redaction)?);
+      migrated.push(record);
     }
     validate_record_schema(path, &migrated)?;
 

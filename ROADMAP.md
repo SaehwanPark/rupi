@@ -1104,8 +1104,8 @@ empirical work.
 context-visibility, bounded-metadata, and event-versioning findings. This follow-up is
 active on `fix/pi-benchmark-audit-round-10`:
 
-- [ ] Keep schema migration semantics-preserving; apply current redaction only to new writes.
-- [ ] Resolve failed/unknown tool projections through their causal invocation, not session-global call IDs.
+- [x] Keep schema migration semantics-preserving; apply current redaction only to new writes.
+- [x] Resolve failed/unknown tool projections through their causal invocation, not session-global call IDs.
 - [ ] Spend mutation budget only after the durable `ToolStarted` boundary.
 - [ ] Refuse emergency compaction that hides all prior semantic history from the model.
 - [ ] Preserve aggregate rejection-reason bounds through duplicate-ID normalization.
