@@ -146,6 +146,7 @@ impl RawPayloadCapture {
 /// Defaults are intentionally bounded: an unbounded journal is a disk incident
 /// waiting to happen, and trace data may contain secrets.
 #[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize)]
+#[serde(deny_unknown_fields)]
 pub struct TraceRetention {
   /// Delete whole older-than-this sessions' traces. `None` means no age limit.
   #[serde(default, skip_serializing_if = "Option::is_none")]

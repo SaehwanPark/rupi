@@ -83,7 +83,7 @@ use crate::{
 const PROMPT_PREFIX: &str = "> ";
 
 /// The slash commands this loop answers itself, and what Tab completes to.
-const COMMANDS: [&str; 9] = [
+const COMMANDS: [&str; 10] = [
   "help",
   "quit",
   "exit",
@@ -93,6 +93,7 @@ const COMMANDS: [&str; 9] = [
   "failover",
   "switch-back",
   "mcp",
+  "reconcile",
 ];
 
 /// Action requested via the `/mcp` command.
@@ -101,6 +102,16 @@ pub enum McpAction {
   List,
   Enable(String),
   Disable(String),
+  Help,
+}
+
+#[derive(Debug, PartialEq, Eq)]
+enum ReconcileAction {
+  List,
+  Confirm {
+    request_event_id: String,
+    outcome: String,
+  },
   Help,
 }
 
@@ -130,6 +141,8 @@ enum Submitted {
   SwitchBack,
   /// Inspect or control configured MCP servers.
   Mcp(McpAction),
+  /// List or explicitly resolve uncertain mutating tool outcomes.
+  Reconcile(ReconcileAction),
   /// A loaded prompt template, with the argument string exactly as typed after the
   /// name. What the model receives is the expansion, not these parts.
   Template { name: String, arguments: String },
@@ -152,6 +165,25 @@ fn route(text: &str, templates: &prompt::Scan) -> Submitted {
       "checkpoints" | "checkpoint" => Submitted::Checkpoints,
       "failover" => Submitted::Failover,
       "switch-back" | "switchback" => Submitted::SwitchBack,
+      "reconcile" => {
+        let rest = rest.trim();
+        if rest.is_empty() || rest == "list" {
+          Submitted::Reconcile(ReconcileAction::List)
+        } else {
+          let mut parts = rest.split_whitespace();
+          match (parts.next(), parts.next(), parts.next()) {
+            (Some(request_event_id), Some(outcome), None)
+              if matches!(outcome, "committed" | "unmodified") =>
+            {
+              Submitted::Reconcile(ReconcileAction::Confirm {
+                request_event_id: request_event_id.to_string(),
+                outcome: outcome.to_string(),
+              })
+            }
+            _ => Submitted::Reconcile(ReconcileAction::Help),
+          }
+        }
+      }
       "compact" => {
         let trimmed = rest.trim();
         let summary = if trimmed.is_empty() {
@@ -228,6 +260,10 @@ enum AfterTurn {
   /// The model request budget ended the turn without a final answer. The
   /// interactive session remains usable for another user turn.
   BudgetExhausted(&'static str),
+  /// The tool-call budget ended the turn after closing every unexecuted call.
+  ToolBudgetExhausted(&'static str),
+  /// A mutating tool outcome needs human reconciliation before autonomous work.
+  NeedsReconciliation(&'static str),
   /// The failure that ends the session.
   Failed(run::SessionError),
 }
@@ -245,11 +281,25 @@ fn after_turn(result: Result<TurnReport, TurnError>) -> AfterTurn {
     Ok(report) if report.status == TurnStatus::BudgetExhausted => {
       AfterTurn::BudgetExhausted("model request budget exhausted")
     }
+    Ok(report) if report.status == TurnStatus::ToolBudgetExhausted => {
+      AfterTurn::ToolBudgetExhausted("tool-call budget exhausted; unexecuted calls were not run")
+    }
+    Ok(report) if report.status == TurnStatus::NeedsReconciliation => {
+      AfterTurn::NeedsReconciliation(
+        "mutating tool outcome is unknown; use /reconcile before continuing",
+      )
+    }
     Ok(_) => AfterTurn::Done,
     Err(TurnError::Aborted(TurnStatus::Cancelled)) => AfterTurn::Cancelled("turn cancelled"),
     Err(TurnError::Aborted(TurnStatus::BudgetExhausted)) => {
       AfterTurn::BudgetExhausted("model request budget exhausted")
     }
+    Err(TurnError::Aborted(TurnStatus::ToolBudgetExhausted)) => {
+      AfterTurn::ToolBudgetExhausted("tool-call budget exhausted; unexecuted calls were not run")
+    }
+    Err(TurnError::Aborted(TurnStatus::NeedsReconciliation)) => AfterTurn::NeedsReconciliation(
+      "mutating tool outcome is unknown; use /reconcile before continuing",
+    ),
     Err(error) => AfterTurn::Failed(run::SessionError::Turn(error)),
   }
 }
@@ -598,6 +648,7 @@ impl Loop {
           "/switch-back switch generation back to the primary model".to_string(),
           "/mcp        list or control MCP servers (/mcp enable <name>, /mcp disable <name>)"
             .to_string(),
+          "/reconcile  inspect or resolve an uncertain mutating tool result".to_string(),
           "/quit, /exit  end the session (ctrl-c on an empty draft does the same)".to_string(),
           "tab         complete the command the caret sits on".to_string(),
         ];
@@ -739,6 +790,79 @@ impl Loop {
         }
         Ok(Submitted::SwitchBack)
       }
+      Submitted::Reconcile(action) => {
+        match &action {
+          ReconcileAction::List => {
+            let unresolved = session.unresolved_side_effects();
+            if unresolved.is_empty() {
+              self.write_note(&["no unresolved mutating tool side effects".to_string()])?;
+            } else {
+              let mut lines = vec![format!(
+                "Unresolved mutating tool side effects ({}):",
+                unresolved.len()
+              )];
+              for side_effect in unresolved {
+                let status = side_effect
+                  .latest_status
+                  .as_ref()
+                  .map(|status| format!("; latest inspection: {}", status.summary()))
+                  .unwrap_or_default();
+                lines.push(format!(
+                  "  - request {}: {} (call {}){status}",
+                  side_effect.request_event_id,
+                  side_effect.request.name,
+                  side_effect.request.call_id,
+                ));
+              }
+              lines.push(
+                "After inspecting the environment, use /reconcile <request-event-id> committed|unmodified."
+                  .to_string(),
+              );
+              self.write_note(&lines)?;
+            }
+          }
+          ReconcileAction::Confirm {
+            request_event_id,
+            outcome,
+          } => {
+            let status = match outcome.as_str() {
+              "committed" => rupi_core::ReconciliationStatus::Committed {
+                details: "operator confirmed after manual inspection".into(),
+              },
+              "unmodified" => rupi_core::ReconciliationStatus::Unmodified {
+                details: "operator confirmed after manual inspection".into(),
+              },
+              _ => unreachable!("route accepts only known reconciliation outcomes"),
+            };
+            let request_event_id = rupi_core::EventId::from_string(request_event_id.clone());
+            match session.confirm_side_effect_resolution(&request_event_id, status) {
+              Ok(()) => self.write_note(&[
+                "manual reconciliation recorded; autonomous work may continue on the next request"
+                  .to_string(),
+              ])?,
+              Err(TurnError::Sink(message)) => {
+                return Err(run::session_error(run::SessionError::Turn(
+                  TurnError::Sink(message),
+                )));
+              }
+              Err(TurnError::Refused(message)) => {
+                self.write_note(&[format!("reconciliation refused: {message}")])?;
+              }
+              Err(error) => {
+                self.write_note(&[format!("reconciliation failed: {error:?}")])?;
+              }
+            }
+          }
+          ReconcileAction::Help => {
+            self.write_note(&[
+              "Usage: /reconcile [list | <request-event-id> committed|unmodified]".to_string(),
+              "Inspect the environment before confirming either outcome; this releases the mutation barrier."
+                .to_string(),
+            ])?;
+          }
+        }
+        Ok(Submitted::Reconcile(action))
+      }
       Submitted::Mcp(action) => {
         match &action {
           McpAction::List => {
@@ -875,7 +999,11 @@ impl Loop {
     take_line().map_err(terminal_failure)?;
     // The loop's own line about a cancellation, written while the terminal still
     // translates it into a row of its own.
-    if let AfterTurn::Cancelled(note) | AfterTurn::BudgetExhausted(note) = &outcome {
+    if let AfterTurn::Cancelled(note)
+    | AfterTurn::BudgetExhausted(note)
+    | AfterTurn::ToolBudgetExhausted(note)
+    | AfterTurn::NeedsReconciliation(note) = &outcome
+    {
       write_line(&mut io::stdout(), note).map_err(terminal_failure)?;
     }
     terminal::enable_raw_mode().map_err(terminal_failure)?;
@@ -883,7 +1011,10 @@ impl Loop {
       AfterTurn::Done => self.turns += 1,
       // The note above is the report; the frame below it goes back to saying
       // `waiting`, which is all the projection is allowed to claim.
-      AfterTurn::Cancelled(_) | AfterTurn::BudgetExhausted(_) => {}
+      AfterTurn::Cancelled(_)
+      | AfterTurn::BudgetExhausted(_)
+      | AfterTurn::ToolBudgetExhausted(_)
+      | AfterTurn::NeedsReconciliation(_) => {}
       AfterTurn::Failed(run::SessionError::Turn(error)) => {
         let error = session.close_after_failure(error);
         return Err(run::session_error(run::SessionError::Turn(error)));
@@ -1410,6 +1541,25 @@ mod tests {
       route("/mcp unknown", &none),
       Submitted::Mcp(McpAction::Help)
     ));
+    assert!(matches!(
+      route("/reconcile", &none),
+      Submitted::Reconcile(ReconcileAction::List)
+    ));
+    assert!(matches!(
+      route("/reconcile list", &none),
+      Submitted::Reconcile(ReconcileAction::List)
+    ));
+    assert!(matches!(
+      route("/reconcile req-event committed", &none),
+      Submitted::Reconcile(ReconcileAction::Confirm {
+        request_event_id,
+        outcome,
+      }) if request_event_id == "req-event" && outcome == "committed"
+    ));
+    assert!(matches!(
+      route("/reconcile req-event unknown", &none),
+      Submitted::Reconcile(ReconcileAction::Help)
+    ));
     assert!(matches!(route("/failover", &none), Submitted::Failover));
     assert!(matches!(
       route("/switch-back", &none),
@@ -1470,6 +1620,16 @@ mod tests {
     }
     assert_eq!(surface.editor.apply(Intent::Complete), Outcome::Changed);
     assert_eq!(surface.editor.text(), "/switch-back ");
+  }
+
+  #[test]
+  fn reconcile_command_is_completed_by_tab() {
+    let mut surface = Loop::new("local/vulcan".to_string(), 80);
+    for ch in "/recon".chars() {
+      surface.editor.apply(Intent::Insert(ch));
+    }
+    assert_eq!(surface.editor.apply(Intent::Complete), Outcome::Changed);
+    assert_eq!(surface.editor.text(), "/reconcile ");
   }
 
   #[test]

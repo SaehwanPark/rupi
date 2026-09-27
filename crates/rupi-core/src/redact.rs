@@ -77,6 +77,7 @@ impl Redacted {
 
 /// Redaction policy.
 #[derive(Clone, PartialEq, Eq, Serialize, Deserialize)]
+#[serde(deny_unknown_fields)]
 pub struct RedactionPolicy {
   /// `false` disables redaction. Disabling is an explicit config choice, never
   /// inferred, because it has a security consequence.

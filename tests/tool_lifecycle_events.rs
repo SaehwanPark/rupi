@@ -195,13 +195,9 @@ fn an_outcome_the_runtime_cannot_determine_is_not_coerced_into_success_or_failur
   let timeout_command = r#"{"command":"ping -n 6 127.0.0.1 >nul","timeout_ms":250}"#;
   #[cfg(not(windows))]
   let timeout_command = r#"{"command":"sleep 5","timeout_ms":250}"#;
-  let records = turn_records(
-    &[
-      tool_call(UNOBSERVED_CALL, "exec", timeout_command),
-      text_response("completed"),
-    ],
-    2,
-  );
+  // An uncertain mutation ends the turn before the scripted follow-up answer
+  // can be requested.
+  let records = turn_records(&[tool_call(UNOBSERVED_CALL, "exec", timeout_command)], 1);
 
   let action: Vec<&Record> = records
     .iter()

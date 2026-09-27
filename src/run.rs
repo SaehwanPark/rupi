@@ -43,6 +43,12 @@ pub fn execute(args: RunArgs) -> Result<(), String> {
             TurnStatus::BudgetExhausted => session
               .close_interrupted("model request budget exhausted")
               .map_err(session_error),
+            TurnStatus::ToolBudgetExhausted => session
+              .close_interrupted("tool-call budget exhausted")
+              .map_err(session_error),
+            TurnStatus::NeedsReconciliation => session
+              .close_interrupted("mutating tool side effect needs reconciliation")
+              .map_err(session_error),
             TurnStatus::Cancelled => session
               .close_interrupted("turn cancelled")
               .map_err(session_error),
@@ -252,6 +258,10 @@ pub(crate) fn open_session_with_approval(
   .with_interactive_tool_approval(interactive_approval)
   .with_thinking(config.thinking)
   .with_max_requests(config.limits.max_model_requests_per_turn as usize)
+  .with_tool_call_budgets(
+    config.limits.max_tool_calls_per_turn as usize,
+    config.limits.max_mutating_tool_calls_per_turn as usize,
+  )
   .with_progress_boundary(
     config
       .limits
@@ -452,6 +462,22 @@ impl SessionHandle<'_> {
     self.runtime.list_checkpoints()
   }
 
+  /// Side effects whose mutating tool outcome is still unknown.
+  pub fn unresolved_side_effects(&self) -> &[rupi_core::UnresolvedSideEffect] {
+    self.runtime.unresolved_side_effects()
+  }
+
+  /// Confirm a mutating tool outcome after manual inspection of the environment.
+  pub fn confirm_side_effect_resolution(
+    &mut self,
+    request_event_id: &rupi_core::EventId,
+    status: rupi_core::ReconciliationStatus,
+  ) -> Result<(), TurnError> {
+    self
+      .runtime
+      .confirm_side_effect_resolution(request_event_id, status)
+  }
+
   /// The model currently active for generation.
   #[allow(dead_code)]
   pub fn active_model(&self) -> rupi_core::ModelRef {
@@ -649,6 +675,7 @@ fn continue_state(
     checkpoint_floor,
     cited_history: restored.last_seq.map(|last| (cited_first, last)),
     interrupted_tools: restored.interrupted_tools,
+    unresolved_side_effects: restored.unresolved_side_effects,
   })
 }
 

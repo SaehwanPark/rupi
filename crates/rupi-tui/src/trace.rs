@@ -156,6 +156,7 @@ fn is_tool(event: &AgentEvent) -> bool {
       | AgentEvent::ToolCompleted(_)
       | AgentEvent::ToolFailed(_)
       | AgentEvent::ToolUnknown(_)
+      | AgentEvent::ToolReconciliationObserved(_)
   )
 }
 

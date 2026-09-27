@@ -212,7 +212,36 @@ impl BlobStore {
   /// size are part of the reference, so checking them here keeps a corrupted
   /// trace from being turned into a plausible message.
   pub fn get_relative_verified(&self, reference: &str) -> Result<Vec<u8>, StoreError> {
-    let bytes = self.get_relative(reference)?;
+    self.get_relative_verified_limited(reference, u64::MAX)
+  }
+
+  /// Read and verify a payload while bounding decoded bytes, including deflate expansion.
+  pub fn get_relative_verified_limited(
+    &self,
+    reference: &str,
+    max_bytes: u64,
+  ) -> Result<Vec<u8>, StoreError> {
+    let (path, compression) = self.parse_relative(reference)?;
+    let file = match fs::File::open(&path) {
+      Ok(file) => file,
+      Err(error) if StoreError::is_missing(&error) => {
+        return Err(StoreError::Missing(reference.to_string()));
+      }
+      Err(error) => return Err(StoreError::Io(error)),
+    };
+    let mut bytes = Vec::new();
+    let read_limit = max_bytes.saturating_add(1);
+    match compression {
+      BlobCompression::None => file.take(read_limit).read_to_end(&mut bytes)?,
+      BlobCompression::Deflate => DeflateDecoder::new(file)
+        .take(read_limit)
+        .read_to_end(&mut bytes)?,
+    };
+    if bytes.len() as u64 > max_bytes {
+      return Err(StoreError::Invalid(format!(
+        "payload {reference} exceeds the {max_bytes}-byte read limit"
+      )));
+    }
     let filename = reference
       .rsplit('/')
       .next()
@@ -464,6 +493,27 @@ mod tests {
     assert_eq!(store.get_relative(&blob.relative_path()).unwrap(), bytes);
     assert!(store.verify(&blob).unwrap());
     assert!(fs::metadata(store.path_for(&blob)).unwrap().len() < blob.size);
+  }
+
+  #[test]
+  fn verified_relative_reads_bound_decoded_compressed_payloads() {
+    let tmp = TempDir::new("blob-bounded-read");
+    let store = compressed_store(&tmp);
+    let bytes = b"bounded model-readable recovery ".repeat(4 * 1024);
+    let blob = store.put(&bytes, Some("text/plain")).unwrap();
+    let reference = blob.relative_path();
+
+    assert!(
+      store
+        .get_relative_verified_limited(&reference, 1_024)
+        .is_err()
+    );
+    assert_eq!(
+      store
+        .get_relative_verified_limited(&reference, bytes.len() as u64)
+        .unwrap(),
+      bytes
+    );
   }
 
   #[test]

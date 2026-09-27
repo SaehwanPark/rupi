@@ -20,7 +20,7 @@ use serde::{Deserialize, Serialize};
 use crate::{
   capability::{ModelCapabilities, ModelRef},
   failure::{CompletionCertainty, ModelFailure},
-  message::{Message, ToolCallBlock},
+  message::{ContentBlock, Message, ToolCallBlock},
   provenance::ReasoningProvenance,
 };
 
@@ -45,27 +45,49 @@ pub const MAX_TOOL_ARGUMENT_BYTES_TOTAL: usize = 8 * 1024 * 1024;
 ///
 /// Cancellation is a request, not a guarantee: an adapter checks it between
 /// stream reads and returns [`crate::failure::ModelFailureKind::Cancelled`],
-/// leaving the runtime free to keep whatever output was already committed.
+/// leaving the runtime free to keep whatever output was already committed. A
+/// linked child can be cancelled independently while also observing its parent.
 #[derive(Debug, Clone, Default)]
-pub struct CancelToken(Arc<AtomicBool>);
+pub struct CancelToken(Arc<CancelState>);
+
+#[derive(Debug, Default)]
+struct CancelState {
+  cancelled: AtomicBool,
+  parent: Option<Arc<CancelState>>,
+}
 
 impl CancelToken {
   pub fn new() -> Self {
     Self::default()
   }
 
+  /// Create a request-local token that also observes cancellation of `self`.
+  /// Cancelling the child does not change the parent's user-cancellation state.
+  pub fn child(&self) -> Self {
+    Self(Arc::new(CancelState {
+      cancelled: AtomicBool::new(false),
+      parent: Some(Arc::clone(&self.0)),
+    }))
+  }
+
   pub fn cancel(&self) {
-    self.0.store(true, Ordering::SeqCst);
+    self.0.cancelled.store(true, Ordering::SeqCst);
   }
 
   pub fn is_cancelled(&self) -> bool {
-    self.0.load(Ordering::SeqCst)
+    self.0.cancelled.load(Ordering::SeqCst)
+      || self.0.parent.as_deref().is_some_and(parent_is_cancelled)
   }
 
-  /// Borrow the underlying [`AtomicBool`] for signal-safe cancellation.
+  /// Borrow this token's local [`AtomicBool`] for signal-safe cancellation.
+  /// Use [`Self::is_cancelled`] to also observe a linked parent's cancellation.
   pub fn raw_flag(&self) -> &AtomicBool {
-    &self.0
+    &self.0.cancelled
   }
+}
+
+fn parent_is_cancelled(state: &CancelState) -> bool {
+  state.cancelled.load(Ordering::SeqCst) || state.parent.as_deref().is_some_and(parent_is_cancelled)
 }
 
 /// Requested reasoning depth.
@@ -229,15 +251,16 @@ impl ModelRequest {
     let messages: usize = self
       .messages
       .iter()
-      .map(|message| {
-        message
-          .content
-          .iter()
-          .map(|block| serde_json::to_string(block).map(|s| s.len()).unwrap_or(0))
-          .sum::<usize>()
+      .flat_map(|message| message.content.iter())
+      .map(|block| match block {
+        ContentBlock::Text { text } => text.len(),
+        ContentBlock::Reasoning(chunk) => chunk.text.len(),
+        ContentBlock::ToolCall(call) => call.name.len() + call.arguments.to_string().len(),
+        ContentBlock::ToolResult(result) => result.text.len(),
+        ContentBlock::Image { data_base64, .. } => data_base64.len(),
       })
       .sum();
-    ((system.len() + tools + messages) as u64 / 4) + 1
+    ((system.len() + tools + messages) / 4).max(1) as u64
   }
 }
 
@@ -438,6 +461,20 @@ pub trait ModelProvider: Send + Sync {
   /// retries within the same turn never call this hook.
   fn reset_after_abandonment(&self) {}
 
+  /// Estimate prompt tokens after provider-specific message/schema mapping.
+  /// Adapters should include any normalization that changes the prompt shape;
+  /// the default estimates the logical Rupi request.
+  fn estimate_prompt_tokens(&self, request: &ModelRequest) -> u64 {
+    request.estimate_tokens()
+  }
+
+  /// Stable calibration scope for this model and prompt dialect. Implementations
+  /// should include material tokenizer or request-mapping options so observations
+  /// from incompatible shapes are never mixed.
+  fn prompt_estimator_scope(&self, request: &ModelRequest) -> String {
+    format!("{}:{}", self.provider_id(), request.model.as_key())
+  }
+
   /// Stream one completion.
   ///
   /// The failure object is deliberately by-value rather than boxed: it is
@@ -615,6 +652,19 @@ mod tests {
       certainty: CompletionCertainty::Certain,
     };
     assert!(!normal.stopped_at_output_limit());
+  }
+
+  #[test]
+  fn child_cancellation_is_local_and_inherits_its_parent() {
+    let user = CancelToken::new();
+    let request = user.child();
+    request.cancel();
+    assert!(request.is_cancelled());
+    assert!(!user.is_cancelled());
+
+    let next_request = user.child();
+    user.cancel();
+    assert!(next_request.is_cancelled());
   }
 
   #[test]

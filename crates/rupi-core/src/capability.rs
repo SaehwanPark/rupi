@@ -112,6 +112,7 @@ impl ReasoningExposure {
 
 /// What a model is claimed to be able to do.
 #[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize)]
+#[serde(deny_unknown_fields)]
 pub struct ModelCapabilities {
   pub text: bool,
   pub images: bool,

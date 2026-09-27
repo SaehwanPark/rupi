@@ -990,6 +990,37 @@ bench/results/startup-ci.json` passed (cold 122.06 ms; warm mean 5.93 ms), and
 this Round-5 safety slice relies on deterministic fixtures, and weak-model performance remains a
 later empirical focus.
 
+### Completed audit follow-up — Round 6 (PR #126)
+
+`audits/pi-benchmark-audit/round06.md` identified one mutating-`Unknown` safety barrier
+and seven hardening/recovery gaps. The implementation is regression-covered:
+
+- [x] A live mutating `Unknown` closes the remaining batch, blocks automatic inference and
+      later mutations, and restores as a reconciliation barrier. Durable reconciliation
+      facts and model-visible status survive resume; replay lifts the block only for a safe
+      committed/unmodified result.
+- [x] Internal request aborts use a linked request-local cancellation token and no longer
+      mutate user cancellation state.
+- [x] Per-turn requested tool calls are bounded (64 total, 16 mutating by default); denied
+      calls receive terminal results without `ToolStarted` or execution.
+- [x] Hard fit checks reserve bounded answer room without an explicit output cap while
+      keeping that implicit reserve off the provider wire.
+- [x] Successful logical prompt usage updates a bounded high-side calibration scoped to
+      provider/model/request dialect; current requests are never replaced by stale counts.
+- [x] The active provider estimates the mapped prompt, including strict-schema expansion,
+      before runtime budgeting and output-ceiling resolution.
+- [x] Fixed-schema configuration rejects unknown fields with nested path diagnostics.
+- [x] Reduced tool output is re-readable through read-only `payload_read`, restricted to
+      recently exposed opaque refs for the current session, 4 KiB ranges, and 16 MiB decoded
+      payloads.
+
+Evidence: `cargo fmt --all --check`, `cargo check -p rupi-core --all-features`,
+`cargo clippy --workspace --all-targets -- -D warnings`, `cargo test --workspace`, and
+`cargo doc --workspace --no-deps` passed. `bash bench/startup.sh --json
+bench/results/startup-ci.json` passed (cold 136.49 ms; warm mean 6.33 ms), and
+`bash bench/context_prefill.sh` passed all five budgets. No local llama.cpp comparison was
+run; this is deterministic runtime-safety evidence, not a weak-model performance claim.
+
 ### P2 — Later / deliberately deferred
 
 - [x] Windows CI matrix (hosted CI covers Ubuntu, macOS, and Windows; benchmark execution remains non-Windows only).

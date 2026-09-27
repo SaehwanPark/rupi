@@ -447,6 +447,8 @@ pub struct RestoredSession {
   pub reductions: Vec<SessionReductionRecord>,
   /// Tool calls whose terminal lifecycle event was absent from the canonical trace.
   pub interrupted_tools: Vec<rupi_core::InterruptedToolCall>,
+  /// Terminal mutating Unknown results whose side-effect barrier remains active.
+  pub unresolved_side_effects: Vec<rupi_core::UnresolvedSideEffect>,
   /// Highest model-visible compaction epoch persisted in the session log.
   pub context_epoch: u32,
   /// Messages summarized by the checkpoint, for honest UI reporting.
@@ -821,6 +823,7 @@ pub(crate) fn restore_from_report(
     compactions,
     reductions,
     interrupted_tools: Vec::new(),
+    unresolved_side_effects: Vec::new(),
     context_epoch,
     summarized_messages,
     last_seq,
