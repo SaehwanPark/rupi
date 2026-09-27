@@ -512,6 +512,10 @@ pub struct ToolReconciliationObserved {
   /// Identifies the exact request even if a provider later reuses its call ID.
   pub request_event_id: EventId,
   pub unknown_event_id: EventId,
+  /// Turn that owns the original request, retained for its session-message projection.
+  /// The observation itself is session-level and does not reopen that completed turn.
+  #[serde(default, skip_serializing_if = "Option::is_none")]
+  pub related_turn_id: Option<TurnId>,
   pub status: ReconciliationStatus,
   /// `operator` means a user explicitly confirmed the outcome after inspection.
   pub source: ToolReconciliationSource,

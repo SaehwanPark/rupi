@@ -407,6 +407,7 @@ impl Store {
       session,
       restored.checkpoint_seq,
     )?;
+    rehydrate_tool_recovery_refs(&mut restored.messages, &trace.items);
     restored.interrupted_tools = interrupted_tools;
     restored.unresolved_side_effects = unresolved_side_effects;
     let from_trace = trace
@@ -832,6 +833,10 @@ impl Session {
     let turn_id = meta
       .turn_id
       .as_ref()
+      .or(match &envelope.event {
+        AgentEvent::ToolReconciliationObserved(observed) => observed.related_turn_id.as_ref(),
+        _ => None,
+      })
       .ok_or_else(|| StoreError::Invalid("a persisted message must belong to a turn".into()))?;
     let epoch = meta
       .model_epoch
@@ -1558,6 +1563,7 @@ impl Session {
           text: details,
           is_error: true,
           reduced: false,
+          recovery_ref: None,
         })],
       );
       self.emit_message(&mut failed, &message)?;
@@ -1612,6 +1618,7 @@ impl Session {
           text: details,
           is_error: true,
           reduced: false,
+          recovery_ref: None,
         })],
       );
       self.emit_message(&mut envelope, &message)?;
@@ -2877,6 +2884,47 @@ fn validate_checkpoint_lifecycles(
   Ok(())
 }
 
+/// Recover runtime-owned payload references for pre-field session projections.
+/// The canonical tool-completion event, not tool-controlled result text, owns the ref.
+fn rehydrate_tool_recovery_refs(
+  messages: &mut [rupi_core::SessionMessage],
+  entries: &[rupi_core::TraceEntry],
+) {
+  let legacy_event_ids = messages
+    .iter()
+    .filter_map(|message| match message.message.content.first() {
+      Some(ContentBlock::ToolResult(result)) if result.reduced && result.recovery_ref.is_none() => {
+        Some(message.event_id.clone())
+      }
+      _ => None,
+    })
+    .collect::<BTreeSet<_>>();
+  if legacy_event_ids.is_empty() {
+    return;
+  }
+
+  let refs_by_event = entries
+    .iter()
+    .filter(|entry| legacy_event_ids.contains(&entry.envelope.meta.event_id))
+    .filter_map(|entry| match &entry.envelope.event {
+      AgentEvent::ToolCompleted(completed) if completed.reduced => completed
+        .blob
+        .as_ref()
+        .map(|blob| (entry.envelope.meta.event_id.clone(), blob.recovery_ref())),
+      _ => None,
+    })
+    .collect::<BTreeMap<_, _>>();
+
+  for message in messages {
+    let Some(ContentBlock::ToolResult(result)) = message.message.content.first_mut() else {
+      continue;
+    };
+    if result.reduced && result.recovery_ref.is_none() {
+      result.recovery_ref = refs_by_event.get(&message.event_id).cloned();
+    }
+  }
+}
+
 /// Check the trace/projection join. Low-level callers may still write synthetic
 /// semantic records without a trace; those unlinked records are checked only
 /// when they claim a canonical sequence. Canonical events that imply a runtime
@@ -3480,7 +3528,11 @@ fn validate_message_projection(
   let event = restored_event
     .as_ref()
     .unwrap_or(&trace_entry.envelope.event);
-  if meta.turn_id.as_ref() != Some(&message.turn_id)
+  let projected_turn_id = meta.turn_id.clone().or_else(|| match event {
+    AgentEvent::ToolReconciliationObserved(observed) => observed.related_turn_id.clone(),
+    _ => None,
+  });
+  if projected_turn_id.as_ref() != Some(&message.turn_id)
     || meta.model_epoch.is_some_and(|epoch| epoch != message.epoch)
     || meta
       .model
@@ -3593,6 +3645,26 @@ fn validate_message_projection(
       {
         return Err(invalid(
           "tool result reduction or visible-byte metadata mismatch",
+        ));
+      }
+      if result.recovery_ref.as_deref().is_some_and(|reference| {
+        completed
+          .blob
+          .as_ref()
+          .is_none_or(|blob| blob.recovery_ref() != reference)
+      }) {
+        return Err(invalid(
+          "tool result recovery reference does not match its archived payload",
+        ));
+      }
+      if result.recovery_ref.as_deref().is_some_and(|reference| {
+        completed
+          .blob
+          .as_ref()
+          .is_none_or(|blob| blob.recovery_ref() != reference)
+      }) {
+        return Err(invalid(
+          "tool result recovery reference does not match its archived payload",
         ));
       }
     }
@@ -4167,9 +4239,13 @@ fn validate_session_record_size(
 }
 
 fn validate_message_envelope(envelope: &EventEnvelope) -> Result<(), StoreError> {
-  if envelope.meta.turn_id.is_none() {
+  let has_related_turn = matches!(
+    &envelope.event,
+    AgentEvent::ToolReconciliationObserved(observed) if observed.related_turn_id.is_some()
+  );
+  if envelope.meta.turn_id.is_none() && !has_related_turn {
     return Err(StoreError::Invalid(
-      "a persisted message must belong to a turn".into(),
+      "a persisted message must belong to a turn or a related reconciliation turn".into(),
     ));
   }
   if envelope.meta.model_epoch.is_none() {
@@ -4198,6 +4274,10 @@ fn recover_projection_record(
     let turn_id = meta
       .turn_id
       .clone()
+      .or_else(|| match &trace_entry.envelope.event {
+        AgentEvent::ToolReconciliationObserved(observed) => observed.related_turn_id.clone(),
+        _ => None,
+      })
       .ok_or_else(|| StoreError::Invalid("cannot recover a message without a turn id".into()))?;
     let epoch = meta.model_epoch.ok_or_else(|| {
       StoreError::Invalid("cannot recover a message without a model epoch".into())
@@ -4267,6 +4347,7 @@ fn recover_projection_record(
             text: failed.message.clone(),
             is_error: true,
             reduced: false,
+            recovery_ref: None,
           })],
         ),
         epoch,
@@ -4290,6 +4371,7 @@ fn recover_projection_record(
             text: unknown.why.clone(),
             is_error: true,
             reduced: false,
+            recovery_ref: None,
           })],
         ),
         epoch,
@@ -4646,6 +4728,71 @@ mod tests {
       unresolved: vec!["provider phase".into()],
       next_actions: vec!["cargo test".into()],
     }
+  }
+
+  #[test]
+  fn legacy_reduced_tool_messages_rehydrate_refs_from_canonical_completion_events() {
+    let session_id = SessionId::new();
+    let turn_id = TurnId::new();
+    let model = ModelRef::new("local", "qwen");
+    let call_id = ToolCallId::new();
+    let event_id = EventId::new();
+    let blob = BlobRef::for_bytes(b"archived payload", Some("text/plain"));
+    let reference = blob.recovery_ref();
+    let text = format!(
+      "reduced result\n\n[Archived output is available through payload_read: ref={reference}; offset=0; limit up to 4096 bytes.]"
+    );
+    let visible_bytes = text.len() as u64;
+    let message = SessionMessage {
+      turn_id,
+      role: Role::Tool,
+      message: Message::new(
+        Role::Tool,
+        vec![ContentBlock::ToolResult(ToolResultBlock {
+          id: call_id.clone(),
+          name: "read".into(),
+          state: ToolExecutionState::Succeeded,
+          text,
+          is_error: false,
+          reduced: true,
+          recovery_ref: None,
+        })],
+      ),
+      epoch: 0,
+      model,
+      event_id: event_id.clone(),
+      seq: Some(EventSeq(1)),
+      external_context: None,
+    };
+    let mut envelope = EventEnvelope::new(
+      EventMeta::new(session_id, TraceId::new()),
+      AgentEvent::ToolCompleted(ToolCompleted {
+        call_id,
+        name: "read".into(),
+        state: ToolExecutionState::Succeeded,
+        duration_ms: 1,
+        status: None,
+        reduced: true,
+        blob: Some(blob),
+        visible_bytes,
+      }),
+    );
+    envelope.meta.event_id = event_id;
+    let entry = rupi_core::TraceEntry {
+      envelope,
+      redactions: 0,
+      raw_payload: false,
+      raw_ref: None,
+      externalized: Vec::new(),
+    };
+    let mut messages = vec![message];
+
+    rehydrate_tool_recovery_refs(&mut messages, &[entry]);
+
+    let ContentBlock::ToolResult(result) = &messages[0].message.content[0] else {
+      unreachable!();
+    };
+    assert_eq!(result.recovery_ref.as_deref(), Some(reference.as_str()));
   }
 
   #[test]
@@ -5242,6 +5389,7 @@ mod tests {
             let reduced = matches!(case, Case::ReducedToolCompleted);
             let text = if reduced { "visible" } else { "complete" };
             let blob = reduced.then(|| session.put_recovery_blob(b"full tool output").unwrap());
+            let recovery_ref = blob.as_ref().map(BlobRef::recovery_ref);
             (
               EventEnvelope::new(
                 meta(&id, &turn),
@@ -5265,6 +5413,7 @@ mod tests {
                   text: text.into(),
                   is_error: false,
                   reduced,
+                  recovery_ref,
                 })],
               ),
             )
@@ -5334,6 +5483,7 @@ mod tests {
                   text: text.into(),
                   is_error: true,
                   reduced: false,
+                  recovery_ref: None,
                 })],
               ),
             )
@@ -5940,6 +6090,7 @@ mod tests {
               text: "ok".into(),
               is_error: false,
               reduced: false,
+              recovery_ref: None,
             })],
           ),
         )
@@ -7216,6 +7367,7 @@ mod tests {
         text: "completion boundary not observed".into(),
         is_error: true,
         reduced: false,
+        recovery_ref: None,
       })],
     );
     session.emit_message(&mut unknown, &result).unwrap();
@@ -7239,6 +7391,7 @@ mod tests {
       name: "write".into(),
       request_event_id: request_id.clone(),
       unknown_event_id: unknown_id.clone(),
+      related_turn_id: None,
       status: ReconciliationStatus::RequiresManualInspection {
         details: "cannot inspect this operation automatically".into(),
       },
@@ -7266,6 +7419,7 @@ mod tests {
       name: "write".into(),
       request_event_id: request_id,
       unknown_event_id: unknown_id.clone(),
+      related_turn_id: None,
       status: ReconciliationStatus::Unmodified {
         details: "operator confirmed no change after manual inspection".into(),
       },

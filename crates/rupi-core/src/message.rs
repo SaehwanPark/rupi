@@ -61,10 +61,13 @@ pub struct ToolResultBlock {
   #[serde(default)]
   pub is_error: bool,
   /// `true` when `text` is a bounded representation and the full payload lives
-  /// in the trace store. The recovery reference is kept in trace, never
-  /// invented here.
+  /// in the trace store.
   #[serde(default)]
   pub reduced: bool,
+  /// Runtime-owned payload reference, copied from the reduction event so
+  /// authorization never has to trust tool-controlled text.
+  #[serde(default, skip_serializing_if = "Option::is_none")]
+  pub recovery_ref: Option<String>,
 }
 
 /// One piece of message content.
@@ -207,6 +210,7 @@ mod tests {
       text: "completion not observed".into(),
       is_error: false,
       reduced: false,
+      recovery_ref: None,
     });
     let encoded = serde_json::to_string(&block).unwrap();
     assert!(encoded.contains("\"state\":\"unknown\""), "{encoded}");

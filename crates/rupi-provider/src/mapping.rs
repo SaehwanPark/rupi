@@ -686,6 +686,7 @@ mod tests {
         text: "fn main() {}".into(),
         is_error: false,
         reduced: false,
+        recovery_ref: None,
       })],
     );
     let body = request_body(&config(), &request(vec![message]));
