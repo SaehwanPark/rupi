@@ -114,7 +114,7 @@ fn render(session: &SessionId, items: &[TraceEntry]) -> Exported {
     first_ms = Some(first_ms.map_or(timestamp_ms, |seen| seen.min(timestamp_ms)));
     match &item.envelope.event {
       AgentEvent::SessionStarted(started) => cwd = started.working_dir.clone(),
-      AgentEvent::UserMessage(message) => {
+      AgentEvent::UserInput(message) => {
         attachments += message.attachments;
         // A reply that never completed is still what a model said, so it is written ahead of
         // the turn that followed it rather than dropped on the floor.
@@ -126,6 +126,9 @@ fn render(session: &SessionId, items: &[TraceEntry]) -> Exported {
         // export does not carry.
         entry["message"] = json!({ "role": "user", "content": message.text });
         push_entry(&mut entries, &mut previous, entry);
+      }
+      AgentEvent::UserMessage(_) => {
+        *kinds.entry("ambiguous_legacy_user_message").or_insert(0) += 1;
       }
       AgentEvent::ModelRequestStarted(started) => model = Some(started.model.clone()),
       AgentEvent::AssistantDelta(delta) => match reply {
@@ -179,10 +182,12 @@ fn render(session: &SessionId, items: &[TraceEntry]) -> Exported {
     ));
   }
   for (kind, count) in &kinds {
-    dropped.push(format!(
-      "{count} {kind} event(s): this export writes user and assistant message entries, so tool, \
-       context, and lifecycle detail stays in the trace"
-    ));
+    let detail = if *kind == "ambiguous_legacy_user_message" {
+      "authorship is unverified; text is omitted rather than exported as human input"
+    } else {
+      "this export writes user and assistant message entries, so tool, context, and lifecycle detail stays in the trace"
+    };
+    dropped.push(format!("{count} {kind} event(s): {detail}"));
   }
 
   let mut lines = vec![header(session, &cwd, first_ms).to_string()];
@@ -255,6 +260,8 @@ fn kind_name(event: &AgentEvent) -> &'static str {
   match event {
     AgentEvent::SessionStarted(_) => "session_started",
     AgentEvent::UserMessage(_) => "user_message",
+    AgentEvent::UserInput(_) => "user_input",
+    AgentEvent::RuntimeControlInjected(_) => "runtime_control_injected",
     AgentEvent::ModelRequestStarted(_) => "model_request_started",
     AgentEvent::ReasoningDelta(_) => "reasoning_delta",
     AgentEvent::AssistantDelta(_) => "assistant_delta",
@@ -383,7 +390,7 @@ mod tests {
   fn turn(question: &str, first: &str, second: &str, from_ms: u64) -> Vec<TraceEntry> {
     vec![
       event(
-        AgentEvent::UserMessage(UserMessage {
+        AgentEvent::UserInput(UserMessage {
           text: question.to_string(),
           attachments: 0,
         }),
@@ -520,6 +527,31 @@ mod tests {
       dropped.is_empty(),
       "a plain conversation loses nothing: {dropped:?}"
     );
+  }
+
+  #[test]
+  fn ambiguous_legacy_user_role_is_not_exported_as_human_input() {
+    let session = SessionId::from_string("session-under-export");
+    let rendered = render(
+      &session,
+      &[event(
+        AgentEvent::UserMessage(UserMessage {
+          text: "legacy text with unknown author".into(),
+          attachments: 0,
+        }),
+        2_000,
+      )],
+    );
+
+    assert!(!rendered.text.contains("legacy text with unknown author"));
+    assert!(
+      rendered
+        .dropped
+        .iter()
+        .any(|detail| detail.contains("authorship is unverified"))
+    );
+    let parsed = pi_import::parse("ambiguous.jsonl", &rendered.text).expect("header is valid");
+    assert!(parsed.entries.is_empty());
   }
 
   #[test]

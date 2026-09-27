@@ -23,11 +23,13 @@ use rupi_core::{
   capability::ModelRef,
   event::AgentEvent,
   ids::{EventSeq, SessionId, uuidv7},
+  message::MessageOrigin,
   redact::RedactionPolicy,
   session::{
     SESSION_SCHEMA_VERSION, SessionHeader, SessionMessage, SessionRecord, SessionReductionRecord,
     SessionSummary,
   },
+  trace::TraceEntry,
 };
 
 use crate::{
@@ -35,6 +37,7 @@ use crate::{
   jsonl::{
     LineWriter, MAX_JSONL_LINE_BYTES, ReadReport, read_first_line, read_jsonl, recover_append_tail,
   },
+  store::origin_for_canonical_message,
 };
 
 /// Bytes read from a trace tail to decide whether a session is closed.
@@ -177,9 +180,19 @@ impl SessionLog {
   /// Migrate an older semantic session to the current schema before opening an
   /// append handle. The complete validated semantic log is rewritten to a
   /// sibling temporary file, synced, and atomically replaced in place. Existing
-  /// records are preserved; only the header version changes unless the active
-  /// redaction policy deliberately removes sensitive values.
+  /// records are preserved except for origins reconstructed from linked canonical
+  /// events and values removed by the active redaction policy.
   pub fn migrate_to_current(path: &Path, redaction: RedactionPolicy) -> Result<bool, StoreError> {
+    Self::migrate_to_current_with_trace(path, redaction, &[])
+  }
+
+  /// Migrate legacy message origins using only matching canonical trace events.
+  /// Ambiguous `UserMessage` events remain `ImportedLegacy`.
+  pub fn migrate_to_current_with_trace(
+    path: &Path,
+    redaction: RedactionPolicy,
+    trace: &[TraceEntry],
+  ) -> Result<bool, StoreError> {
     recover_append_tail(path)?;
     // Current sessions are the common path. Read only the bounded header before
     // deciding that no rewrite is needed; full hydration is reserved for an
@@ -211,7 +224,16 @@ impl SessionLog {
 
     let mut migrated = Vec::with_capacity(report.items.len());
     migrated.push(SessionRecord::Header(header));
-    for record in report.items.into_iter().skip(1) {
+    for mut record in report.items.into_iter().skip(1) {
+      if let SessionRecord::Message(message) = &mut record {
+        let canonical_event = trace
+          .iter()
+          .find(|entry| entry.envelope.meta.event_id == message.event_id)
+          .map(|entry| &entry.envelope.event);
+        message.message.origin = canonical_event
+          .and_then(origin_for_canonical_message)
+          .unwrap_or(MessageOrigin::ImportedLegacy);
+      }
       migrated.push(sanitize_record(&record, &redaction)?);
     }
     validate_record_schema(path, &migrated)?;

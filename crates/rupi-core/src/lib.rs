@@ -63,9 +63,9 @@ pub use event::{
   ContextCompactionEpoch, ContextCompactionStarted, ContextReduced, Diagnostic, DiagnosticLevel,
   EventEnvelope, EventMeta, ExternalContextRetrieved, FIRST_COMPACTION_EPOCH, ModelEpochStarted,
   ModelFailover, ModelRequestCompleted, ModelRequestStarted, ModelRetry, ReasoningDelta,
-  SessionEndReason, SessionEnded, SessionStarted, ToolCompleted, ToolFailed,
-  ToolReconciliationObserved, ToolReconciliationSource, ToolRequested, ToolStarted, ToolUnknown,
-  TurnCompleted, TurnStatus, UserMessage, next_context_epoch,
+  RuntimeControlInjected, SessionEndReason, SessionEnded, SessionStarted, ToolCompleted,
+  ToolFailed, ToolReconciliationObserved, ToolReconciliationSource, ToolRequested, ToolStarted,
+  ToolUnknown, TurnCompleted, TurnStatus, UserMessage, next_context_epoch,
 };
 pub use failure::{
   CompletionCertainty, FailurePhase, ModelFailure, ModelFailureKind, RequestReplaySafety,
@@ -75,7 +75,8 @@ pub use ids::{
   uuidv7,
 };
 pub use message::{
-  ContentBlock, Message, MessageOrigin, Role, RuntimeControlKind, ToolCallBlock, ToolResultBlock,
+  ContentBlock, DerivedSummary, Message, MessageOrigin, Role, RuntimeControlKind, ToolCallBlock,
+  ToolResultBlock,
 };
 pub use provenance::{ReasoningChunk, ReasoningProvenance};
 pub use provider::{
@@ -94,8 +95,9 @@ pub use session::{
 };
 pub use sink::{EventSink, FanOut, MemorySink, NullSink, SinkError};
 pub use tool::{
-  ReconciliationStatus, ReplayDecision, Tool, ToolChunk, ToolError, ToolExecutionContext,
-  ToolExecutionState, ToolMetadata, ToolOutcome, ToolProgress, ToolRequest,
+  ReconciliationStatus, ReplayDecision, Tool, ToolChunk, ToolDefinitionFingerprint,
+  ToolDefinitionIdentity, ToolError, ToolExecutionContext, ToolExecutionState, ToolMetadata,
+  ToolOutcome, ToolProgress, ToolRequest,
 };
 pub use trace::{
   BlobCompression, BlobRef, ExternalContextSource, ExternalizedField, RawPayloadCapture,

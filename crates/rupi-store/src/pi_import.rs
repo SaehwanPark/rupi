@@ -817,7 +817,7 @@ pub fn plan(source: &PiSession) -> Result<ImportPlan, PiImportError> {
           let extracted = message_parts(source, entry, &mut report);
           let message = message_record(&extracted, Role::User, &current_model(&model));
           push(
-            AgentEvent::UserMessage(UserMessage {
+            AgentEvent::UserInput(UserMessage {
               text: extracted.text.clone(),
               attachments: extracted.attachments,
             }),
@@ -940,6 +940,7 @@ pub fn plan(source: &PiSession) -> Result<ImportPlan, PiImportError> {
                 // rupi cannot re-run Pi's tools, and the safe direction to be wrong in is
                 // the one that asks before executing.
                 read_only: false,
+                definition_fingerprint: None,
               }),
               None,
               None,
@@ -1513,7 +1514,7 @@ mod tests {
     ));
     let plan = plan(&source).unwrap();
     let events = events(&plan);
-    assert!(matches!(events[0], AgentEvent::UserMessage(_)));
+    assert!(matches!(events[0], AgentEvent::UserInput(_)));
     assert!(matches!(events[1], AgentEvent::ModelRequestStarted(_)));
     let AgentEvent::ReasoningDelta(reasoning) = events[2] else {
       panic!(
@@ -1558,7 +1559,7 @@ mod tests {
       r#"{"type":"message","id":"u1","parentId":null,"message":{"role":"user","content":[{"type":"text","text":"look"},{"type":"image","data":"AAA","mimeType":"image/png"}]}}"#
     ));
     let plan = plan(&source).unwrap();
-    let AgentEvent::UserMessage(message) = &plan.events[0].event else {
+    let AgentEvent::UserInput(message) = &plan.events[0].event else {
       panic!("expected a user message");
     };
     assert_eq!(message.text, "look");
@@ -1587,7 +1588,7 @@ mod tests {
       r#"{"type":"message","id":"u1","parentId":null,"timestamp":"2026-07-24T09:00:01.000Z","message":{"role":"user","content":[{"type":"image"}]}}"#
     ));
     let plan = plan(&source).unwrap();
-    let AgentEvent::UserMessage(message) = &plan.events[0].event else {
+    let AgentEvent::UserInput(message) = &plan.events[0].event else {
       panic!("expected a user message");
     };
     assert_eq!(message.attachments, 1);
@@ -1674,7 +1675,7 @@ mod tests {
       .iter()
       .map(|mapped| match &mapped.event {
         AgentEvent::Diagnostic(diagnostic) => diagnostic.message.clone(),
-        AgentEvent::UserMessage(message) => message.text.clone(),
+        AgentEvent::UserInput(message) => message.text.clone(),
         _ => String::new(),
       })
       .collect();

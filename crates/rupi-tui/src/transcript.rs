@@ -208,6 +208,18 @@ pub fn render_event(event: &AgentEvent, options: &TranscriptOptions) -> Vec<Rend
       vec![line]
     }
     E::UserMessage(e) => {
+      let mut line = label("legacy user-role; author unverified");
+      line.push(&e.text, Role::UserText);
+      if e.attachments > 0 {
+        fact(
+          &mut line,
+          Role::Meta,
+          &format!("{} attachment(s)", e.attachments),
+        );
+      }
+      vec![line]
+    }
+    E::UserInput(e) => {
       let mut line = RenderLine::new();
       line.push("> ", Role::Prompt);
       line.push(&e.text, Role::UserText);
@@ -218,6 +230,12 @@ pub fn render_event(event: &AgentEvent, options: &TranscriptOptions) -> Vec<Rend
           &format!("{} attachment(s)", e.attachments),
         );
       }
+      vec![line]
+    }
+    E::RuntimeControlInjected(e) => {
+      let mut line = label("runtime control");
+      fact(&mut line, Role::Meta, &format!("{:?}", e.kind));
+      line.push(&e.text, Role::UserText);
       vec![line]
     }
     E::ModelRequestStarted(e) => {
@@ -789,6 +807,7 @@ mod tests {
       name: name.into(),
       arguments,
       read_only: false,
+      definition_fingerprint: None,
     })
   }
 
@@ -959,6 +978,7 @@ mod tests {
       name: "read".into(),
       arguments: serde_json::json!({ "path": "crates/rupi-tui/src/lib.rs", "offset": 10 }),
       read_only: true,
+      definition_fingerprint: None,
     });
     let line = &render_event(&event, &options())[0];
     let roles: Vec<Role> = line.segments.iter().map(|s| s.role).collect();
@@ -975,6 +995,7 @@ mod tests {
       name: "write".into(),
       arguments: serde_json::json!({ "path": "out.txt" }),
       read_only: false,
+      definition_fingerprint: None,
     });
     assert!(plain(&render_event(&event, &options())).contains("mutating"));
   }
@@ -1288,6 +1309,7 @@ mod tests {
         name: "read".into(),
         arguments: serde_json::json!({ "path": "src/main.rs", "offset": 1 }),
         read_only: true,
+        definition_fingerprint: None,
       }),
       AgentEvent::ToolStarted(rupi_core::ToolStarted {
         call_id: ToolCallId::new(),

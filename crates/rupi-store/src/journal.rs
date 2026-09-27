@@ -555,6 +555,7 @@ mod tests {
           name: "write".into(),
           arguments: json!({ "path": "src/main.rs" }),
           read_only: false,
+          definition_fingerprint: None,
         })))
         .unwrap();
       // The transition forces its own way through, and the buffered delta leaves
@@ -853,6 +854,7 @@ mod tests {
         name: "write".into(),
         arguments: json!({"path": "generated/data.txt", "contents": contents}),
         read_only: false,
+        definition_fingerprint: None,
       }),
     )
   }

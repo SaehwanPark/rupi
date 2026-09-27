@@ -28,7 +28,7 @@ use rupi_core::{
     ToolFailed, ToolReconciliationSource,
   },
   ids::{CheckpointId, EventId, EventSeq, SessionId, ToolCallId, TurnId},
-  message::{ContentBlock, Message, Role, ToolResultBlock},
+  message::{ContentBlock, Message, MessageOrigin, Role, ToolResultBlock},
   redact::RedactionPolicy,
   session::{
     InterruptedToolCall, SessionCheckpointRecord, SessionHeader, SessionMessage, SessionRecord,
@@ -57,6 +57,35 @@ pub const DEFAULT_INLINE_THRESHOLD_BYTES: u64 = 8 * 1024;
 const MAX_CAPSULE_BYTES: u64 = 128 * 1024;
 const MAX_CHECKPOINT_COUNT: usize = 1_024;
 const MAX_CHECKPOINT_TOTAL_BYTES: u64 = 8 * 1024 * 1024;
+
+/// Recover message source only from an unambiguous canonical event variant.
+pub(crate) fn origin_for_canonical_message(event: &AgentEvent) -> Option<MessageOrigin> {
+  match event {
+    AgentEvent::UserInput(_) => Some(MessageOrigin::UserInput),
+    AgentEvent::RuntimeControlInjected(control) => {
+      Some(MessageOrigin::RuntimeControl { kind: control.kind })
+    }
+    AgentEvent::UserMessage(_) => Some(MessageOrigin::ImportedLegacy),
+    AgentEvent::ExternalContextRetrieved(retrieved) => Some(MessageOrigin::ExternalContext {
+      source: Some(ExternalContextRef {
+        provider: retrieved.source.provider.clone(),
+        resource_id: retrieved.source.resource_id.clone(),
+        citation: retrieved.citation.clone(),
+        provenance: retrieved.source.provenance.clone(),
+        metadata: retrieved.metadata.clone(),
+      }),
+    }),
+    AgentEvent::ContextSummary => Some(MessageOrigin::CompactionSummary),
+    AgentEvent::AssistantDelta(_) | AgentEvent::ModelRequestCompleted(_) => {
+      Some(MessageOrigin::Assistant)
+    }
+    AgentEvent::ToolCompleted(_) | AgentEvent::ToolFailed(_) | AgentEvent::ToolUnknown(_) => {
+      Some(MessageOrigin::ToolResult)
+    }
+    AgentEvent::ToolReconciliationObserved(_) => Some(MessageOrigin::ToolReconciliation),
+    _ => None,
+  }
+}
 
 #[cfg(test)]
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]
@@ -207,11 +236,50 @@ impl Store {
     self.layout.ensure_session_dirs(session)?;
     let lease = SessionLease::acquire(&self.layout.lease_path(session))?;
     // Legacy semantic logs are upgraded while the lease is held and before any
-    // append handle exists. This prevents a v1/v2 header from claiming a file
-    // that now contains v3-only reduction or checkpoint records.
-    SessionLog::migrate_to_current(
+    // append handle exists. Canonical events are the only evidence allowed to
+    // recover message origins; ambiguous legacy user-role events stay opaque.
+    let migration_trace = if header.version < rupi_core::session::SESSION_SCHEMA_VERSION {
+      match TraceJournal::read(&self.layout.trace_path(session)) {
+        Ok(trace) => trace,
+        Err(StoreError::Missing(_)) => crate::jsonl::ReadReport {
+          items: Vec::new(),
+          malformed: 0,
+          first_malformed_line: None,
+        },
+        Err(error) => return Err(error),
+      }
+    } else {
+      crate::jsonl::ReadReport {
+        items: Vec::new(),
+        malformed: 0,
+        first_malformed_line: None,
+      }
+    };
+    if migration_trace.malformed > 0 {
+      return Err(StoreError::Invalid(format!(
+        "session {session} trace contains {} malformed line(s); origin migration is unsafe",
+        migration_trace.malformed
+      )));
+    }
+    let hydrated_migration_trace = if migration_trace.items.is_empty() {
+      Vec::new()
+    } else {
+      let blobs =
+        BlobStore::for_session_with_compression(&self.layout, session, self.policy.compression)?;
+      migration_trace
+        .items
+        .iter()
+        .map(|entry| {
+          let mut hydrated = entry.clone();
+          hydrated.envelope.event = restore_externalized_event_from_blobs(entry, &blobs, session)?;
+          Ok(hydrated)
+        })
+        .collect::<Result<Vec<_>, StoreError>>()?
+    };
+    SessionLog::migrate_to_current_with_trace(
       &self.layout.session_path(session),
       self.policy.redaction.clone(),
+      &hydrated_migration_trace,
     )?;
     let header = SessionLog::read_header(&self.layout.session_path(session))?;
     let session_report = SessionLog::read(&self.layout.session_path(session))?;
@@ -405,8 +473,12 @@ impl Store {
       &semantic_records.items,
       &blobs,
       session,
+      restored.header.version,
       restored.checkpoint_seq,
     )?;
+    if restored.header.version < rupi_core::session::SESSION_SCHEMA_VERSION {
+      recover_legacy_message_origins(&mut restored.messages, &trace.items, &blobs, session)?;
+    }
     rehydrate_tool_recovery_refs(&mut restored.messages, &trace.items);
     restored.interrupted_tools = interrupted_tools;
     restored.unresolved_side_effects = unresolved_side_effects;
@@ -699,7 +771,7 @@ impl Session {
       });
     }
 
-    validate_message_envelope(envelope)?;
+    validate_message_envelope(envelope, message)?;
     // Preflight the final redacted semantic line before creating recovery
     // payloads or changing durable state. Otherwise the canonical event could
     // be committed while the projection is permanently too large to append.
@@ -828,7 +900,7 @@ impl Session {
     message: &Message,
     seq: EventSeq,
   ) -> Result<SessionRecord, StoreError> {
-    validate_message_envelope(envelope)?;
+    validate_message_envelope(envelope, message)?;
     let meta = &envelope.meta;
     let turn_id = meta
       .turn_id
@@ -1534,6 +1606,7 @@ impl Session {
           // Recovery is about proving non-execution, not assigning a registry
           // risk class. Keep the conservative value for later inspection.
           read_only: false,
+          definition_fingerprint: None,
         }),
       );
       self.emit(&mut requested)?;
@@ -2237,6 +2310,8 @@ fn event_kind(event: &AgentEvent) -> &'static str {
   match event {
     AgentEvent::SessionStarted(_) => "session_started",
     AgentEvent::UserMessage(_) => "user_message",
+    AgentEvent::UserInput(_) => "user_input",
+    AgentEvent::RuntimeControlInjected(_) => "runtime_control_injected",
     AgentEvent::ModelRequestStarted(_) => "model_request_started",
     AgentEvent::ReasoningDelta(_) => "reasoning_delta",
     AgentEvent::AssistantDelta(_) => "assistant_delta",
@@ -2934,6 +3009,7 @@ fn validate_projection_alignment(
   records: &[SessionRecord],
   blobs: &BlobStore,
   session: &SessionId,
+  schema_version: u32,
   _checkpoint_seq: Option<EventSeq>,
 ) -> Result<(), StoreError> {
   let linked = |record: &SessionRecord| match record {
@@ -2982,6 +3058,8 @@ fn validate_projection_alignment(
       AgentEvent::ContextSummary | AgentEvent::ContextCompactionEpoch(_)
         if aborted_events.contains(&entry.envelope.meta.event_id) => {}
       AgentEvent::UserMessage(_)
+      | AgentEvent::UserInput(_)
+      | AgentEvent::RuntimeControlInjected(_)
       | AgentEvent::ExternalContextRetrieved(_)
       | AgentEvent::ContextSummary
       | AgentEvent::ToolCompleted(_) => {
@@ -3347,19 +3425,34 @@ fn validate_projection_alignment(
         _ => None,
       })
       .expect("summary_is_previous_message proved the projection shape");
-    let summary_blob = entries
-      .iter()
-      .find_map(|entry| match &entry.envelope.event {
+    let mut summary_epoch = None;
+    for entry in entries {
+      if !matches!(
+        &entry.envelope.event,
         AgentEvent::ContextCompactionEpoch(epoch)
           if epoch.context_epoch == compaction.context_epoch
             && epoch.replaces_from == from
-            && epoch.replaces_through == through =>
-        {
-          epoch.summary.as_ref()
-        }
-        _ => None,
-      });
-    if let Some(blob) = summary_blob {
+            && epoch.replaces_through == through
+      ) {
+        continue;
+      }
+      let event = restore_externalized_event_from_blobs(entry, blobs, session)?;
+      if let AgentEvent::ContextCompactionEpoch(epoch) = event {
+        summary_epoch = Some(epoch);
+        break;
+      }
+    }
+    let summary_epoch =
+      summary_epoch.expect("has_epoch proved the matching canonical record exists");
+    if summary_message.message.derived_summary.as_deref()
+      != summary_epoch.derived_summary.as_deref()
+    {
+      return Err(StoreError::Invalid(format!(
+        "session {session} compaction epoch {} semantic summary disagrees with its canonical event; resume requires recovery",
+        compaction.context_epoch
+      )));
+    }
+    if let Some(blob) = summary_epoch.summary.as_ref() {
       let bytes = blobs.get(blob).map_err(|error| {
         StoreError::Invalid(format!(
           "session {session} compaction epoch {} summary blob is unreadable: {error}; resume requires recovery",
@@ -3405,11 +3498,69 @@ fn validate_projection_alignment(
       )));
     }
     if let Some(message) = message {
-      validate_message_projection(message, trace_entry, blobs, session)?;
+      if let Some(summary) = message.message.derived_summary.as_deref() {
+        let mut summary_is_canonical = false;
+        for entry in entries {
+          if !entry
+            .envelope
+            .meta
+            .seq
+            .zip(message.seq)
+            .is_some_and(|(epoch_seq, summary_seq)| epoch_seq > summary_seq)
+            || entry.envelope.meta.turn_id != Some(message.turn_id.clone())
+            || !matches!(entry.envelope.event, AgentEvent::ContextCompactionEpoch(_))
+          {
+            continue;
+          }
+          let event = restore_externalized_event_from_blobs(entry, blobs, session)?;
+          if matches!(
+            event,
+            AgentEvent::ContextCompactionEpoch(ref epoch)
+              if epoch.derived_summary.as_deref() == Some(summary)
+          ) {
+            summary_is_canonical = true;
+            break;
+          }
+        }
+        if !summary_is_canonical {
+          return Err(StoreError::Invalid(format!(
+            "session {session} derived summary {} has no matching canonical compaction state; resume requires recovery",
+            message.event_id
+          )));
+        }
+      }
+      validate_message_projection(message, trace_entry, blobs, session, schema_version)?;
       if message.role == Role::Assistant {
         validate_assistant_message_content(message, entries, blobs, session)?;
       }
     }
+  }
+  Ok(())
+}
+
+fn recover_legacy_message_origins(
+  messages: &mut [SessionMessage],
+  entries: &[rupi_core::TraceEntry],
+  blobs: &BlobStore,
+  session: &SessionId,
+) -> Result<(), StoreError> {
+  for message in messages {
+    let origin = if let Some(entry) = entries
+      .iter()
+      .find(|entry| entry.envelope.meta.event_id == message.event_id)
+    {
+      let event = restore_externalized_event_from_blobs(entry, blobs, session)?;
+      origin_for_canonical_message(&event).unwrap_or(MessageOrigin::ImportedLegacy)
+    } else {
+      MessageOrigin::ImportedLegacy
+    };
+    message.message.origin = origin;
+    message.message.validate_role_origin().map_err(|detail| {
+      StoreError::Invalid(format!(
+        "session {session} legacy message {} has incompatible canonical origin ({detail}); resume requires recovery",
+        message.event_id
+      ))
+    })?;
   }
   Ok(())
 }
@@ -3514,6 +3665,7 @@ fn validate_message_projection(
   trace_entry: &rupi_core::TraceEntry,
   blobs: &BlobStore,
   session: &SessionId,
+  schema_version: u32,
 ) -> Result<(), StoreError> {
   let meta = &trace_entry.envelope.meta;
   let restored_event = if trace_entry.externalized.is_empty() {
@@ -3550,8 +3702,19 @@ fn validate_message_projection(
       message.event_id
     ))
   };
+  message.message.validate_role_origin().map_err(&invalid)?;
+  let origin_is_ambiguous_legacy_user_event =
+    matches!(event, AgentEvent::UserMessage(_)) && message.role != Role::User;
+  if schema_version >= rupi_core::session::SESSION_SCHEMA_VERSION
+    && !origin_is_ambiguous_legacy_user_event
+    && origin_for_canonical_message(event).is_some_and(|origin| origin != message.message.origin)
+  {
+    return Err(invalid(
+      "semantic origin disagrees with canonical event type",
+    ));
+  }
   match event {
-    AgentEvent::UserMessage(user) => {
+    AgentEvent::UserMessage(user) | AgentEvent::UserInput(user) => {
       // Low-level callers may use a user event as the causal introducer for a
       // richer assistant message (the provenance round-trip API does this).
       // Only a semantic user projection has the user text/attachment shape to
@@ -3575,6 +3738,19 @@ fn validate_message_projection(
         if !valid {
           return Err(invalid("user text, role, or attachment mismatch"));
         }
+      }
+    }
+    AgentEvent::RuntimeControlInjected(control) => {
+      if message.role != Role::User
+        || message.message.origin != (MessageOrigin::RuntimeControl { kind: control.kind })
+        || message.message.text() != control.text
+        || message.message.content.len() != 1
+        || !matches!(
+          message.message.content.first(),
+          Some(rupi_core::ContentBlock::Text { .. })
+        )
+      {
+        return Err(invalid("runtime-control text, role, or kind mismatch"));
       }
     }
     AgentEvent::ExternalContextRetrieved(retrieved) => {
@@ -3819,6 +3995,26 @@ fn lifecycle_invalid(entry: &rupi_core::TraceEntry, detail: &str) -> StoreError 
   ))
 }
 
+fn valid_tool_definition_fingerprint(
+  fingerprint: &rupi_core::ToolDefinitionFingerprint,
+  name: &str,
+  read_only: bool,
+) -> bool {
+  let valid_component = |value: &str| {
+    !value.trim().is_empty() && value.len() <= 256 && !value.chars().any(char::is_control)
+  };
+  fingerprint.name == name
+    && fingerprint.read_only == read_only
+    && valid_component(&fingerprint.source)
+    && valid_component(&fingerprint.definition_id)
+    && valid_component(&fingerprint.definition_version)
+    && fingerprint.schema_sha256.len() == 64
+    && fingerprint
+      .schema_sha256
+      .bytes()
+      .all(|byte| byte.is_ascii_hexdigit())
+}
+
 struct ScannedToolLifecycles {
   pending: Vec<PendingToolLifecycle>,
   unresolved_side_effects: Vec<UnresolvedSideEffect>,
@@ -3841,6 +4037,17 @@ fn scan_tool_lifecycles(
           || !tool_call_metadata_matches(entry, &requested.call_id)
         {
           return Err(invalid("tool request has no turn or call identity"));
+        }
+        if requested
+          .definition_fingerprint
+          .as_ref()
+          .is_some_and(|fingerprint| {
+            !valid_tool_definition_fingerprint(fingerprint, &requested.name, requested.read_only)
+          })
+        {
+          return Err(invalid(
+            "tool request has an invalid definition fingerprint",
+          ));
         }
         let event_id = entry.envelope.meta.event_id.clone();
         if pending
@@ -3992,6 +4199,7 @@ fn scan_tool_lifecycles(
               request_event_id: request_id,
               unknown_event_id: entry.envelope.meta.event_id.clone(),
               latest_status: None,
+              definition_fingerprint: requested.definition_fingerprint.clone(),
             },
           );
         }
@@ -4075,6 +4283,7 @@ fn interrupted_tool_calls(
       model: call.request.envelope.meta.model.clone(),
       request_event_id: Some(call.request.envelope.meta.event_id.clone()),
       started_event_id: call.started_event_id,
+      definition_fingerprint: requested.definition_fingerprint.clone(),
     });
   }
   Ok(interrupted)
@@ -4238,7 +4447,22 @@ fn validate_session_record_size(
   Ok(())
 }
 
-fn validate_message_envelope(envelope: &EventEnvelope) -> Result<(), StoreError> {
+fn validate_message_envelope(
+  envelope: &EventEnvelope,
+  message: &Message,
+) -> Result<(), StoreError> {
+  message
+    .validate_role_origin()
+    .map_err(|detail| StoreError::Invalid(detail.into()))?;
+  let legacy_non_user_projection =
+    matches!(&envelope.event, AgentEvent::UserMessage(_)) && message.role != Role::User;
+  if !legacy_non_user_projection
+    && origin_for_canonical_message(&envelope.event).is_some_and(|origin| origin != message.origin)
+  {
+    return Err(StoreError::Invalid(
+      "message semantic origin disagrees with canonical event type".into(),
+    ));
+  }
   let has_related_turn = matches!(
     &envelope.event,
     AgentEvent::ToolReconciliationObserved(observed) if observed.related_turn_id.is_some()
@@ -4304,19 +4528,36 @@ fn recover_projection_record(
     )?));
   }
   match &trace_entry.envelope.event {
-    AgentEvent::UserMessage(_) => {
+    AgentEvent::UserMessage(_) | AgentEvent::UserInput(_) => {
       let event = restore_externalized_event(trace_entry, session)?;
-      let AgentEvent::UserMessage(user) = event else {
-        return Err(StoreError::Invalid(format!(
-          "session {} externalized user event changed type during recovery",
-          session.id()
-        )));
+      let (text, origin) = match event {
+        AgentEvent::UserMessage(user) => (user.text, MessageOrigin::ImportedLegacy),
+        AgentEvent::UserInput(user) => (user.text, MessageOrigin::UserInput),
+        _ => {
+          return Err(StoreError::Invalid(format!(
+            "session {} externalized user event changed type during recovery",
+            session.id()
+          )));
+        }
       };
       let (turn_id, epoch, model) = message_attribution()?;
       Ok(Some(SessionRecord::Message(SessionMessage {
         turn_id,
         role: Role::User,
-        message: Message::user(user.text),
+        message: Message::with_origin(Role::User, vec![ContentBlock::text(text)], origin),
+        epoch,
+        model,
+        event_id: trace_entry.envelope.meta.event_id.clone(),
+        seq,
+        external_context: None,
+      })))
+    }
+    AgentEvent::RuntimeControlInjected(control) => {
+      let (turn_id, epoch, model) = message_attribution()?;
+      Ok(Some(SessionRecord::Message(SessionMessage {
+        turn_id,
+        role: Role::User,
+        message: Message::runtime_control(control.text.clone(), control.kind),
         epoch,
         model,
         event_id: trace_entry.envelope.meta.event_id.clone(),
@@ -4386,7 +4627,7 @@ fn recover_projection_record(
       Ok(Some(SessionRecord::Message(SessionMessage {
         turn_id,
         role: Role::User,
-        message: Message::user(observed.model_notice()),
+        message: Message::tool_reconciliation(observed.model_notice()),
         epoch,
         model,
         event_id: trace_entry.envelope.meta.event_id.clone(),
@@ -4663,7 +4904,7 @@ mod tests {
       ToolStarted, ToolUnknown, TurnCompleted, TurnStatus, UserMessage,
     },
     ids::{EventId, ToolCallId, TraceId, uuidv7},
-    message::{ContentBlock, Message, Role, ToolCallBlock, ToolResultBlock},
+    message::{ContentBlock, Message, MessageOrigin, Role, ToolCallBlock, ToolResultBlock},
     session::{SESSION_SCHEMA_VERSION, SessionEpochRecord, SessionReductionRecord},
     tool::ReconciliationStatus,
     trace::{BlobCompression, TraceRetention},
@@ -4863,6 +5104,7 @@ mod tests {
         name: "write".into(),
         arguments: serde_json::json!({"path": "generated/data.bin", "contents": contents}),
         read_only: false,
+        definition_fingerprint: None,
       }),
     )
   }
@@ -4944,7 +5186,7 @@ mod tests {
       .unwrap();
     let mut introduced = EventEnvelope::new(
       meta(&id, &turn),
-      AgentEvent::UserMessage(UserMessage {
+      AgentEvent::UserInput(UserMessage {
         text: "write the file".into(),
         attachments: 0,
       }),
@@ -4994,7 +5236,7 @@ mod tests {
     let mut session = opened.begin(header(&id)).unwrap();
     let mut introduced = EventEnvelope::new(
       meta(&id, &turn),
-      AgentEvent::UserMessage(UserMessage {
+      AgentEvent::UserInput(UserMessage {
         text: "hello".into(),
         attachments: 0,
       }),
@@ -5061,7 +5303,7 @@ mod tests {
       for index in 0..4u32 {
         let mut introduced = EventEnvelope::new(
           meta(&id, &turn),
-          AgentEvent::UserMessage(UserMessage {
+          AgentEvent::UserInput(UserMessage {
             text: format!("long message {index}"),
             attachments: 0,
           }),
@@ -5091,7 +5333,7 @@ mod tests {
       session.emit(&mut created).unwrap();
       let mut after = EventEnvelope::new(
         meta(&id, &turn),
-        AgentEvent::UserMessage(UserMessage {
+        AgentEvent::UserInput(UserMessage {
           text: "after".into(),
           attachments: 0,
         }),
@@ -5155,7 +5397,7 @@ mod tests {
       let mut session = opened.begin(header(&id)).unwrap();
       let mut envelope = EventEnvelope::new(
         meta(&id, &turn),
-        AgentEvent::UserMessage(UserMessage {
+        AgentEvent::UserInput(UserMessage {
           text: "exact durable message".into(),
           attachments: 0,
         }),
@@ -5253,7 +5495,7 @@ mod tests {
           Case::User => (
             EventEnvelope::new(
               meta(&id, &turn),
-              AgentEvent::UserMessage(UserMessage {
+              AgentEvent::UserInput(UserMessage {
                 text: "user message".into(),
                 attachments: 0,
               }),
@@ -5285,7 +5527,7 @@ mod tests {
                   metadata,
                 }),
               ),
-              Message::user(context.format_for_model()),
+              Message::external_context(context.format_for_model(), Some(context.external_ref())),
             )
           }
           Case::AssistantText => {
@@ -5375,6 +5617,7 @@ mod tests {
                 name: name.into(),
                 arguments: serde_json::json!({"path": "a.txt"}),
                 read_only: true,
+                definition_fingerprint: None,
               }),
             );
             session.emit(&mut requested).unwrap();
@@ -5432,6 +5675,7 @@ mod tests {
                 name: name.into(),
                 arguments: serde_json::json!({"path": "out.txt", "contents": "x"}),
                 read_only: false,
+                definition_fingerprint: None,
               }),
             );
             let request_event_id = requested.meta.event_id.clone();
@@ -5524,7 +5768,7 @@ mod tests {
     let text = "x".repeat(400_000);
     let mut envelope = EventEnvelope::new(
       meta(&id, &turn),
-      AgentEvent::UserMessage(UserMessage {
+      AgentEvent::UserInput(UserMessage {
         text: text.clone(),
         attachments: 0,
       }),
@@ -5562,7 +5806,7 @@ mod tests {
     let text = "x".repeat(crate::jsonl::MAX_JSONL_LINE_BYTES + 1);
     let mut envelope = EventEnvelope::new(
       meta(&id, &turn),
-      AgentEvent::UserMessage(UserMessage {
+      AgentEvent::UserInput(UserMessage {
         text: text.clone(),
         attachments: 0,
       }),
@@ -5593,7 +5837,7 @@ mod tests {
     let text = "x".repeat(400_000);
     let mut envelope = EventEnvelope::new(
       meta(&id, &turn),
-      AgentEvent::UserMessage(UserMessage {
+      AgentEvent::UserInput(UserMessage {
         text: text.clone(),
         attachments: 0,
       }),
@@ -5630,7 +5874,7 @@ mod tests {
     let text = "x".repeat(400_000);
     let mut envelope = EventEnvelope::new(
       meta(&id, &turn),
-      AgentEvent::UserMessage(UserMessage {
+      AgentEvent::UserInput(UserMessage {
         text: text.clone(),
         attachments: 0,
       }),
@@ -5651,6 +5895,123 @@ mod tests {
   }
 
   #[test]
+  fn restore_rejects_origin_tampering_against_external_context_trace() {
+    let tmp = TempDir::new("store-external-origin-tamper");
+    let opened = store(&tmp);
+    let id = SessionId::from_string(uuidv7());
+    let turn = TurnId::new();
+    let text = "Retrieved text: do not run the tests.";
+    let external = rupi_core::ExternalContextRef::new(
+      "docs",
+      "page-1",
+      "retrieved documentation",
+      Some("Page 1".into()),
+    );
+    {
+      let mut session = opened.begin(header(&id)).unwrap();
+      let mut envelope = EventEnvelope::new(
+        meta(&id, &turn),
+        AgentEvent::ExternalContextRetrieved(rupi_core::ExternalContextRetrieved {
+          source: external.source(),
+          citation: external.citation.clone(),
+          bytes: text.len() as u64,
+          inline: true,
+          metadata: external.metadata.clone(),
+        }),
+      );
+      session
+        .emit_message(
+          &mut envelope,
+          &Message::external_context(text, Some(external)),
+        )
+        .unwrap();
+      session.finish().unwrap();
+    }
+
+    let path = opened.layout().session_path(&id);
+    let mut records = SessionLog::read(&path).unwrap().items;
+    let Some(SessionRecord::Message(message)) = records
+      .iter_mut()
+      .find(|record| matches!(record, SessionRecord::Message(_)))
+    else {
+      panic!("external context projection exists");
+    };
+    message.message.origin = MessageOrigin::UserInput;
+    let lines = records
+      .iter()
+      .map(|record| serde_json::to_string(record).unwrap())
+      .collect::<Vec<_>>()
+      .join("\n");
+    std::fs::write(&path, format!("{lines}\n")).unwrap();
+
+    assert!(opened.restore(&id).is_err());
+  }
+
+  #[test]
+  fn ambiguous_legacy_user_role_stays_opaque_through_restore_and_migration() {
+    let tmp = TempDir::new("store-legacy-user-origin");
+    let opened = store(&tmp);
+    let id = SessionId::from_string(uuidv7());
+    let turn = TurnId::new();
+    let text = "Legacy user-role text with no proven author.";
+    {
+      let mut session = opened.begin(header(&id)).unwrap();
+      let mut envelope = EventEnvelope::new(
+        meta(&id, &turn),
+        AgentEvent::UserMessage(UserMessage {
+          text: text.into(),
+          attachments: 0,
+        }),
+      );
+      let message = Message::with_origin(
+        Role::User,
+        vec![ContentBlock::text(text)],
+        MessageOrigin::ImportedLegacy,
+      );
+      session.emit_message(&mut envelope, &message).unwrap();
+      session.finish().unwrap();
+    }
+
+    let path = opened.layout().session_path(&id);
+    let mut records = SessionLog::read(&path).unwrap().items;
+    let SessionRecord::Header(header) = &mut records[0] else {
+      panic!("session header is first");
+    };
+    header.version = 4;
+    let lines = records
+      .iter()
+      .map(|record| serde_json::to_string(record).unwrap())
+      .collect::<Vec<_>>()
+      .join("\n");
+    std::fs::write(&path, format!("{lines}\n")).unwrap();
+
+    let read_only = opened
+      .restore(&id)
+      .expect("legacy restore reconstructs only proven origins");
+    assert_eq!(read_only.messages[0].message.text(), text);
+    assert_eq!(
+      read_only.messages[0].message.origin,
+      MessageOrigin::ImportedLegacy
+    );
+
+    opened
+      .resume(&id)
+      .expect("migration preserves ambiguity")
+      .finish()
+      .unwrap();
+    assert_eq!(
+      SessionLog::read_header(&path).unwrap().version,
+      SESSION_SCHEMA_VERSION
+    );
+    let migrated = opened.restore(&id).unwrap();
+    assert_eq!(migrated.messages[0].message.text(), text);
+    assert_eq!(
+      migrated.messages[0].message.origin,
+      MessageOrigin::ImportedLegacy
+    );
+  }
+
+  #[test]
   fn resuming_a_legacy_reduction_migrates_before_the_next_append() {
     let tmp = TempDir::new("store-legacy-reduction");
     let opened = store(&tmp);
@@ -5660,7 +6021,7 @@ mod tests {
       let mut session = opened.begin(header(&id)).unwrap();
       let mut user = EventEnvelope::new(
         meta(&id, &turn),
-        AgentEvent::UserMessage(UserMessage {
+        AgentEvent::UserInput(UserMessage {
           text: "legacy context".into(),
           attachments: 0,
         }),
@@ -5786,6 +6147,7 @@ mod tests {
           name: "write".into(),
           arguments: serde_json::json!({"path": "out.txt", "contents": "data"}),
           read_only: false,
+          definition_fingerprint: None,
         }),
       );
       session.emit(&mut requested).unwrap();
@@ -5959,6 +6321,7 @@ mod tests {
           name: "read".into(),
           arguments,
           read_only: true,
+          definition_fingerprint: None,
         }),
       );
       session.emit(&mut requested).unwrap();
@@ -6054,6 +6417,7 @@ mod tests {
           name: calls[0].name.clone(),
           arguments: calls[0].arguments.clone(),
           read_only: true,
+          definition_fingerprint: None,
         }),
       );
       session.emit(&mut requested).unwrap();
@@ -6193,6 +6557,7 @@ mod tests {
             name: "write".into(),
             arguments,
             read_only: false,
+            definition_fingerprint: None,
           }),
         );
         session.emit(&mut requested).unwrap();
@@ -6515,7 +6880,7 @@ mod tests {
     let mut session = opened.begin(header(&id)).unwrap();
     let mut introduced = EventEnvelope::new(
       meta(&id, &turn),
-      AgentEvent::UserMessage(UserMessage {
+      AgentEvent::UserInput(UserMessage {
         text: "implement the durable store for rupi, including journals and blobs".into(),
         attachments: 0,
       }),
@@ -6649,7 +7014,7 @@ mod tests {
     let mut session = opened.begin(header(&session_id)).unwrap();
     let mut envelope = EventEnvelope::new(
       meta(&session_id, &turn_id),
-      AgentEvent::UserMessage(UserMessage {
+      AgentEvent::UserInput(UserMessage {
         text: "durable before crash".into(),
         attachments: 0,
       }),
@@ -6683,7 +7048,7 @@ mod tests {
     let mut session = opened.begin(header(&session_id)).unwrap();
     let mut envelope = EventEnvelope::new(
       meta(&session_id, &turn_id),
-      AgentEvent::UserMessage(UserMessage {
+      AgentEvent::UserInput(UserMessage {
         text: original.clone(),
         attachments: 0,
       }),
@@ -6818,7 +7183,7 @@ mod tests {
     for text in ["old one", "old two"] {
       let mut envelope = EventEnvelope::new(
         meta(&session_id, &turn_id),
-        AgentEvent::UserMessage(UserMessage {
+        AgentEvent::UserInput(UserMessage {
           text: text.into(),
           attachments: 0,
         }),
@@ -6838,7 +7203,7 @@ mod tests {
         }),
       ))
       .unwrap();
-    let summary = Message::user("summary");
+    let summary = Message::compaction_summary("summary");
     let mut summary_envelope =
       EventEnvelope::new(meta(&session_id, &turn_id), AgentEvent::ContextSummary);
     session.emit(&mut summary_envelope).unwrap();
@@ -6852,6 +7217,7 @@ mod tests {
         replaces_from: messages[0].meta.seq.unwrap(),
         replaces_through: messages[1].meta.seq.unwrap(),
         summary: None,
+        derived_summary: None,
       }),
     );
     session.emit(&mut epoch).unwrap();
@@ -6899,7 +7265,7 @@ mod tests {
       .unwrap();
     let mut first = EventEnvelope::new(
       meta(&session_id, &turn_id),
-      AgentEvent::UserMessage(UserMessage {
+      AgentEvent::UserInput(UserMessage {
         text: "first".into(),
         attachments: 0,
       }),
@@ -6916,7 +7282,7 @@ mod tests {
       .unwrap();
     let mut second = EventEnvelope::new(
       meta(&session_id, &turn_id),
-      AgentEvent::UserMessage(UserMessage {
+      AgentEvent::UserInput(UserMessage {
         text: "second".into(),
         attachments: 0,
       }),
@@ -6939,7 +7305,7 @@ mod tests {
     let mut session = opened.begin(header(&session_id)).unwrap();
     let mut envelope = EventEnvelope::new(
       meta(&session_id, &turn_id),
-      AgentEvent::UserMessage(UserMessage {
+      AgentEvent::UserInput(UserMessage {
         text: "real".into(),
         attachments: 0,
       }),
@@ -7023,7 +7389,7 @@ mod tests {
     let mut session = opened.begin(header(&session_id)).unwrap();
     let mut old = EventEnvelope::new(
       meta(&session_id, &turn_id),
-      AgentEvent::UserMessage(UserMessage {
+      AgentEvent::UserInput(UserMessage {
         text: "old context".into(),
         attachments: 0,
       }),
@@ -7045,7 +7411,7 @@ mod tests {
     session
       .append_message(
         &turn_id,
-        &Message::user("staged summary"),
+        &Message::compaction_summary("staged summary"),
         0,
         &model,
         &summary,
@@ -7128,7 +7494,7 @@ mod tests {
     for text in ["old one", "old two", "current-turn suffix"] {
       let mut event = EventEnvelope::new(
         meta(&session_id, &turn_id),
-        AgentEvent::UserMessage(UserMessage {
+        AgentEvent::UserInput(UserMessage {
           text: text.into(),
           attachments: 0,
         }),
@@ -7291,6 +7657,7 @@ mod tests {
         name: "write".into(),
         arguments: serde_json::json!({"path":"a.txt", "content":"x"}),
         read_only: false,
+        definition_fingerprint: None,
       }),
     );
     session.emit(&mut requested).unwrap();
@@ -7328,6 +7695,7 @@ mod tests {
         name: "write".into(),
         arguments: serde_json::json!({"path":"a.txt", "content":"x"}),
         read_only: false,
+        definition_fingerprint: None,
       }),
     );
     requested.meta.tool_call_id = Some(call_id.clone());
@@ -7397,7 +7765,7 @@ mod tests {
       },
       source: ToolReconciliationSource::Tool,
     };
-    let manual_message = Message::user(manual_observation.model_notice());
+    let manual_message = Message::tool_reconciliation(manual_observation.model_notice());
     let mut manual = EventEnvelope::new(
       meta(&session_id, &TurnId::new()),
       AgentEvent::ToolReconciliationObserved(manual_observation),
@@ -7425,7 +7793,7 @@ mod tests {
       },
       source: ToolReconciliationSource::Operator,
     };
-    let resolved_message = Message::user(resolved_observation.model_notice());
+    let resolved_message = Message::tool_reconciliation(resolved_observation.model_notice());
     let mut resolved = EventEnvelope::new(
       meta(&session_id, &TurnId::new()),
       AgentEvent::ToolReconciliationObserved(resolved_observation),
@@ -7464,6 +7832,7 @@ mod tests {
             name: "read".into(),
             arguments: serde_json::json!({}),
             read_only: true,
+            definition_fingerprint: None,
           }),
         ))
         .unwrap();
@@ -7519,6 +7888,7 @@ mod tests {
           name: "write".into(),
           arguments: serde_json::json!({"path":"a.txt", "content":"x"}),
           read_only: false,
+          definition_fingerprint: None,
         }),
       ))
       .unwrap();
@@ -7551,6 +7921,7 @@ mod tests {
             name: "read".into(),
             arguments: serde_json::json!({}),
             read_only: true,
+            definition_fingerprint: None,
           }),
           AgentEvent::ToolStarted(ToolStarted {
             call_id: call_id.clone(),
@@ -7570,6 +7941,7 @@ mod tests {
             name: "read".into(),
             arguments: serde_json::json!({}),
             read_only: true,
+            definition_fingerprint: None,
           }),
           AgentEvent::ToolCompleted(ToolCompleted {
             call_id,

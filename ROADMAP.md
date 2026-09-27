@@ -721,7 +721,7 @@ Do not begin until stable baselines exist.
 
 ## Current priorities — plan of record
 
-> Updated 2026-09-20 after the Round 9 audit archive and the `rupi` rebrand work. This
+> Updated 2026-09-27 after Round 9 audit implementation and the `rupi` rebrand work. This
 > section remains the phase-by-phase record of verified implementation state; release
 > evidence belongs in the release notes and CI. The current release target is `v0.2.2`.
 
@@ -1047,11 +1047,11 @@ bench/results/startup-ci.json` passed (cold 128.83 ms; warm mean 6.06 ms), and
 run; these tests verify runtime safety, not weak-model task performance. The slow-runner
 ambiguous-timeout fixture now allows time for request setup while retaining a delayed response.
 
-### In progress audit follow-up — Round 8 (WIP)
+### Completed audit follow-up — Round 8 (PR #129)
 
-`audits/pi-benchmark-audit/round08.md` identifies six remaining runtime/provider
-findings. Implementation and regression coverage are complete on
-`fix/pi-benchmark-audit-round-08`; local verification passed, with hosted CI still pending:
+`audits/pi-benchmark-audit/round08.md` identified six runtime/provider findings. The
+implementation and regression coverage are merged on `main`; local verification passed and
+PR #129's Ubuntu, macOS, and Windows checks succeeded:
 
 - [x] Bind execution to the exact tool definition and permission snapshot advertised
       for each provider request; replacement/removal fails before `ToolStarted`.
@@ -1073,6 +1073,30 @@ bench/results/startup-ci.json` passed (cold 132.51 ms; warm mean 6.25 ms),
 budgets, and `bash bench/large_session.sh --json bench/results/large-session-ci.json` passed
 all five session-restore budgets. No local llama.cpp comparison was run; these tests verify
 runtime invariants and regression behavior, not weak-model task performance.
+
+### In progress audit follow-up — Round 9 (WIP)
+
+`audits/pi-benchmark-audit/round09.md` identifies five recovery/provenance correctness
+findings and one conservative mutation-budget edge. This follow-up is in progress on
+`fix/pi-benchmark-audit-round-09`. The independent invariant review's P1 projection-integrity
+gap and P3 Pi mapping-doc mismatch were also resolved before final verification:
+
+- [x] Persist stable tool-definition identity and require a compatible definition before
+      reconciling an interrupted mutating call.
+- [x] Make runtime-control provenance canonical and validate event/message-origin pairs.
+- [x] Preserve typed and opaque derived context across recursive compaction; recover legacy
+      origins only from unambiguous trace evidence. Canonical compaction events now bind typed
+      summary state to its session projection, and restore rejects valid-JSON tampering.
+- [x] Enforce unique provider tool-call identities at the runtime boundary.
+- [x] Avoid charging mutation budget for stale calls proven not to have started.
+- [x] Complete invariant review, workspace verification, and applicable performance checks.
+
+Verification: `cargo fmt --all --check`, `cargo clippy --workspace --all-targets -- -D warnings`,
+`cargo test --workspace`, and `cargo doc --workspace --no-deps` pass. Startup, TUI render,
+context-prefill, and large-session restore benchmarks pass their budgets; the 1,000-turn
+checkpoint restore measured 3.91 ms against a 30 ms budget. No weak-model superiority claim is
+made by these deterministic recovery tests. A live llama.cpp comparison remains separate
+empirical work.
 
 ### P2 — Later / deliberately deferred
 

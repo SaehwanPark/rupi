@@ -388,7 +388,9 @@ A conceptual schema:
 ```rust
 enum AgentEvent {
   SessionStarted,
-  UserMessage,
+  UserInput,
+  RuntimeControlInjected,
+  UserMessage, // ambiguous legacy event; not proof of human authorship
   ModelRequest,
   ReasoningDelta,
   AssistantDelta,
@@ -434,6 +436,12 @@ The same event stream should support:
 - OpenTelemetry or other optional exporters.
 
 Avoid separate ad hoc logging systems for each subsystem.
+
+A canonical message's semantic origin is independent of provider wire role and is validated
+against its role. Human input and runtime-injected control use distinct event variants. Legacy
+`UserMessage` records cannot prove who authored their text; migration may promote an origin only
+when a linked canonical event provides unambiguous evidence. Otherwise the message remains
+`ImportedLegacy` and may be preserved as opaque context, not promoted into user authority.
 
 ---
 
@@ -798,7 +806,14 @@ next_actions:
   - open PR
 ```
 
-The semantic representation may later be rendered differently for different models.
+The semantic representation may later be rendered differently for different models. Runtime
+messages retain this semantic state in typed `DerivedSummary` variants (`Capsule`, `Phase`,
+`Rendered`, or `Opaque`) rather than relying on re-parsing rendered prompt text during later
+compactions. Typed capsules and phase wrappers carry forward their fields recursively; custom
+prose and unattributed legacy text are retained as bounded opaque unresolved context. Neither is
+reclassified as a newly authored user instruction. Each canonical `ContextCompactionEpoch` also
+persists this typed state; session restore verifies the message projection against the canonical
+event and rejects semantic-state tampering.
 
 ---
 
@@ -1206,7 +1221,21 @@ Failed
 Unknown
 ```
 
-A stable tool-call ID should be recorded.
+A stable tool-call ID should be recorded. The runtime, not an individual adapter, enforces
+non-empty unique call IDs across all executable and rejected calls in one provider response.
+Every member of a collision receives a fresh internal lifecycle ID and is rejected together
+before dispatch.
+
+Each `ToolRequested` record should also persist a stable tool-definition fingerprint when the
+tool declares trustworthy identity: source, definition ID, reconciliation-contract version,
+normalized schema hash, and risk metadata. Process-local registry generations are not durable
+identity. After restart, automatic reconciliation of a mutating call is allowed only when the
+current definition exactly matches the saved fingerprint; a missing or changed fingerprint
+requires manual inspection and the replacement's `reconcile()` must not run.
+
+Mutation-budget capacity is reserved at execution admission. It may be released only when a
+typed stale-binding result proves that a replacement race refused the call before `Started`;
+other refusals and uncertain outcomes keep conservative accounting.
 
 If a side-effecting operation has `Unknown` completion state, the runtime must not blindly replay it after failover.
 

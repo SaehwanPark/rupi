@@ -13,9 +13,9 @@ use std::collections::BTreeMap;
 use std::sync::{Arc, Mutex, RwLock};
 
 use rupi_core::{
-  CancelToken, ReplayDecision, Tool, ToolChunk, ToolError, ToolExecutionContext,
-  ToolExecutionState, ToolMetadata, ToolOutcome, ToolProgress, ToolRequest, ToolSamplingConstraint,
-  ToolSamplingStrictness,
+  CancelToken, ReplayDecision, Tool, ToolChunk, ToolDefinitionFingerprint, ToolError,
+  ToolExecutionContext, ToolExecutionState, ToolMetadata, ToolOutcome, ToolProgress, ToolRequest,
+  ToolSamplingConstraint, ToolSamplingStrictness,
 };
 use serde_json::Value;
 
@@ -114,6 +114,8 @@ pub struct Executed {
   pub full_output: Option<Vec<u8>>,
   /// `true` when cancellation was observed.
   pub cancelled: bool,
+  /// The request binding was stale and the registry proved execution never started.
+  pub stale_binding: bool,
 }
 
 impl Executed {
@@ -128,7 +130,14 @@ impl Executed {
       refusal: Some(reason),
       full_output: None,
       cancelled: false,
+      stale_binding: false,
     }
+  }
+
+  fn stale_binding_refused(request: ToolRequest, reason: impl Into<String>) -> Self {
+    let mut executed = Self::refused(request, reason);
+    executed.stale_binding = true;
+    executed
   }
 
   /// The block to append to context for this call.
@@ -150,6 +159,7 @@ struct RegisteredTool {
   schema: Arc<Value>,
   sampling_constraint: Option<ToolSamplingConstraint>,
   generation: u128,
+  definition_fingerprint: Option<ToolDefinitionFingerprint>,
 }
 
 impl RegisteredTool {
@@ -160,12 +170,19 @@ impl RegisteredTool {
   ) -> Self {
     let metadata = tool.metadata();
     let schema = Arc::new(tool.arguments_schema());
+    let definition_fingerprint = tool
+      .stable_definition_identity()
+      .as_ref()
+      .and_then(|identity| {
+        ToolDefinitionFingerprint::from_definition(identity, &metadata, schema.as_ref())
+      });
     Self {
       tool,
       metadata,
       schema,
       sampling_constraint,
       generation,
+      definition_fingerprint,
     }
   }
 
@@ -189,6 +206,7 @@ pub struct ToolBinding {
   name: String,
   generation: u128,
   read_only: bool,
+  definition_fingerprint: Option<ToolDefinitionFingerprint>,
 }
 
 impl ToolBinding {
@@ -202,6 +220,10 @@ impl ToolBinding {
 
   pub fn read_only(&self) -> bool {
     self.read_only
+  }
+
+  pub fn definition_fingerprint(&self) -> Option<&ToolDefinitionFingerprint> {
+    self.definition_fingerprint.as_ref()
   }
 }
 
@@ -451,6 +473,7 @@ impl ToolRegistry {
       name: tool.metadata.name.clone(),
       generation: tool.generation,
       read_only: tool.metadata.read_only,
+      definition_fingerprint: tool.definition_fingerprint.clone(),
     }
   }
 
@@ -459,6 +482,7 @@ impl ToolRegistry {
       && binding.name == tool.metadata.name
       && binding.generation == tool.generation
       && binding.read_only == tool.metadata.read_only
+      && binding.definition_fingerprint == tool.definition_fingerprint
   }
 
   /// Metadata only when this exact request binding remains current and permitted.
@@ -517,24 +541,53 @@ impl ToolRegistry {
     request: &ToolRequest,
     expected_read_only: Option<bool>,
   ) -> Result<rupi_core::ReconciliationStatus, ToolError> {
+    self.reconcile_with_definition(request, expected_read_only, None)
+  }
+
+  /// Reconcile only when the current implementation exactly matches the
+  /// definition frozen with the interrupted request. Identity-free callers may
+  /// inspect read-only operations, but mutating calls require exact identity.
+  pub fn reconcile_with_definition(
+    &self,
+    request: &ToolRequest,
+    expected_read_only: Option<bool>,
+    expected_fingerprint: Option<&ToolDefinitionFingerprint>,
+  ) -> Result<rupi_core::ReconciliationStatus, ToolError> {
     if let Some(error) = &self.configuration_error {
       return Err(ToolError::new(format!(
         "tool registry configuration is invalid: {error}"
       )));
     }
-    let tool = {
+    let (tool, metadata, current_fingerprint) = {
       let tools = self.tools.read().unwrap();
-      let Some(tool) = tools.get(&request.name) else {
+      let Some(registered) = tools.get(&request.name) else {
         return Err(ToolError::new(format!("unknown tool '{}'", request.name)));
       };
-      if expected_read_only.is_some_and(|expected| tool.metadata.read_only != expected) {
-        return Err(ToolError::new(format!(
-          "tool '{}' risk metadata changed since the interrupted request",
-          request.name
-        )));
+      if expected_read_only.is_some_and(|expected| registered.metadata.read_only != expected) {
+        return Ok(rupi_core::ReconciliationStatus::RequiresManualInspection {
+          details: format!(
+            "tool '{}' risk metadata changed since the interrupted request",
+            request.name
+          ),
+        });
       }
-      Arc::clone(&tool.tool)
+      (
+        Arc::clone(&registered.tool),
+        registered.metadata.clone(),
+        registered.definition_fingerprint.clone(),
+      )
     };
+    let was_mutating = !expected_read_only.unwrap_or(metadata.read_only);
+    if was_mutating
+      && (expected_fingerprint.is_none() || expected_fingerprint != current_fingerprint.as_ref())
+    {
+      return Ok(rupi_core::ReconciliationStatus::RequiresManualInspection {
+        details: format!(
+          "tool '{}' definition identity is missing or changed since the interrupted request",
+          request.name
+        ),
+      });
+    }
     tool.reconcile(request)
   }
 
@@ -662,6 +715,7 @@ impl ToolRegistry {
         refusal: Some("cancelled before execution".to_string()),
         full_output: None,
         cancelled: true,
+        stale_binding: false,
       });
     }
     let (tool, metadata, arguments_schema) = {
@@ -671,10 +725,13 @@ impl ToolRegistry {
           || unknown_tool(&request.name, &self.allowed_names()),
           |_| stale_binding_reason(&request.name),
         );
-        return Ok(Executed::refused(request.clone(), reason));
+        return Ok(match expected_binding {
+          Some(_) => Executed::stale_binding_refused(request.clone(), reason),
+          None => Executed::refused(request.clone(), reason),
+        });
       };
       if expected_binding.is_some_and(|binding| !self.binding_matches(binding, tool)) {
-        return Ok(Executed::refused(
+        return Ok(Executed::stale_binding_refused(
           request.clone(),
           stale_binding_reason(&request.name),
         ));
@@ -713,13 +770,13 @@ impl ToolRegistry {
       // executing the already selected Arc is safe even if the registry later changes.
       let tools = self.tools.read().unwrap();
       let Some(current) = tools.get(&request.name) else {
-        return Ok(Executed::refused(
+        return Ok(Executed::stale_binding_refused(
           request.clone(),
           stale_binding_reason(&request.name),
         ));
       };
       if !self.binding_matches(binding, current) || !self.is_allowed(&request.name) {
-        return Ok(Executed::refused(
+        return Ok(Executed::stale_binding_refused(
           request.clone(),
           stale_binding_reason(&request.name),
         ));
@@ -763,6 +820,7 @@ impl ToolRegistry {
           refusal: None,
           full_output,
           cancelled: cancel.is_cancelled(),
+          stale_binding: false,
         })
       }
       Err(error) => {
@@ -788,6 +846,7 @@ impl ToolRegistry {
           refusal: Some(error.message),
           full_output: None,
           cancelled: cancel.is_cancelled(),
+          stale_binding: false,
         })
       }
     }

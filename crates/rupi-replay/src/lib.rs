@@ -150,6 +150,8 @@ pub struct ReplayedEvent {
 pub enum EventKind {
   SessionStarted,
   UserMessage,
+  UserInput,
+  RuntimeControlInjected,
   ModelRequestStarted,
   ReasoningDelta,
   AssistantDelta,
@@ -831,6 +833,8 @@ impl EventKind {
     match event {
       AgentEvent::SessionStarted(_) => Self::SessionStarted,
       AgentEvent::UserMessage(_) => Self::UserMessage,
+      AgentEvent::UserInput(_) => Self::UserInput,
+      AgentEvent::RuntimeControlInjected(_) => Self::RuntimeControlInjected,
       AgentEvent::ModelRequestStarted(_) => Self::ModelRequestStarted,
       AgentEvent::ReasoningDelta(_) => Self::ReasoningDelta,
       AgentEvent::AssistantDelta(_) => Self::AssistantDelta,
@@ -1614,6 +1618,7 @@ mod tests {
           name: "read".into(),
           arguments: serde_json::json!({"path":"src/lib.rs"}),
           read_only: true,
+          definition_fingerprint: None,
         }),
       ),
       entry(
@@ -1682,6 +1687,7 @@ mod tests {
         replaces_from: EventSeq(1),
         replaces_through: EventSeq(2),
         summary: Some(summary.clone()),
+        derived_summary: None,
       }),
     )];
     let session = vec![
@@ -1716,6 +1722,7 @@ mod tests {
         replaces_from: EventSeq(1),
         replaces_through: EventSeq(2),
         summary: Some(summary),
+        derived_summary: None,
       }),
     )];
     let session = vec![
@@ -1807,6 +1814,7 @@ mod tests {
           name: "write".into(),
           arguments: serde_json::json!({"path":"x","contents":"y"}),
           read_only: false,
+          definition_fingerprint: None,
         }),
       ),
       entry(
@@ -1846,6 +1854,7 @@ mod tests {
         name: "write".into(),
         arguments: serde_json::json!({"path":"x","contents":"y"}),
         read_only: false,
+        definition_fingerprint: None,
       }),
     );
     let request_event_id = request.envelope.meta.event_id.clone();
@@ -1945,6 +1954,7 @@ mod tests {
         name: "read".into(),
         arguments: serde_json::json!({}),
         read_only: true,
+        definition_fingerprint: None,
       }),
     );
     let first_request_id = first_request.envelope.meta.event_id.clone();
@@ -1972,6 +1982,7 @@ mod tests {
         name: "grep".into(),
         arguments: serde_json::json!({}),
         read_only: true,
+        definition_fingerprint: None,
       }),
     );
     let second_request_id = second_request.envelope.meta.event_id.clone();
@@ -1996,6 +2007,7 @@ mod tests {
         name: "write".into(),
         arguments: serde_json::json!({}),
         read_only: false,
+        definition_fingerprint: None,
       }),
     );
     let third_request_id = third_request.envelope.meta.event_id.clone();
@@ -2072,6 +2084,7 @@ mod tests {
         name: "read".into(),
         arguments: serde_json::json!({}),
         read_only: true,
+        definition_fingerprint: None,
       }),
     );
     let second = entry(
@@ -2081,6 +2094,7 @@ mod tests {
         name: "read".into(),
         arguments: serde_json::json!({}),
         read_only: true,
+        definition_fingerprint: None,
       }),
     );
     let ambiguous_terminal = entry(

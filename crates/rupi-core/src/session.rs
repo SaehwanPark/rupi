@@ -24,17 +24,17 @@ use crate::{
   context::{ContextCapsule, ExternalContextRef, ReductionReason},
   ids::{CheckpointId, EventId, EventSeq, SessionId, TurnId},
   message::{Message, Role},
-  tool::{ReconciliationStatus, ToolExecutionState, ToolRequest},
+  tool::{ReconciliationStatus, ToolDefinitionFingerprint, ToolExecutionState, ToolRequest},
 };
 
 /// Schema version stamped on the session header.
 ///
 /// Version 2 adds the `reduction` semantic record and canonical sequence
 /// bounds on compaction records. Version 3 adds the checkpoint context epoch;
-/// version 4 persists message origin independently of provider role. Older
-/// messages without origin decode as `ImportedLegacy` rather than acquiring
-/// user authority from their wire role.
-pub const SESSION_SCHEMA_VERSION: u32 = 4;
+/// version 4 persists message origin independently of provider role. Version 5
+/// binds origins to canonical event evidence and persists typed derived-summary
+/// state. Ambiguous legacy user events remain unattributed.
+pub const SESSION_SCHEMA_VERSION: u32 = 5;
 
 /// One line of `session.jsonl`.
 #[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize)]
@@ -183,6 +183,9 @@ pub struct InterruptedToolCall {
   /// Event identity of the observed start boundary, when one exists. Recovery
   /// parents its terminal fact here rather than to a session-global call id.
   pub started_event_id: Option<EventId>,
+  /// Definition identity captured at request time; `None` means automatic
+  /// mutating reconciliation is not safe across process restart.
+  pub definition_fingerprint: Option<ToolDefinitionFingerprint>,
 }
 
 /// A terminal `ToolUnknown` that may still have an unresolved mutating side effect.
@@ -194,6 +197,8 @@ pub struct UnresolvedSideEffect {
   pub unknown_event_id: EventId,
   /// Latest persisted inspection result, if reconciliation has already been attempted.
   pub latest_status: Option<ReconciliationStatus>,
+  /// Definition identity captured at request time; mismatches require manual inspection.
+  pub definition_fingerprint: Option<ToolDefinitionFingerprint>,
 }
 
 /// A checkpoint barrier.
@@ -270,7 +275,7 @@ mod tests {
     });
     let line = serde_json::to_string(&header).unwrap();
     assert!(line.contains("\"type\":\"header\""), "{line}");
-    assert!(line.contains("\"version\":4"), "{line}");
+    assert!(line.contains("\"version\":5"), "{line}");
     assert_eq!(
       serde_json::from_str::<SessionRecord>(&line).unwrap(),
       header

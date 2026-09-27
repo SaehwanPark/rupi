@@ -313,7 +313,7 @@ fn one_turn_streams_and_persists_tools_messages_and_trace() {
     assert!(
       matches!(
         (message.role, &entry.envelope.event),
-        (Role::User, AgentEvent::UserMessage(_))
+        (Role::User, AgentEvent::UserInput(_))
           | (Role::Assistant, AgentEvent::AssistantDelta(_))
           | (Role::Assistant, AgentEvent::ModelRequestCompleted(_))
           | (Role::Tool, AgentEvent::ToolCompleted(_))

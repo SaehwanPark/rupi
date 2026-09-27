@@ -557,6 +557,7 @@ fn tool_requested_round_trips() {
     name: "read".into(),
     arguments: arguments.clone(),
     read_only: true,
+    definition_fingerprint: None,
   });
   let entry = round_trip(original.clone());
   let restored = &entry.envelope.event;
@@ -1087,6 +1088,7 @@ fn all_variants() -> Vec<AgentEvent> {
       name: "read".into(),
       arguments: serde_json::json!({ "path": "docs/SLICE_RT.md" }),
       read_only: true,
+      definition_fingerprint: None,
     }),
     AgentEvent::ToolStarted(ToolStarted {
       call_id: tool_call_id(),

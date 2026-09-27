@@ -194,7 +194,9 @@ Conceptual event families:
 ```rust
 pub enum AgentEvent {
   SessionStarted,
-  UserMessage,
+  UserInput,
+  RuntimeControlInjected,
+  UserMessage, // legacy/imported user-role event; never proves authorship
   ModelRequestStarted,
   ReasoningDelta,
   AssistantDelta,
@@ -203,6 +205,7 @@ pub enum AgentEvent {
   ToolStarted,
   ToolCompleted,
   ToolFailed,
+  ToolReconciliationObserved,
   ExternalContextRetrieved,
   ContextReduced,
   ContextCompactionStarted,
@@ -342,12 +345,17 @@ That rule is pinned at every hop a claim crosses, in `tests/provenance_roundtrip
 ### Message source vs protocol role
 
 A canonical `Message` carries a semantic `origin` independently of its provider-facing
-`Role`. User input alone can establish user-authored objectives and constraints. Runtime
-control, external evidence, reconciliation notices, and derived compaction/checkpoint
-summaries retain their own origin even when an endpoint requires them on the wire as
-`role=user`. Session schema v4 persists this distinction; pre-v4 messages deserialize as
-`ImportedLegacy`, which is deliberately not granted user authority. Context capsules and
-safe eviction boundaries inspect origin rather than inferring authorship from wire role.
+`Role`, and its origin/role pairing is validated at construction-sensitive storage
+boundaries. Genuine user input and injected runtime control have distinct canonical events
+(`UserInput` and `RuntimeControlInjected`); the legacy `UserMessage` event is ambiguous and
+never proves human authorship. User input alone can establish user-authored objectives and
+constraints. Runtime control, external evidence, reconciliation notices, and derived
+compaction/checkpoint summaries retain their own origin even when an endpoint requires them
+on the wire as `role=user`. Session schema v5 persists this distinction. Migration derives
+origins only from linked, unambiguous canonical events; legacy user-role messages with no
+proof remain `ImportedLegacy` and are carried forward only as opaque unresolved context.
+Context capsules and safe eviction boundaries inspect origin rather than inferring authorship
+from wire role.
 
 ## 9. Tool runtime
 
@@ -366,9 +374,11 @@ pub enum ToolExecutionState {
 Every tool call should have a stable ID.
 
 An adapter that receives a model-authored call with malformed JSON arguments or ambiguous
-fragment correlation emits `ProviderEvent::ToolCallRejected` with a stable call ID. The
-runtime records the request and a terminal failed result, returns that result to the same
-model for correction, and never dispatches the rejected call. Missing provider IDs are
+fragment correlation emits `ProviderEvent::ToolCallRejected` with a stable call ID. Before an
+assistant tool-call response is committed, the runtime enforces non-empty unique invocation IDs
+across executable and rejected calls for every provider; all members of a collision receive
+fresh internal lifecycle IDs and are rejected together for same-model correction. The runtime
+records terminal failed results and never dispatches rejected calls. Missing provider IDs are
 replaced with internal IDs when a provider index still identifies the call. A fragment
 without either key may attach only when exactly one explicitly keyed call without a prior
 correlation conflict is open. Otherwise it remains rejected and receives
@@ -392,10 +402,16 @@ Each model request captures the exact permitted tool definition binding: registr
 registration generation, name, and risk class. Shared replacement/removal advances the
 binding generation. Dispatch refuses a stale binding as `Failed` before `ToolStarted`; the
 registry holds its read lock across the durable start boundary so replacement cannot race
-between the final check and that event. Unknown, policy-denied, rejected, already-stale, and decoded-but-incomplete calls still
-spend total-call budget but do not spend mutation budget; unavailable calls do not prompt for
-approval. Binding freshness is checked again before dispatch so the selected implementation
-cannot silently change after the model response.
+between the final check and that event. `ToolRequested` also persists a stable definition
+fingerprint (declared source, definition and reconciliation version, normalized schema hash,
+and risk metadata) when a tool supplies trustworthy identity. Restart reconciliation of a
+mutating operation requires an exact fingerprint match; missing or mismatched identity is a
+manual-inspection barrier, never a guess based on the current name or risk class. Unknown,
+policy-denied, rejected, already-stale, and decoded-but-incomplete calls still spend total-call
+budget but do not spend mutation budget; unavailable calls do not prompt for approval. Mutation
+budget is reserved at execution admission and released only when the typed `stale_binding`
+result proves the replacement race was refused before `ToolStarted`; other refusals and
+uncertain outcomes keep conservative accounting.
 
 Read-only tools may use more permissive retry semantics.
 
@@ -519,7 +535,14 @@ Core fields should cover:
 - unresolved items;
 - next actions.
 
-The capsule schema must be versioned.
+The capsule schema must be versioned. Runtime compaction carries semantic state as typed
+`DerivedSummary` variants (`Capsule`, `Phase`, `Rendered`, or `Opaque`) on the message rather
+than reconstructing it from provider-facing prose. Repeated compaction unwraps typed phase and
+render wrappers without reclassifying them as user input; custom prose and unattributed legacy
+messages survive as bounded opaque unresolved context, never as user-authored constraints. The
+canonical `ContextCompactionEpoch` stores the same typed state as the session-message projection;
+restore rejects disagreement so edited projection fields cannot silently change recursive
+compaction.
 
 ### Checkpoint barrier invariant
 

@@ -44,7 +44,7 @@ store.
 
 - **Header**: Version 1, 2, or 3 headers map to `SessionHeader` with `id: "pi-<id>"`, `cwd`,
   and starting timestamp.
-- **User Messages**: Role `user` entries map to `AgentEvent::UserMessage` and session message turns.
+- **User Messages**: Explicit Pi role `user` entries map to `AgentEvent::UserInput` and user-authoritative session turns. Legacy rupi `UserMessage` events are ambiguous because earlier runtimes also used them for injected control text; they remain unattributed.
 - **Assistant Messages**: Deliberately folded into a request span: `ReasoningDelta`,
   `AssistantDelta`, `ToolRequested`, and `ModelRequestCompleted` (carrying usage token counts).
 - **Tool Results**: Mapped to `AgentEvent::ToolCompleted` and corresponding message turns.
@@ -60,7 +60,7 @@ store.
 | **`compaction` Entries** | Boundary marked as a diagnostic. Compaction summary text is discarded to prevent duplicate conversation replay. | Stderr report names compaction event count. |
 | **Extension Entries (`label`, `custom`, `custom_message`)** | Skipped; `rupi` core models coding agent lifecycle events, not UI or third-party extension states. | Stderr report names each unhandled entry type and count. |
 | **Provider Cost** (`cost`) | Dropped. Token and cache counts are preserved in `ModelRequestCompleted`; billing metadata is not part of the event contract. | Omitted from stored event envelope without error. |
-| **Unattached Image Entries** | Images lacking inline bytes are counted as attachments on `UserMessage` rather than empty blocks. | Stderr report notes attachment count. |
+| **Unattached Image Entries** | Images lacking inline bytes are counted as attachments on `UserInput` rather than empty blocks. | Stderr report notes attachment count. |
 | **Unlabelled Thinking Blocks** | Imported without assigning `ReasoningProvenance::Native` (avoids false claims of native model thought). | Imported with conservative / unlabelled provenance. |
 | **Truncated Tool Output** | Pi `truncated: true` and dropped byte count are folded into text representation. | Preserved in text content. |
 
@@ -73,8 +73,9 @@ store.
 ### 4.1 Mapped Fields
 
 - **Header**: Version 3 session header with session id, working directory, and start timestamp.
-- **Linear Conversation**: Alternating user and assistant message entries linked sequentially
-  via `parentId`.
+- **Linear Conversation**: `UserInput` events become user entries; assistant replies become
+  assistant entries, linked sequentially via `parentId`. Ambiguous legacy `UserMessage` events
+  are omitted and reported rather than misattributed to a human.
 - **Assistant Prose & Tool Calls**: Folded from streamed deltas into Pi message content blocks.
 
 ### 4.2 Dropped Metadata on Export
@@ -87,7 +88,8 @@ store.
 | **Blob Store References** | Content-addressed `blobs/sha256/...` paths and typed `ExternalizedField` records | Pi files do not support external content-addressed blob stores. The inline preview string is exported. |
 | **Context Reduction** | `ContextReduced` events, before/after token/byte ratios, and recovery pointers | Pi session format has no representation for context budget management. Emits stderr count. |
 | **Durable Redactions** | `redactions` count per journal line and secret masking audit trail | Export contains redacted strings, but redaction counters and policies are dropped. |
-| **Diagnostics & Checkpoints** | Informational, warning, and error `Diagnostic` events, and filesystem `Checkpoint` paths | Non-message agent events have no counterpart in Pi message format. Emits stderr count. |
+| **Diagnostics & Checkpoints** | Informational, warning, and error `Diagnostic` events, runtime-control events, and filesystem `Checkpoint` paths | Non-message agent events have no counterpart in Pi message format. Emits stderr count. |
+| **Ambiguous legacy user-role text** | `UserMessage` events from older schemas do not prove a human authored the text | Omitted from Pi user entries and reported as unverified rather than exported with false attribution. |
 | **Session End Reason** | `SessionEnded` structured reason (`Clean`, `FaultRecoveryExhausted`, `UserInterrupted`, `ProviderError`) | Pi session terminates at EOF without terminal status records. Emits stderr count. |
 
 ---
@@ -96,7 +98,7 @@ store.
 
 | Feature / Metadata | In `rupi` Trace | In Pi JSONL | Round-Trip Status |
 |---|---|---|---|
-| User & Assistant text | Yes | Yes | **Full fidelity** |
+| Explicit user input & assistant text | Yes | Yes | **Full fidelity** for explicit user input; ambiguous legacy user-role text is omitted on export |
 | Tool invocation arguments | Yes | Yes | **Full fidelity** (inline or preview) |
 | Tool completion results | Yes | Yes | **Full fidelity** (inline or preview) |
 | Conversation turn order | Yes | Yes | **Full fidelity** (linear path) |

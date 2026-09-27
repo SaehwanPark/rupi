@@ -17,7 +17,9 @@
 use serde::{Deserialize, Serialize};
 
 use crate::{
-  context::ExternalContextRef, ids::ToolCallId, provenance::ReasoningChunk,
+  context::{ContextCapsule, ExternalContextRef},
+  ids::ToolCallId,
+  provenance::ReasoningChunk,
   tool::ToolExecutionState,
 };
 
@@ -154,6 +156,47 @@ impl ContentBlock {
   }
 }
 
+/// Semantic state carried by a derived summary independently of its rendering.
+#[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize)]
+#[serde(rename_all = "snake_case", tag = "kind")]
+pub enum DerivedSummary {
+  /// A structured capsule produced by the runtime or a structured summarizer.
+  Capsule { capsule: ContextCapsule },
+  /// A phase label around another structured or opaque summary.
+  Phase {
+    phase: String,
+    summary: Box<DerivedSummary>,
+  },
+  /// A bounded provider-facing rendering while retaining the complete semantic
+  /// state for a later compaction pass.
+  Rendered {
+    summary: Box<DerivedSummary>,
+    text: String,
+  },
+  /// Custom or legacy prose. It is carried forward as untrusted opaque context.
+  Opaque { text: String },
+}
+
+impl DerivedSummary {
+  /// Render semantic summary state for a provider-facing conversation.
+  pub fn format_for_model(&self) -> String {
+    match self {
+      Self::Capsule { capsule } => format!(
+        "Summary of earlier conversation:\n{}",
+        capsule.format_for_model()
+      ),
+      Self::Phase { phase, summary } => {
+        format!(
+          "[Phase Compaction: {phase}]\n{}",
+          summary.format_for_model()
+        )
+      }
+      Self::Rendered { text, .. } => text.clone(),
+      Self::Opaque { text } => text.clone(),
+    }
+  }
+}
+
 /// One message in the canonical session record.
 #[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize)]
 pub struct Message {
@@ -162,6 +205,10 @@ pub struct Message {
   #[serde(default)]
   pub origin: MessageOrigin,
   pub content: Vec<ContentBlock>,
+  /// Structured semantics for a derived summary; rendered text is only its
+  /// model-facing projection and is never the source of recovery state.
+  #[serde(default, skip_serializing_if = "Option::is_none")]
+  pub derived_summary: Option<Box<DerivedSummary>>,
 }
 
 impl Message {
@@ -180,7 +227,57 @@ impl Message {
       role,
       origin,
       content,
+      derived_summary: None,
     }
+  }
+
+  /// Construct model-visible summary text while retaining structured semantics.
+  pub fn derived_compaction_summary(summary: DerivedSummary) -> Self {
+    let text = summary.format_for_model();
+    let mut message = Self::compaction_summary(text);
+    message.derived_summary = Some(Box::new(summary));
+    message
+  }
+
+  /// Construct a checkpoint message that keeps its typed capsule for later compaction.
+  pub fn checkpoint_capsule_with_state(capsule: ContextCapsule) -> Self {
+    let summary = DerivedSummary::Capsule { capsule };
+    let text = summary
+      .format_for_model()
+      .strip_prefix("Summary of earlier conversation:\n")
+      .unwrap_or_default()
+      .to_string();
+    let mut message = Self::checkpoint_capsule(text);
+    message.derived_summary = Some(Box::new(summary));
+    message
+  }
+
+  /// Check that the semantic origin is legal for this provider-facing role.
+  pub fn validate_role_origin(&self) -> Result<(), &'static str> {
+    if self.derived_summary.is_some()
+      && !matches!(
+        &self.origin,
+        MessageOrigin::CompactionSummary | MessageOrigin::CheckpointCapsule
+      )
+    {
+      return Err("derived summary state requires a summary message origin");
+    }
+    let valid = matches!(
+      (self.role, &self.origin),
+      (Role::User, MessageOrigin::UserInput)
+        | (Role::User, MessageOrigin::RuntimeControl { .. })
+        | (Role::User, MessageOrigin::ExternalContext { .. })
+        | (Role::User, MessageOrigin::ToolReconciliation)
+        | (Role::User, MessageOrigin::CompactionSummary)
+        | (Role::User, MessageOrigin::CheckpointCapsule)
+        | (Role::Assistant, MessageOrigin::Assistant)
+        | (Role::Tool, MessageOrigin::ToolResult)
+        | (Role::System, MessageOrigin::System)
+        | (_, MessageOrigin::ImportedLegacy)
+    );
+    valid
+      .then_some(())
+      .ok_or("message role and semantic origin disagree")
   }
 
   pub fn external_context(text: impl Into<String>, source: Option<ExternalContextRef>) -> Self {
@@ -340,6 +437,40 @@ mod tests {
     let restored: Message =
       serde_json::from_str(&serde_json::to_string(&control).unwrap()).unwrap();
     assert_eq!(restored, control);
+  }
+
+  #[test]
+  fn message_origin_must_be_legal_for_its_provider_role() {
+    assert!(Message::user("prompt").validate_role_origin().is_ok());
+    assert!(Message::assistant("answer").validate_role_origin().is_ok());
+    assert!(
+      Message::tool_reconciliation("status")
+        .validate_role_origin()
+        .is_ok()
+    );
+    assert!(
+      Message::with_origin(
+        Role::Assistant,
+        vec![ContentBlock::text("not user input")],
+        MessageOrigin::UserInput,
+      )
+      .validate_role_origin()
+      .is_err()
+    );
+  }
+
+  #[test]
+  fn typed_derived_summary_round_trips_and_requires_summary_origin() {
+    let summary = Message::derived_compaction_summary(DerivedSummary::Capsule {
+      capsule: ContextCapsule::new("Build the parser"),
+    });
+    assert!(summary.validate_role_origin().is_ok());
+    let decoded: Message = serde_json::from_str(&serde_json::to_string(&summary).unwrap()).unwrap();
+    assert_eq!(decoded, summary);
+
+    let mut invalid = Message::user("prompt");
+    invalid.derived_summary = summary.derived_summary;
+    assert!(invalid.validate_role_origin().is_err());
   }
 
   #[test]
