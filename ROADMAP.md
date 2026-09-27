@@ -1098,6 +1098,20 @@ checkpoint restore measured 3.91 ms against a 30 ms budget. No weak-model superi
 made by these deterministic recovery tests. A live llama.cpp comparison remains separate
 empirical work.
 
+### In progress audit follow-up — Round 10 (WIP)
+
+`audits/pi-benchmark-audit/round10.md` identifies six storage, lifecycle, accounting,
+context-visibility, bounded-metadata, and event-versioning findings. This follow-up is
+active on `fix/pi-benchmark-audit-round-10`:
+
+- [ ] Keep schema migration semantics-preserving; apply current redaction only to new writes.
+- [ ] Resolve failed/unknown tool projections through their causal invocation, not session-global call IDs.
+- [ ] Spend mutation budget only after the durable `ToolStarted` boundary.
+- [ ] Refuse emergency compaction that hides all prior semantic history from the model.
+- [ ] Preserve aggregate rejection-reason bounds through duplicate-ID normalization.
+- [ ] Version new event semantics as schema v2 while continuing to read supported v1 records.
+- [ ] Complete invariant review, workspace verification, and applicable performance checks.
+
 ### P2 — Later / deliberately deferred
 
 - [x] Windows CI matrix (hosted CI covers Ubuntu, macOS, and Windows; benchmark execution remains non-Windows only).
