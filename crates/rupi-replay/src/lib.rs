@@ -1805,6 +1805,7 @@ mod tests {
         name: "write".into(),
         request_event_id: EventId::new(),
         unknown_event_id: unknown_event_id.clone(),
+        related_turn_id: None,
         status: ReconciliationStatus::Committed {
           details: "this observation belongs to a different request".into(),
         },
@@ -1818,6 +1819,7 @@ mod tests {
         name: "write".into(),
         request_event_id: request_event_id.clone(),
         unknown_event_id: unknown_event_id.clone(),
+        related_turn_id: None,
         status: ReconciliationStatus::RequiresManualInspection {
           details: "arbitrary command state cannot be inspected".into(),
         },
@@ -1831,6 +1833,7 @@ mod tests {
         name: "write".into(),
         request_event_id,
         unknown_event_id,
+        related_turn_id: None,
         status: ReconciliationStatus::Committed {
           details: "the target already contains the requested contents".into(),
         },

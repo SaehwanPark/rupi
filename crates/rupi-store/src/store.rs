@@ -832,6 +832,10 @@ impl Session {
     let turn_id = meta
       .turn_id
       .as_ref()
+      .or_else(|| match &envelope.event {
+        AgentEvent::ToolReconciliationObserved(observed) => observed.related_turn_id.as_ref(),
+        _ => None,
+      })
       .ok_or_else(|| StoreError::Invalid("a persisted message must belong to a turn".into()))?;
     let epoch = meta
       .model_epoch
@@ -3480,7 +3484,11 @@ fn validate_message_projection(
   let event = restored_event
     .as_ref()
     .unwrap_or(&trace_entry.envelope.event);
-  if meta.turn_id.as_ref() != Some(&message.turn_id)
+  let projected_turn_id = meta.turn_id.clone().or_else(|| match event {
+    AgentEvent::ToolReconciliationObserved(observed) => observed.related_turn_id.clone(),
+    _ => None,
+  });
+  if projected_turn_id.as_ref() != Some(&message.turn_id)
     || meta.model_epoch.is_some_and(|epoch| epoch != message.epoch)
     || meta
       .model
@@ -4167,9 +4175,13 @@ fn validate_session_record_size(
 }
 
 fn validate_message_envelope(envelope: &EventEnvelope) -> Result<(), StoreError> {
-  if envelope.meta.turn_id.is_none() {
+  let has_related_turn = matches!(
+    &envelope.event,
+    AgentEvent::ToolReconciliationObserved(observed) if observed.related_turn_id.is_some()
+  );
+  if envelope.meta.turn_id.is_none() && !has_related_turn {
     return Err(StoreError::Invalid(
-      "a persisted message must belong to a turn".into(),
+      "a persisted message must belong to a turn or a related reconciliation turn".into(),
     ));
   }
   if envelope.meta.model_epoch.is_none() {
@@ -4198,6 +4210,10 @@ fn recover_projection_record(
     let turn_id = meta
       .turn_id
       .clone()
+      .or_else(|| match &trace_entry.envelope.event {
+        AgentEvent::ToolReconciliationObserved(observed) => observed.related_turn_id.clone(),
+        _ => None,
+      })
       .ok_or_else(|| StoreError::Invalid("cannot recover a message without a turn id".into()))?;
     let epoch = meta.model_epoch.ok_or_else(|| {
       StoreError::Invalid("cannot recover a message without a model epoch".into())
@@ -7239,6 +7255,7 @@ mod tests {
       name: "write".into(),
       request_event_id: request_id.clone(),
       unknown_event_id: unknown_id.clone(),
+      related_turn_id: None,
       status: ReconciliationStatus::RequiresManualInspection {
         details: "cannot inspect this operation automatically".into(),
       },
@@ -7266,6 +7283,7 @@ mod tests {
       name: "write".into(),
       request_event_id: request_id,
       unknown_event_id: unknown_id.clone(),
+      related_turn_id: None,
       status: ReconciliationStatus::Unmodified {
         details: "operator confirmed no change after manual inspection".into(),
       },

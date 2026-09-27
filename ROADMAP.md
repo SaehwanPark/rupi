@@ -1021,6 +1021,23 @@ bench/results/startup-ci.json` passed (cold 136.49 ms; warm mean 6.33 ms), and
 `bash bench/context_prefill.sh` passed all five budgets. No local llama.cpp comparison was
 run; this is deterministic runtime-safety evidence, not a weak-model performance claim.
 
+### In progress audit follow-up — Round 7 (PR #128)
+
+`audits/pi-benchmark-audit/round07.md` tracks the current safety slice. All seven
+findings are in progress; none is complete until its regression evidence and workspace
+verification pass:
+
+- [-] Convert resumed interrupted mutations that require inspection into durable,
+      operator-resolvable `Unknown` barriers.
+- [-] Reject blocked user prompts and external context before persisting them; keep
+      reconciliation observations outside completed turn identities.
+- [-] Recover context-clamped length stops against the desired output ceiling.
+- [-] Expose only tools within the remaining per-turn total and mutation budgets; fail
+      unsatisfiable progress boundaries as `ToolBudgetExhausted` when the budget is spent.
+- [-] Bind `payload_read` authorization and visible recovery notices to active context.
+- [-] Quarantine implausible usage calibration samples and require confirmation for large
+      ratio jumps.
+
 ### P2 — Later / deliberately deferred
 
 - [x] Windows CI matrix (hosted CI covers Ubuntu, macOS, and Windows; benchmark execution remains non-Windows only).

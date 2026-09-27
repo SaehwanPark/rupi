@@ -695,6 +695,7 @@ fn tool_reconciliation_observed_round_trips() {
     name: "write".into(),
     request_event_id,
     unknown_event_id,
+    related_turn_id: Some(rupi_core::TurnId::new()),
     status: ReconciliationStatus::Unmodified {
       details: "the target is unchanged".into(),
     },
