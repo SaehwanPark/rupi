@@ -1047,6 +1047,23 @@ bench/results/startup-ci.json` passed (cold 128.83 ms; warm mean 6.06 ms), and
 run; these tests verify runtime safety, not weak-model task performance. The slow-runner
 ambiguous-timeout fixture now allows time for request setup while retaining a delayed response.
 
+### In progress audit follow-up — Round 8 (WIP)
+
+`audits/pi-benchmark-audit/round08.md` identifies six remaining runtime/provider
+findings. Work is underway on `fix/pi-benchmark-audit-round-08`; none of the items
+below is complete until its regression coverage and verification pass:
+
+- [ ] Bind execution to the exact tool definition and permission snapshot advertised
+      for each provider request; replacement/removal must fail before `ToolStarted`.
+- [ ] Preserve semantic message origin separately from provider role through session
+      persistence, resume, compaction, and eviction.
+- [ ] Return duplicate provider tool-call IDs as non-executable model-correctable
+      rejections instead of provider protocol failure.
+- [ ] Key replay tool lifecycles by causal request-event identity, not provider call ID.
+- [ ] Keep unavailable/policy-denied calls out of mutation-budget accounting and
+      approval prompts while retaining total-call limits.
+- [ ] Bound per-call and aggregate custom-provider rejection-reason bytes.
+
 ### P2 — Later / deliberately deferred
 
 - [x] Windows CI matrix (hosted CI covers Ubuntu, macOS, and Windows; benchmark execution remains non-Windows only).
