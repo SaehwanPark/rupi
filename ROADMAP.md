@@ -1021,22 +1021,29 @@ bench/results/startup-ci.json` passed (cold 136.49 ms; warm mean 6.33 ms), and
 `bash bench/context_prefill.sh` passed all five budgets. No local llama.cpp comparison was
 run; this is deterministic runtime-safety evidence, not a weak-model performance claim.
 
-### In progress audit follow-up — Round 7 (PR #128)
+### Implemented audit follow-up — Round 7 (PR #128; independent review pending)
 
-`audits/pi-benchmark-audit/round07.md` tracks the current safety slice. All seven
-findings are in progress; none is complete until its regression evidence and workspace
-verification pass:
+`audits/pi-benchmark-audit/round07.md` findings have regression coverage and passed local
+workspace verification plus the Ubuntu, macOS, and Windows CI matrix:
 
-- [-] Convert resumed interrupted mutations that require inspection into durable,
+- [x] Convert resumed interrupted mutations that require inspection into durable,
       operator-resolvable `Unknown` barriers.
-- [-] Reject blocked user prompts and external context before persisting them; keep
-      reconciliation observations outside completed turn identities.
-- [-] Recover context-clamped length stops against the desired output ceiling.
-- [-] Expose only tools within the remaining per-turn total and mutation budgets; fail
+- [x] Reject blocked user prompts and external context before persisting them.
+- [x] Keep reconciliation observations outside completed turn identities.
+- [x] Recover context-clamped length stops against the desired output ceiling.
+- [x] Expose only tools within the remaining per-turn total and mutation budgets; fail
       unsatisfiable progress boundaries as `ToolBudgetExhausted` when the budget is spent.
-- [-] Bind `payload_read` authorization and visible recovery notices to active context.
-- [-] Quarantine implausible usage calibration samples and require confirmation for large
+- [x] Bind `payload_read` authorization and visible recovery notices to active context.
+- [x] Quarantine implausible usage calibration samples and require confirmation for large
       ratio jumps.
+
+Evidence: `cargo fmt --all --check`, `cargo check -p rupi-core --all-features`,
+`cargo clippy --workspace --all-targets -- -D warnings`, `cargo test --workspace`, and
+`cargo doc --workspace --no-deps` passed. `bash bench/startup.sh --json
+bench/results/startup-ci.json` passed (cold 132.41 ms; warm mean 7.12 ms), and
+`bash bench/context_prefill.sh` passed all five budgets. No local llama.cpp comparison was
+run; these tests verify runtime safety, not weak-model task performance. Independent review
+is pending before merge.
 
 ### P2 — Later / deliberately deferred
 
