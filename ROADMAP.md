@@ -1098,19 +1098,27 @@ checkpoint restore measured 3.91 ms against a 30 ms budget. No weak-model superi
 made by these deterministic recovery tests. A live llama.cpp comparison remains separate
 empirical work.
 
-### In progress audit follow-up — Round 10 (WIP)
+### Completed audit follow-up — Round 10
 
-`audits/pi-benchmark-audit/round10.md` identifies six storage, lifecycle, accounting,
-context-visibility, bounded-metadata, and event-versioning findings. This follow-up is
-active on `fix/pi-benchmark-audit-round-10`:
+`audits/pi-benchmark-audit/round10.md` identified six storage, lifecycle, accounting,
+context-visibility, bounded-metadata, and event-versioning findings. All six are implemented
+and verified on `fix/pi-benchmark-audit-round-10`:
 
 - [x] Keep schema migration semantics-preserving; apply current redaction only to new writes.
-- [x] Resolve failed/unknown tool projections through their causal invocation, not session-global call IDs.
+- [x] Resolve failed/unknown tool projections through their causal invocation, not
+      session-global call IDs.
 - [x] Spend mutation budget only after the durable `ToolStarted` boundary.
 - [x] Refuse emergency compaction that hides all prior semantic history from the model.
 - [x] Preserve aggregate rejection-reason bounds through duplicate-ID normalization.
-- [x] Version new event semantics as schema v2 while continuing to read supported v1 records.
-- [ ] Complete invariant review, workspace verification, and applicable performance checks.
+- [x] Version new event semantics as schema v2 while continuing to read supported
+      v1 records.
+- [x] Complete invariant review, workspace verification, and applicable performance checks.
+
+Verification passed: `cargo fmt --all --check`, `cargo check -p rupi-core --all-features`,
+workspace clippy/tests/docs, and hosted Ubuntu/macOS/Windows CI. Startup measured 134.14 ms cold
+and 6.36 ms warm median; context-prefill cases passed; 1,000-turn checkpointed restore measured
+3.96 ms against a 30 ms budget. This correctness slice makes no local-model completion claim;
+controlled llama.cpp comparison remains separate empirical work.
 
 ### P2 — Later / deliberately deferred
 
