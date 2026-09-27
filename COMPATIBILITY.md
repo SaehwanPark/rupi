@@ -282,7 +282,7 @@ Mapped, at the fidelity the file supports:
 
 | Pi | `rupi` |
 | --- | --- |
-| `message` (role `user`) | `user_message`, with non-text blocks counted as attachments |
+| `message` (role `user`) | `user_input`, with non-text blocks counted as attachments; the imported Pi role is explicit source evidence |
 | `message` (role `assistant`) | one request span: `reasoning_delta`, `assistant_delta`, `tool_requested`, `model_request_completed` carrying Pi's usage and stop reason |
 | `message` (role `toolResult`) | `tool_completed`, output filed past the store's inline threshold, under the durable redaction policy |
 | `model_change`, `thinking_level_change` | info `diagnostic`; opening a model epoch would claim capabilities Pi never recorded |
@@ -291,7 +291,7 @@ Mapped, at the fidelity the file supports:
 
 One plan writes two durable records. The trace journal holds the events above. The session
 log holds the conversation as message records, each bound to the event that introduced it: a
-user message to its `user_message`, an imported assistant reply — its prose and its calls,
+Pi user entry to its `user_input`, an imported assistant reply — its prose and its calls,
 never its reasoning — to the first `assistant_delta`, and a tool result to its terminal tool
 event. Native runtime replies bind to the terminal `model_request_completed` instead, so
 assistant prose and tool calls are recovered as one atomic message transaction. That binding
@@ -327,8 +327,12 @@ than something to paper over.
 The emitted shape is derived from what `rupi import-pi` accepts:
 
 - A version 3 header (`type: "session"`, `id`, `cwd`, `timestamp`);
-- Linear message entries linked sequentially with `parentId`;
+- `UserInput` events exported as Pi user message entries and linked sequentially with `parentId`;
 - Assistant reply text and tool calls folded from streamed deltas into Pi message blocks.
+
+Legacy `UserMessage` events do not prove human authorship, so their text is omitted and named
+as ambiguous on stderr rather than exported as user-authored content. Runtime-control events are
+also reported as non-message trace details, not rewritten as Pi user turns.
 
 Anything the canonical trace holds that Pi's shape cannot carry is explicitly surfaced on
 stderr as a dropped item rather than silently discarded or falsified.

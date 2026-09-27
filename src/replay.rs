@@ -329,7 +329,13 @@ fn write_human(report: &ReplayReport, sequence: bool, timing: bool) -> Result<()
         line.push_str(&format!(" [{}] {}", delta.provenance.as_str(), delta.text));
       }
       rupi_core::AgentEvent::AssistantDelta(delta) => line.push_str(&format!(": {}", delta.text)),
-      rupi_core::AgentEvent::UserMessage(message) => line.push_str(&format!(": {}", message.text)),
+      rupi_core::AgentEvent::UserInput(message) => line.push_str(&format!(": {}", message.text)),
+      rupi_core::AgentEvent::RuntimeControlInjected(control) => {
+        line.push_str(&format!(" [{:?}] {}", control.kind, control.text));
+      }
+      rupi_core::AgentEvent::UserMessage(message) => {
+        line.push_str(&format!(": [author unverified] {}", message.text));
+      }
       rupi_core::AgentEvent::ToolRequested(tool) => line.push_str(&format!(" {}", tool.name)),
       rupi_core::AgentEvent::ToolStarted(tool) => line.push_str(&format!(" {}", tool.name)),
       rupi_core::AgentEvent::ToolCompleted(tool) => line.push_str(&format!(" {}", tool.name)),

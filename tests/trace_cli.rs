@@ -120,7 +120,7 @@ fn fixture_events() -> Vec<(u32, AgentEvent)> {
     ),
     (
       0,
-      AgentEvent::UserMessage(UserMessage {
+      AgentEvent::UserInput(UserMessage {
         text: "fix the build".into(),
         attachments: 0,
       }),
@@ -169,6 +169,7 @@ fn fixture_events() -> Vec<(u32, AgentEvent)> {
         name: "read".into(),
         arguments: serde_json::json!({"path": "src/main.rs"}),
         read_only: true,
+        definition_fingerprint: None,
       }),
     ),
     (
@@ -198,6 +199,7 @@ fn fixture_events() -> Vec<(u32, AgentEvent)> {
         name: "exec".into(),
         arguments: serde_json::json!({"command": "make"}),
         read_only: false,
+        definition_fingerprint: None,
       }),
     ),
     (
@@ -396,7 +398,7 @@ fn epoch_fixture(root: &Path, id: &str) -> (Vec<(u32, AgentEvent)>, Fixture, Blo
     ),
     (
       0,
-      AgentEvent::UserMessage(UserMessage {
+      AgentEvent::UserInput(UserMessage {
         text: "measure the pump".into(),
         attachments: 0,
       }),
@@ -408,6 +410,7 @@ fn epoch_fixture(root: &Path, id: &str) -> (Vec<(u32, AgentEvent)>, Fixture, Blo
         name: "read".into(),
         arguments: serde_json::json!({ "path": "src/pump.rs" }),
         read_only: true,
+        definition_fingerprint: None,
       }),
     ),
     (
@@ -425,7 +428,7 @@ fn epoch_fixture(root: &Path, id: &str) -> (Vec<(u32, AgentEvent)>, Fixture, Blo
     ),
     (
       0,
-      AgentEvent::UserMessage(UserMessage {
+      AgentEvent::UserInput(UserMessage {
         text: "now the valve".into(),
         attachments: 0,
       }),
@@ -448,6 +451,7 @@ fn epoch_fixture(root: &Path, id: &str) -> (Vec<(u32, AgentEvent)>, Fixture, Blo
       replaces_from: EventSeq(replaced_from),
       replaces_through: EventSeq(replaced_through),
       summary: Some(summary.clone()),
+      derived_summary: None,
     }),
   ));
   let session = fixture(root, id, &events);
@@ -818,6 +822,7 @@ fn a_bounded_line_renders_its_preview_and_names_where_the_bytes_went() {
           "contents": preview,
         }),
         read_only: false,
+        definition_fingerprint: None,
       }),
     ),
     redactions: 0,

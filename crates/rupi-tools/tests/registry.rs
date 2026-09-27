@@ -20,8 +20,8 @@ use std::{
 use rupi_core::ToolExecutionState as State;
 use rupi_core::{
   CancelToken, CancelToken as Cancel, ReconciliationStatus, ReplayDecision, ToolCallId, ToolChunk,
-  ToolMetadata, ToolOutcome, ToolPolicy, ToolProgress, ToolRequest, ToolSamplingConstraint,
-  ToolSamplingStrictness, ToolSpec,
+  ToolDefinitionFingerprint, ToolMetadata, ToolOutcome, ToolPolicy, ToolProgress, ToolRequest,
+  ToolSamplingConstraint, ToolSamplingStrictness, ToolSpec,
 };
 use serde_json::{Value, json};
 use tempfile::TempDir;
@@ -80,6 +80,15 @@ impl ApprovalGate for RecordingGate {
 /// because a harness must not change state without an answer.
 fn registry(dir: &TempDir) -> ToolRegistry {
   ToolRegistry::new(workspace(dir.path())).with_builtins()
+}
+
+fn definition_fingerprint(registry: &ToolRegistry, name: &str) -> ToolDefinitionFingerprint {
+  registry
+    .bound_specs()
+    .into_iter()
+    .find(|bound| bound.spec.name == name)
+    .and_then(|bound| bound.binding.definition_fingerprint().cloned())
+    .expect("built-in tools have stable definition identities")
 }
 
 /// Registry for an operator who has already accepted mutating tools by
@@ -972,8 +981,17 @@ fn reconciliation_path_disambiguates_uncertain_write_state() {
     }),
   );
 
+  let fingerprint = definition_fingerprint(&reg, "write");
+  // Identity-free reconciliation cannot call a replacement mutating tool.
+  assert!(matches!(
+    reg.reconcile(&req).unwrap(),
+    ReconciliationStatus::RequiresManualInspection { .. }
+  ));
+
   // Before any execution, the file does not exist -> Unmodified
-  let status_before = reg.reconcile(&req).unwrap();
+  let status_before = reg
+    .reconcile_with_definition(&req, Some(false), Some(&fingerprint))
+    .unwrap();
   assert!(
     status_before.is_unmodified(),
     "file does not exist before write"
@@ -981,7 +999,9 @@ fn reconciliation_path_disambiguates_uncertain_write_state() {
 
   // After writing matching content -> Committed
   fs::write(dir.path().join("target.txt"), "expected content").unwrap();
-  let status_committed = reg.reconcile(&req).unwrap();
+  let status_committed = reg
+    .reconcile_with_definition(&req, Some(false), Some(&fingerprint))
+    .unwrap();
   assert!(
     status_committed.is_committed(),
     "matching content is committed"
@@ -989,7 +1009,9 @@ fn reconciliation_path_disambiguates_uncertain_write_state() {
 
   // If content was modified differently -> Diverged
   fs::write(dir.path().join("target.txt"), "corrupted partial content").unwrap();
-  let status_diverged = reg.reconcile(&req).unwrap();
+  let status_diverged = reg
+    .reconcile_with_definition(&req, Some(false), Some(&fingerprint))
+    .unwrap();
   assert!(
     matches!(status_diverged, ReconciliationStatus::Diverged { .. }),
     "divergent content is detected as diverged"
@@ -1012,8 +1034,11 @@ fn reconciliation_path_disambiguates_uncertain_edit_state() {
     }),
   );
 
+  let fingerprint = definition_fingerprint(&reg, "edit");
   // Before edit is applied -> Unmodified
-  let status_before = reg.reconcile(&req).unwrap();
+  let status_before = reg
+    .reconcile_with_definition(&req, Some(false), Some(&fingerprint))
+    .unwrap();
   assert!(
     status_before.is_unmodified(),
     "original text remains intact"
@@ -1021,7 +1046,9 @@ fn reconciliation_path_disambiguates_uncertain_edit_state() {
 
   // After edit is applied -> Committed
   fs::write(&file_path, "updated text here").unwrap();
-  let status_after = reg.reconcile(&req).unwrap();
+  let status_after = reg
+    .reconcile_with_definition(&req, Some(false), Some(&fingerprint))
+    .unwrap();
   assert!(
     status_after.is_committed(),
     "updated text exists and original is gone"

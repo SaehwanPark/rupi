@@ -74,6 +74,14 @@ impl Tool for ExecTool {
     )
   }
 
+  fn stable_definition_identity(&self) -> Option<rupi_core::ToolDefinitionIdentity> {
+    Some(rupi_core::ToolDefinitionIdentity::new(
+      "rupi-tools-builtin",
+      "exec",
+      "1",
+    ))
+  }
+
   fn arguments_schema(&self) -> serde_json::Value {
     json!({
       "type": "object",

@@ -42,6 +42,14 @@ impl Tool for ReadTool {
     )
   }
 
+  fn stable_definition_identity(&self) -> Option<rupi_core::ToolDefinitionIdentity> {
+    Some(rupi_core::ToolDefinitionIdentity::new(
+      "rupi-tools-builtin",
+      "read",
+      "1",
+    ))
+  }
+
   fn arguments_schema(&self) -> serde_json::Value {
     json!({
       "type": "object",

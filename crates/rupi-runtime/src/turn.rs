@@ -29,22 +29,23 @@ use rupi_core::{
   CapsuleArtifact, CapsuleDecision, CheckpointCreated, CheckpointId, ContentBlock, ContextAction,
   ContextCapsule, ContextCompactionCompleted, ContextCompactionEpoch, ContextCompactionStarted,
   ContextLevel, ContextPolicy, ContextReduced, ContextState, DEFAULT_MAX_MODEL_REQUESTS_PER_TURN,
-  DEFAULT_MAX_MUTATING_TOOL_CALLS_PER_TURN, DEFAULT_MAX_TOOL_CALLS_PER_TURN, Diagnostic,
-  DiagnosticLevel, EpochReason, EventEnvelope, EventMeta, EventSeq, EventSink, ExternalContextItem,
-  ExternalContextRetrieved, FailurePhase, MAX_CONFIGURED_MODEL_REQUESTS_PER_TURN,
-  MAX_CONFIGURED_MUTATING_TOOL_CALLS_PER_TURN, MAX_CONFIGURED_TOOL_CALLS_PER_TURN,
-  MAX_RESPONSE_EVENTS, MAX_RESPONSE_REASONING_BYTES, MAX_RESPONSE_TEXT_BYTES,
-  MAX_RESPONSE_TOOL_CALLS, MAX_TOOL_ARGUMENT_BYTES_PER_CALL, MAX_TOOL_ARGUMENT_BYTES_TOTAL,
-  MAX_TOOL_ID_BYTES, MAX_TOOL_NAME_BYTES, MAX_TOOL_REJECTION_REASON_BYTES,
-  MAX_TOOL_REJECTION_REASON_BYTES_TOTAL, Message, MessageOrigin, ModelCapabilities, ModelEpoch,
-  ModelEpochStarted, ModelFailover, ModelFailure, ModelFailureKind, ModelProvider, ModelRef,
-  ModelRequest, ModelRequestCompleted, ModelRequestStarted, ModelRetry, ReasoningChunk,
-  ReasoningDelta, ReasoningProvenance, ReconciliationStatus, ReductionReason, Role,
-  RuntimeControlKind, SessionEndReason, SessionEnded, SessionId, SessionStarted, SinkError,
-  ThinkingLevel, ToolCallBlock, ToolChoice, ToolCompleted, ToolExecutionState, ToolFailed,
-  ToolMetadata, ToolOutcome, ToolProgress, ToolReconciliationObserved, ToolReconciliationSource,
-  ToolRequested, ToolResultBlock, ToolStarted, ToolUnknown, TraceId, TurnCompleted, TurnId,
-  TurnStatus, UnresolvedSideEffect, UserMessage,
+  DEFAULT_MAX_MUTATING_TOOL_CALLS_PER_TURN, DEFAULT_MAX_TOOL_CALLS_PER_TURN, DerivedSummary,
+  Diagnostic, DiagnosticLevel, EpochReason, EventEnvelope, EventMeta, EventSeq, EventSink,
+  ExternalContextItem, ExternalContextRetrieved, FailurePhase,
+  MAX_CONFIGURED_MODEL_REQUESTS_PER_TURN, MAX_CONFIGURED_MUTATING_TOOL_CALLS_PER_TURN,
+  MAX_CONFIGURED_TOOL_CALLS_PER_TURN, MAX_RESPONSE_EVENTS, MAX_RESPONSE_REASONING_BYTES,
+  MAX_RESPONSE_TEXT_BYTES, MAX_RESPONSE_TOOL_CALLS, MAX_TOOL_ARGUMENT_BYTES_PER_CALL,
+  MAX_TOOL_ARGUMENT_BYTES_TOTAL, MAX_TOOL_ID_BYTES, MAX_TOOL_NAME_BYTES,
+  MAX_TOOL_REJECTION_REASON_BYTES, MAX_TOOL_REJECTION_REASON_BYTES_TOTAL, Message, MessageOrigin,
+  ModelCapabilities, ModelEpoch, ModelEpochStarted, ModelFailover, ModelFailure, ModelFailureKind,
+  ModelProvider, ModelRef, ModelRequest, ModelRequestCompleted, ModelRequestStarted, ModelRetry,
+  ReasoningChunk, ReasoningDelta, ReasoningProvenance, ReconciliationStatus, ReductionReason, Role,
+  RuntimeControlInjected, RuntimeControlKind, SessionEndReason, SessionEnded, SessionId,
+  SessionStarted, SinkError, ThinkingLevel, ToolCallBlock, ToolChoice, ToolCompleted,
+  ToolExecutionState, ToolFailed, ToolMetadata, ToolOutcome, ToolProgress,
+  ToolReconciliationObserved, ToolReconciliationSource, ToolRequested, ToolResultBlock,
+  ToolStarted, ToolUnknown, TraceId, TurnCompleted, TurnId, TurnStatus, UnresolvedSideEffect,
+  UserMessage,
 };
 use rupi_tools::{Approval, ApprovalGate, BoundToolSpec, Executed, ToolBinding, ToolRegistry};
 
@@ -60,8 +61,10 @@ pub enum CompactionStrategy {
   Summarize,
 }
 
-/// Custom summarizer function alias.
+/// Custom prose summarizer function alias. Its result remains opaque context.
 pub type Summarizer = Arc<dyn Fn(&[Message]) -> String + Send + Sync>;
+/// Custom summarizer that returns typed capsule semantics.
+pub type StructuredSummarizer = Arc<dyn Fn(&[Message]) -> ContextCapsule + Send + Sync>;
 
 /// How to handle context pressure when policy suggests a checkpoint.
 #[derive(Debug, Clone, Copy, PartialEq, Eq, Default)]
@@ -495,7 +498,7 @@ struct ToolBatchContext<'a> {
 
 #[derive(Debug, Clone)]
 enum RequestToolBinding {
-  Registry(ToolBinding),
+  Registry(Box<ToolBinding>),
   PayloadRead,
 }
 
@@ -504,6 +507,13 @@ impl RequestToolBinding {
     match self {
       Self::Registry(binding) => binding.read_only(),
       Self::PayloadRead => true,
+    }
+  }
+
+  fn definition_fingerprint(&self) -> Option<&rupi_core::ToolDefinitionFingerprint> {
+    match self {
+      Self::Registry(binding) => binding.definition_fingerprint(),
+      Self::PayloadRead => None,
     }
   }
 }
@@ -516,13 +526,13 @@ struct BuiltRequest {
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]
 enum ToolBudgetDenial {
   Total,
-  Mutating,
 }
 
 #[derive(Debug, Clone)]
 struct ToolCallAdmission {
   binding: Option<RequestToolBinding>,
   read_only: bool,
+  mutation_candidate: bool,
   denial: Option<ToolBudgetDenial>,
 }
 
@@ -617,6 +627,7 @@ pub struct TurnLoop<'a> {
   history: Option<(rupi_core::EventSeq, rupi_core::EventSeq)>,
   compaction_strategy: CompactionStrategy,
   summarizer: Option<Summarizer>,
+  structured_summarizer: Option<StructuredSummarizer>,
   checkpoint_strategy: CheckpointStrategy,
   checkpointer: Option<Checkpointer>,
 }
@@ -683,6 +694,7 @@ impl<'a> TurnLoop<'a> {
       history: None,
       compaction_strategy: CompactionStrategy::default(),
       summarizer: None,
+      structured_summarizer: None,
       checkpoint_strategy: CheckpointStrategy::default(),
       checkpointer: None,
     }
@@ -911,8 +923,44 @@ impl<'a> TurnLoop<'a> {
     summarizer: impl Fn(&[Message]) -> String + Send + Sync + 'static,
   ) -> Self {
     self.summarizer = Some(Arc::new(summarizer));
+    self.structured_summarizer = None;
     self.compaction_strategy = CompactionStrategy::Summarize;
     self
+  }
+
+  /// Attach a structured summarizer whose capsule semantics survive compaction.
+  pub fn with_structured_summarizer(
+    mut self,
+    summarizer: impl Fn(&[Message]) -> ContextCapsule + Send + Sync + 'static,
+  ) -> Self {
+    self.structured_summarizer = Some(Arc::new(summarizer));
+    self.summarizer = None;
+    self.compaction_strategy = CompactionStrategy::Summarize;
+    self
+  }
+
+  fn summarize_messages(&self, messages: &[Message]) -> DerivedSummary {
+    self.summarize_messages_with_state(messages, "")
+  }
+
+  fn summarize_messages_with_state(
+    &self,
+    messages: &[Message],
+    current_state: &str,
+  ) -> DerivedSummary {
+    if let Some(summarizer) = &self.structured_summarizer {
+      DerivedSummary::Capsule {
+        capsule: summarizer(messages),
+      }
+    } else if let Some(summarizer) = &self.summarizer {
+      DerivedSummary::Opaque {
+        text: summarizer(messages),
+      }
+    } else {
+      DerivedSummary::Capsule {
+        capsule: coding_capsule(messages, self.system.as_deref(), current_state),
+      }
+    }
   }
 
   /// Set the checkpoint strategy when context policy suggests checkpointing.
@@ -1128,7 +1176,11 @@ impl<'a> TurnLoop<'a> {
       };
       let status = self
         .tools
-        .reconcile_with_risk(&call.request, Some(call.read_only))
+        .reconcile_with_definition(
+          &call.request,
+          Some(call.read_only),
+          call.definition_fingerprint.as_ref(),
+        )
         .unwrap_or_else(|error| ReconciliationStatus::RequiresManualInspection {
           details: format!("automatic reconciliation failed: {}", error.message),
         });
@@ -1230,6 +1282,7 @@ impl<'a> TurnLoop<'a> {
             .expect("unresolved mutations require request identity"),
           unknown_event_id: envelope.meta.event_id.clone(),
           latest_status: Some(status),
+          definition_fingerprint: call.definition_fingerprint.clone(),
         });
       }
       self.interrupted_tools.remove(0);
@@ -1281,7 +1334,11 @@ impl<'a> TurnLoop<'a> {
 
       let status = self
         .tools
-        .reconcile_with_risk(&side_effect.request, Some(false))
+        .reconcile_with_definition(
+          &side_effect.request,
+          Some(false),
+          side_effect.definition_fingerprint.as_ref(),
+        )
         .unwrap_or_else(|error| ReconciliationStatus::RequiresManualInspection {
           details: format!("automatic reconciliation failed: {}", error.message),
         });
@@ -1459,7 +1516,7 @@ impl<'a> TurnLoop<'a> {
     let user = Message::user(input);
     let envelope = self.emit_message(
       Some(turn_id.clone()),
-      AgentEvent::UserMessage(UserMessage {
+      AgentEvent::UserInput(UserMessage {
         text: input.to_string(),
         attachments: 0,
       }),
@@ -2088,21 +2145,22 @@ impl<'a> TurnLoop<'a> {
     let prefix = self.messages[protected..prefix_end].to_vec();
     let protected_messages = self.messages[..protected].to_vec();
     let suffix = self.messages[prefix_end..].to_vec();
-    let source = match &self.summarizer {
-      Some(summarizer) => summarizer(&prefix),
-      None => structured_summary(&prefix),
-    };
+    let source = self.summarize_messages(&prefix);
+    let source_text = source.format_for_model();
 
-    // The summary is reduced by character-boundary-safe steps. A bounded number
-    // of attempts keeps a pathological local summarizer from consuming the turn,
-    // while still reaching an empty-summary candidate for very large histories.
-    let mut summary_bytes = source.len();
+    // The rendering is reduced at character boundaries while its typed source
+    // remains attached for a later recursive compaction.
+    let mut summary_bytes = source_text.len();
     let mut accepted = None;
     for _ in 0..=64 {
-      let summary = truncate_utf8_to_bytes(&source, summary_bytes).to_string();
+      let text = truncate_utf8_to_bytes(&source_text, summary_bytes).to_string();
+      let summary = DerivedSummary::Rendered {
+        summary: Box::new(source.clone()),
+        text,
+      };
       let mut candidate_messages = Vec::with_capacity(protected_messages.len() + suffix.len() + 1);
       candidate_messages.extend(protected_messages.iter().cloned());
-      candidate_messages.push(Message::compaction_summary(summary.clone()));
+      candidate_messages.push(Message::derived_compaction_summary(summary.clone()));
       candidate_messages.extend(suffix.iter().cloned());
       let request = self.assemble_request(candidate_messages);
       if self.request_context_tokens_for(self.provider(), &request) <= target {
@@ -2113,7 +2171,7 @@ impl<'a> TurnLoop<'a> {
         break;
       }
       let next = summary_bytes / 2;
-      let next = truncate_utf8_to_bytes(&source, next).len();
+      let next = truncate_utf8_to_bytes(&source_text, next).len();
       if next == summary_bytes {
         summary_bytes = summary_bytes.saturating_sub(1);
       } else {
@@ -2135,7 +2193,13 @@ impl<'a> TurnLoop<'a> {
       DiagnosticLevel::Info,
       "compacting prior history for one bounded model-request recovery",
     )?;
-    let replaced = self.compact_prefix(turn_id, prefix_end, &summary)?;
+    let replaced = self.compact_range(
+      turn_id,
+      prefix_end,
+      summary,
+      ContextLevel::L1Ordinary,
+      "bounded provider-overflow recovery".into(),
+    )?;
     if replaced == 0 {
       return Ok(false);
     }
@@ -2247,6 +2311,7 @@ impl<'a> TurnLoop<'a> {
         clock,
       );
       let outcome = provider.stream(&request, &mut collector, &request_cancel);
+      collector.normalize_tool_call_ids();
       let duration_ms = elapsed_ms(clock);
       let Collector {
         text,
@@ -2841,7 +2906,9 @@ impl<'a> TurnLoop<'a> {
     self.compact_range(
       turn_id,
       removed,
-      summary,
+      DerivedSummary::Opaque {
+        text: summary.to_string(),
+      },
       ContextLevel::L1Ordinary,
       format!("summarizing {removed} oldest messages"),
     )
@@ -2862,7 +2929,9 @@ impl<'a> TurnLoop<'a> {
     self.compact_range(
       turn_id,
       prefix_end,
-      summary,
+      DerivedSummary::Opaque {
+        text: summary.to_string(),
+      },
       ContextLevel::L1Ordinary,
       format!("summarizing {prefix_end} oldest messages"),
     )
@@ -2875,7 +2944,7 @@ impl<'a> TurnLoop<'a> {
     &mut self,
     turn_id: &TurnId,
     prefix_end: usize,
-    summary: &str,
+    summary: DerivedSummary,
     level: ContextLevel,
     reason: String,
   ) -> Result<u32, TurnError> {
@@ -2910,17 +2979,16 @@ impl<'a> TurnLoop<'a> {
       AgentEvent::ContextCompactionStarted(ContextCompactionStarted { level, reason }),
     )?;
 
-    // Persist the summary before deleting replaced live context. It is a user
-    // message because providers accept that role mid-conversation. A checkpoint
-    // capsule at the front is an impermeable floor: only messages after it may
-    // be replaced by this ordinary compaction.
-    let summary_message = Message::compaction_summary(summary);
+    // Persist model-facing text and typed summary semantics before deleting
+    // replaced context. The checkpoint at the front remains an impermeable floor.
+    let summary_text = summary.format_for_model();
+    let summary_message = Message::derived_compaction_summary(summary.clone());
     let summary_envelope = self.emit_message(
       Some(turn_id.clone()),
       AgentEvent::ContextSummary,
       &summary_message,
     )?;
-    let summary_ref = self.trace.put_payload(summary.as_bytes())?;
+    let summary_ref = self.trace.put_payload(summary_text.as_bytes())?;
     self.emit(
       Some(turn_id.clone()),
       AgentEvent::ContextCompactionEpoch(ContextCompactionEpoch {
@@ -2928,6 +2996,7 @@ impl<'a> TurnLoop<'a> {
         summary: summary_ref,
         replaces_from,
         replaces_through,
+        derived_summary: Some(Box::new(summary)),
       }),
     )?;
     self.emit(
@@ -2979,17 +3048,34 @@ impl<'a> TurnLoop<'a> {
     if prefix_end <= protected {
       return Ok(0);
     }
-    let summary_text = match explicit_summary {
-      Some(text) => text.to_string(),
-      None => {
-        let slice = &self.messages[protected..prefix_end];
-        match &self.summarizer {
-          Some(custom) => custom(slice),
-          None => structured_summary(slice),
-        }
-      }
+    let summary = match explicit_summary {
+      Some(text) => DerivedSummary::Opaque {
+        text: text.to_string(),
+      },
+      None => self.summarize_messages(&self.messages[protected..prefix_end]),
     };
-    self.compact(turn_id, &summary_text, kept)
+    self.compact_derived(turn_id, summary, kept)
+  }
+
+  fn compact_derived(
+    &mut self,
+    turn_id: &TurnId,
+    summary: DerivedSummary,
+    retained: usize,
+  ) -> Result<u32, TurnError> {
+    let kept = if self.messages.is_empty() {
+      0
+    } else {
+      retained.min(self.messages.len().saturating_sub(1))
+    };
+    let removed = self.messages.len().saturating_sub(kept);
+    self.compact_range(
+      turn_id,
+      removed,
+      summary,
+      ContextLevel::L1Ordinary,
+      format!("summarizing {removed} oldest messages"),
+    )
   }
 
   /// Compact oldest messages using the configured summarizer.
@@ -3039,21 +3125,22 @@ impl<'a> TurnLoop<'a> {
     }
 
     let base_summary = match explicit_summary {
-      Some(text) => text.to_string(),
+      Some(text) => DerivedSummary::Opaque {
+        text: text.to_string(),
+      },
       None => {
         let protected = self.checkpoint_floor.min(self.messages.len());
-        let slice = &self.messages[protected..removed];
-        match &self.summarizer {
-          Some(custom) => custom(slice),
-          None => structured_summary(slice),
-        }
+        self.summarize_messages(&self.messages[protected..removed])
       }
     };
-    let summary_text = format!("[Phase Compaction: {phase}]\n{base_summary}");
+    let summary = DerivedSummary::Phase {
+      phase: phase.to_string(),
+      summary: Box::new(base_summary),
+    };
     self.compact_range(
       turn_id,
       removed,
-      &summary_text,
+      summary,
       ContextLevel::L2Phase,
       format!("semantic phase: {phase}"),
     )
@@ -3117,7 +3204,7 @@ impl<'a> TurnLoop<'a> {
     };
 
     // Reset visible messages: replace summarized history with the capsule's model representation
-    let capsule_msg = Message::checkpoint_capsule(capsule.format_for_model());
+    let capsule_msg = Message::checkpoint_capsule_with_state(capsule.clone());
     self.messages.clear();
     self.message_seqs.clear();
     self.messages.push(capsule_msg);
@@ -3187,7 +3274,7 @@ impl<'a> TurnLoop<'a> {
       None => None,
     };
 
-    let capsule_message = Message::checkpoint_capsule(capsule.format_for_model());
+    let capsule_message = Message::checkpoint_capsule_with_state(capsule.clone());
     let retained_tail = self.messages.len() - prefix_end;
     // The durable L3 count describes the complete post-boundary working set:
     // the protected capsule plus the untouched current-turn suffix. Full
@@ -3244,22 +3331,18 @@ impl<'a> TurnLoop<'a> {
       return Ok(0);
     }
 
-    let mut selected: Option<(usize, String)> = None;
+    let mut selected: Option<(usize, DerivedSummary)> = None;
     for boundary in (cycle_start + 1)..=self.messages.len() {
       if !safe_completed_cycle_boundary(&self.messages, cycle_start, boundary) {
         continue;
       }
       let source = self.messages[protected..boundary].to_vec();
-      let summary = match &self.summarizer {
-        Some(summarizer) => summarizer(&source),
-        None => format_coding_summary(
-          &source,
-          self.system.as_deref(),
-          &format!("Active turn continues after context pressure: {reason}"),
-        ),
-      };
+      let summary = self.summarize_messages_with_state(
+        &source,
+        &format!("Active turn continues after context pressure: {reason}"),
+      );
       let mut candidate = self.messages[..protected].to_vec();
-      candidate.push(Message::compaction_summary(summary.clone()));
+      candidate.push(Message::derived_compaction_summary(summary.clone()));
       candidate.extend(self.messages[boundary..].iter().cloned());
       selected = Some((boundary, summary));
       let request = self.assemble_request(candidate);
@@ -3274,7 +3357,7 @@ impl<'a> TurnLoop<'a> {
     let replaced = self.compact_range(
       turn_id,
       prefix_end,
-      &summary,
+      summary,
       ContextLevel::L1Ordinary,
       reason,
     )?;
@@ -3301,11 +3384,8 @@ impl<'a> TurnLoop<'a> {
       return Ok(0);
     }
     let prefix = self.messages[protected..prefix_end].to_vec();
-    let summary = match &self.summarizer {
-      Some(summarizer) => summarizer(&prefix),
-      None => structured_summary(&prefix),
-    };
-    let removed = self.compact_range(turn_id, prefix_end, &summary, level, reason)?;
+    let summary = self.summarize_messages(&prefix);
+    let removed = self.compact_range(turn_id, prefix_end, summary, level, reason)?;
     if removed > 0 {
       *turn_history_start = self.checkpoint_floor.saturating_add(1);
     }
@@ -3345,7 +3425,7 @@ impl<'a> TurnLoop<'a> {
       if self.progress_tool_is_exposed(&spec.name, read_only)
         && (read_only || (mutations_remain && may_approve_mutations))
       {
-        tools.push((spec, RequestToolBinding::Registry(binding)));
+        tools.push((spec, RequestToolBinding::Registry(Box::new(binding))));
       }
     }
     if !self.progress_boundary_active
@@ -3400,6 +3480,7 @@ impl<'a> TurnLoop<'a> {
       refusal: Some(message),
       full_output: None,
       cancelled: false,
+      stale_binding: false,
     };
     let Some(arguments) = request.arguments.as_object() else {
       return failed("payload_read arguments must be an object".into());
@@ -3455,6 +3536,7 @@ impl<'a> TurnLoop<'a> {
       refusal: None,
       full_output: None,
       cancelled: false,
+      stale_binding: false,
     }
   }
 
@@ -3697,13 +3779,11 @@ impl<'a> TurnLoop<'a> {
     let text = format!(
       "Runtime progress boundary remains unsatisfied: your previous response did not make a successful progress-tool call. Call one of {tools} now; do not claim completion until the requested change has been attempted."
     );
-    let message = Message::runtime_control(text.clone(), RuntimeControlKind::ProgressCorrection);
+    let kind = RuntimeControlKind::ProgressCorrection;
+    let message = Message::runtime_control(text.clone(), kind);
     let envelope = self.emit_message(
       Some(turn_id.clone()),
-      AgentEvent::UserMessage(UserMessage {
-        text,
-        attachments: 0,
-      }),
+      AgentEvent::RuntimeControlInjected(RuntimeControlInjected { kind, text }),
       &message,
     )?;
     self.push_message(message, envelope.meta.seq);
@@ -3722,13 +3802,11 @@ impl<'a> TurnLoop<'a> {
     let text = format!(
       "Runtime progress boundary: this implementation turn has spent the configured inspection budget without calling a progress tool. In your next response, call one of {tools} to make the requested change. Do not spend another request reading, probing, or planning; the turn remains incomplete until the change is attempted."
     );
-    let message = Message::runtime_control(text.clone(), RuntimeControlKind::ProgressBoundary);
+    let kind = RuntimeControlKind::ProgressBoundary;
+    let message = Message::runtime_control(text.clone(), kind);
     let envelope = self.emit_message(
       Some(turn_id.clone()),
-      AgentEvent::UserMessage(UserMessage {
-        text,
-        attachments: 0,
-      }),
+      AgentEvent::RuntimeControlInjected(RuntimeControlInjected { kind, text }),
       &message,
     )?;
     self.push_message(message, envelope.meta.seq);
@@ -4005,26 +4083,17 @@ impl<'a> TurnLoop<'a> {
           }
           None => false,
         };
-        let executable_mutation = mutating_calls_executable
+        let mutation_candidate = mutating_calls_executable
           && binding_is_current
           && binding.as_ref().is_some_and(|binding| !binding.read_only())
           && !rejected_calls.contains_key(call.id.as_str());
-        let denial = if self.tool_calls_seen >= self.max_tool_calls {
-          Some(ToolBudgetDenial::Total)
-        } else if executable_mutation
-          && self.mutating_tool_calls_seen >= self.max_mutating_tool_calls
-        {
-          Some(ToolBudgetDenial::Mutating)
-        } else {
-          None
-        };
+        let denial =
+          (self.tool_calls_seen >= self.max_tool_calls).then_some(ToolBudgetDenial::Total);
         self.tool_calls_seen = self.tool_calls_seen.saturating_add(1);
-        if executable_mutation {
-          self.mutating_tool_calls_seen = self.mutating_tool_calls_seen.saturating_add(1);
-        }
         ToolCallAdmission {
           binding,
           read_only,
+          mutation_candidate,
           denial,
         }
       })
@@ -4091,12 +4160,13 @@ impl<'a> TurnLoop<'a> {
   /// Add the runtime-owned instruction that explains why the final request has no tools.
   fn append_finalization_instruction(&mut self, turn_id: &TurnId) -> Result<(), TurnError> {
     let text = "The model-request safety budget is exhausted for this turn. This is a bounded finalization request: do not request or imply any tool execution. Summarize what is complete, identify unfinished files or verification, and state the safest next continuation step. Treat the task as incomplete.";
-    let message = Message::runtime_control(text, RuntimeControlKind::RequestFinalization);
+    let kind = RuntimeControlKind::RequestFinalization;
+    let message = Message::runtime_control(text, kind);
     let envelope = self.emit_message(
       Some(turn_id.clone()),
-      AgentEvent::UserMessage(UserMessage {
+      AgentEvent::RuntimeControlInjected(RuntimeControlInjected {
+        kind,
         text: text.to_string(),
-        attachments: 0,
       }),
       &message,
     )?;
@@ -4119,6 +4189,11 @@ impl<'a> TurnLoop<'a> {
         .tool_bindings
         .get(&call.name)
         .is_some_and(RequestToolBinding::read_only);
+      let definition_fingerprint = batch
+        .tool_bindings
+        .get(&call.name)
+        .and_then(RequestToolBinding::definition_fingerprint)
+        .cloned();
       progress.on_tool_requested(call);
       let requested = self.emit_with_parent(
         Some(turn_id.clone()),
@@ -4127,6 +4202,7 @@ impl<'a> TurnLoop<'a> {
           name: call.name.clone(),
           arguments: call.arguments.clone(),
           read_only,
+          definition_fingerprint,
         }),
         Some(batch.assistant_event_id.clone()),
       )?;
@@ -4176,6 +4252,7 @@ impl<'a> TurnLoop<'a> {
         refusal: Some(reason.to_string()),
         full_output: None,
         cancelled: false,
+        stale_binding: false,
       };
       progress.on_tool_finished(call, &executed);
     }
@@ -4219,6 +4296,11 @@ impl<'a> TurnLoop<'a> {
         TurnError::Sink("tool-call budget plan does not match the assistant batch".into())
       })?;
       let read_only = admission.read_only;
+      let definition_fingerprint = admission
+        .binding
+        .as_ref()
+        .and_then(RequestToolBinding::definition_fingerprint)
+        .cloned();
       progress.on_tool_requested(call);
       let requested = self.emit_with_parent(
         Some(turn_id.clone()),
@@ -4227,6 +4309,7 @@ impl<'a> TurnLoop<'a> {
           name: call.name.clone(),
           arguments: call.arguments.clone(),
           read_only,
+          definition_fingerprint: definition_fingerprint.clone(),
         }),
         Some(assistant_event_id.clone()),
       )?;
@@ -4236,10 +4319,6 @@ impl<'a> TurnLoop<'a> {
           ToolBudgetDenial::Total => format!(
             "not executed: the per-turn tool-call budget of {} calls is exhausted",
             self.max_tool_calls
-          ),
-          ToolBudgetDenial::Mutating => format!(
-            "not executed: the per-turn mutating-tool budget of {} calls is exhausted",
-            self.max_mutating_tool_calls
           ),
         };
         let executed = Executed {
@@ -4254,6 +4333,7 @@ impl<'a> TurnLoop<'a> {
           refusal: Some(reason),
           full_output: None,
           cancelled: false,
+          stale_binding: false,
         };
         let (block, seq, _) = self.record_tool_outcome(
           turn_id.clone(),
@@ -4288,6 +4368,7 @@ impl<'a> TurnLoop<'a> {
           refusal: Some(reason),
           full_output: None,
           cancelled: false,
+          stale_binding: false,
         };
         let (block, seq, _) = self.record_tool_outcome(
           turn_id.clone(),
@@ -4337,6 +4418,7 @@ impl<'a> TurnLoop<'a> {
           refusal: Some(reason),
           full_output: None,
           cancelled: false,
+          stale_binding: false,
         };
         let (block, seq, _) = self.record_tool_outcome(
           turn_id.clone(),
@@ -4353,6 +4435,41 @@ impl<'a> TurnLoop<'a> {
         );
         continue;
       };
+      let reserve_mutation_budget = admission.mutation_candidate && !metadata.read_only;
+      if reserve_mutation_budget && self.mutating_tool_calls_seen >= self.max_mutating_tool_calls {
+        let reason = format!(
+          "not executed: the per-turn mutating-tool budget of {} started calls is exhausted",
+          self.max_mutating_tool_calls
+        );
+        let executed = Executed {
+          request: request.clone(),
+          outcome: ToolOutcome::failed(reason.clone()),
+          state: ToolExecutionState::Failed,
+          started: false,
+          refusal: Some(reason),
+          full_output: None,
+          cancelled: false,
+          stale_binding: false,
+        };
+        let (block, seq, _) = self.record_tool_outcome(
+          turn_id.clone(),
+          call,
+          &executed,
+          0,
+          read_only,
+          Some(requested.meta.event_id),
+        )?;
+        outcome.budget_exhausted = true;
+        progress.on_tool_finished(call, &executed);
+        self.push_message(
+          Message::new(Role::Tool, vec![ContentBlock::ToolResult(block)]),
+          seq,
+        );
+        continue;
+      }
+      if reserve_mutation_budget {
+        self.mutating_tool_calls_seen = self.mutating_tool_calls_seen.saturating_add(1);
+      }
       let attribution = StreamAttribution {
         turn_id: turn_id.clone(),
         session_id: self.session_id.clone(),
@@ -4428,6 +4545,9 @@ impl<'a> TurnLoop<'a> {
         (executed, elapsed_ms(clock), started_event_id)
       };
       let (mut execution, duration_ms, started_event_id) = executed;
+      if reserve_mutation_budget && execution.stale_binding {
+        self.mutating_tool_calls_seen = self.mutating_tool_calls_seen.saturating_sub(1);
+      }
       if started_event_id.is_some() {
         self.tool_calls_started = self.tool_calls_started.saturating_add(1);
       }
@@ -4461,6 +4581,7 @@ impl<'a> TurnLoop<'a> {
               model: Some(attribution.model.clone()),
               request_event_id: Some(request_event_id),
               started_event_id,
+              definition_fingerprint: definition_fingerprint.clone(),
             });
           }
           return Err(error);
@@ -4478,6 +4599,7 @@ impl<'a> TurnLoop<'a> {
           request_event_id,
           unknown_event_id: outcome_event_id,
           latest_status: None,
+          definition_fingerprint: definition_fingerprint.clone(),
         });
         let tail = &calls[index + 1..];
         if !tail.is_empty() {
@@ -4809,6 +4931,67 @@ impl<'a> Collector<'a> {
       return None;
     }
     Some(envelope)
+  }
+
+  /// Make every invocation id unique before the assistant response is committed.
+  /// All members of a collision are rejected, including the first occurrence,
+  /// because none can be paired with a unique provider invocation identity.
+  fn normalize_tool_call_ids(&mut self) {
+    let mut occurrences = BTreeMap::<String, Vec<usize>>::new();
+    for (index, call) in self.calls.iter().enumerate() {
+      occurrences
+        .entry(call.id.as_str().to_string())
+        .or_default()
+        .push(index);
+    }
+    let duplicates: Vec<_> = occurrences
+      .into_iter()
+      .filter(|(id, indices)| id.is_empty() || indices.len() > 1)
+      .collect();
+    if duplicates.is_empty() {
+      return;
+    }
+
+    let duplicate_indices: BTreeSet<_> = duplicates
+      .iter()
+      .flat_map(|(_, indices)| indices.iter().copied())
+      .collect();
+    let mut used_ids: BTreeSet<String> = self
+      .calls
+      .iter()
+      .enumerate()
+      .filter(|(index, _call)| !duplicate_indices.contains(index))
+      .map(|(_, call)| call.id.as_str().to_string())
+      .collect();
+
+    for (provider_id, indices) in duplicates {
+      let provider_rejection = self.rejected_calls.remove(&provider_id);
+      for index in indices {
+        let call = &mut self.calls[index];
+        let normalized_id = loop {
+          let candidate = rupi_core::ToolCallId::new();
+          if used_ids.insert(candidate.as_str().to_string()) {
+            break candidate;
+          }
+        };
+        call.id = normalized_id.clone();
+        let duplicate = if provider_id.is_empty() {
+          "provider returned a tool call without an invocation id".to_string()
+        } else {
+          format!(
+            "provider reused invocation id '{provider_id}' in one response; send unique ids for every tool call"
+          )
+        };
+        let reason = provider_rejection
+          .as_ref()
+          .map(|reason| format!("{duplicate}; original rejection: {reason}"))
+          .unwrap_or(duplicate);
+        let reason = truncate_utf8_to_bytes(&reason, MAX_TOOL_REJECTION_REASON_BYTES).to_string();
+        self
+          .rejected_calls
+          .insert(normalized_id.as_str().to_string(), reason);
+      }
+    }
   }
 }
 
@@ -5347,12 +5530,31 @@ struct CapsuleAccumulation<'a> {
   prior_state: &'a mut String,
 }
 
-/// Copy a structured capsule forward without treating it as newly authored input.
-fn absorb_formatted_capsule(text: &str, capsule: &mut CapsuleAccumulation<'_>) {
-  let trimmed = text.trim();
-  if !trimmed.starts_with("[Session Checkpoint Capsule]") {
-    return;
+/// Unwrap legacy rendering envelopes without assigning authority to their prose.
+fn legacy_capsule_body(text: &str) -> Option<&str> {
+  let mut body = text.trim();
+  loop {
+    if let Some(rest) = body.strip_prefix("Summary of earlier conversation:") {
+      body = rest.trim_start();
+      continue;
+    }
+    if body.starts_with("[Phase Compaction:") {
+      let (_, rest) = body.split_once('\n')?;
+      body = rest.trim_start();
+      continue;
+    }
+    break;
   }
+  body
+    .starts_with("[Session Checkpoint Capsule]")
+    .then_some(body)
+}
+
+/// Copy a structured capsule forward without treating it as newly authored input.
+fn absorb_formatted_capsule(text: &str, capsule: &mut CapsuleAccumulation<'_>) -> bool {
+  let Some(trimmed) = legacy_capsule_body(text) else {
+    return false;
+  };
   let mut section = "";
   for line in trimmed.lines().map(str::trim) {
     if let Some(value) = line.strip_prefix("objective: ") {
@@ -5360,7 +5562,9 @@ fn absorb_formatted_capsule(text: &str, capsule: &mut CapsuleAccumulation<'_>) {
         .objective
         .get_or_insert_with(|| bounded_text(value, 400));
     } else if let Some(value) = line.strip_prefix("current_state: ") {
-      *capsule.prior_state = bounded_text(value, 400);
+      if capsule.prior_state.is_empty() {
+        *capsule.prior_state = bounded_text(value, 400);
+      }
     } else if matches!(
       line,
       "completed:"
@@ -5398,6 +5602,100 @@ fn absorb_formatted_capsule(text: &str, capsule: &mut CapsuleAccumulation<'_>) {
       }
     } else {
       section = "";
+    }
+  }
+  true
+}
+
+fn absorb_typed_capsule(source: &ContextCapsule, target: &mut CapsuleAccumulation<'_>) {
+  target
+    .objective
+    .get_or_insert_with(|| bounded_text(&source.objective, 400));
+  for item in &source.completed_work {
+    push_unique(target.completed_work, bounded_text(item, 240));
+  }
+  for item in &source.decisions {
+    push_unique(
+      target.decisions,
+      CapsuleDecision {
+        decision: bounded_text(&item.decision, 240),
+        rationale: bounded_text(&item.rationale, 240),
+      },
+    );
+  }
+  for item in &source.constraints {
+    push_unique(target.constraints, bounded_text(item, 240));
+  }
+  for artifact in &source.artifacts {
+    upsert_artifact(
+      target.artifacts,
+      &bounded_text(&artifact.path, 200),
+      bounded_text(&artifact.note, 200),
+    );
+  }
+  for item in &source.unresolved {
+    push_unique(target.unresolved, bounded_text(item, 240));
+  }
+  for item in &source.next_actions {
+    push_unique(target.next_actions, bounded_text(item, 240));
+  }
+  if target.prior_state.is_empty() {
+    *target.prior_state = bounded_text(&source.current_state, 400);
+  }
+}
+
+fn add_opaque_context(unresolved: &mut Vec<String>, label: &str, text: &str) {
+  let text = text.trim();
+  if text.is_empty() {
+    return;
+  }
+  let mut bounded = bounded_text(text, 800);
+  if text.chars().count() > 800 {
+    bounded.push_str(" [truncated]");
+  }
+  push_unique(
+    unresolved,
+    format!("{label} (opaque, not user-authored): {bounded}"),
+  );
+}
+
+fn opaque_message_text(message: &Message) -> String {
+  let mut text = message.text();
+  let other_blocks = message
+    .content
+    .iter()
+    .filter(|block| block.plain_text().is_none())
+    .count();
+  if other_blocks > 0 {
+    if !text.is_empty() {
+      text.push(' ');
+    }
+    text.push_str(&format!(
+      "[{other_blocks} non-text content block(s) retained in canonical history]"
+    ));
+  }
+  text
+}
+
+fn absorb_derived_summary(summary: &DerivedSummary, capsule: &mut CapsuleAccumulation<'_>) {
+  match summary {
+    DerivedSummary::Capsule { capsule: source } => absorb_typed_capsule(source, capsule),
+    DerivedSummary::Phase { summary, .. } | DerivedSummary::Rendered { summary, .. } => {
+      absorb_derived_summary(summary, capsule);
+    }
+    DerivedSummary::Opaque { text } => {
+      add_opaque_context(capsule.unresolved, "Prior summary", text);
+    }
+  }
+}
+
+fn absorb_summary_message(message: &Message, target: &mut CapsuleAccumulation<'_>) {
+  if let Some(summary) = &message.derived_summary {
+    absorb_derived_summary(summary, target);
+  } else {
+    let text = message.text();
+    if !absorb_formatted_capsule(&text, target) {
+      add_opaque_context(target.unresolved, "Prior summary", &text);
     }
   }
 }
@@ -5445,23 +5743,45 @@ fn coding_capsule(
           }
         }
         MessageOrigin::CheckpointCapsule | MessageOrigin::CompactionSummary => {
-          absorb_formatted_capsule(
-            &message.text(),
-            &mut CapsuleAccumulation {
-              objective: &mut objective,
-              completed_work: &mut completed_work,
-              decisions: &mut decisions,
-              constraints: &mut constraints,
-              artifacts: &mut artifacts,
-              unresolved: &mut unresolved,
-              next_actions: &mut next_actions,
-              prior_state: &mut prior_state,
-            },
+          let mut capsule = CapsuleAccumulation {
+            objective: &mut objective,
+            completed_work: &mut completed_work,
+            decisions: &mut decisions,
+            constraints: &mut constraints,
+            artifacts: &mut artifacts,
+            unresolved: &mut unresolved,
+            next_actions: &mut next_actions,
+            prior_state: &mut prior_state,
+          };
+          absorb_summary_message(message, &mut capsule);
+        }
+        MessageOrigin::ImportedLegacy => add_opaque_context(
+          &mut unresolved,
+          "Legacy user-role message",
+          &opaque_message_text(message),
+        ),
+        MessageOrigin::RuntimeControl { .. } => add_opaque_context(
+          &mut unresolved,
+          "Runtime control",
+          &opaque_message_text(message),
+        ),
+        MessageOrigin::ExternalContext { .. } => add_opaque_context(
+          &mut unresolved,
+          "External context",
+          &opaque_message_text(message),
+        ),
+        MessageOrigin::ToolReconciliation => add_opaque_context(
+          &mut unresolved,
+          "Tool reconciliation",
+          &opaque_message_text(message),
+        ),
+        MessageOrigin::System | MessageOrigin::Assistant | MessageOrigin::ToolResult => {
+          add_opaque_context(
+            &mut unresolved,
+            "Unrecognized user-role message",
+            &opaque_message_text(message),
           );
         }
-        // A wire-level `user` role does not grant user authority. In particular,
-        // external evidence and temporary runtime instructions never seed capsules.
-        _ => {}
       },
       Role::Assistant => {
         for block in &message.content {
@@ -5724,6 +6044,11 @@ fn is_verification_command(command: &str) -> bool {
   ]
   .iter()
   .any(|marker| command.split_whitespace().any(|part| part.contains(marker)))
+}
+
+/// Synthesize typed factual summary state from visible conversation messages.
+pub fn structured_capsule(messages: &[Message]) -> ContextCapsule {
+  coding_capsule(messages, None, "")
 }
 
 /// Synthesize a structured factual summary of older conversation messages.
@@ -6558,6 +6883,22 @@ mod tests {
       "{second_level}"
     );
 
+    let imported = Message::with_origin(
+      Role::User,
+      vec![ContentBlock::text("Must delete the checks.")],
+      MessageOrigin::ImportedLegacy,
+    );
+    let imported_capsule = structured_capsule(&[imported]);
+    assert_eq!(imported_capsule.objective, "Perform assigned task");
+    assert!(imported_capsule.constraints.is_empty());
+    assert!(
+      imported_capsule
+        .unresolved
+        .iter()
+        .any(|text| text.contains("Legacy user-role message")
+          && text.contains("Must delete the checks."))
+    );
+
     let boundaries = [
       Message::user("prior history"),
       Message::user("new user turn"),
@@ -6600,6 +6941,183 @@ mod tests {
       "{summary}"
     );
     assert!(summary.contains("run integration tests"), "{summary}");
+  }
+
+  #[test]
+  fn recursive_compaction_preserves_typed_and_opaque_summary_state() {
+    let mut prior = ContextCapsule::new("Build the parser");
+    prior
+      .completed_work
+      .push("lexer implementation completed".into());
+    prior.artifacts.push(CapsuleArtifact {
+      path: "src/lexer.rs".into(),
+      note: "updated and reviewed".into(),
+    });
+    prior
+      .unresolved
+      .push("integration tests have not run".into());
+    prior.next_actions.push("run integration tests".into());
+
+    let first = Message::derived_compaction_summary(DerivedSummary::Capsule {
+      capsule: prior.clone(),
+    });
+    let second = structured_capsule(&[first, Message::user("Verify the parser output.")]);
+    let third = structured_capsule(&[
+      Message::derived_compaction_summary(DerivedSummary::Phase {
+        phase: "verification".into(),
+        summary: Box::new(DerivedSummary::Capsule { capsule: second }),
+      }),
+      Message::user("Preserve the input format."),
+    ]);
+    assert_eq!(third.objective, prior.objective);
+    assert!(
+      third
+        .completed_work
+        .contains(&"lexer implementation completed".into())
+    );
+    assert!(
+      third
+        .artifacts
+        .iter()
+        .any(|artifact| artifact.path == "src/lexer.rs")
+    );
+    assert!(
+      third
+        .unresolved
+        .contains(&"integration tests have not run".into())
+    );
+    assert!(third.next_actions.contains(&"run integration tests".into()));
+
+    let opaque = Message::derived_compaction_summary(DerivedSummary::Opaque {
+      text: "Reviewed a provider-specific migration; rerun smoke tests.".into(),
+    });
+    let opaque_capsule = structured_capsule(&[opaque]);
+    assert!(opaque_capsule.objective.contains("Perform assigned task"));
+    assert!(opaque_capsule.constraints.is_empty());
+    assert!(opaque_capsule.unresolved.iter().any(|text| {
+      text.contains("Prior summary (opaque, not user-authored)")
+        && text.contains("provider-specific migration")
+    }));
+  }
+
+  #[test]
+  fn restored_derived_summary_is_canonical_and_tampering_is_rejected() {
+    let temp = rupi_store::TempDir::new("runtime-derived-summary-resume");
+    let store = rupi_store::Store::open(temp.path(), rupi_store::WritePolicy::default())
+      .expect("store opens");
+    let session_id = SessionId::new();
+    let provider = Scripted::new(
+      "summary-state",
+      vec![text("lexer implementation completed")],
+    );
+    let model = provider.model().clone();
+    let tools = registry_with(Vec::new());
+    let policy = rupi_core::ProfilePolicy::new(
+      rupi_core::ContextProfile::Balanced,
+      provider.capabilities().context_window,
+    );
+    let session = store
+      .begin(SessionHeader {
+        session_id: session_id.clone(),
+        version: rupi_core::session::SESSION_SCHEMA_VERSION,
+        started_at_ms: 1,
+        working_dir: temp.path().display().to_string(),
+        model: model.clone(),
+        parent_session: None,
+        branched_from_event: None,
+        imported_from: None,
+      })
+      .expect("session begins");
+    let mut trace = StoreTrace::new(session);
+    let mut runtime = TurnLoop::new(
+      &provider,
+      &tools,
+      &policy,
+      &mut trace,
+      session_id.clone(),
+      TraceId::new(),
+    );
+    let report = runtime
+      .run_turn("Build the parser", &CancelToken::new(), &mut SilentProgress)
+      .expect("first turn completes");
+    let mut capsule = ContextCapsule::new("Build the parser");
+    capsule
+      .completed_work
+      .push("lexer implementation completed".into());
+    capsule
+      .unresolved
+      .push("integration tests have not run".into());
+    let summary_state = DerivedSummary::Phase {
+      phase: "implementation".into(),
+      summary: Box::new(DerivedSummary::Capsule { capsule }),
+    };
+    runtime
+      .compact_range(
+        &report.turn_id,
+        1,
+        summary_state.clone(),
+        ContextLevel::L1Ordinary,
+        "persist typed test summary".into(),
+      )
+      .expect("typed summary compacts durably");
+    drop(runtime);
+    trace.flush().expect("flush summary state");
+    drop(trace);
+
+    let restored = store.restore(&session_id).expect("session restores");
+    let restored_summary = restored.messages[0].message.clone();
+    assert_eq!(
+      restored_summary.derived_summary,
+      Some(Box::new(summary_state))
+    );
+    let next = structured_capsule(&[restored_summary.clone(), Message::user("Verify output.")]);
+    assert_eq!(next.objective, "Build the parser");
+    assert!(
+      next
+        .completed_work
+        .contains(&"lexer implementation completed".into())
+    );
+    assert!(
+      next
+        .unresolved
+        .contains(&"integration tests have not run".into())
+    );
+
+    // Keep model-visible text, origin, event id, and sequence untouched while
+    // altering only the typed projection. The canonical epoch must catch it.
+    let path = store.layout().session_path(&session_id);
+    let mut records = rupi_store::SessionLog::read(&path).unwrap().items;
+    let summary_record = records.iter_mut().find_map(|record| match record {
+      rupi_core::SessionRecord::Message(message) if message.message.derived_summary.is_some() => {
+        Some(message)
+      }
+      _ => None,
+    });
+    let message = summary_record.expect("typed summary projection exists");
+    let rendered = message.message.text();
+    let Some(DerivedSummary::Phase { summary, .. }) =
+      message.message.derived_summary.as_deref_mut()
+    else {
+      panic!("phase state is projected");
+    };
+    let DerivedSummary::Capsule { capsule } = summary.as_mut() else {
+      panic!("structured capsule is retained");
+    };
+    capsule.objective = "Tampered objective".into();
+    assert_eq!(message.message.text(), rendered);
+    let lines = records
+      .iter()
+      .map(|record| serde_json::to_string(record).unwrap())
+      .collect::<Vec<_>>()
+      .join("\n");
+    std::fs::write(path, format!("{lines}\n")).unwrap();
+    let error = store
+      .restore(&session_id)
+      .expect_err("typed projection tampering is rejected");
+    assert!(
+      error.to_string().contains("semantic summary disagrees"),
+      "restore rejected for the canonical integrity check, got: {error}"
+    );
   }
 
   #[test]
@@ -6833,6 +7351,100 @@ mod tests {
     ) -> Result<ToolOutcome, rupi_core::ToolError> {
       self.seen.lock().unwrap().push(request.arguments.clone());
       Ok(self.outcome.clone())
+    }
+  }
+
+  struct ReplaceBindingDuringPreflight {
+    registry: Arc<ToolRegistry>,
+    replaced: std::sync::atomic::AtomicBool,
+    stale_seen: Arc<Mutex<Vec<serde_json::Value>>>,
+    replacement_seen: Arc<Mutex<Vec<serde_json::Value>>>,
+  }
+
+  impl Tool for ReplaceBindingDuringPreflight {
+    fn metadata(&self) -> ToolMetadata {
+      ToolMetadata::mutating("write_probe", "replaces its binding before start", true)
+    }
+
+    fn arguments_schema(&self) -> serde_json::Value {
+      serde_json::json!({"type":"object"})
+    }
+
+    fn preflight(&self, _request: &ToolRequest) -> Result<(), rupi_core::ToolError> {
+      if !self
+        .replaced
+        .swap(true, std::sync::atomic::Ordering::SeqCst)
+      {
+        self.registry.register_shared(Box::new(MutatingSpy {
+          seen: Arc::clone(&self.replacement_seen),
+          outcome: ToolOutcome::succeeded("replacement implementation"),
+        }));
+      }
+      Ok(())
+    }
+
+    #[allow(clippy::result_large_err)]
+    fn execute(
+      &self,
+      request: &ToolRequest,
+      _progress: &mut dyn rupi_core::ToolProgress,
+    ) -> Result<ToolOutcome, rupi_core::ToolError> {
+      self
+        .stale_seen
+        .lock()
+        .unwrap()
+        .push(request.arguments.clone());
+      Ok(ToolOutcome::succeeded("stale implementation"))
+    }
+  }
+
+  struct VersionedUnknownTool {
+    version: String,
+    reconcile_calls: Arc<std::sync::atomic::AtomicUsize>,
+  }
+
+  impl Tool for VersionedUnknownTool {
+    fn metadata(&self) -> ToolMetadata {
+      ToolMetadata::mutating(
+        "versioned_write",
+        "test write with versioned recovery",
+        false,
+      )
+    }
+
+    fn stable_definition_identity(&self) -> Option<rupi_core::ToolDefinitionIdentity> {
+      Some(rupi_core::ToolDefinitionIdentity::new(
+        "runtime-tests",
+        "versioned-write",
+        self.version.clone(),
+      ))
+    }
+
+    fn arguments_schema(&self) -> serde_json::Value {
+      serde_json::json!({"type":"object"})
+    }
+
+    #[allow(clippy::result_large_err)]
+    fn execute(
+      &self,
+      _request: &ToolRequest,
+      _progress: &mut dyn rupi_core::ToolProgress,
+    ) -> Result<ToolOutcome, rupi_core::ToolError> {
+      Ok(ToolOutcome::unknown(
+        "write issued; completion not observed",
+      ))
+    }
+
+    fn reconcile(
+      &self,
+      _request: &ToolRequest,
+    ) -> Result<ReconciliationStatus, rupi_core::ToolError> {
+      self
+        .reconcile_calls
+        .fetch_add(1, std::sync::atomic::Ordering::SeqCst);
+      Ok(ReconciliationStatus::Committed {
+        details: "test tool observed the write".into(),
+      })
     }
   }
 
@@ -7495,7 +8107,7 @@ mod tests {
     }];
     let bindings = BTreeMap::from([(
       "write_probe".into(),
-      RequestToolBinding::Registry(advertised),
+      RequestToolBinding::Registry(Box::new(advertised)),
     )]);
     let admissions = runtime.admit_tool_calls(&calls, &BTreeMap::new(), &bindings, true);
 
@@ -7505,6 +8117,62 @@ mod tests {
     assert!(admissions[0].denial.is_none());
     assert!(!admissions[0].read_only);
     assert!(mutations.lock().unwrap().is_empty());
+  }
+
+  #[test]
+  fn prestart_stale_binding_releases_only_its_mutation_budget_reservation() {
+    let temp = rupi_store::TempDir::new("stale-binding-mutation-budget");
+    let replacement_seen = Arc::new(Mutex::new(Vec::new()));
+    let stale_seen = Arc::new(Mutex::new(Vec::new()));
+    let registry = Arc::new(
+      ToolRegistry::new(Workspace::new(temp.path()).unwrap()).with_policy(&ToolPolicy {
+        auto_approve_mutating: true,
+        ..ToolPolicy::default()
+      }),
+    );
+    registry.register_shared(Box::new(ReplaceBindingDuringPreflight {
+      registry: Arc::clone(&registry),
+      replaced: std::sync::atomic::AtomicBool::new(false),
+      stale_seen: Arc::clone(&stale_seen),
+      replacement_seen: Arc::clone(&replacement_seen),
+    }));
+    let provider = Scripted::new(
+      "stale-binding-mutation-budget",
+      vec![
+        tool_call("write_probe", json!({"path":"stale"})),
+        tool_call("write_probe", json!({"path":"started"})),
+        text("done"),
+      ],
+    );
+    let policy = rupi_core::ProfilePolicy::new(
+      rupi_core::ContextProfile::Balanced,
+      provider.capabilities().context_window,
+    );
+    let mut trace = Recorder::default();
+    let report = TurnLoop::new(
+      &provider,
+      &registry,
+      &policy,
+      &mut trace,
+      SessionId::new(),
+      TraceId::new(),
+    )
+    .with_tool_call_budgets(4, 1)
+    .run_turn(
+      "replace the implementation before dispatch, then use the new one",
+      &CancelToken::new(),
+      &mut SilentProgress,
+    )
+    .expect("a stale pre-start refusal must not consume the only mutation slot");
+
+    assert_eq!(report.status, TurnStatus::Completed);
+    assert_eq!(report.tool_calls_started, 1);
+    assert_eq!(provider.requests().len(), 3);
+    assert_eq!(trace.count("tool_failed"), 1);
+    assert!(stale_seen.lock().unwrap().is_empty());
+    let replacement_seen = replacement_seen.lock().unwrap();
+    assert_eq!(replacement_seen.len(), 1);
+    assert_eq!(replacement_seen[0]["path"], "started");
   }
 
   #[test]
@@ -7563,7 +8231,7 @@ mod tests {
   }
 
   #[test]
-  fn duplicate_id_rejections_get_same_model_correction_without_failover_or_execution() {
+  fn duplicate_provider_ids_are_all_rejected_before_the_same_model_correction() {
     let mutations = Arc::new(Mutex::new(Vec::new()));
     let tools = registry_with(vec![Box::new(MutatingSpy {
       seen: Arc::clone(&mutations),
@@ -7573,19 +8241,15 @@ mod tests {
       "duplicate-id-correction",
       vec![
         vec![
-          ProviderEvent::ToolCallRejected {
-            id: rupi_core::ToolCallId::from_string("rejected-duplicate-1"),
+          ProviderEvent::ToolCall(ToolCallBlock {
+            id: rupi_core::ToolCallId::from_string("call_1"),
             name: "write_probe".into(),
-            reason:
-              "provider response reused tool-call id 'call_1'; no colliding call was executed"
-                .into(),
-          },
+            arguments: json!({"path":"must-not-run"}),
+          }),
           ProviderEvent::ToolCallRejected {
-            id: rupi_core::ToolCallId::from_string("rejected-duplicate-2"),
+            id: rupi_core::ToolCallId::from_string("call_1"),
             name: "write_probe".into(),
-            reason:
-              "provider response reused tool-call id 'call_1'; no colliding call was executed"
-                .into(),
+            reason: "provider rejected one ambiguous call".into(),
           },
         ],
         tool_call("write_probe", json!({"path":"corrected"})),
@@ -7621,7 +8285,9 @@ mod tests {
     assert_eq!(report.tool_calls_started, 1);
     assert_eq!(trace.count("tool_failed"), 2);
     assert_eq!(trace.count("tool_started"), 1);
-    assert_eq!(mutations.lock().unwrap().len(), 1);
+    let mutations = mutations.lock().unwrap();
+    assert_eq!(mutations.len(), 1);
+    assert_eq!(mutations[0]["path"], "corrected");
   }
 
   #[test]
@@ -8748,7 +9414,7 @@ mod tests {
     for expected in [
       "session_started",
       "model_epoch_started",
-      "user_message",
+      "user_input",
       "model_request_started",
       "model_request_completed",
       "turn_completed",
@@ -12507,7 +13173,9 @@ mod tests {
     assert_eq!(replaced, 2);
     assert_eq!(
       runtime.messages()[0],
-      Message::compaction_summary("summary")
+      Message::derived_compaction_summary(DerivedSummary::Opaque {
+        text: "summary".into(),
+      })
     );
     assert_eq!(&runtime.messages()[1..], suffix.as_slice());
     assert_eq!(runtime.context_epoch, 1);
@@ -12558,7 +13226,7 @@ mod tests {
       let envelope = runtime
         .emit_message(
           Some(turn.clone()),
-          AgentEvent::UserMessage(UserMessage {
+          AgentEvent::UserInput(UserMessage {
             text: text.into(),
             attachments: 0,
           }),
@@ -12607,7 +13275,7 @@ mod tests {
     let second_envelope = runtime
       .emit_message(
         Some(turn.clone()),
-        AgentEvent::UserMessage(UserMessage {
+        AgentEvent::UserInput(UserMessage {
           text: "second current user".into(),
           attachments: 0,
         }),
@@ -12828,6 +13496,14 @@ mod tests {
       provider.capabilities().context_window,
     );
     let old_turn = TurnId::new();
+    let definition_fingerprint = tools
+      .bound_specs()
+      .into_iter()
+      .find(|bound| bound.spec.name == "write")
+      .expect("built-in write is registered")
+      .binding
+      .definition_fingerprint()
+      .cloned();
     let pending = rupi_core::InterruptedToolCall {
       request: rupi_core::ToolRequest {
         call_id: rupi_core::ToolCallId::new(),
@@ -12844,6 +13520,7 @@ mod tests {
       model: Some(provider.model().clone()),
       request_event_id: None,
       started_event_id: None,
+      definition_fingerprint,
     };
     let mut trace = Recorder::default();
     let mut runtime = TurnLoop::new(
@@ -12890,6 +13567,303 @@ mod tests {
         )
         .is_some_and(|(reconciled, request)| reconciled < request),
       "reconciliation must precede the first provider request"
+    );
+  }
+
+  #[test]
+  fn restart_reconciliation_refuses_a_changed_tool_definition_fingerprint() {
+    let temp = rupi_store::TempDir::new("runtime-tool-definition-mismatch");
+    let store = rupi_store::Store::open(temp.path(), rupi_store::WritePolicy::default())
+      .expect("store opens");
+    let session_id = SessionId::new();
+    let provider = Scripted::new(
+      "versioned-write",
+      vec![tool_call(
+        "versioned_write",
+        json!({"path":"uncertain.txt"}),
+      )],
+    );
+    let old_reconciles = Arc::new(std::sync::atomic::AtomicUsize::new(0));
+    let old_tools = registry_with(vec![Box::new(VersionedUnknownTool {
+      version: "v1".into(),
+      reconcile_calls: Arc::clone(&old_reconciles),
+    })]);
+    let policy = rupi_core::ProfilePolicy::new(
+      rupi_core::ContextProfile::Balanced,
+      provider.capabilities().context_window,
+    );
+    let session = store
+      .begin(SessionHeader {
+        session_id: session_id.clone(),
+        version: rupi_core::session::SESSION_SCHEMA_VERSION,
+        started_at_ms: 1,
+        working_dir: temp.path().display().to_string(),
+        model: provider.model().clone(),
+        parent_session: None,
+        branched_from_event: None,
+        imported_from: None,
+      })
+      .expect("session begins");
+    let mut trace = StoreTrace::new(session);
+    let report = TurnLoop::new(
+      &provider,
+      &old_tools,
+      &policy,
+      &mut trace,
+      session_id.clone(),
+      TraceId::new(),
+    )
+    .run_turn(
+      "perform a potentially uncertain write",
+      &CancelToken::new(),
+      &mut SilentProgress,
+    )
+    .expect("unknown write is a resumable reconciliation state");
+    assert_eq!(report.status, TurnStatus::NeedsReconciliation);
+    assert_eq!(old_reconciles.load(std::sync::atomic::Ordering::SeqCst), 0);
+    trace.flush().expect("flush first process");
+    drop(trace);
+
+    let restored = store.restore(&session_id).expect("restore pending write");
+    assert_eq!(restored.unresolved_side_effects.len(), 1);
+    assert_eq!(restored.unresolved_side_effects[0].latest_status, None);
+    let fingerprint = restored.unresolved_side_effects[0]
+      .definition_fingerprint
+      .as_ref()
+      .expect("stable tool definition was durably fingerprinted");
+    assert_eq!(fingerprint.definition_version, "v1");
+
+    let resumed_provider = Scripted::new("versioned-write", vec![text("unsafe continuation")]);
+    let new_reconciles = Arc::new(std::sync::atomic::AtomicUsize::new(0));
+    let new_tools = registry_with(vec![Box::new(VersionedUnknownTool {
+      version: "v2".into(),
+      reconcile_calls: Arc::clone(&new_reconciles),
+    })]);
+    let current_fingerprint = new_tools
+      .bound_specs()
+      .into_iter()
+      .find(|bound| bound.spec.name == "versioned_write")
+      .expect("replacement tool is registered")
+      .binding
+      .definition_fingerprint()
+      .cloned()
+      .expect("replacement definition is fingerprinted");
+    assert_eq!(current_fingerprint.definition_version, "v2");
+    assert_ne!(
+      current_fingerprint,
+      restored.unresolved_side_effects[0]
+        .definition_fingerprint
+        .clone()
+        .expect("old request is fingerprinted")
+    );
+    let resumed_session = store.resume(&session_id).expect("reopen session");
+    let mut resumed_trace = StoreTrace::new(resumed_session);
+    let resume_state = ResumeState {
+      messages: restored
+        .messages
+        .iter()
+        .map(|message| message.message.clone())
+        .collect(),
+      message_seqs: restored
+        .messages
+        .iter()
+        .map(|message| message.seq)
+        .collect(),
+      epochs: restored
+        .epochs
+        .iter()
+        .map(|epoch| ModelEpoch {
+          index: epoch.epoch,
+          model: epoch.model.clone(),
+          capabilities: resumed_provider.capabilities(),
+          reason: epoch.reason.clone(),
+          started_by_event: None,
+        })
+        .collect(),
+      context_epoch: restored.context_epoch,
+      checkpoint_floor: usize::from(restored.checkpoint.is_some()),
+      cited_history: restored.last_seq.map(|last| (EventSeq(1), last)),
+      interrupted_tools: restored.interrupted_tools,
+      unresolved_side_effects: restored.unresolved_side_effects,
+    };
+    let mut resumed = TurnLoop::new(
+      &resumed_provider,
+      &new_tools,
+      &policy,
+      &mut resumed_trace,
+      session_id.clone(),
+      TraceId::new(),
+    )
+    .with_resume_state(resume_state)
+    .expect("restored state validates");
+    assert_eq!(resumed.unresolved_side_effects().len(), 1);
+    assert_eq!(
+      resumed.unresolved_side_effects()[0]
+        .definition_fingerprint
+        .as_ref()
+        .unwrap()
+        .definition_version,
+      "v1"
+    );
+    let direct_status = new_tools
+      .reconcile_with_definition(
+        &resumed.unresolved_side_effects()[0].request,
+        Some(false),
+        resumed.unresolved_side_effects()[0]
+          .definition_fingerprint
+          .as_ref(),
+      )
+      .expect("the registry resolves a mismatch as manual");
+    assert!(matches!(
+      direct_status,
+      ReconciliationStatus::RequiresManualInspection { .. }
+    ));
+    assert_eq!(new_reconciles.load(std::sync::atomic::Ordering::SeqCst), 0);
+    let report = resumed
+      .run_turn(
+        "continue only after safe reconciliation",
+        &CancelToken::new(),
+        &mut SilentProgress,
+      )
+      .expect("definition mismatch is a visible reconciliation barrier");
+
+    assert_eq!(report.status, TurnStatus::NeedsReconciliation);
+    assert!(resumed_provider.requests().is_empty());
+    assert_eq!(new_reconciles.load(std::sync::atomic::Ordering::SeqCst), 0);
+    assert!(matches!(
+      resumed.unresolved_side_effects()[0].latest_status,
+      Some(ReconciliationStatus::RequiresManualInspection { .. })
+    ));
+    drop(resumed);
+    resumed_trace.flush().expect("flush mismatch decision");
+    drop(resumed_trace);
+    let updated = store.restore(&session_id).expect("restore manual barrier");
+    assert!(matches!(
+      updated.unresolved_side_effects[0].latest_status,
+      Some(ReconciliationStatus::RequiresManualInspection { .. })
+    ));
+  }
+
+  #[test]
+  fn restart_reconciles_when_the_stable_tool_definition_is_unchanged() {
+    let temp = rupi_store::TempDir::new("runtime-tool-definition-match");
+    let store = rupi_store::Store::open(temp.path(), rupi_store::WritePolicy::default())
+      .expect("store opens");
+    let session_id = SessionId::new();
+    let provider = Scripted::new(
+      "versioned-write",
+      vec![tool_call(
+        "versioned_write",
+        json!({"path":"uncertain.txt"}),
+      )],
+    );
+    let old_reconciles = Arc::new(std::sync::atomic::AtomicUsize::new(0));
+    let old_tools = registry_with(vec![Box::new(VersionedUnknownTool {
+      version: "v1".into(),
+      reconcile_calls: Arc::clone(&old_reconciles),
+    })]);
+    let policy = rupi_core::ProfilePolicy::new(
+      rupi_core::ContextProfile::Balanced,
+      provider.capabilities().context_window,
+    );
+    let session = store
+      .begin(SessionHeader {
+        session_id: session_id.clone(),
+        version: rupi_core::session::SESSION_SCHEMA_VERSION,
+        started_at_ms: 1,
+        working_dir: temp.path().display().to_string(),
+        model: provider.model().clone(),
+        parent_session: None,
+        branched_from_event: None,
+        imported_from: None,
+      })
+      .expect("session begins");
+    let mut trace = StoreTrace::new(session);
+    let report = TurnLoop::new(
+      &provider,
+      &old_tools,
+      &policy,
+      &mut trace,
+      session_id.clone(),
+      TraceId::new(),
+    )
+    .run_turn(
+      "perform a potentially uncertain write",
+      &CancelToken::new(),
+      &mut SilentProgress,
+    )
+    .expect("unknown write is a resumable reconciliation state");
+    assert_eq!(report.status, TurnStatus::NeedsReconciliation);
+    assert_eq!(old_reconciles.load(std::sync::atomic::Ordering::SeqCst), 0);
+    trace.flush().expect("flush first process");
+    drop(trace);
+
+    let restored = store.restore(&session_id).expect("restore pending write");
+    let resumed_provider = Scripted::new("versioned-write", vec![text("continue safely")]);
+    let new_reconciles = Arc::new(std::sync::atomic::AtomicUsize::new(0));
+    let new_tools = registry_with(vec![Box::new(VersionedUnknownTool {
+      version: "v1".into(),
+      reconcile_calls: Arc::clone(&new_reconciles),
+    })]);
+    let resumed_session = store.resume(&session_id).expect("reopen session");
+    let mut resumed_trace = StoreTrace::new(resumed_session);
+    let resume_state = ResumeState {
+      messages: restored
+        .messages
+        .iter()
+        .map(|message| message.message.clone())
+        .collect(),
+      message_seqs: restored
+        .messages
+        .iter()
+        .map(|message| message.seq)
+        .collect(),
+      epochs: restored
+        .epochs
+        .iter()
+        .map(|epoch| ModelEpoch {
+          index: epoch.epoch,
+          model: epoch.model.clone(),
+          capabilities: resumed_provider.capabilities(),
+          reason: epoch.reason.clone(),
+          started_by_event: None,
+        })
+        .collect(),
+      context_epoch: restored.context_epoch,
+      checkpoint_floor: usize::from(restored.checkpoint.is_some()),
+      cited_history: restored.last_seq.map(|last| (EventSeq(1), last)),
+      interrupted_tools: restored.interrupted_tools,
+      unresolved_side_effects: restored.unresolved_side_effects,
+    };
+    let mut resumed = TurnLoop::new(
+      &resumed_provider,
+      &new_tools,
+      &policy,
+      &mut resumed_trace,
+      session_id.clone(),
+      TraceId::new(),
+    )
+    .with_resume_state(resume_state)
+    .expect("restored state validates");
+    let report = resumed
+      .run_turn("continue safely", &CancelToken::new(), &mut SilentProgress)
+      .expect("same stable definition may reconcile");
+
+    assert_eq!(report.status, TurnStatus::Completed);
+    assert_eq!(resumed_provider.requests().len(), 1);
+    assert_eq!(new_reconciles.load(std::sync::atomic::Ordering::SeqCst), 1);
+    assert!(resumed.unresolved_side_effects().is_empty());
+    drop(resumed);
+    resumed_trace
+      .flush()
+      .expect("flush reconciled continuation");
+    drop(resumed_trace);
+    assert!(
+      store
+        .restore(&session_id)
+        .expect("restore reconciled state")
+        .unresolved_side_effects
+        .is_empty()
     );
   }
 
@@ -13078,6 +14052,7 @@ mod tests {
         model: Some(provider.model().clone()),
         request_event_id: Some(request_event_id.clone()),
         started_event_id: Some(started_event_id.clone()),
+        definition_fingerprint: None,
       }],
       unresolved_side_effects: Vec::new(),
     })
@@ -13106,7 +14081,7 @@ mod tests {
     );
     assert_eq!(observed_trace.count("tool_unknown"), 1);
     assert_eq!(observed_trace.count("external_context_retrieved"), 0);
-    assert_eq!(observed_trace.count("user_message"), 0);
+    assert_eq!(observed_trace.count("user_input"), 0);
     let unknown = observed_trace.causal("tool_unknown");
     assert_eq!(unknown[0].1.as_ref(), Some(&started_event_id));
     assert_eq!(runtime.messages().len(), 1);
@@ -13506,6 +14481,7 @@ mod tests {
         latest_status: Some(ReconciliationStatus::RequiresManualInspection {
           details: "the latest durable reconciliation still requires inspection".into(),
         }),
+        definition_fingerprint: None,
       }],
     })
     .expect("resume state validates");

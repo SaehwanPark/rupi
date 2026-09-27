@@ -37,8 +37,9 @@ use crate::{
   failure::ModelFailureKind,
   ids::{CheckpointId, EventId, EventSeq, SessionId, ToolCallId, TraceId, TurnId, now_millis},
   message::Message,
+  message::RuntimeControlKind,
   provenance::ReasoningProvenance,
-  tool::{ReconciliationStatus, ToolExecutionState},
+  tool::{ReconciliationStatus, ToolDefinitionFingerprint, ToolExecutionState},
   trace::{BlobRef, ExternalContextSource},
 };
 
@@ -183,11 +184,21 @@ pub enum AgentEvent {
   /// Persistence: always. Replay: creates the session shell and epoch 0.
   /// UI: establishes the header and model label.
   SessionStarted(SessionStarted),
-  /// Why: a user message was accepted into canonical history.
-  /// Ordering: after `session_started`, before the model request it triggers.
-  /// Persistence: always. Replay: appends a user message.
-  /// UI: renders the user turn.
+  /// Legacy user-role message whose author is not proven by the event shape.
+  /// New producers use `UserInput` or `RuntimeControlInjected` instead.
+  /// Persistence: read-only compatibility for older traces; replay keeps it
+  /// unattributed rather than granting user authority.
   UserMessage(UserMessage),
+  /// Why: human-authored input entered canonical history.
+  /// Ordering: after `session_started`, before the request it triggers.
+  /// Persistence: always. Replay: appends user-authoritative input.
+  /// UI: renders the user turn.
+  UserInput(UserMessage),
+  /// Why: runtime-owned user-role guidance entered model context.
+  /// Ordering: before the bounded request it controls.
+  /// Persistence: always. Replay: retains the control kind and text without
+  /// reclassifying it as human input. UI: quiet unless inspecting the trace.
+  RuntimeControlInjected(RuntimeControlInjected),
   /// Why: a model request began, which is the boundary for partial output.
   /// Ordering: before any delta for that request.
   /// Persistence: always. Replay: opens a request span.
@@ -353,6 +364,12 @@ pub struct UserMessage {
 }
 
 #[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize)]
+pub struct RuntimeControlInjected {
+  pub kind: RuntimeControlKind,
+  pub text: String,
+}
+
+#[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize)]
 pub struct ModelRequestStarted {
   pub epoch: u32,
   pub model: ModelRef,
@@ -455,6 +472,11 @@ pub struct ToolRequested {
   pub arguments: serde_json::Value,
   #[serde(default)]
   pub read_only: bool,
+  /// Stable implementation and reconciliation identity captured with the
+  /// advertised definition. Absent on legacy or unversioned tools; never infer
+  /// it from the tool registered when a session is resumed.
+  #[serde(default, skip_serializing_if = "Option::is_none")]
+  pub definition_fingerprint: Option<ToolDefinitionFingerprint>,
 }
 
 #[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize)]
@@ -666,10 +688,14 @@ pub struct ContextCompactionEpoch {
   /// Last canonical sequence number the summary replaces. Inclusive, and never
   /// below `replaces_from`: a summary always stands in for at least one record.
   pub replaces_through: EventSeq,
-  /// Reference to the stored summary, never the summary itself. `None` when the
-  /// trace holds no blob store: the epoch still opened, and the summary message
-  /// it substitutes still stands in model-visible context.
+  /// Reference to the stored provider-facing summary rendering, never the prose
+  /// itself. `None` when the trace holds no blob store.
   pub summary: Option<BlobRef>,
+  /// Canonical semantic state paired with the session message projection. The
+  /// store checks this against the projected message so editing typed capsule
+  /// fields cannot silently alter later recursive compaction.
+  #[serde(default, skip_serializing_if = "Option::is_none")]
+  pub derived_summary: Option<Box<crate::message::DerivedSummary>>,
 }
 
 /// The epoch ordinal the next [`ContextCompactionEpoch`] record must claim.
@@ -731,7 +757,7 @@ pub struct AttributedMessage {
 
 #[cfg(test)]
 mod tests {
-  use crate::context::ContextLevel;
+  use crate::{context::ContextCapsule, message::DerivedSummary};
 
   use super::*;
 
@@ -876,6 +902,7 @@ mod tests {
       replaces_from: EventSeq(from),
       replaces_through: EventSeq(through),
       summary: Some(BlobRef::for_bytes(b"summary text", Some("text/plain"))),
+      derived_summary: None,
     }
   }
 
@@ -892,6 +919,19 @@ mod tests {
     assert!(encoded.contains("\"replaces_from\":4"), "{encoded}");
     assert!(encoded.contains("\"replaces_through\":12"), "{encoded}");
     assert!(!encoded.contains("summary text"), "{encoded}");
+    let decoded: AgentEvent = serde_json::from_str(&encoded).unwrap();
+    assert_eq!(decoded, event);
+  }
+
+  #[test]
+  fn compaction_epoch_round_trips_typed_semantic_state() {
+    let mut epoch = epoch_record(1, 4, 12);
+    epoch.derived_summary = Some(Box::new(DerivedSummary::Capsule {
+      capsule: ContextCapsule::new("Build the parser"),
+    }));
+    let event = AgentEvent::ContextCompactionEpoch(epoch);
+    let encoded = serde_json::to_string(&event).unwrap();
+    assert!(encoded.contains("\"derived_summary\""), "{encoded}");
     let decoded: AgentEvent = serde_json::from_str(&encoded).unwrap();
     assert_eq!(decoded, event);
   }

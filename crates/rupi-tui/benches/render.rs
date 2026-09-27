@@ -241,6 +241,7 @@ fn session() -> Vec<AgentEvent> {
         "limit": 200,
       }),
       read_only: true,
+      definition_fingerprint: None,
     }));
     events.push(AgentEvent::ToolStarted(ToolStarted {
       call_id: call_id.clone(),

@@ -117,7 +117,7 @@ impl Trace for StoreTrace {
     };
     let hold_for_message = matches!(
       &envelope.event,
-      AgentEvent::UserMessage(_)
+      AgentEvent::UserInput(_)
         | AgentEvent::ExternalContextRetrieved(_)
         | AgentEvent::ContextSummary
         | AgentEvent::ToolCompleted(_)
@@ -392,7 +392,7 @@ mod tests {
     let text = format!("do not persist {secret} or {recognized}");
     let mut envelope = EventEnvelope::new(
       meta,
-      AgentEvent::UserMessage(UserMessage {
+      AgentEvent::UserInput(UserMessage {
         text: text.clone(),
         attachments: 0,
       }),
@@ -459,7 +459,7 @@ mod tests {
     metadata.insert("source_url".into(), "https://example.test/doc".into());
     let item = rupi_core::ExternalContextItem::inline(source, "evidence", Some("[1]".into()))
       .with_metadata(metadata.clone());
-    let message = Message::user(item.format_for_model());
+    let message = Message::external_context(item.format_for_model(), Some(item.external_ref()));
     let mut envelope = EventEnvelope::new(
       meta,
       AgentEvent::ExternalContextRetrieved(ExternalContextRetrieved {
@@ -511,7 +511,7 @@ mod tests {
     meta.model = Some(model);
     let mut envelope = EventEnvelope::new(
       meta,
-      AgentEvent::UserMessage(UserMessage {
+      AgentEvent::UserInput(UserMessage {
         text: "hello".into(),
         attachments: 0,
       }),
@@ -532,7 +532,7 @@ mod tests {
     assert_eq!(journal.items[0].envelope.meta.seq, envelope.meta.seq);
     assert!(matches!(
       journal.items[0].envelope.event,
-      AgentEvent::UserMessage(_)
+      AgentEvent::UserInput(_)
     ));
     assert_eq!(
       journal.items[0].envelope.meta.model.as_ref(),
@@ -544,7 +544,7 @@ mod tests {
     );
     assert_eq!(
       journal.items[0].envelope.event,
-      AgentEvent::UserMessage(UserMessage {
+      AgentEvent::UserInput(UserMessage {
         text: "hello".into(),
         attachments: 0
       })
@@ -585,6 +585,7 @@ mod tests {
         name: "write".into(),
         arguments: serde_json::json!({"path":"a.txt", "content":"x"}),
         read_only: false,
+        definition_fingerprint: None,
       }),
     );
     trace.emit(&mut requested).unwrap();

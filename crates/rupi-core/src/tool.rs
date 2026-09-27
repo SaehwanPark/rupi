@@ -135,6 +135,80 @@ impl ReconciliationStatus {
   }
 }
 
+/// Stable identity declared by a tool implementation for crash recovery.
+///
+/// `reconciliation_version` covers both execution semantics and the tool's
+/// interpretation of uncertain side effects. Process-local registration
+/// generations are deliberately excluded.
+#[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize)]
+pub struct ToolDefinitionIdentity {
+  pub source: String,
+  pub definition_id: String,
+  pub reconciliation_version: String,
+}
+
+impl ToolDefinitionIdentity {
+  pub fn new(
+    source: impl Into<String>,
+    definition_id: impl Into<String>,
+    reconciliation_version: impl Into<String>,
+  ) -> Self {
+    Self {
+      source: source.into(),
+      definition_id: definition_id.into(),
+      reconciliation_version: reconciliation_version.into(),
+    }
+  }
+}
+
+/// Durable identity of the tool definition captured when a request was emitted.
+#[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize)]
+pub struct ToolDefinitionFingerprint {
+  pub name: String,
+  pub source: String,
+  pub definition_id: String,
+  pub definition_version: String,
+  pub schema_sha256: String,
+  pub read_only: bool,
+  pub idempotent: bool,
+}
+
+impl ToolDefinitionFingerprint {
+  /// Freeze a stable identity together with its schema and recovery-relevant risk.
+  ///
+  /// Invalid or missing producer identity returns `None`; callers must not fill
+  /// it from a process-local registry generation or guess from a display name.
+  pub fn from_definition(
+    identity: &ToolDefinitionIdentity,
+    metadata: &ToolMetadata,
+    schema: &serde_json::Value,
+  ) -> Option<Self> {
+    const MAX_IDENTITY_BYTES: usize = 256;
+    let valid_component = |value: &str| {
+      !value.trim().is_empty()
+        && value.len() <= MAX_IDENTITY_BYTES
+        && !value.chars().any(char::is_control)
+    };
+    if !valid_component(&identity.source)
+      || !valid_component(&identity.definition_id)
+      || !valid_component(&identity.reconciliation_version)
+      || !valid_component(&metadata.name)
+    {
+      return None;
+    }
+    let schema = serde_json::to_vec(schema).ok()?;
+    Some(Self {
+      name: metadata.name.clone(),
+      source: identity.source.clone(),
+      definition_id: identity.definition_id.clone(),
+      definition_version: identity.reconciliation_version.clone(),
+      schema_sha256: crate::hash::sha256_hex(&schema),
+      read_only: metadata.read_only,
+      idempotent: metadata.idempotent,
+    })
+  }
+}
+
 /// Static description of a tool.
 #[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize)]
 pub struct ToolMetadata {
@@ -398,6 +472,14 @@ impl ToolExecutionContext {
 /// One executable tool.
 pub trait Tool: Send + Sync {
   fn metadata(&self) -> ToolMetadata;
+
+  /// Stable source, definition, and reconciliation-contract version.
+  ///
+  /// Tools that do not provide one remain usable, but an interrupted mutating
+  /// call cannot be automatically reconciled against a later registration.
+  fn stable_definition_identity(&self) -> Option<ToolDefinitionIdentity> {
+    None
+  }
 
   /// JSON Schema for arguments, handed to tool-capable providers.
   fn arguments_schema(&self) -> serde_json::Value;

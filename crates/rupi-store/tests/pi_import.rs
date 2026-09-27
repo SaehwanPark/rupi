@@ -301,7 +301,7 @@ fn message_records_bind_to_the_event_that_introduced_them() {
   for record in &records {
     let introduced_by = event(record);
     match (&record.role, &introduced_by) {
-      (Role::User, AgentEvent::UserMessage(_))
+      (Role::User, AgentEvent::UserInput(_))
       | (Role::Assistant, AgentEvent::AssistantDelta(_))
       | (Role::Tool, AgentEvent::ToolCompleted(_)) => {}
       (role, other) => {
