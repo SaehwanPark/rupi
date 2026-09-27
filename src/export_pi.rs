@@ -267,6 +267,7 @@ fn kind_name(event: &AgentEvent) -> &'static str {
     AgentEvent::ToolCompleted(_) => "tool_completed",
     AgentEvent::ToolFailed(_) => "tool_failed",
     AgentEvent::ToolUnknown(_) => "tool_unknown",
+    AgentEvent::ToolReconciliationObserved(_) => "tool_reconciliation_observed",
     AgentEvent::ExternalContextRetrieved(_) => "external_context_retrieved",
     AgentEvent::ContextReduced(_) => "context_reduced",
     AgentEvent::ContextCompactionStarted(_) => "context_compaction_started",

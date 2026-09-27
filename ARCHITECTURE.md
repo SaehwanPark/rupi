@@ -283,6 +283,15 @@ message payload: small messages stay inline, while larger messages keep a verifi
 session-blob reference. `begin` and `resume` hold the per-session lease for the
 handle lifetime, and retention acquires the same lease before deleting a victim.
 
+Reduced tool output can be re-read only through the runtime's read-only
+`payload_read` tool. The model receives an opaque recovery reference in the reduced
+result; the active turn keeps a bounded allowlist of exposed references and restores
+references found in reduced tool results in the resumed model-visible window. The
+store resolves each reference only inside that session's blob directory after hash
+verification. Reads are byte-ranged (at most 4 KiB per call), and decoded payloads
+are capped at 16 MiB. The tool accepts no paths and is unavailable for references
+that were not exposed in the current session.
+
 ## 8. Reasoning provenance
 
 Reasoning-like information must use explicit provenance.
@@ -401,14 +410,16 @@ The context engine owns model-visible working memory.
 
 It consumes canonical session/trace state and produces a bounded working set.
 
-Before policy evaluation, request sizing includes the assembled system prompt, messages,
-and currently exposed tool schemas. With a configured output ceiling, the estimate also includes
+Before policy evaluation, request sizing asks the active provider to estimate the assembled
+prompt after provider-specific mapping, including strict tool-schema normalization. Successful
+logical-prompt usage calibrates future estimates through a bounded high-side ratio scoped by
+provider, model, and material request dialect; a prior request's token count never substitutes
+for the current request estimate. With a configured output ceiling, the estimate also includes
 the effective output allowance; a safety reserve is deducted while resolving that ceiling but is
-not itself a model token. Provider-reported usage describes the request
-just sent; it never substitutes for the
-estimate of the request being assembled. If a configured output ceiling cannot be clamped to
-the minimum useful allowance, the runtime first evicts only safe pre-turn history and refuses
-if that cannot create headroom. The active provider's context window controls threshold
+not itself a model token. Without a configured ceiling, hard-fit checks still reserve bounded
+response headroom, but no wire output ceiling is added. If a configured output ceiling cannot be
+clamped to the minimum useful allowance, the runtime first evicts only safe pre-turn history and
+refuses if that cannot create headroom. The active provider's context window controls threshold
 evaluation after failover; adaptive latency observations are scoped to model identity. Backup
 rebudgeting assembles that provider's system prompt, retained messages, exposed tools, and output
 budget before committing the epoch transition. Same-turn compaction validates every tool

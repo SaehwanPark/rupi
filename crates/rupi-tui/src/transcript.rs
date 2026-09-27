@@ -383,6 +383,26 @@ pub fn render_event(event: &AgentEvent, options: &TranscriptOptions) -> Vec<Rend
       }
       vec![line]
     }
+    E::ToolReconciliationObserved(e) => {
+      let resolved = e.status.is_committed() || e.status.is_unmodified();
+      let mut line = label(if resolved {
+        "side effect reconciled"
+      } else {
+        "side effect unresolved"
+      });
+      line.push(&e.name, Role::Operation);
+      fact(&mut line, Role::Meta, &e.call_id.to_string());
+      fact(&mut line, Role::Path, &e.request_event_id.to_string());
+      line.push(
+        e.status.summary(),
+        if resolved {
+          Role::StateOk
+        } else {
+          Role::StateUnknown
+        },
+      );
+      vec![line]
+    }
     E::ExternalContextRetrieved(e) => {
       let mut line = label("external");
       line.push(&e.source.resource_id, Role::Path);
@@ -503,6 +523,8 @@ pub fn render_event(event: &AgentEvent, options: &TranscriptOptions) -> Vec<Rend
         TurnStatus::Completed => ("completed", Role::StateOk),
         TurnStatus::Cancelled => ("cancelled", Role::Muted),
         TurnStatus::BudgetExhausted => ("budget exhausted", Role::StateFailed),
+        TurnStatus::ToolBudgetExhausted => ("tool budget exhausted", Role::StateFailed),
+        TurnStatus::NeedsReconciliation => ("needs reconciliation", Role::StateFailed),
         TurnStatus::Failed { kind } => (kind.as_str(), Role::StateFailed),
       };
       line.push(status, role);

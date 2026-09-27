@@ -279,6 +279,10 @@ impl OpenAiCompat {
     self.model.clone()
   }
 
+  fn mapped_request_body(&self, request: &ModelRequest) -> serde_json::Value {
+    request_body(&self.config, request)
+  }
+
   #[allow(clippy::result_large_err)]
   fn stream_blocking(
     &self,
@@ -286,7 +290,7 @@ impl OpenAiCompat {
     sink: &mut dyn ProviderEventSink,
     cancel: &CancelToken,
   ) -> Result<CompletionUsage, ModelFailure> {
-    let body = request_body(&self.config, request).to_string();
+    let body = self.mapped_request_body(request).to_string();
     let response = match self.send(&body, cancel) {
       Ok(response) => response,
       Err(_failure) if cancel.is_cancelled() => {
@@ -690,6 +694,40 @@ impl ModelProvider for OpenAiCompat {
     capabilities
   }
 
+  fn estimate_prompt_tokens(&self, request: &ModelRequest) -> u64 {
+    let mut body = self.mapped_request_body(request);
+    if let serde_json::Value::Object(fields) = &mut body {
+      for field in [
+        "model",
+        "max_tokens",
+        "max_completion_tokens",
+        "stream",
+        "stream_options",
+        "temperature",
+        "stop",
+      ] {
+        fields.remove(field);
+      }
+    }
+    let bytes = serde_json::to_vec(&body).map_or(0, |encoded| encoded.len() as u64);
+    (bytes.saturating_add(3) / 4).max(1)
+  }
+
+  fn prompt_estimator_scope(&self, request: &ModelRequest) -> String {
+    let strict_tools = request
+      .tools
+      .iter()
+      .any(|tool| tool.sampling_constraint.is_some());
+    format!(
+      "openai-compat:{}:{}:{:?}:{:?}:{:?}:strict-tools={strict_tools}",
+      self.config.id,
+      request.model.as_key(),
+      self.config.strict_tool_schema,
+      self.config.thinking_input,
+      self.config.thinking_disable,
+    )
+  }
+
   fn reset_after_abandonment(&self) {
     // The runtime calls this only at the beginning of a new user turn, after
     // the abandoned worker has been joined. Reusing the adapter directly
@@ -723,8 +761,8 @@ impl ModelProvider for OpenAiCompat {
 #[cfg(test)]
 mod tests {
   use rupi_core::{
-    Collector, ModelRef, ProviderEvent, ReasoningExposure, ToolSamplingConstraint,
-    ToolSamplingStrictness,
+    Collector, ModelRef, OpenAiStrictToolSchemaSupport, ProviderEvent, ReasoningExposure,
+    ToolSamplingConstraint, ToolSamplingStrictness,
   };
 
   use super::*;
@@ -774,6 +812,65 @@ mod tests {
     .unwrap();
 
     assert_eq!(provider.capabilities().max_output_tokens, Some(1_024));
+  }
+
+  #[test]
+  fn mapped_prompt_estimate_includes_strict_optional_schema_expansion() {
+    let mut schema_properties = serde_json::Map::new();
+    for index in 0..64 {
+      schema_properties.insert(
+        format!("field_{index:02}"),
+        serde_json::json!({
+          "type":"string",
+          "description":"optional provider field with a bounded human-readable explanation"
+        }),
+      );
+    }
+    let schema = serde_json::json!({
+      "type":"object",
+      "properties":schema_properties,
+      "additionalProperties":false
+    });
+    let ordinary = OpenAiCompat::new(ProviderConfig::local(
+      "local",
+      "schema-test",
+      "http://127.0.0.1:9/v1",
+      8_192,
+    ))
+    .unwrap();
+    let strict = OpenAiCompat::new(ProviderConfig {
+      strict_tool_schema: OpenAiStrictToolSchemaSupport::Supported,
+      ..ProviderConfig::local("local", "schema-test", "http://127.0.0.1:9/v1", 8_192)
+    })
+    .unwrap();
+    let mut capabilities = ordinary.capabilities();
+    capabilities.tools = true;
+    let request = ModelRequest::new(
+      ordinary.model().clone(),
+      capabilities,
+      vec![rupi_core::Message::user("read the requested record")],
+    )
+    .with_tools(vec![rupi_core::ToolSpec {
+      name: "inspect".into(),
+      description: "inspect a structured record".into(),
+      parameters: schema,
+      sampling_constraint: Some(ToolSamplingConstraint::JsonSchema {
+        strictness: ToolSamplingStrictness::Prefer,
+      }),
+    }]);
+
+    let ordinary_estimate = ordinary.estimate_prompt_tokens(&request);
+    let strict_estimate = strict.estimate_prompt_tokens(&request);
+    assert!(
+      strict_estimate > ordinary_estimate + 200,
+      "ordinary={ordinary_estimate}, strict={strict_estimate}"
+    );
+    assert!(strict_estimate < request.capabilities.context_window);
+    assert_ne!(
+      ordinary.prompt_estimator_scope(&request),
+      strict.prompt_estimator_scope(&request),
+      "calibration must not cross strict-schema dialect changes"
+    );
   }
 
   #[test]

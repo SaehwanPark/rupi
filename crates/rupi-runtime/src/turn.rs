@@ -19,7 +19,7 @@
 //! - **Context is never silently truncated.** An oversized request is refused, and
 //!   the refusal is recorded.
 
-use std::collections::{BTreeMap, BTreeSet};
+use std::collections::{BTreeMap, BTreeSet, VecDeque};
 use std::sync::Arc;
 use std::sync::atomic::{AtomicUsize, Ordering};
 use std::time::{Duration, Instant};
@@ -29,18 +29,21 @@ use rupi_core::{
   CapsuleArtifact, CapsuleDecision, CheckpointCreated, CheckpointId, ContentBlock, ContextAction,
   ContextCapsule, ContextCompactionCompleted, ContextCompactionEpoch, ContextCompactionStarted,
   ContextLevel, ContextPolicy, ContextReduced, ContextState, DEFAULT_MAX_MODEL_REQUESTS_PER_TURN,
-  Diagnostic, DiagnosticLevel, EpochReason, EventEnvelope, EventMeta, EventSeq, EventSink,
-  ExternalContextItem, ExternalContextRetrieved, FailurePhase,
-  MAX_CONFIGURED_MODEL_REQUESTS_PER_TURN, MAX_RESPONSE_EVENTS, MAX_RESPONSE_REASONING_BYTES,
-  MAX_RESPONSE_TEXT_BYTES, MAX_RESPONSE_TOOL_CALLS, MAX_TOOL_ARGUMENT_BYTES_PER_CALL,
-  MAX_TOOL_ARGUMENT_BYTES_TOTAL, MAX_TOOL_ID_BYTES, MAX_TOOL_NAME_BYTES, Message,
-  ModelCapabilities, ModelEpoch, ModelEpochStarted, ModelFailover, ModelFailure, ModelFailureKind,
-  ModelProvider, ModelRef, ModelRequest, ModelRequestCompleted, ModelRequestStarted, ModelRetry,
-  ReasoningChunk, ReasoningDelta, ReasoningProvenance, ReductionReason, Role, SessionEndReason,
-  SessionEnded, SessionId, SessionStarted, SinkError, ThinkingLevel, ToolCallBlock, ToolChoice,
-  ToolCompleted, ToolExecutionState, ToolFailed, ToolOutcome, ToolProgress, ToolRequested,
+  DEFAULT_MAX_MUTATING_TOOL_CALLS_PER_TURN, DEFAULT_MAX_TOOL_CALLS_PER_TURN, Diagnostic,
+  DiagnosticLevel, EpochReason, EventEnvelope, EventMeta, EventSeq, EventSink, ExternalContextItem,
+  ExternalContextRetrieved, FailurePhase, MAX_CONFIGURED_MODEL_REQUESTS_PER_TURN,
+  MAX_CONFIGURED_MUTATING_TOOL_CALLS_PER_TURN, MAX_CONFIGURED_TOOL_CALLS_PER_TURN,
+  MAX_RESPONSE_EVENTS, MAX_RESPONSE_REASONING_BYTES, MAX_RESPONSE_TEXT_BYTES,
+  MAX_RESPONSE_TOOL_CALLS, MAX_TOOL_ARGUMENT_BYTES_PER_CALL, MAX_TOOL_ARGUMENT_BYTES_TOTAL,
+  MAX_TOOL_ID_BYTES, MAX_TOOL_NAME_BYTES, Message, ModelCapabilities, ModelEpoch,
+  ModelEpochStarted, ModelFailover, ModelFailure, ModelFailureKind, ModelProvider, ModelRef,
+  ModelRequest, ModelRequestCompleted, ModelRequestStarted, ModelRetry, ReasoningChunk,
+  ReasoningDelta, ReasoningProvenance, ReconciliationStatus, ReductionReason, Role,
+  SessionEndReason, SessionEnded, SessionId, SessionStarted, SinkError, ThinkingLevel,
+  ToolCallBlock, ToolChoice, ToolCompleted, ToolExecutionState, ToolFailed, ToolMetadata,
+  ToolOutcome, ToolProgress, ToolReconciliationObserved, ToolReconciliationSource, ToolRequested,
   ToolResultBlock, ToolStarted, ToolUnknown, TraceId, TurnCompleted, TurnId, TurnStatus,
-  UserMessage,
+  UnresolvedSideEffect, UserMessage,
 };
 use rupi_tools::{Approval, ApprovalGate, Executed, ToolRegistry};
 
@@ -95,6 +98,8 @@ pub struct ResumeState {
   /// Tool calls whose terminal event was absent when the prior process stopped.
   /// These must be reconciled before a new provider request.
   pub interrupted_tools: Vec<rupi_core::InterruptedToolCall>,
+  /// Terminal mutating Unknown outcomes that still block autonomous side effects.
+  pub unresolved_side_effects: Vec<UnresolvedSideEffect>,
 }
 
 /// How many model round-trips one user input may take.
@@ -102,6 +107,15 @@ pub struct ResumeState {
 /// A model that keeps asking for tools is looping; the limit exists so a loop
 /// costs one visible failure instead of an unbounded bill.
 pub const MAX_MODEL_REQUESTS_PER_TURN: usize = DEFAULT_MAX_MODEL_REQUESTS_PER_TURN as usize;
+/// Default maximum tool calls accepted during one user turn.
+pub const MAX_TOOL_CALLS_PER_TURN: usize = DEFAULT_MAX_TOOL_CALLS_PER_TURN as usize;
+/// Default maximum mutating tool calls accepted during one user turn.
+pub const MAX_MUTATING_TOOL_CALLS_PER_TURN: usize =
+  DEFAULT_MAX_MUTATING_TOOL_CALLS_PER_TURN as usize;
+const PAYLOAD_READ_TOOL_NAME: &str = "payload_read";
+pub(crate) const MAX_PAYLOAD_READ_CHUNK_BYTES: u64 = 4 * 1024;
+pub(crate) const MAX_RECOVERABLE_PAYLOAD_BYTES: u64 = 16 * 1024 * 1024;
+const MAX_AVAILABLE_PAYLOAD_REFS: usize = 128;
 
 /// Live feedback for the surface. Every method is optional by design: the loop
 /// must be runnable with nobody watching.
@@ -152,6 +166,13 @@ impl TurnProgress for SilentProgress {
   fn output_is_irreversible(&self) -> bool {
     false
   }
+}
+
+/// One bounded range read from a session-owned recovery payload.
+#[derive(Debug, Clone, PartialEq, Eq)]
+pub struct PayloadRead {
+  pub bytes: Vec<u8>,
+  pub total_bytes: u64,
 }
 
 /// Durable sink for the canonical event stream.
@@ -214,6 +235,22 @@ pub trait Trace: Send {
     Ok(None)
   }
 
+  /// Whether this sink can read references it created for the active session.
+  fn supports_payload_read(&self) -> bool {
+    false
+  }
+
+  /// Read one bounded range from a previously persisted recovery reference.
+  fn read_payload_range(
+    &self,
+    reference: &str,
+    offset: u64,
+    limit: u64,
+  ) -> Result<Option<PayloadRead>, SinkError> {
+    let _ = (reference, offset, limit);
+    Ok(None)
+  }
+
   /// Persist a checkpoint capsule and barrier, returning the checkpoint ID and relative path if supported.
   fn create_checkpoint(
     &mut self,
@@ -267,6 +304,19 @@ impl<T: Trace + ?Sized> Trace for &mut T {
 
   fn put_payload(&mut self, bytes: &[u8]) -> Result<Option<BlobRef>, SinkError> {
     <T as Trace>::put_payload(self, bytes)
+  }
+
+  fn supports_payload_read(&self) -> bool {
+    (**self).supports_payload_read()
+  }
+
+  fn read_payload_range(
+    &self,
+    reference: &str,
+    offset: u64,
+    limit: u64,
+  ) -> Result<Option<PayloadRead>, SinkError> {
+    (**self).read_payload_range(reference, offset, limit)
   }
 
   fn create_checkpoint(
@@ -335,7 +385,11 @@ impl TurnError {
       Self::Unavailable(failure) => Some(failure.kind),
       Self::Aborted(status) => match status {
         TurnStatus::Failed { kind } => Some(*kind),
-        TurnStatus::Completed | TurnStatus::Cancelled | TurnStatus::BudgetExhausted => None,
+        TurnStatus::Completed
+        | TurnStatus::Cancelled
+        | TurnStatus::BudgetExhausted
+        | TurnStatus::ToolBudgetExhausted
+        | TurnStatus::NeedsReconciliation => None,
       },
       Self::Sink(_) | Self::Refused(_) => None,
     }
@@ -359,6 +413,10 @@ pub struct TurnReport {
   pub text: String,
   /// Tool calls that reached a terminal state.
   pub tool_calls: u32,
+  /// Calls that crossed the durable tool-start boundary during this turn.
+  pub tool_calls_started: u32,
+  /// `true` when the per-turn tool-call budget stopped execution.
+  pub tool_budget_exhausted: bool,
   /// Model round-trips used.
   pub requests: usize,
   /// Epoch active when the turn ended, so a caller can report *which* model
@@ -377,6 +435,8 @@ impl TurnReport {
       status: TurnStatus::Completed,
       text: String::new(),
       tool_calls: 0,
+      tool_calls_started: 0,
+      tool_budget_exhausted: false,
       requests: 0,
       epoch,
       duration_ms: 0,
@@ -423,6 +483,26 @@ struct RecordedResponse {
   assistant_event_id: rupi_core::EventId,
   calls: Vec<ToolCallBlock>,
   rejected_calls: BTreeMap<String, String>,
+  admissions: Vec<ToolCallAdmission>,
+}
+
+#[derive(Debug, Clone, Copy, PartialEq, Eq)]
+enum ToolBudgetDenial {
+  Total,
+  Mutating,
+}
+
+#[derive(Debug, Clone, Copy)]
+struct ToolCallAdmission {
+  read_only: bool,
+  denial: Option<ToolBudgetDenial>,
+}
+
+#[derive(Debug, Clone, Copy, Default)]
+struct ToolBatchOutcome {
+  progress_succeeded: bool,
+  unresolved_mutation: bool,
+  budget_exhausted: bool,
 }
 
 /// Drives turns against one primary model, with an optional backup.
@@ -445,6 +525,15 @@ pub struct TurnLoop<'a> {
   working_dir: String,
   thinking: ThinkingLevel,
   max_requests: usize,
+  max_tool_calls: usize,
+  max_mutating_tool_calls: usize,
+  tool_calls_seen: usize,
+  mutating_tool_calls_seen: usize,
+  tool_calls_started: usize,
+  /// High-side prompt-estimator calibration kept separate for each provider/dialect.
+  prompt_calibration: BTreeMap<String, PromptCalibration>,
+  /// Recently model-visible recovery refs this trace can read for the session.
+  payload_read_refs: VecDeque<String>,
   /// Optional boundary for coding turns that must make a named kind of
   /// progress instead of spending the request budget on inspection alone.
   progress_request_limit: Option<usize>,
@@ -473,6 +562,8 @@ pub struct TurnLoop<'a> {
   resumed: bool,
   /// Interrupted tool lifecycles recovered from the canonical trace.
   interrupted_tools: Vec<rupi_core::InterruptedToolCall>,
+  /// Terminal mutating Unknown outcomes reconstructed from the durable trace.
+  unresolved_side_effects: Vec<UnresolvedSideEffect>,
   /// A failed reconciliation is sticky for this loop. Dropping the queue after
   /// an error would let a caller catch the error and issue a provider request
   /// against history whose side effects are still uncertain.
@@ -537,6 +628,13 @@ impl<'a> TurnLoop<'a> {
       working_dir: String::new(),
       thinking: ThinkingLevel::default(),
       max_requests: MAX_MODEL_REQUESTS_PER_TURN,
+      max_tool_calls: MAX_TOOL_CALLS_PER_TURN,
+      max_mutating_tool_calls: MAX_MUTATING_TOOL_CALLS_PER_TURN,
+      tool_calls_seen: 0,
+      mutating_tool_calls_seen: 0,
+      tool_calls_started: 0,
+      prompt_calibration: BTreeMap::new(),
+      payload_read_refs: VecDeque::new(),
       progress_request_limit: None,
       progress_tool_names: Vec::new(),
       progress_requests_without_progress: 0,
@@ -549,6 +647,7 @@ impl<'a> TurnLoop<'a> {
       session_started: false,
       resumed: false,
       interrupted_tools: Vec::new(),
+      unresolved_side_effects: Vec::new(),
       recovery_blocked: false,
       reported_context_adjustments: BTreeSet::new(),
       context_epoch: 0,
@@ -655,6 +754,15 @@ impl<'a> TurnLoop<'a> {
     self
   }
 
+  /// Override per-turn total and mutating tool-call budgets.
+  pub fn with_tool_call_budgets(mut self, total: usize, mutating: usize) -> Self {
+    self.max_tool_calls = total.min(MAX_CONFIGURED_TOOL_CALLS_PER_TURN as usize);
+    self.max_mutating_tool_calls = mutating
+      .min(self.max_tool_calls)
+      .min(MAX_CONFIGURED_MUTATING_TOOL_CALLS_PER_TURN as usize);
+    self
+  }
+
   /// Require a configured kind of tool progress after a bounded number of
   /// tool-bearing requests without it. While active, the next provider request
   /// exposes only the named tools; an empty name list exposes all permitted
@@ -745,6 +853,23 @@ impl<'a> TurnLoop<'a> {
       .collect();
     self.messages = state.messages;
     self.message_seqs = state.message_seqs;
+    if self.trace.supports_payload_read() {
+      let references = self
+        .messages
+        .iter()
+        .filter(|message| message.role == Role::Tool)
+        .flat_map(|message| message.content.iter())
+        .filter_map(|block| match block {
+          ContentBlock::ToolResult(result) if result.reduced => {
+            archived_payload_ref(&result.text).map(str::to_string)
+          }
+          _ => None,
+        })
+        .collect::<Vec<_>>();
+      for reference in references {
+        self.remember_payload_ref(reference);
+      }
+    }
     if self.message_seqs.len() != self.messages.len() {
       return Err(TurnError::Sink(
         "cannot resume a session with message sequence metadata out of alignment".into(),
@@ -756,6 +881,7 @@ impl<'a> TurnLoop<'a> {
       ));
     }
     self.interrupted_tools = state.interrupted_tools;
+    self.unresolved_side_effects = state.unresolved_side_effects;
     self.context_epoch = state.context_epoch;
     self.checkpoint_floor = state.checkpoint_floor;
     self.history = state.cited_history;
@@ -931,6 +1057,48 @@ impl<'a> TurnLoop<'a> {
     self.tools.reconcile(request)
   }
 
+  /// Mutating Unknown outcomes that still block autonomous actions.
+  pub fn unresolved_side_effects(&self) -> &[UnresolvedSideEffect] {
+    &self.unresolved_side_effects
+  }
+
+  /// Record an operator's explicit resolution after inspecting the environment.
+  /// Only a confirmed committed or unmodified state can clear the barrier.
+  pub fn confirm_side_effect_resolution(
+    &mut self,
+    request_event_id: &rupi_core::EventId,
+    status: ReconciliationStatus,
+  ) -> Result<(), TurnError> {
+    if !matches!(
+      &status,
+      ReconciliationStatus::Committed { .. } | ReconciliationStatus::Unmodified { .. }
+    ) {
+      return Err(TurnError::Refused(
+        "operator resolution must confirm committed or unmodified after manual inspection".into(),
+      ));
+    }
+    let Some(index) = self
+      .unresolved_side_effects
+      .iter()
+      .position(|item| item.request_event_id == *request_event_id)
+    else {
+      return Err(TurnError::Refused(format!(
+        "no unresolved mutating tool request has event id {request_event_id}"
+      )));
+    };
+    let side_effect = self.unresolved_side_effects[index].clone();
+    self.record_side_effect_reconciliation(
+      &side_effect,
+      status.clone(),
+      ToolReconciliationSource::Operator,
+    )?;
+    self.unresolved_side_effects.remove(index);
+    if self.unresolved_side_effects.is_empty() && self.interrupted_tools.is_empty() {
+      self.recovery_blocked = false;
+    }
+    Ok(())
+  }
+
   /// Reconcile tool lifecycles left open by a crashed predecessor. No provider
   /// request is permitted until every call is either normalized into a durable
   /// result or explicitly blocked for human inspection.
@@ -1034,6 +1202,88 @@ impl<'a> TurnLoop<'a> {
     Ok(())
   }
 
+  fn reconcile_unresolved_side_effects(&mut self, turn_id: &TurnId) -> Result<bool, TurnError> {
+    while let Some(side_effect) = self.unresolved_side_effects.first().cloned() {
+      if let Some(
+        status @ (ReconciliationStatus::Diverged { .. }
+        | ReconciliationStatus::RequiresManualInspection { .. }),
+      ) = side_effect.latest_status.clone()
+      {
+        self.diagnostic(
+          Some(turn_id.clone()),
+          DiagnosticLevel::Error,
+          format!(
+            "mutating tool '{}' ({}) still requires manual side-effect reconciliation: {}; use /reconcile",
+            side_effect.request.name,
+            side_effect.request_event_id,
+            status.summary(),
+          ),
+        )?;
+        return Ok(false);
+      }
+
+      let status = self
+        .tools
+        .reconcile_with_risk(&side_effect.request, Some(false))
+        .unwrap_or_else(|error| ReconciliationStatus::RequiresManualInspection {
+          details: format!("automatic reconciliation failed: {}", error.message),
+        });
+      self.record_side_effect_reconciliation(
+        &side_effect,
+        status.clone(),
+        ToolReconciliationSource::Tool,
+      )?;
+      match &status {
+        ReconciliationStatus::Committed { .. } | ReconciliationStatus::Unmodified { .. } => {
+          self.unresolved_side_effects.remove(0);
+        }
+        ReconciliationStatus::Diverged { .. }
+        | ReconciliationStatus::RequiresManualInspection { .. } => {
+          self.unresolved_side_effects[0].latest_status = Some(status.clone());
+          self.diagnostic(
+            Some(turn_id.clone()),
+            DiagnosticLevel::Error,
+            format!(
+              "mutating tool '{}' ({}) needs manual side-effect reconciliation: {}; use /reconcile",
+              side_effect.request.name,
+              side_effect.request_event_id,
+              status.summary(),
+            ),
+          )?;
+          return Ok(false);
+        }
+      }
+    }
+    Ok(true)
+  }
+
+  fn record_side_effect_reconciliation(
+    &mut self,
+    side_effect: &UnresolvedSideEffect,
+    status: ReconciliationStatus,
+    source: ToolReconciliationSource,
+  ) -> Result<(), TurnError> {
+    let observed = ToolReconciliationObserved {
+      call_id: side_effect.request.call_id.clone(),
+      name: side_effect.request.name.clone(),
+      request_event_id: side_effect.request_event_id.clone(),
+      unknown_event_id: side_effect.unknown_event_id.clone(),
+      status,
+      source,
+    };
+    let message = Message::user(observed.model_notice());
+    let mut envelope = self.new_envelope_with_parent(
+      Some(side_effect.turn_id.clone()),
+      AgentEvent::ToolReconciliationObserved(observed),
+      Some(side_effect.unknown_event_id.clone()),
+    );
+    envelope.meta.tool_call_id = Some(side_effect.request.call_id.clone());
+    self.trace.emit_message(&mut envelope, &message)?;
+    self.envelopes.push(envelope.clone());
+    self.push_message(message, envelope.meta.seq);
+    Ok(())
+  }
+
   fn normalize_message_seqs(&mut self) {
     match self.message_seqs.len().cmp(&self.messages.len()) {
       std::cmp::Ordering::Less => self.message_seqs.resize(self.messages.len(), None),
@@ -1085,6 +1335,9 @@ impl<'a> TurnLoop<'a> {
     let clock = Instant::now();
     let mut report = TurnReport::new(turn_id.clone(), self.epoch_index());
     self.requests.store(0, Ordering::SeqCst);
+    self.tool_calls_seen = 0;
+    self.mutating_tool_calls_seen = 0;
+    self.tool_calls_started = 0;
     self.progress_requests_without_progress = 0;
     self.progress_boundary_active = false;
     self.progress_boundary_used = false;
@@ -1145,6 +1398,15 @@ impl<'a> TurnLoop<'a> {
     )?;
     self.push_message(user, envelope.meta.seq);
     progress.on_user_message(input);
+    let reconciliation_clear = self.reconcile_unresolved_side_effects(&turn_id)?;
+    if !reconciliation_clear {
+      return self.finish(
+        report,
+        TurnStatus::NeedsReconciliation,
+        clock,
+        Some(turn_id.clone()),
+      );
+    }
 
     // The loop is bounded by *requests*, not rounds: a turn that keeps asking for
     // tools and a turn that keeps retrying spend the same budget, because from the
@@ -1239,13 +1501,9 @@ impl<'a> TurnLoop<'a> {
         Err(TurnFailure::Sink(error)) => return Err(TurnError::from(error)),
       };
       let rejected_completion = self.progress_boundary_active && response.calls.is_empty();
-      let RecordedResponse {
-        assistant_event_id,
-        calls,
-        rejected_calls,
-      } = self.record_response(response, &mut report, !rejected_completion)?;
+      let recorded = self.record_response(response, &mut report, !rejected_completion)?;
 
-      if calls.is_empty() {
+      if recorded.calls.is_empty() {
         if rejected_completion {
           self.append_progress_retry_instruction(&turn_id)?;
           self.diagnostic(
@@ -1259,11 +1517,11 @@ impl<'a> TurnLoop<'a> {
         return self.finish(report, TurnStatus::Completed, clock, Some(turn_id.clone()));
       }
 
-      if !self.tools_enabled && !calls.is_empty() {
+      if !self.tools_enabled && !recorded.calls.is_empty() {
         self.record_unexecuted_calls(
           turn_id.clone(),
-          assistant_event_id,
-          &calls,
+          recorded.assistant_event_id,
+          &recorded.calls,
           progress,
           "finalization mode does not execute tools",
           true,
@@ -1282,21 +1540,47 @@ impl<'a> TurnLoop<'a> {
         );
       }
 
-      let tool_calls = u32::try_from(calls.len())
+      let tool_calls = u32::try_from(recorded.calls.len())
         .map_err(|_| TurnError::Sink("tool-call count exceeds durable limit".into()))?;
       report.tool_calls = report
         .tool_calls
         .checked_add(tool_calls)
         .ok_or_else(|| TurnError::Sink("turn tool-call count is exhausted".into()))?;
-      let progress_succeeded = self.execute_calls(
-        turn_id.clone(),
-        assistant_event_id,
-        &calls,
-        &rejected_calls,
-        cancel,
-        progress,
-      )?;
-      if let Some(reason) = self.observe_progress(&turn_id, progress_succeeded)? {
+      let batch = self.execute_calls(turn_id.clone(), recorded, cancel, progress)?;
+      if batch.unresolved_mutation {
+        report.requests = self.requests.load(Ordering::SeqCst);
+        self.diagnostic(
+          Some(turn_id.clone()),
+          DiagnosticLevel::Error,
+          "a mutating tool outcome is unknown; the rest of the batch was not executed and autonomous work stopped until reconciliation",
+        )?;
+        return self.finish(
+          report,
+          TurnStatus::NeedsReconciliation,
+          clock,
+          Some(turn_id.clone()),
+        );
+      }
+      if batch.budget_exhausted {
+        report.tool_budget_exhausted = true;
+        report.requests = self.requests.load(Ordering::SeqCst);
+        self.diagnostic(
+          Some(turn_id.clone()),
+          DiagnosticLevel::Warn,
+          format!(
+            "tool-call budget exhausted ({} total, {} mutating); the remaining batch results are terminal and no more tools will execute this turn",
+            self.max_tool_calls,
+            self.max_mutating_tool_calls,
+          ),
+        )?;
+        return self.finish(
+          report,
+          TurnStatus::ToolBudgetExhausted,
+          clock,
+          Some(turn_id.clone()),
+        );
+      }
+      if let Some(reason) = self.observe_progress(&turn_id, batch.progress_succeeded)? {
         let failure =
           ModelFailure::new(ModelFailureKind::Semantic, FailurePhase::PreRequest, reason);
         return self.finish_failure(report, failure, clock, turn_id.clone());
@@ -1628,6 +1912,7 @@ impl<'a> TurnLoop<'a> {
     turn_id: Option<TurnId>,
   ) -> Result<TurnReport, TurnError> {
     report.status = status.clone();
+    report.tool_calls_started = u32::try_from(self.tool_calls_started).unwrap_or(u32::MAX);
     report.duration_ms = elapsed_ms(clock);
     self.emit(
       turn_id.clone(),
@@ -1690,7 +1975,7 @@ impl<'a> TurnLoop<'a> {
     // emergency epoch; the normal builder will issue the same request again.
     if self.turn_has_structural_compaction(turn_id) {
       let request = self.assemble_request(self.messages.clone());
-      if request_context_tokens(&request) <= target {
+      if self.request_context_tokens_for(self.provider(), &request) <= target {
         self.diagnostic(
           Some(turn_id.clone()),
           DiagnosticLevel::Info,
@@ -1720,7 +2005,7 @@ impl<'a> TurnLoop<'a> {
       candidate_messages.push(Message::user(summary.clone()));
       candidate_messages.extend(suffix.iter().cloned());
       let request = self.assemble_request(candidate_messages);
-      if request_context_tokens(&request) <= target {
+      if self.request_context_tokens_for(self.provider(), &request) <= target {
         accepted = Some(summary);
         break;
       }
@@ -1812,7 +2097,12 @@ impl<'a> TurnLoop<'a> {
       self.requests.fetch_add(1, Ordering::SeqCst);
       let epoch = self.epoch_index();
       let model = self.active_model();
-      let estimate = estimate_tokens(&request);
+      let provider = self.provider();
+      let raw_prompt_estimate = provider.estimate_prompt_tokens(&request).max(1);
+      let estimator_scope = provider.prompt_estimator_scope(&request);
+      let calibrated_prompt_estimate = self.calibrated_prompt_estimate(provider, &request);
+      let estimate = RequestBudget::for_prompt_estimate(&request, calibrated_prompt_estimate)
+        .context_tokens_est();
 
       self
         .emit(
@@ -1843,15 +2133,17 @@ impl<'a> TurnLoop<'a> {
         epoch,
         model: model.clone(),
       };
-      let provider = self.provider();
+      // Provider aborts and trace failures must stop this request without
+      // mutating the user's cancellation token for the whole turn.
+      let request_cancel = cancel.child();
       let mut collector = Collector::new(
         progress,
         &mut *self.trace,
         attribution,
-        cancel.clone(),
+        request_cancel.clone(),
         clock,
       );
-      let outcome = provider.stream(&request, &mut collector, cancel);
+      let outcome = provider.stream(&request, &mut collector, &request_cancel);
       let duration_ms = elapsed_ms(clock);
       let Collector {
         text,
@@ -1880,6 +2172,13 @@ impl<'a> TurnLoop<'a> {
         // question, and answering it wrongly is how a runtime accepts a half
         // answer as final.
         Ok(usage) => {
+          if let Some(actual_prompt_tokens) = usage.logical_prompt_tokens {
+            self.observe_prompt_estimate(
+              estimator_scope.clone(),
+              raw_prompt_estimate,
+              actual_prompt_tokens,
+            );
+          }
           // "Produced" means *content the user would see*. Tool calls alone do not
           // make an unfinished response a truncation of an answer.
           let produced = !text.is_empty();
@@ -1984,6 +2283,7 @@ impl<'a> TurnLoop<'a> {
           }),
         )
         .map_err(TurnFailure::from)?;
+      self.admit_tool_calls(&calls);
       self
         .record_unexecuted_calls(
           turn_id.clone(),
@@ -2838,7 +3138,8 @@ impl<'a> TurnLoop<'a> {
       candidate.push(Message::user(summary.clone()));
       candidate.extend(self.messages[boundary..].iter().cloned());
       selected = Some((boundary, summary));
-      if request_context_tokens(&self.assemble_request(candidate)) <= target_tokens {
+      let request = self.assemble_request(candidate);
+      if self.request_context_tokens_for(self.provider(), &request) <= target_tokens {
         break;
       }
     }
@@ -2899,10 +3200,11 @@ impl<'a> TurnLoop<'a> {
     }
     let may_approve_mutations =
       self.mutating_approval_available || self.tools.auto_approves_mutating();
-    self
+    let mut tools = self
       .tools
       .specs()
       .into_iter()
+      .filter(|spec| spec.name != PAYLOAD_READ_TOOL_NAME)
       .filter(|spec| {
         self.progress_tool_is_exposed(&spec.name)
           && (may_approve_mutations
@@ -2911,7 +3213,109 @@ impl<'a> TurnLoop<'a> {
               .metadata_for(&spec.name)
               .is_some_and(|metadata| metadata.read_only))
       })
-      .collect()
+      .collect::<Vec<_>>();
+    if !self.progress_boundary_active
+      && self.trace.supports_payload_read()
+      && !self.payload_read_refs.is_empty()
+    {
+      tools.push(payload_read_tool_spec());
+    }
+    tools
+  }
+
+  fn tool_metadata_for(&self, name: &str) -> Option<ToolMetadata> {
+    if name == PAYLOAD_READ_TOOL_NAME {
+      return Some(ToolMetadata::read_only(
+        PAYLOAD_READ_TOOL_NAME,
+        "Read a bounded byte range from archived output in this session.",
+      ));
+    }
+    self.tools.metadata_for(name)
+  }
+
+  fn remember_payload_ref(&mut self, reference: String) {
+    if self
+      .payload_read_refs
+      .iter()
+      .any(|known| known == &reference)
+    {
+      return;
+    }
+    if self.payload_read_refs.len() == MAX_AVAILABLE_PAYLOAD_REFS {
+      self.payload_read_refs.pop_front();
+    }
+    self.payload_read_refs.push_back(reference);
+  }
+
+  fn execute_payload_read(&self, request: &rupi_core::ToolRequest) -> Executed {
+    let failed = |message: String| Executed {
+      request: request.clone(),
+      outcome: ToolOutcome::failed(message.clone()),
+      state: ToolExecutionState::Failed,
+      started: true,
+      refusal: Some(message),
+      full_output: None,
+      cancelled: false,
+    };
+    let Some(arguments) = request.arguments.as_object() else {
+      return failed("payload_read arguments must be an object".into());
+    };
+    if arguments.len() != 3
+      || arguments
+        .keys()
+        .any(|key| !matches!(key.as_str(), "ref" | "offset" | "limit"))
+    {
+      return failed("payload_read accepts only ref, offset, and limit".into());
+    }
+    let Some(reference) = arguments.get("ref").and_then(serde_json::Value::as_str) else {
+      return failed("payload_read ref must be an opaque string".into());
+    };
+    if !self
+      .payload_read_refs
+      .iter()
+      .any(|known| known == reference)
+    {
+      return failed("payload_read ref is not available in this session".into());
+    }
+    let Some(offset) = arguments.get("offset").and_then(serde_json::Value::as_u64) else {
+      return failed("payload_read offset must be a non-negative integer".into());
+    };
+    let Some(limit) = arguments.get("limit").and_then(serde_json::Value::as_u64) else {
+      return failed("payload_read limit must be a positive integer".into());
+    };
+    if offset > MAX_RECOVERABLE_PAYLOAD_BYTES || limit == 0 || limit > MAX_PAYLOAD_READ_CHUNK_BYTES
+    {
+      return failed(format!(
+        "payload_read range exceeds the {MAX_PAYLOAD_READ_CHUNK_BYTES}-byte chunk or {MAX_RECOVERABLE_PAYLOAD_BYTES}-byte payload limit"
+      ));
+    }
+    let read = match self.trace.read_payload_range(reference, offset, limit) {
+      Ok(Some(read)) => read,
+      Ok(None) | Err(_) => {
+        return failed(
+          "payload_read ref is missing, invalid, or exceeds the supported payload size".into(),
+        );
+      }
+    };
+    let next_offset = offset.saturating_add(read.bytes.len() as u64);
+    let text = serde_json::json!({
+      "ref": reference,
+      "offset": offset,
+      "next_offset": next_offset,
+      "total_bytes": read.total_bytes,
+      "complete": next_offset >= read.total_bytes,
+      "text": String::from_utf8_lossy(&read.bytes)
+    })
+    .to_string();
+    Executed {
+      request: request.clone(),
+      outcome: ToolOutcome::succeeded(text),
+      state: ToolExecutionState::Succeeded,
+      started: true,
+      refusal: None,
+      full_output: None,
+      cancelled: false,
+    }
   }
 
   fn effective_progress_tools(&self) -> Vec<String> {
@@ -2951,8 +3355,42 @@ impl<'a> TurnLoop<'a> {
     request
   }
 
+  fn calibrated_prompt_estimate(
+    &self,
+    provider: &dyn ModelProvider,
+    request: &ModelRequest,
+  ) -> u64 {
+    let raw = provider.estimate_prompt_tokens(request).max(1);
+    let scope = provider.prompt_estimator_scope(request);
+    self
+      .prompt_calibration
+      .get(&scope)
+      .map_or(raw, |calibration| calibration.estimate(raw))
+  }
+
+  fn observe_prompt_estimate(&mut self, scope: String, raw: u64, actual: u64) {
+    if raw == 0 || actual == 0 {
+      return;
+    }
+    self
+      .prompt_calibration
+      .entry(scope)
+      .or_default()
+      .observe(raw, actual);
+  }
+
+  fn request_context_tokens_for(
+    &self,
+    provider: &dyn ModelProvider,
+    request: &ModelRequest,
+  ) -> u64 {
+    RequestBudget::for_prompt_estimate(request, self.calibrated_prompt_estimate(provider, request))
+      .context_tokens_est()
+  }
+
   fn estimate_request_for(&self, provider: &dyn ModelProvider, messages: Vec<Message>) -> u64 {
-    request_context_tokens(&self.assemble_request_for(provider, messages))
+    let request = self.assemble_request_for(provider, messages);
+    self.request_context_tokens_for(provider, &request)
   }
 
   fn estimate_request_after_eviction(
@@ -2969,9 +3407,9 @@ impl<'a> TurnLoop<'a> {
     }
     let request = self.assemble_request_for(provider, messages);
     if prompt_only {
-      estimate_tokens(&request)
+      self.calibrated_prompt_estimate(provider, &request)
     } else {
-      request_context_tokens(&request)
+      self.request_context_tokens_for(provider, &request)
     }
   }
 
@@ -3138,7 +3576,7 @@ impl<'a> TurnLoop<'a> {
       }));
     }
     let estimated_request = self.assemble_request(self.messages.clone());
-    let estimated_tokens = request_context_tokens(&estimated_request);
+    let estimated_tokens = self.request_context_tokens_for(self.provider(), &estimated_request);
     let state = {
       let mut state = ContextState::zero(capabilities.context_window);
       state.model = Some(self.active_model());
@@ -3284,7 +3722,10 @@ impl<'a> TurnLoop<'a> {
     }
 
     let mut request = self.assemble_request(self.messages.clone());
-    let mut budget = RequestBudget::for_request(&request);
+    let mut budget = RequestBudget::for_prompt_estimate(
+      &request,
+      self.calibrated_prompt_estimate(self.provider(), &request),
+    );
     if budget.is_unusable() {
       let target_prompt_tokens = if let Some(desired_output_tokens) = budget.desired_output_tokens {
         budget
@@ -3292,11 +3733,17 @@ impl<'a> TurnLoop<'a> {
           .saturating_sub(budget.safety_reserve_tokens)
           .saturating_sub(desired_output_tokens.min(MINIMUM_USEFUL_OUTPUT_TOKENS))
       } else {
-        budget.context_window
+        budget
+          .context_window
+          .saturating_sub(budget.safety_reserve_tokens)
+          .saturating_sub(budget.reserved_output_tokens)
       };
       self.evict_oldest_to_prompt(target_prompt_tokens, turn_id, turn_history_start)?;
       request = self.assemble_request(self.messages.clone());
-      budget = RequestBudget::for_request(&request);
+      budget = RequestBudget::for_prompt_estimate(
+        &request,
+        self.calibrated_prompt_estimate(self.provider(), &request),
+      );
     }
     if budget.is_unusable() {
       self.diagnostic(
@@ -3332,6 +3779,29 @@ impl<'a> TurnLoop<'a> {
     request =
       request.with_output_budget(budget.desired_output_tokens, budget.effective_output_tokens);
     Ok(request)
+  }
+
+  fn admit_tool_calls(&mut self, calls: &[ToolCallBlock]) -> Vec<ToolCallAdmission> {
+    calls
+      .iter()
+      .map(|call| {
+        let read_only = self
+          .tool_metadata_for(&call.name)
+          .is_some_and(|metadata| metadata.read_only);
+        let denial = if self.tool_calls_seen >= self.max_tool_calls {
+          Some(ToolBudgetDenial::Total)
+        } else if !read_only && self.mutating_tool_calls_seen >= self.max_mutating_tool_calls {
+          Some(ToolBudgetDenial::Mutating)
+        } else {
+          None
+        };
+        self.tool_calls_seen = self.tool_calls_seen.saturating_add(1);
+        if !read_only {
+          self.mutating_tool_calls_seen = self.mutating_tool_calls_seen.saturating_add(1);
+        }
+        ToolCallAdmission { read_only, denial }
+      })
+      .collect()
   }
 
   /// Persist one assistant response and add its visible content to model history.
@@ -3380,10 +3850,12 @@ impl<'a> TurnLoop<'a> {
       self.trace.emit_without_message(&mut completion)?;
       self.envelopes.push(completion);
     }
+    let admissions = self.admit_tool_calls(&calls);
     Ok(RecordedResponse {
       assistant_event_id,
       calls,
       rejected_calls,
+      admissions,
     })
   }
 
@@ -3415,8 +3887,7 @@ impl<'a> TurnLoop<'a> {
   ) -> Result<(), TurnError> {
     for call in calls {
       let read_only = self
-        .tools
-        .metadata_for(&call.name)
+        .tool_metadata_for(&call.name)
         .map(|metadata| metadata.read_only)
         .unwrap_or(false);
       progress.on_tool_requested(call);
@@ -3486,13 +3957,17 @@ impl<'a> TurnLoop<'a> {
   fn execute_calls(
     &mut self,
     turn_id: TurnId,
-    assistant_event_id: rupi_core::EventId,
-    calls: &[ToolCallBlock],
-    rejected_calls: &BTreeMap<String, String>,
+    recorded: RecordedResponse,
     cancel: &CancelToken,
     progress: &mut dyn TurnProgress,
-  ) -> Result<bool, TurnError> {
-    let mut progress_succeeded = false;
+  ) -> Result<ToolBatchOutcome, TurnError> {
+    let RecordedResponse {
+      assistant_event_id,
+      calls,
+      rejected_calls,
+      admissions,
+    } = recorded;
+    let mut outcome = ToolBatchOutcome::default();
     for (index, call) in calls.iter().enumerate() {
       if cancel.is_cancelled() {
         // The assistant batch is already committed. Close the entire remaining
@@ -3507,11 +3982,11 @@ impl<'a> TurnLoop<'a> {
         )?;
         break;
       }
-      let metadata = self.tools.metadata_for(&call.name);
-      let read_only = metadata
-        .as_ref()
-        .map(|meta| meta.read_only)
-        .unwrap_or(false);
+      let admission = admissions.get(index).copied().ok_or_else(|| {
+        TurnError::Sink("tool-call budget plan does not match the assistant batch".into())
+      })?;
+      let metadata = self.tool_metadata_for(&call.name);
+      let read_only = admission.read_only;
       progress.on_tool_requested(call);
       let requested = self.emit_with_parent(
         Some(turn_id.clone()),
@@ -3523,6 +3998,47 @@ impl<'a> TurnLoop<'a> {
         }),
         Some(assistant_event_id.clone()),
       )?;
+
+      if let Some(denial) = admission.denial {
+        let reason = match denial {
+          ToolBudgetDenial::Total => format!(
+            "not executed: the per-turn tool-call budget of {} calls is exhausted",
+            self.max_tool_calls
+          ),
+          ToolBudgetDenial::Mutating => format!(
+            "not executed: the per-turn mutating-tool budget of {} calls is exhausted",
+            self.max_mutating_tool_calls
+          ),
+        };
+        let executed = Executed {
+          request: rupi_core::ToolRequest {
+            call_id: call.id.clone(),
+            name: call.name.clone(),
+            arguments: call.arguments.clone(),
+          },
+          outcome: ToolOutcome::failed(reason.clone()),
+          state: ToolExecutionState::Failed,
+          started: false,
+          refusal: Some(reason),
+          full_output: None,
+          cancelled: false,
+        };
+        let (block, seq, _) = self.record_tool_outcome(
+          turn_id.clone(),
+          call,
+          &executed,
+          0,
+          read_only,
+          Some(requested.meta.event_id),
+        )?;
+        outcome.budget_exhausted = true;
+        progress.on_tool_finished(call, &executed);
+        self.push_message(
+          Message::new(Role::Tool, vec![ContentBlock::ToolResult(block)]),
+          seq,
+        );
+        continue;
+      }
 
       if let Some(parse_reason) = rejected_calls.get(call.id.as_str()) {
         let reason = format!(
@@ -3541,7 +4057,7 @@ impl<'a> TurnLoop<'a> {
           full_output: None,
           cancelled: false,
         };
-        let (block, seq) = self.record_tool_outcome(
+        let (block, seq, _) = self.record_tool_outcome(
           turn_id.clone(),
           call,
           &executed,
@@ -3580,7 +4096,19 @@ impl<'a> TurnLoop<'a> {
             .into(),
         ),
       };
-      let executed = {
+      let executed = if call.name == PAYLOAD_READ_TOOL_NAME {
+        let clock = Instant::now();
+        let started = self.emit_with_parent(
+          Some(turn_id.clone()),
+          AgentEvent::ToolStarted(ToolStarted {
+            call_id: call.id.clone(),
+            name: call.name.clone(),
+          }),
+          Some(requested.meta.event_id.clone()),
+        )?;
+        let execution = self.execute_payload_read(&request);
+        (execution, elapsed_ms(clock), Some(started.meta.event_id))
+      } else {
         let mut gate = FixedApprovalGate(approval);
         let mut sink = LiveToolSink { progress, call };
         let trace = &mut *self.trace;
@@ -3616,6 +4144,9 @@ impl<'a> TurnLoop<'a> {
         (executed, elapsed_ms(clock), started_event_id)
       };
       let (mut execution, duration_ms, started_event_id) = executed;
+      if started_event_id.is_some() {
+        self.tool_calls_started = self.tool_calls_started.saturating_add(1);
+      }
       // The registry can observe cancellation in the small race between our batch
       // check and dispatch. It proves this call never started, so close it as a
       // terminal failure rather than leaving an open Requested lifecycle.
@@ -3624,16 +4155,44 @@ impl<'a> TurnLoop<'a> {
         execution.outcome.state = ToolExecutionState::Failed;
         execution.outcome.is_error = true;
       }
-      let (block, seq) = self.record_tool_outcome(
+      let request_event_id = requested.meta.event_id.clone();
+      let (block, seq, outcome_event_id) = self.record_tool_outcome(
         turn_id.clone(),
         call,
         &execution,
         duration_ms,
         read_only,
-        started_event_id.or(Some(requested.meta.event_id.clone())),
+        started_event_id.or(Some(request_event_id.clone())),
       )?;
       if self.call_makes_progress(call) && execution.state == ToolExecutionState::Succeeded {
-        progress_succeeded = true;
+        outcome.progress_succeeded = true;
+      }
+      if execution.state == ToolExecutionState::Unknown && !read_only {
+        self.unresolved_side_effects.push(UnresolvedSideEffect {
+          request: request.clone(),
+          turn_id: turn_id.clone(),
+          request_event_id,
+          unknown_event_id: outcome_event_id,
+          latest_status: None,
+        });
+        let tail = &calls[index + 1..];
+        if !tail.is_empty() {
+          self.record_unexecuted_calls(
+            turn_id.clone(),
+            assistant_event_id.clone(),
+            tail,
+            progress,
+            "not executed: an earlier mutating tool has an unresolved side effect",
+            true,
+          )?;
+        }
+        outcome.unresolved_mutation = true;
+        progress.on_tool_finished(call, &execution);
+        self.push_message(
+          Message::new(Role::Tool, vec![ContentBlock::ToolResult(block)]),
+          seq,
+        );
+        break;
       }
       progress.on_tool_finished(call, &execution);
       self.push_message(
@@ -3641,7 +4200,7 @@ impl<'a> TurnLoop<'a> {
         seq,
       );
     }
-    Ok(progress_succeeded)
+    Ok(outcome)
   }
 
   /// Turn one executed call into its session block and its terminal event.
@@ -3653,9 +4212,9 @@ impl<'a> TurnLoop<'a> {
     duration_ms: u64,
     read_only: bool,
     parent_event_id: Option<rupi_core::EventId>,
-  ) -> Result<(ToolResultBlock, Option<EventSeq>), TurnError> {
+  ) -> Result<(ToolResultBlock, Option<EventSeq>, rupi_core::EventId), TurnError> {
     let outcome = &executed.outcome;
-    let text = outcome.text.clone();
+    let mut text = outcome.text.clone();
     let mut reduced = outcome.reduced;
     let mut recovery_blob = None;
 
@@ -3666,6 +4225,15 @@ impl<'a> TurnLoop<'a> {
       reduced = true;
       recovery_blob = blob.clone();
       let recovery_ref = blob.as_ref().map(BlobRef::recovery_ref);
+      if let Some(reference) = recovery_ref
+        .as_ref()
+        .filter(|_| self.trace.supports_payload_read())
+      {
+        self.remember_payload_ref(reference.clone());
+        text.push_str(&format!(
+          "\n\n[Archived output is available through payload_read: ref={reference}; offset=0; limit up to {MAX_PAYLOAD_READ_CHUNK_BYTES} bytes.]"
+        ));
+      }
       self.emit(
         Some(turn_id.clone()),
         AgentEvent::ContextReduced(ContextReduced {
@@ -3734,7 +4302,7 @@ impl<'a> TurnLoop<'a> {
       parent_event_id,
     )?;
 
-    Ok((block, envelope.meta.seq))
+    Ok((block, envelope.meta.seq, envelope.meta.event_id))
   }
 }
 
@@ -4130,18 +4698,61 @@ fn elapsed_ms(clock: Instant) -> u64 {
 /// first or refuse before dispatch.
 const MINIMUM_USEFUL_OUTPUT_TOKENS: u64 = 256;
 
+const PROMPT_CALIBRATION_WINDOW: usize = 8;
+const PROMPT_CALIBRATION_SCALE: u64 = 1_000;
+const PROMPT_CALIBRATION_MAX_RATIO: u64 = 10_000;
+
+/// Recent high-side actual/estimated prompt ratios for one provider dialect.
+#[derive(Debug, Default)]
+struct PromptCalibration {
+  ratios: VecDeque<u64>,
+}
+
+impl PromptCalibration {
+  fn observe(&mut self, raw_estimate: u64, actual: u64) {
+    let ratio = actual
+      .saturating_mul(PROMPT_CALIBRATION_SCALE)
+      .div_ceil(raw_estimate)
+      .clamp(PROMPT_CALIBRATION_SCALE, PROMPT_CALIBRATION_MAX_RATIO);
+    self.ratios.push_back(ratio);
+    if self.ratios.len() > PROMPT_CALIBRATION_WINDOW {
+      self.ratios.pop_front();
+    }
+  }
+
+  fn multiplier(&self) -> u64 {
+    self
+      .ratios
+      .iter()
+      .copied()
+      .max()
+      .unwrap_or(PROMPT_CALIBRATION_SCALE)
+  }
+
+  fn estimate(&self, raw: u64) -> u64 {
+    raw
+      .saturating_mul(self.multiplier())
+      .div_ceil(PROMPT_CALIBRATION_SCALE)
+  }
+}
+
 /// Prompt plus requested generation budget for one exact assembled request.
 struct RequestBudget {
   prompt_tokens_est: u64,
   desired_output_tokens: Option<u64>,
   effective_output_tokens: Option<u64>,
+  reserved_output_tokens: u64,
   context_window: u64,
   safety_reserve_tokens: u64,
 }
 
 impl RequestBudget {
+  #[cfg(test)]
   fn for_request(request: &ModelRequest) -> Self {
-    let prompt_tokens_est = estimate_tokens(request);
+    Self::for_prompt_estimate(request, estimate_tokens(request))
+  }
+
+  fn for_prompt_estimate(request: &ModelRequest, prompt_tokens_est: u64) -> Self {
     let context_window = request.capabilities.context_window;
     // Leave room for estimator error and provider-side framing. The runtime
     // still uses the full advertised window to derive profile thresholds.
@@ -4152,10 +4763,16 @@ impl RequestBudget {
     let desired_output_tokens = request.desired_output_tokens;
     let effective_output_tokens =
       desired_output_tokens.map(|desired| desired.min(available_output));
+    // With no provider wire ceiling, preserve bounded room for an answer anyway.
+    // The reserve is smaller than a configured output budget and never grows
+    // beyond half of a tiny context or 2,048 tokens on a large one.
+    let implicit_output_reserve = (context_window / 8).min(2_048).min(context_window / 2);
+    let reserved_output_tokens = effective_output_tokens.unwrap_or(implicit_output_reserve);
     Self {
       prompt_tokens_est,
       desired_output_tokens,
       effective_output_tokens,
+      reserved_output_tokens,
       context_window,
       safety_reserve_tokens,
     }
@@ -4165,11 +4782,9 @@ impl RequestBudget {
     if self.desired_output_tokens == Some(0) {
       return true;
     }
-    let minimum_prompt_headroom = if self.desired_output_tokens.is_some() {
-      self.safety_reserve_tokens
-    } else {
-      0
-    };
+    let minimum_prompt_headroom = self
+      .safety_reserve_tokens
+      .saturating_add(self.reserved_output_tokens);
     self
       .prompt_tokens_est
       .saturating_add(minimum_prompt_headroom)
@@ -4183,14 +4798,15 @@ impl RequestBudget {
   }
 
   fn context_tokens_est(&self) -> u64 {
-    // The reserve constrains the exact output ceiling but is not itself a model
-    // token; threshold estimates report prompt plus the effective wire allowance.
+    // Include response headroom in context policy even when it is not sent as a
+    // provider `max_tokens` field; it still consumes the model's context window.
     self
       .prompt_tokens_est
-      .saturating_add(self.effective_output_tokens.unwrap_or_default())
+      .saturating_add(self.reserved_output_tokens)
   }
 }
 
+#[cfg(test)]
 fn request_context_tokens(request: &ModelRequest) -> u64 {
   RequestBudget::for_request(request).context_tokens_est()
 }
@@ -4201,19 +4817,9 @@ fn request_context_tokens(request: &ModelRequest) -> u64 {
 /// can fit by message bytes alone while still exceeding the provider window once
 /// exposed tools are serialized. A previous request's usage is not a measurement
 /// of this request and must not replace this estimate.
+#[cfg(test)]
 fn estimate_tokens(request: &ModelRequest) -> u64 {
-  let mut bytes = request
-    .system
-    .as_ref()
-    .map(|system| system.len())
-    .unwrap_or(0);
-  for message in &request.messages {
-    bytes += estimate_message_bytes(message);
-  }
-  for spec in &request.tools {
-    bytes += spec.name.len() + spec.description.len() + spec.parameters.to_string().len();
-  }
-  (bytes / 4).max(1) as u64
+  request.estimate_tokens()
 }
 
 struct FixedApprovalGate(Approval);
@@ -4225,6 +4831,36 @@ impl ApprovalGate for FixedApprovalGate {
     _arguments: &serde_json::Value,
   ) -> Approval {
     self.0.clone()
+  }
+}
+
+fn archived_payload_ref(text: &str) -> Option<&str> {
+  const PREFIX: &str = "[Archived output is available through payload_read: ref=";
+  let start = text.find(PREFIX)?.saturating_add(PREFIX.len());
+  let end = start.saturating_add(text[start..].find(';')?);
+  let reference = text.get(start..end)?;
+  (!reference.is_empty() && !reference.chars().any(char::is_whitespace)).then_some(reference)
+}
+
+fn payload_read_tool_spec() -> rupi_core::ToolSpec {
+  rupi_core::ToolSpec {
+    name: PAYLOAD_READ_TOOL_NAME.into(),
+    description: format!(
+      "Read archived tool output by its opaque current-session reference. Read at most {MAX_PAYLOAD_READ_CHUNK_BYTES} bytes per call; use byte offsets and the reported total to fetch another range."
+    ),
+    parameters: serde_json::json!({
+      "type":"object",
+      "properties":{
+        "ref":{"type":"string","description":"Opaque recovery ref printed with reduced output"},
+        "offset":{"type":"integer","minimum":0},
+        "limit":{"type":"integer","minimum":1,"maximum":MAX_PAYLOAD_READ_CHUNK_BYTES}
+      },
+      "required":["ref","offset","limit"],
+      "additionalProperties":false
+    }),
+    sampling_constraint: Some(rupi_core::ToolSamplingConstraint::JsonSchema {
+      strictness: rupi_core::ToolSamplingStrictness::Prefer,
+    }),
   }
 }
 
@@ -4742,6 +5378,54 @@ mod tests {
   #[derive(Clone, Default)]
   struct Recorder(Arc<Mutex<Vec<Recorded>>>, Arc<Mutex<Vec<Causal>>>);
 
+  #[derive(Clone, Default)]
+  struct PayloadTrace {
+    recorder: Recorder,
+    payloads: Arc<Mutex<BTreeMap<String, Vec<u8>>>>,
+  }
+
+  impl Trace for PayloadTrace {
+    fn emit(&mut self, envelope: &mut EventEnvelope) -> Result<(), SinkError> {
+      self.recorder.emit(envelope)
+    }
+
+    fn put_payload(&mut self, bytes: &[u8]) -> Result<Option<BlobRef>, SinkError> {
+      let blob = BlobRef::for_bytes(bytes, Some("text/plain"));
+      self
+        .payloads
+        .lock()
+        .unwrap()
+        .insert(blob.recovery_ref(), bytes.to_vec());
+      Ok(Some(blob))
+    }
+
+    fn supports_payload_read(&self) -> bool {
+      true
+    }
+
+    fn read_payload_range(
+      &self,
+      reference: &str,
+      offset: u64,
+      limit: u64,
+    ) -> Result<Option<PayloadRead>, SinkError> {
+      let payloads = self.payloads.lock().unwrap();
+      let Some(bytes) = payloads.get(reference) else {
+        return Ok(None);
+      };
+      let start = usize::try_from(offset)
+        .unwrap_or(usize::MAX)
+        .min(bytes.len());
+      let end = start
+        .saturating_add(usize::try_from(limit).unwrap_or(usize::MAX))
+        .min(bytes.len());
+      Ok(Some(PayloadRead {
+        bytes: bytes[start..end].to_vec(),
+        total_bytes: bytes.len() as u64,
+      }))
+    }
+  }
+
   impl Recorder {
     fn kinds(&self) -> Vec<String> {
       self
@@ -5072,6 +5756,173 @@ mod tests {
         ));
       };
       Ok(usage)
+    }
+  }
+
+  struct AbortObservingProvider {
+    model: ModelRef,
+    request_aborted: Arc<std::sync::atomic::AtomicBool>,
+  }
+
+  struct CalibratingProvider {
+    model: ModelRef,
+    requests: Arc<Mutex<Vec<ModelRequest>>>,
+    round: std::sync::atomic::AtomicUsize,
+  }
+
+  impl ModelProvider for CalibratingProvider {
+    fn provider_id(&self) -> &str {
+      "calibration-test"
+    }
+
+    fn model(&self) -> &ModelRef {
+      &self.model
+    }
+
+    fn capabilities(&self) -> ModelCapabilities {
+      ModelCapabilities {
+        tools: true,
+        max_output_tokens: Some(1_024),
+        ..ModelCapabilities::text_only(8_192)
+      }
+    }
+
+    fn stream(
+      &self,
+      request: &ModelRequest,
+      sink: &mut dyn ProviderEventSink,
+      _cancel: &CancelToken,
+    ) -> Result<CompletionUsage, ModelFailure> {
+      self.requests.lock().unwrap().push(request.clone());
+      let round = self.round.fetch_add(1, std::sync::atomic::Ordering::SeqCst);
+      if round == 0 {
+        sink.emit(&ProviderEvent::ToolCall(ToolCallBlock {
+          id: rupi_core::ToolCallId::new(),
+          name: "spy".into(),
+          arguments: json!({}),
+        }));
+      } else {
+        sink.emit(&ProviderEvent::TextDelta("calibrated".into()));
+      }
+      let actual = request.estimate_tokens().saturating_mul(135).div_ceil(100);
+      let mut usage = CompletionUsage::unknown();
+      usage.input_tokens = Some(actual);
+      usage.logical_prompt_tokens = Some(actual);
+      usage.output_tokens = Some(1);
+      usage.provider_total_tokens = Some(actual + 1);
+      usage.finish_reason = Some(if round == 0 { "tool_calls" } else { "stop" }.into());
+      usage.certainty = rupi_core::CompletionCertainty::Certain;
+      Ok(usage)
+    }
+  }
+
+  struct PayloadReadProvider {
+    model: ModelRef,
+    recovery_ref: String,
+    denied_ref: String,
+    requests: Arc<Mutex<Vec<ModelRequest>>>,
+    round: std::sync::atomic::AtomicUsize,
+  }
+
+  impl ModelProvider for PayloadReadProvider {
+    fn provider_id(&self) -> &str {
+      "payload-read-test"
+    }
+
+    fn model(&self) -> &ModelRef {
+      &self.model
+    }
+
+    fn capabilities(&self) -> ModelCapabilities {
+      ModelCapabilities {
+        tools: true,
+        max_output_tokens: Some(1_024),
+        ..ModelCapabilities::text_only(32_000)
+      }
+    }
+
+    fn stream(
+      &self,
+      request: &ModelRequest,
+      sink: &mut dyn ProviderEventSink,
+      _cancel: &CancelToken,
+    ) -> Result<CompletionUsage, ModelFailure> {
+      let round = self.round.fetch_add(1, std::sync::atomic::Ordering::SeqCst);
+      self.requests.lock().unwrap().push(request.clone());
+      let finish_reason = match round {
+        0 => {
+          sink.emit(&ProviderEvent::ToolCall(ToolCallBlock {
+            id: rupi_core::ToolCallId::new(),
+            name: "large_output".into(),
+            arguments: json!({}),
+          }));
+          "tool_calls"
+        }
+        1 => {
+          sink.emit(&ProviderEvent::ToolCall(ToolCallBlock {
+            id: rupi_core::ToolCallId::new(),
+            name: PAYLOAD_READ_TOOL_NAME.into(),
+            arguments: json!({"ref":self.denied_ref,"offset":0,"limit":512}),
+          }));
+          "tool_calls"
+        }
+        2 => {
+          sink.emit(&ProviderEvent::ToolCall(ToolCallBlock {
+            id: rupi_core::ToolCallId::new(),
+            name: PAYLOAD_READ_TOOL_NAME.into(),
+            arguments: json!({"ref":self.recovery_ref,"offset":0,"limit":512}),
+          }));
+          "tool_calls"
+        }
+        3 => {
+          sink.emit(&ProviderEvent::TextDelta("recovered".into()));
+          "stop"
+        }
+        _ => {
+          return Err(ModelFailure::new(
+            ModelFailureKind::Protocol,
+            FailurePhase::Streaming,
+            "unexpected payload-read test round",
+          ));
+        }
+      };
+      let mut usage = CompletionUsage::unknown();
+      usage.input_tokens = Some(request.estimate_tokens());
+      usage.logical_prompt_tokens = Some(request.estimate_tokens());
+      usage.output_tokens = Some(1);
+      usage.provider_total_tokens = Some(request.estimate_tokens().saturating_add(1));
+      usage.finish_reason = Some(finish_reason.into());
+      usage.certainty = rupi_core::CompletionCertainty::Certain;
+      Ok(usage)
+    }
+  }
+
+  impl ModelProvider for AbortObservingProvider {
+    fn provider_id(&self) -> &str {
+      "test"
+    }
+
+    fn model(&self) -> &ModelRef {
+      &self.model
+    }
+
+    fn capabilities(&self) -> ModelCapabilities {
+      ModelCapabilities::text_only(128_000)
+    }
+
+    fn stream(
+      &self,
+      _request: &ModelRequest,
+      sink: &mut dyn ProviderEventSink,
+      cancel: &CancelToken,
+    ) -> Result<CompletionUsage, ModelFailure> {
+      sink.emit(&ProviderEvent::TextDelta(
+        "x".repeat(MAX_RESPONSE_TEXT_BYTES + 1),
+      ));
+      self
+        .request_aborted
+        .store(cancel.is_cancelled(), std::sync::atomic::Ordering::SeqCst);
+      Ok(CompletionUsage::unknown())
     }
   }
 
@@ -5480,6 +6331,53 @@ mod tests {
     }
   }
 
+  #[derive(Clone)]
+  struct UnknownAfterStartTool(Arc<Mutex<Vec<serde_json::Value>>>);
+
+  impl Tool for UnknownAfterStartTool {
+    fn metadata(&self) -> ToolMetadata {
+      ToolMetadata::mutating("write_probe", "may have changed state", true)
+    }
+
+    fn arguments_schema(&self) -> serde_json::Value {
+      serde_json::json!({"type":"object"})
+    }
+
+    fn execute(
+      &self,
+      request: &ToolRequest,
+      _progress: &mut dyn rupi_core::ToolProgress,
+    ) -> Result<ToolOutcome, rupi_core::ToolError> {
+      self.0.lock().unwrap().push(request.arguments.clone());
+      Err(rupi_core::ToolError::after_start(
+        "execution ended before the side effect could be observed",
+      ))
+    }
+  }
+
+  struct OutputTool {
+    output: String,
+  }
+
+  impl Tool for OutputTool {
+    fn metadata(&self) -> ToolMetadata {
+      ToolMetadata::read_only("large_output", "Return a large deterministic text payload.")
+    }
+
+    fn arguments_schema(&self) -> serde_json::Value {
+      json!({"type":"object","properties":{},"additionalProperties":false})
+    }
+
+    #[allow(clippy::result_large_err)]
+    fn execute(
+      &self,
+      _request: &ToolRequest,
+      _progress: &mut dyn rupi_core::ToolProgress,
+    ) -> Result<ToolOutcome, rupi_core::ToolError> {
+      Ok(ToolOutcome::succeeded(self.output.clone()))
+    }
+  }
+
   struct SizedTool {
     description: String,
     schema: serde_json::Value,
@@ -5581,6 +6479,213 @@ mod tests {
       self.prompts += 1;
       self.decision.clone()
     }
+  }
+
+  #[test]
+  fn mutating_unknown_stops_the_batch_until_an_operator_resolves_it() {
+    let mutations = Arc::new(Mutex::new(Vec::new()));
+    let reads = Arc::new(Mutex::new(Vec::new()));
+    let tools = registry_with(vec![
+      Box::new(UnknownAfterStartTool(Arc::clone(&mutations))),
+      Box::new(Spy(Arc::clone(&reads))),
+    ]);
+    let first_id = rupi_core::ToolCallId::new();
+    let second_id = rupi_core::ToolCallId::new();
+    let read_id = rupi_core::ToolCallId::new();
+    let provider = Scripted::new(
+      "unknown-barrier",
+      vec![
+        vec![
+          ProviderEvent::ToolCall(ToolCallBlock {
+            id: first_id,
+            name: "write_probe".into(),
+            arguments: json!({"path":"a"}),
+          }),
+          ProviderEvent::ToolCall(ToolCallBlock {
+            id: second_id,
+            name: "write_probe".into(),
+            arguments: json!({"path":"b"}),
+          }),
+          ProviderEvent::ToolCall(ToolCallBlock {
+            id: read_id,
+            name: "spy".into(),
+            arguments: json!({"read":"later"}),
+          }),
+        ],
+        text("continue only after the side effect is reconciled"),
+      ],
+    );
+    let policy = rupi_core::ProfilePolicy::new(
+      rupi_core::ContextProfile::Balanced,
+      provider.capabilities().context_window,
+    );
+    let mut trace = Recorder::default();
+    let observed_trace = trace.clone();
+    let mut runtime = TurnLoop::new(
+      &provider,
+      &tools,
+      &policy,
+      &mut trace,
+      SessionId::new(),
+      TraceId::new(),
+    )
+    .with_max_requests(4);
+
+    let first = runtime
+      .run_turn(
+        "perform these operations",
+        &CancelToken::new(),
+        &mut SilentProgress,
+      )
+      .expect("unknown outcome is a terminal report");
+    assert_eq!(first.status, TurnStatus::NeedsReconciliation);
+    assert_eq!(provider.requests().len(), 1);
+    assert_eq!(observed_trace.count("tool_started"), 1);
+    assert_eq!(observed_trace.count("tool_unknown"), 1);
+    assert_eq!(observed_trace.count("tool_failed"), 2);
+    assert_eq!(mutations.lock().unwrap().len(), 1);
+    assert!(reads.lock().unwrap().is_empty());
+    assert_eq!(runtime.unresolved_side_effects().len(), 1);
+
+    let blocked = runtime
+      .run_turn("continue", &CancelToken::new(), &mut SilentProgress)
+      .expect("an unresolved side effect blocks with a report");
+    assert_eq!(blocked.status, TurnStatus::NeedsReconciliation);
+    assert_eq!(provider.requests().len(), 1);
+
+    let request_event = runtime.unresolved_side_effects()[0]
+      .request_event_id
+      .clone();
+    runtime
+      .confirm_side_effect_resolution(
+        &request_event,
+        ReconciliationStatus::Unmodified {
+          details: "operator inspected the target and confirmed it was unchanged".into(),
+        },
+      )
+      .expect("explicit operator reconciliation clears the barrier");
+    let resolved = runtime
+      .run_turn(
+        "continue after inspection",
+        &CancelToken::new(),
+        &mut SilentProgress,
+      )
+      .expect("the next user-requested turn may continue");
+    assert_eq!(resolved.status, TurnStatus::Completed);
+    assert_eq!(provider.requests().len(), 2);
+    assert!(runtime.unresolved_side_effects().is_empty());
+    assert_eq!(observed_trace.count("tool_reconciliation_observed"), 2);
+  }
+
+  #[test]
+  fn tool_call_budgets_close_the_batch_tail_before_excess_calls_start() {
+    let mutations = Arc::new(Mutex::new(Vec::new()));
+    let reads = Arc::new(Mutex::new(Vec::new()));
+    let tools = registry_with(vec![
+      Box::new(MutatingSpy {
+        seen: Arc::clone(&mutations),
+        outcome: ToolOutcome::succeeded("mutated"),
+      }),
+      Box::new(Spy(Arc::clone(&reads))),
+    ]);
+    let mut calls = Vec::new();
+    for (id, name, arguments) in [
+      ("write-1", "write_probe", json!({"path":"one"})),
+      ("write-2", "write_probe", json!({"path":"two"})),
+      ("write-3", "write_probe", json!({"path":"three"})),
+      ("read-1", "spy", json!({"item":1})),
+      ("read-2", "spy", json!({"item":2})),
+    ] {
+      calls.push(ProviderEvent::ToolCall(ToolCallBlock {
+        id: rupi_core::ToolCallId::from_string(id),
+        name: name.into(),
+        arguments,
+      }));
+    }
+    let provider = Scripted::new("tool-call-budget", vec![calls, text("must not run")]);
+    let policy = rupi_core::ProfilePolicy::new(
+      rupi_core::ContextProfile::Balanced,
+      provider.capabilities().context_window,
+    );
+    let mut trace = Recorder::default();
+    let report = TurnLoop::new(
+      &provider,
+      &tools,
+      &policy,
+      &mut trace,
+      SessionId::new(),
+      TraceId::new(),
+    )
+    .with_tool_call_budgets(4, 2)
+    .run_turn(
+      "bounded tool batch",
+      &CancelToken::new(),
+      &mut SilentProgress,
+    )
+    .expect("budget exhaustion is a terminal report");
+
+    assert_eq!(report.status, TurnStatus::ToolBudgetExhausted);
+    assert!(report.tool_budget_exhausted);
+    assert_eq!(report.tool_calls, 5);
+    assert_eq!(report.tool_calls_started, 3);
+    assert_eq!(provider.requests().len(), 1);
+    assert_eq!(mutations.lock().unwrap().len(), 2);
+    assert_eq!(reads.lock().unwrap().len(), 1);
+    assert_eq!(trace.count("tool_started"), 3);
+    assert_eq!(trace.count("tool_failed"), 2);
+  }
+
+  #[test]
+  fn rejected_tool_requests_still_spend_the_per_turn_budget() {
+    let mutations = Arc::new(Mutex::new(Vec::new()));
+    let tools = registry_with(vec![Box::new(MutatingSpy {
+      seen: Arc::clone(&mutations),
+      outcome: ToolOutcome::succeeded("mutated"),
+    })]);
+    let rejected_id = rupi_core::ToolCallId::from_string("rejected-write");
+    let later_id = rupi_core::ToolCallId::from_string("later-write");
+    let provider = Scripted::new(
+      "rejected-tool-budget",
+      vec![vec![
+        ProviderEvent::ToolCallRejected {
+          id: rejected_id,
+          name: "write_probe".into(),
+          reason: "malformed arguments".into(),
+        },
+        ProviderEvent::ToolCall(ToolCallBlock {
+          id: later_id,
+          name: "write_probe".into(),
+          arguments: json!({"path":"later"}),
+        }),
+      ]],
+    );
+    let policy = rupi_core::ProfilePolicy::new(
+      rupi_core::ContextProfile::Balanced,
+      provider.capabilities().context_window,
+    );
+    let mut trace = Recorder::default();
+    let report = TurnLoop::new(
+      &provider,
+      &tools,
+      &policy,
+      &mut trace,
+      SessionId::new(),
+      TraceId::new(),
+    )
+    .with_tool_call_budgets(1, 1)
+    .run_turn(
+      "bounded malformed calls",
+      &CancelToken::new(),
+      &mut SilentProgress,
+    )
+    .expect("budget exhaustion is a terminal report");
+
+    assert_eq!(report.status, TurnStatus::ToolBudgetExhausted);
+    assert_eq!(report.tool_calls, 2);
+    assert_eq!(report.tool_calls_started, 0);
+    assert!(mutations.lock().unwrap().is_empty());
+    assert_eq!(trace.count("tool_failed"), 2);
+    assert_eq!(provider.requests().len(), 1);
   }
 
   #[test]
@@ -5811,6 +6916,120 @@ mod tests {
   }
 
   #[test]
+  fn prompt_calibration_uses_a_bounded_high_side_window() {
+    let mut calibration = PromptCalibration::default();
+    calibration.observe(100, 140);
+    calibration.observe(100, 110);
+    assert_eq!(calibration.multiplier(), 1_400);
+    assert_eq!(calibration.estimate(1_000), 1_400);
+
+    for _ in 0..PROMPT_CALIBRATION_WINDOW {
+      calibration.observe(100, 100);
+    }
+    assert_eq!(calibration.multiplier(), PROMPT_CALIBRATION_SCALE);
+    assert_eq!(calibration.estimate(1_000), 1_000);
+  }
+
+  #[test]
+  fn missing_wire_output_ceiling_still_reserves_response_headroom() {
+    let context_window = 8_192;
+    for percentage in [70, 85, 95, 99] {
+      let prompt_bytes = (context_window * 4 * percentage) / 100;
+      let request = ModelRequest::new(
+        ModelRef::new("local", "no-output-cap"),
+        ModelCapabilities::text_only(context_window),
+        vec![Message::user("x".repeat(prompt_bytes as usize))],
+      );
+      let budget = RequestBudget::for_request(&request);
+
+      assert_eq!(budget.desired_output_tokens, None);
+      assert_eq!(budget.effective_output_tokens, None);
+      assert!(budget.reserved_output_tokens > 0);
+      if percentage == 70 {
+        assert!(!budget.is_unusable(), "70% prompt retains answer headroom");
+      } else {
+        assert!(
+          budget.is_unusable(),
+          "{percentage}% prompt must be compacted or refused before dispatch"
+        );
+      }
+    }
+  }
+
+  #[test]
+  fn strict_provider_mapping_is_included_in_the_prompt_budget() {
+    let context_window = 8_192;
+    let mut properties = serde_json::Map::new();
+    for index in 0..220 {
+      properties.insert(
+        format!("field_{index:03}"),
+        json!({
+          "type":"string",
+          "description":"optional schema field for the near-window mapping budget"
+        }),
+      );
+    }
+    let schema = json!({
+      "type":"object",
+      "properties":properties,
+      "additionalProperties":false
+    });
+    let mut capabilities = ModelCapabilities::text_only(context_window);
+    capabilities.tools = true;
+    let provider = rupi_provider::OpenAiCompat::new(rupi_provider::config::ProviderConfig {
+      strict_tool_schema: rupi_core::OpenAiStrictToolSchemaSupport::Supported,
+      max_output_tokens: Some(1_024),
+      capabilities,
+      ..rupi_provider::config::ProviderConfig::local(
+        "local",
+        "strict-budget",
+        "http://127.0.0.1:9/v1",
+        context_window,
+      )
+    })
+    .expect("strict test endpoint config is valid");
+    let mut tools = registry_with(Vec::new());
+    tools.register_with_sampling_constraint(
+      Box::new(SizedTool {
+        description: "inspect structured fields".into(),
+        schema,
+      }),
+      Some(rupi_core::ToolSamplingConstraint::JsonSchema {
+        strictness: rupi_core::ToolSamplingStrictness::Prefer,
+      }),
+    );
+    let observed = Arc::new(Mutex::new(None));
+    let policy = CaptureContextState(Arc::clone(&observed));
+    let mut trace = Recorder::default();
+    let mut runtime = TurnLoop::new(
+      &provider,
+      &tools,
+      &policy,
+      &mut trace,
+      SessionId::new(),
+      TraceId::new(),
+    )
+    .with_messages(vec![Message::user("inspect this record")]);
+    let mut turn_history_start = 1;
+    let request = runtime
+      .build_request(&TurnId::new(), &mut turn_history_start)
+      .expect("the mapped strict request retains useful output headroom");
+    let state = observed
+      .lock()
+      .unwrap()
+      .clone()
+      .expect("context policy sees the mapped request estimate");
+    let mapped_prompt = provider.estimate_prompt_tokens(&request);
+    let expected_context =
+      RequestBudget::for_prompt_estimate(&request, mapped_prompt).context_tokens_est();
+
+    assert!(mapped_prompt > request.estimate_tokens() + 200);
+    assert!(state.estimated_tokens > context_window * 7 / 10);
+    assert_eq!(state.estimated_tokens, expected_context);
+    assert!(request.max_output_tokens.unwrap() >= MINIMUM_USEFUL_OUTPUT_TOKENS);
+  }
+
+  #[test]
   fn output_budget_clamps_the_exact_wire_ceiling_with_prompt_headroom() {
     let mut provider = Scripted::new("output-budget", Vec::new());
     provider.capabilities.context_window = 32_768;
@@ -5852,6 +7071,40 @@ mod tests {
         .iter()
         .any(|message| { message.contains("output budget reduced from 16384") })
     );
+  }
+
+  #[test]
+  fn no_output_ceiling_refuses_near_full_current_turns_before_dispatch() {
+    let context_window = 8_192;
+    for percentage in [85, 95, 99] {
+      let mut provider = Scripted::new("no-output-ceiling", vec![text("must not run")]);
+      provider.capabilities.context_window = context_window;
+      provider.capabilities.max_output_tokens = None;
+      let tools = registry_with(Vec::new());
+      let policy =
+        rupi_core::ProfilePolicy::new(rupi_core::ContextProfile::Balanced, context_window);
+      let mut trace = Recorder::default();
+      let input = "x".repeat((context_window * 4 * percentage / 100) as usize);
+      let error = TurnLoop::new(
+        &provider,
+        &tools,
+        &policy,
+        &mut trace,
+        SessionId::new(),
+        TraceId::new(),
+      )
+      .run_turn(&input, &CancelToken::new(), &mut SilentProgress)
+      .expect_err("current-turn text cannot be evicted to invent answer capacity");
+
+      assert_eq!(error.kind(), Some(ModelFailureKind::ContextOverflow));
+      assert!(provider.requests().is_empty());
+      assert!(
+        trace
+          .diagnostics()
+          .iter()
+          .any(|message| { message.contains("cannot reserve a useful output budget") })
+      );
+    }
   }
 
   #[test]
@@ -5992,11 +7245,11 @@ mod tests {
       "current-context-sizing",
       vec![tool_call("expand", serde_json::json!({})), text("done")],
     );
-    provider.capabilities.context_window = 32_000;
-    provider.capabilities.max_output_tokens = None;
+    provider.capabilities.context_window = 80_000;
+    provider.capabilities.max_output_tokens = Some(512);
     let mut usage = rupi_core::CompletionUsage::unknown();
-    usage.input_tokens = Some(8_000);
-    usage.logical_prompt_tokens = Some(8_000);
+    usage.input_tokens = Some(557);
+    usage.logical_prompt_tokens = Some(557);
     let provider = provider.with_usage(usage);
 
     let tool_policy = rupi_core::ToolPolicy {
@@ -6006,11 +7259,11 @@ mod tests {
     };
     let mut tools = ToolRegistry::new(Workspace::new(std::env::temp_dir()).expect("temp dir"))
       .with_policy(&tool_policy);
-    tools.register(Box::new(ExpandedResultTool("x".repeat(100_000))));
+    tools.register(Box::new(ExpandedResultTool("x".repeat(26_000))));
 
     let observations = Arc::new(Mutex::new(Vec::new()));
     let policy = RecordingProfilePolicy {
-      profile: rupi_core::ProfilePolicy::new(rupi_core::ContextProfile::Balanced, 32_000),
+      profile: rupi_core::ProfilePolicy::new(rupi_core::ContextProfile::Balanced, 80_000),
       observations: Arc::clone(&observations),
     };
     let mut trace = Recorder::default();
@@ -6023,18 +7276,26 @@ mod tests {
       TraceId::new(),
     )
     .run_turn("expand context", &CancelToken::new(), &mut SilentProgress)
-    .expect("turn completes after reducing the completed tool cycle");
+    .unwrap_or_else(|error| {
+      panic!(
+        "turn completes after reducing the completed tool cycle: {error:?}; states={:?}; events={:?}",
+        observations.lock().unwrap(),
+        trace.kinds()
+      )
+    });
 
     assert_eq!(report.status, TurnStatus::Completed);
     let observations = observations.lock().unwrap();
     assert!(observations.len() >= 2);
     let (second_state, second_decision) = &observations[1];
     assert_eq!(second_state.measured_tokens, None);
-    assert!(second_state.estimated_tokens > 24_000);
-    assert!(matches!(
-      &second_decision.action,
-      ContextAction::Compact { .. }
-    ));
+    assert!(second_state.estimated_tokens > 6_000);
+    assert!(
+      matches!(&second_decision.action, ContextAction::Compact { .. }),
+      "unexpected action: {:?} for {:?}",
+      second_decision.action,
+      second_state
+    );
     assert!(
       trace
         .kinds()
@@ -6183,7 +7444,7 @@ mod tests {
   }
 
   #[test]
-  fn provider_delta_sink_failure_is_retained_and_cancels_streaming() {
+  fn provider_delta_sink_failure_is_retained_and_aborts_only_request_streaming() {
     let provider = Scripted::new(
       "two-deltas",
       vec![vec![
@@ -6215,7 +7476,10 @@ mod tests {
     .unwrap_err();
 
     assert!(matches!(error, TurnError::Sink(message) if message.contains("delta write")));
-    assert!(cancel.is_cancelled());
+    assert!(
+      !cancel.is_cancelled(),
+      "an internal trace abort must not mutate user cancellation state"
+    );
     assert_eq!(progress.0, vec!["first"]);
     assert_eq!(trace.deltas, 2);
     assert_eq!(
@@ -7727,6 +8991,176 @@ mod tests {
   }
 
   #[test]
+  fn payload_read_recovers_bounded_output_and_rejects_other_session_refs() {
+    let output = format!("BEGIN:{}:END", "x".repeat(12_000));
+    let recovery_ref = BlobRef::for_bytes(output.as_bytes(), Some("text/plain")).recovery_ref();
+    let mut trace = PayloadTrace::default();
+    assert!(trace.supports_payload_read());
+    let unrelated = trace
+      .put_payload(b"unrelated current-session payload")
+      .unwrap()
+      .unwrap()
+      .recovery_ref();
+    let requests = Arc::new(Mutex::new(Vec::new()));
+    let provider = PayloadReadProvider {
+      model: ModelRef::new("payload-read-test", "local-model"),
+      recovery_ref: recovery_ref.clone(),
+      denied_ref: unrelated.clone(),
+      requests: Arc::clone(&requests),
+      round: std::sync::atomic::AtomicUsize::new(0),
+    };
+    let tools =
+      registry_with(vec![Box::new(OutputTool { output })]).with_policy(&rupi_core::ToolPolicy {
+        auto_approve_mutating: true,
+        max_output_bytes: 1_024,
+        ..rupi_core::ToolPolicy::default()
+      });
+    let policy = rupi_core::ProfilePolicy::new(
+      rupi_core::ContextProfile::Balanced,
+      provider.capabilities().context_window,
+    );
+    let mut runtime = TurnLoop::new(
+      &provider,
+      &tools,
+      &policy,
+      &mut trace,
+      SessionId::new(),
+      TraceId::new(),
+    );
+    assert!(runtime.trace.supports_payload_read());
+    let report = runtime
+      .run_turn(
+        "inspect the large output",
+        &CancelToken::new(),
+        &mut SilentProgress,
+      )
+      .expect("bounded payload recovery completes without rerunning the source tool");
+
+    assert_eq!(report.status, TurnStatus::Completed);
+    assert_eq!(report.text, "recovered");
+    assert!(runtime.trace.supports_payload_read());
+    assert_eq!(
+      runtime.payload_read_refs.len(),
+      1,
+      "reduced={:?}",
+      trace.recorder.find("context_reduced")
+    );
+    let requests = requests.lock().unwrap();
+    assert_eq!(requests.len(), 4);
+    assert!(
+      !requests[0]
+        .tools
+        .iter()
+        .any(|tool| tool.name == PAYLOAD_READ_TOOL_NAME)
+    );
+    assert!(
+      requests[1]
+        .tools
+        .iter()
+        .any(|tool| tool.name == PAYLOAD_READ_TOOL_NAME),
+      "tools={:?}, events={:?}",
+      requests[1]
+        .tools
+        .iter()
+        .map(|tool| &tool.name)
+        .collect::<Vec<_>>(),
+      trace.recorder.kinds()
+    );
+    let first_tool_context = serde_json::to_string(&requests[1].messages).unwrap();
+    assert!(first_tool_context.contains(&recovery_ref));
+    assert!(first_tool_context.contains("payload_read"));
+    let denied_context = serde_json::to_string(&requests[2].messages).unwrap();
+    assert!(denied_context.contains("not available in this session"));
+    let recovered_context = serde_json::to_string(&requests[3].messages).unwrap();
+    assert!(recovered_context.contains("BEGIN"));
+    assert!(recovered_context.contains("total_bytes"));
+    assert!(!recovered_context.contains("unrelated current-session payload"));
+    drop(requests);
+    assert_eq!(trace.recorder.count("tool_failed"), 1);
+    assert_eq!(trace.recorder.count("tool_completed"), 2);
+  }
+
+  #[test]
+  fn resume_reexposes_only_reduced_payload_refs_still_in_model_context() {
+    let provider = Scripted::new("resume-payload-read", Vec::new());
+    let tools = registry_with(Vec::new());
+    let policy = rupi_core::ProfilePolicy::new(
+      rupi_core::ContextProfile::Balanced,
+      provider.capabilities().context_window,
+    );
+    let mut trace = PayloadTrace::default();
+    let reference = trace
+      .put_payload(b"resumed archive")
+      .unwrap()
+      .unwrap()
+      .recovery_ref();
+    let notice = format!(
+      "reduced result\n[Archived output is available through payload_read: ref={reference}; offset=0; limit up to 4096 bytes.]"
+    );
+    let messages = vec![
+      Message::user(notice.clone()),
+      Message::new(
+        Role::Tool,
+        vec![ContentBlock::ToolResult(ToolResultBlock {
+          id: rupi_core::ToolCallId::new(),
+          name: "unrelated".into(),
+          state: ToolExecutionState::Succeeded,
+          text: notice.clone(),
+          is_error: false,
+          reduced: false,
+        })],
+      ),
+      Message::new(
+        Role::Tool,
+        vec![ContentBlock::ToolResult(ToolResultBlock {
+          id: rupi_core::ToolCallId::new(),
+          name: "large_output".into(),
+          state: ToolExecutionState::Succeeded,
+          text: notice,
+          is_error: false,
+          reduced: true,
+        })],
+      ),
+    ];
+    let state = ResumeState {
+      messages,
+      message_seqs: vec![None, None, None],
+      epochs: vec![ModelEpoch {
+        index: 0,
+        model: provider.model().clone(),
+        capabilities: provider.capabilities(),
+        reason: rupi_core::EpochReason::Initial,
+        started_by_event: None,
+      }],
+      context_epoch: 0,
+      checkpoint_floor: 0,
+      cited_history: None,
+      interrupted_tools: Vec::new(),
+      unresolved_side_effects: Vec::new(),
+    };
+    let runtime = TurnLoop::new(
+      &provider,
+      &tools,
+      &policy,
+      &mut trace,
+      SessionId::new(),
+      TraceId::new(),
+    )
+    .with_resume_state(state)
+    .expect("resume state validates");
+    let request = runtime.assemble_request(runtime.messages.clone());
+
+    assert_eq!(runtime.payload_read_refs.len(), 1);
+    assert_eq!(runtime.payload_read_refs.front(), Some(&reference));
+    assert!(
+      request
+        .tools
+        .iter()
+        .any(|tool| tool.name == PAYLOAD_READ_TOOL_NAME)
+    );
+  }
+
+  #[test]
   fn reduced_builtin_output_is_archived_and_redacted() {
     let temp = rupi_store::TempDir::new("runtime-reduced-read");
     let secret = "recovery-secret-91f7";
@@ -8781,6 +10215,87 @@ mod tests {
   }
 
   #[test]
+  fn internal_response_rejection_aborts_request_without_cancelling_the_user_turn() {
+    let request_aborted = Arc::new(std::sync::atomic::AtomicBool::new(false));
+    let provider = AbortObservingProvider {
+      model: ModelRef::new("test", "oversized-response"),
+      request_aborted: Arc::clone(&request_aborted),
+    };
+    let tools = registry_with(Vec::new());
+    let policy = rupi_core::ProfilePolicy::new(rupi_core::ContextProfile::Balanced, 128_000);
+    let mut trace = Recorder::default();
+    let user_cancel = CancelToken::new();
+    let error = TurnLoop::new(
+      &provider,
+      &tools,
+      &policy,
+      &mut trace,
+      SessionId::new(),
+      TraceId::new(),
+    )
+    .run_turn("answer briefly", &user_cancel, &mut SilentProgress)
+    .expect_err("oversized normalized output is a protocol failure");
+
+    assert_eq!(error.kind(), Some(ModelFailureKind::Protocol));
+    assert!(!user_cancel.is_cancelled());
+    assert!(request_aborted.load(std::sync::atomic::Ordering::SeqCst));
+    assert!(
+      trace.diagnostics().iter().any(|message| {
+        message.contains("protocol") && message.contains("aggregate text limit")
+      })
+    );
+  }
+
+  #[test]
+  fn provider_usage_calibrates_later_requests_within_the_same_model_scope() {
+    let requests = Arc::new(Mutex::new(Vec::new()));
+    let provider = CalibratingProvider {
+      model: ModelRef::new("calibration-test", "local-model"),
+      requests: Arc::clone(&requests),
+      round: std::sync::atomic::AtomicUsize::new(0),
+    };
+    let tools = registry_with(vec![Box::new(Spy(Arc::new(Mutex::new(Vec::new()))))]);
+    let policy = rupi_core::ProfilePolicy::new(
+      rupi_core::ContextProfile::Balanced,
+      provider.capabilities().context_window,
+    );
+    let mut trace = Recorder::default();
+    let observed_trace = trace.clone();
+    let report = TurnLoop::new(
+      &provider,
+      &tools,
+      &policy,
+      &mut trace,
+      SessionId::new(),
+      TraceId::new(),
+    )
+    .run_turn(
+      "calibrate the local tokenizer",
+      &CancelToken::new(),
+      &mut SilentProgress,
+    )
+    .expect("calibration feedback does not interrupt the turn");
+
+    assert_eq!(report.status, TurnStatus::Completed);
+    let requests = requests.lock().unwrap();
+    assert_eq!(requests.len(), 2);
+    let raw_first = requests[0].estimate_tokens();
+    let actual_first = raw_first.saturating_mul(135).div_ceil(100);
+    let raw_second = requests[1].estimate_tokens();
+    let mut calibration = PromptCalibration::default();
+    calibration.observe(raw_first, actual_first);
+    let expected_second =
+      RequestBudget::for_prompt_estimate(&requests[1], calibration.estimate(raw_second))
+        .context_tokens_est();
+    let uncalibrated_second =
+      RequestBudget::for_prompt_estimate(&requests[1], raw_second).context_tokens_est();
+    let starts = observed_trace.all("model_request_started");
+    assert_eq!(starts.len(), 2);
+    assert_eq!(starts[1]["context_tokens_est"], expected_second);
+    assert!(expected_second > uncalibrated_second);
+  }
+
+  #[test]
   fn output_limited_completion_is_failed_and_keeps_provider_evidence() {
     let provider = Scripted::new("limited", vec![text("partial")]).finishes_with("length");
     let tools = registry_with(Vec::new());
@@ -9438,12 +10953,12 @@ mod tests {
     .run_turn("go", &CancelToken::new(), &mut SilentProgress)
     .expect("turn completes");
 
-    // The exact request estimate includes the system guidance, so one more old
-    // turn is removed than a message-only estimate would require.
+    // The hard-fit request estimate reserves answer headroom as well as system
+    // guidance, so the policy sheds more than the message-only recent target.
     let request = &provider.requests()[0];
-    assert_eq!(request.messages.len(), 5, "evicted to the recent target");
-    assert!(request.messages[0].text().starts_with('m'));
-    assert_eq!(request.messages[4].text(), "go");
+    assert_eq!(request.messages.len(), 3, "evicted to the recent target");
+    assert!(request.messages[0].text().starts_with('o'));
+    assert_eq!(request.messages[2].text(), "go");
 
     let kinds = trace.kinds();
     let reduced = kinds
@@ -9731,7 +11246,8 @@ mod tests {
     runtime
       .run_turn("question 2", &CancelToken::new(), &mut SilentProgress)
       .expect("second turn");
-    let target = estimate_tokens(&runtime.assemble_request(runtime.messages()[2..].to_vec()));
+    let target_request = runtime.assemble_request(runtime.messages()[2..].to_vec());
+    let target = runtime.request_context_tokens_for(&provider, &target_request);
     let mut turn_start = runtime.messages().len();
     let removed = runtime
       .evict_oldest(target, &TurnId::new(), &mut turn_start)
@@ -9843,6 +11359,7 @@ mod tests {
       checkpoint_floor: 0,
       cited_history: restored.last_seq.map(|last| (EventSeq(1), last)),
       interrupted_tools: restored.interrupted_tools.clone(),
+      unresolved_side_effects: restored.unresolved_side_effects.clone(),
     };
     let mut resumed = TurnLoop::new(
       &resume_provider,
@@ -9921,6 +11438,7 @@ mod tests {
       checkpoint_floor: 0,
       cited_history: None,
       interrupted_tools: vec![pending],
+      unresolved_side_effects: Vec::new(),
     })
     .expect("resume state validates");
 
@@ -9995,6 +11513,7 @@ mod tests {
         request_event_id: None,
         started_event_id: None,
       }],
+      unresolved_side_effects: Vec::new(),
     })
     .expect("resume state validates");
     let error = runtime
@@ -10011,6 +11530,94 @@ mod tests {
       .unwrap_err();
     assert!(matches!(second, TurnError::Sink(message) if message.contains("still unresolved")));
     assert!(provider.requests().is_empty());
+  }
+
+  #[test]
+  fn restored_mutating_unknown_stays_blocked_until_operator_resolution() {
+    let temp = rupi_store::TempDir::new("runtime-resume-unknown");
+    let provider = Scripted::new("resume-unknown", vec![text("continue after inspection")]);
+    let tools = ToolRegistry::new(Workspace::new(temp.path()).unwrap())
+      .with_policy(&ToolPolicy {
+        auto_approve_mutating: true,
+        ..ToolPolicy::default()
+      })
+      .with_builtins();
+    let policy = rupi_core::ProfilePolicy::new(
+      rupi_core::ContextProfile::Balanced,
+      provider.capabilities().context_window,
+    );
+    let request_event_id = rupi_core::EventId::new();
+    let unknown_event_id = rupi_core::EventId::new();
+    let call_id = rupi_core::ToolCallId::new();
+    let mut trace = Recorder::default();
+    let observed_trace = trace.clone();
+    let mut runtime = TurnLoop::new(
+      &provider,
+      &tools,
+      &policy,
+      &mut trace,
+      SessionId::new(),
+      TraceId::new(),
+    )
+    .with_resume_state(ResumeState {
+      messages: vec![],
+      message_seqs: vec![],
+      epochs: vec![ModelEpoch {
+        index: 0,
+        model: provider.model().clone(),
+        capabilities: provider.capabilities(),
+        reason: EpochReason::Initial,
+        started_by_event: None,
+      }],
+      context_epoch: 0,
+      checkpoint_floor: 0,
+      cited_history: None,
+      interrupted_tools: vec![],
+      unresolved_side_effects: vec![rupi_core::UnresolvedSideEffect {
+        request: rupi_core::ToolRequest {
+          call_id,
+          name: "write".into(),
+          arguments: serde_json::json!({
+            "path":"may-have-changed.txt",
+            "contents":"uncertain"
+          }),
+        },
+        turn_id: TurnId::new(),
+        request_event_id: request_event_id.clone(),
+        unknown_event_id: unknown_event_id.clone(),
+        latest_status: Some(ReconciliationStatus::RequiresManualInspection {
+          details: "the latest durable reconciliation still requires inspection".into(),
+        }),
+      }],
+    })
+    .expect("resume state validates");
+
+    let blocked = runtime
+      .run_turn("continue", &CancelToken::new(), &mut SilentProgress)
+      .expect("restored uncertainty is a terminal report");
+    assert_eq!(blocked.status, TurnStatus::NeedsReconciliation);
+    assert!(provider.requests().is_empty());
+    assert_eq!(runtime.unresolved_side_effects().len(), 1);
+
+    runtime
+      .confirm_side_effect_resolution(
+        &request_event_id,
+        ReconciliationStatus::Unmodified {
+          details: "operator inspected the path and found no change".into(),
+        },
+      )
+      .expect("operator can durably resolve the restored barrier");
+    let continued = runtime
+      .run_turn(
+        "continue after inspection",
+        &CancelToken::new(),
+        &mut SilentProgress,
+      )
+      .expect("provider can be contacted after resolution");
+    assert_eq!(continued.status, TurnStatus::Completed);
+    assert_eq!(provider.requests().len(), 1);
+    assert!(runtime.unresolved_side_effects().is_empty());
+    assert_eq!(observed_trace.count("tool_reconciliation_observed"), 1);
   }
 
   #[test]
@@ -10717,6 +12324,7 @@ mod tests {
       checkpoint_floor: 0,
       cited_history: Some((rupi_core::EventSeq(1), rupi_core::EventSeq(17))),
       interrupted_tools: Vec::new(),
+      unresolved_side_effects: Vec::new(),
     };
 
     let mut turn_loop = TurnLoop::new(

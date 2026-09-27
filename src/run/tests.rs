@@ -300,11 +300,15 @@ fn a_cancel_during_a_mutating_tool_leaves_that_call_unknown() {
       thread::sleep(Duration::from_millis(20));
       cancel_token.cancel();
     });
-    let canceled = session
+    let report = session
       .turn_with("change something", &cancel)
       .map_err(|error| turn_error(&error))?;
-    assert_eq!(canceled.status, TurnStatus::Cancelled);
-    assert_eq!(canceled.tool_calls, 1, "the call was made, not skipped");
+    assert_eq!(
+      report.status,
+      TurnStatus::NeedsReconciliation,
+      "an uncertain mutation takes precedence over the generic cancellation status"
+    );
+    assert_eq!(report.tool_calls, 1, "the call was made, not skipped");
     session.close().map_err(session_error)
   })
   .expect("a turn canceled inside a tool");

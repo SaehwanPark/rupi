@@ -47,7 +47,9 @@ pub use capability::{
 };
 pub use config::{
   ConfigError, ContextOverrides, DEFAULT_MAX_MODEL_REQUESTS_PER_TURN,
-  MAX_CONFIGURED_MODEL_REQUESTS_PER_TURN, McpServerConfig, ModelEndpoint, OpenAiCompatOptions,
+  DEFAULT_MAX_MUTATING_TOOL_CALLS_PER_TURN, DEFAULT_MAX_TOOL_CALLS_PER_TURN,
+  MAX_CONFIGURED_MODEL_REQUESTS_PER_TURN, MAX_CONFIGURED_MUTATING_TOOL_CALLS_PER_TURN,
+  MAX_CONFIGURED_TOOL_CALLS_PER_TURN, McpServerConfig, ModelEndpoint, OpenAiCompatOptions,
   OpenAiMaxTokensField, OpenAiStrictToolSchemaSupport, OpenAiThinkingDisable, OpenAiThinkingInput,
   RuntimeConfig, RuntimeLimits, ToolPolicy, UiConfig,
 };
@@ -61,8 +63,9 @@ pub use event::{
   ContextCompactionEpoch, ContextCompactionStarted, ContextReduced, Diagnostic, DiagnosticLevel,
   EventEnvelope, EventMeta, ExternalContextRetrieved, FIRST_COMPACTION_EPOCH, ModelEpochStarted,
   ModelFailover, ModelRequestCompleted, ModelRequestStarted, ModelRetry, ReasoningDelta,
-  SessionEndReason, SessionEnded, SessionStarted, ToolCompleted, ToolFailed, ToolRequested,
-  ToolStarted, ToolUnknown, TurnCompleted, TurnStatus, UserMessage, next_context_epoch,
+  SessionEndReason, SessionEnded, SessionStarted, ToolCompleted, ToolFailed,
+  ToolReconciliationObserved, ToolReconciliationSource, ToolRequested, ToolStarted, ToolUnknown,
+  TurnCompleted, TurnStatus, UserMessage, next_context_epoch,
 };
 pub use failure::{
   CompletionCertainty, FailurePhase, ModelFailure, ModelFailureKind, RequestReplaySafety,
@@ -84,6 +87,7 @@ pub use redact::{Redacted, RedactionPolicy, SecretKind};
 pub use session::{
   InterruptedToolCall, SessionCheckpointRecord, SessionCompactionRecord, SessionEpochRecord,
   SessionHeader, SessionMessage, SessionRecord, SessionReductionRecord, SessionSummary,
+  UnresolvedSideEffect,
 };
 pub use sink::{EventSink, FanOut, MemorySink, NullSink, SinkError};
 pub use tool::{

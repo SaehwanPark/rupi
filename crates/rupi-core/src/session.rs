@@ -24,7 +24,7 @@ use crate::{
   context::{ContextCapsule, ExternalContextRef, ReductionReason},
   ids::{CheckpointId, EventId, EventSeq, SessionId, TurnId},
   message::{Message, Role},
-  tool::{ToolExecutionState, ToolRequest},
+  tool::{ReconciliationStatus, ToolExecutionState, ToolRequest},
 };
 
 /// Schema version stamped on the session header.
@@ -182,6 +182,17 @@ pub struct InterruptedToolCall {
   /// Event identity of the observed start boundary, when one exists. Recovery
   /// parents its terminal fact here rather than to a session-global call id.
   pub started_event_id: Option<EventId>,
+}
+
+/// A terminal `ToolUnknown` that may still have an unresolved mutating side effect.
+#[derive(Debug, Clone, PartialEq, Eq)]
+pub struct UnresolvedSideEffect {
+  pub request: ToolRequest,
+  pub turn_id: TurnId,
+  pub request_event_id: EventId,
+  pub unknown_event_id: EventId,
+  /// Latest persisted inspection result, if reconciliation has already been attempted.
+  pub latest_status: Option<ReconciliationStatus>,
 }
 
 /// A checkpoint barrier.

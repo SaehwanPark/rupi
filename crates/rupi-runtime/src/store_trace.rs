@@ -11,7 +11,9 @@ use rupi_core::{
 };
 use rupi_store::Session;
 
-use crate::turn::Trace;
+use crate::turn::{
+  MAX_PAYLOAD_READ_CHUNK_BYTES, MAX_RECOVERABLE_PAYLOAD_BYTES, PayloadRead, Trace,
+};
 
 /// A runtime trace backed by one durable store session.
 #[derive(Debug)]
@@ -220,6 +222,44 @@ impl Trace for StoreTrace {
       .map_err(store_error)
   }
 
+  fn supports_payload_read(&self) -> bool {
+    true
+  }
+
+  fn read_payload_range(
+    &self,
+    reference: &str,
+    offset: u64,
+    limit: u64,
+  ) -> Result<Option<PayloadRead>, SinkError> {
+    let (path, short_hash) = reference
+      .rsplit_once(':')
+      .ok_or_else(|| SinkError("invalid payload recovery reference".into()))?;
+    let filename = path
+      .rsplit('/')
+      .next()
+      .ok_or_else(|| SinkError("invalid payload recovery reference".into()))?;
+    let hash = filename.strip_suffix(".deflate").unwrap_or(filename);
+    if short_hash.len() != 12 || !hash.starts_with(short_hash) {
+      return Err(SinkError("invalid payload recovery reference".into()));
+    }
+    let bytes = self
+      .session
+      .blobs()
+      .get_relative_verified_limited(path, MAX_RECOVERABLE_PAYLOAD_BYTES)
+      .map_err(store_error)?;
+    let total_bytes = bytes.len() as u64;
+    let start = usize::try_from(offset)
+      .unwrap_or(usize::MAX)
+      .min(bytes.len());
+    let length = usize::try_from(limit.min(MAX_PAYLOAD_READ_CHUNK_BYTES)).unwrap_or(usize::MAX);
+    let end = start.saturating_add(length).min(bytes.len());
+    Ok(Some(PayloadRead {
+      bytes: bytes[start..end].to_vec(),
+      total_bytes,
+    }))
+  }
+
   fn create_checkpoint(
     &mut self,
     capsule: &rupi_core::ContextCapsule,
@@ -267,6 +307,59 @@ mod tests {
   use rupi_store::{StateLayout, Store, TempDir, TraceJournal, WritePolicy};
 
   use super::*;
+
+  #[test]
+  fn payload_reads_are_bounded_verified_and_session_scoped() {
+    let temp = TempDir::new("runtime-payload-read");
+    let store = Store::open(temp.path(), WritePolicy::default()).unwrap();
+    let model = ModelRef::new("local", "model");
+    let begin = |session_id: SessionId| {
+      store
+        .begin(SessionHeader {
+          session_id,
+          version: SESSION_SCHEMA_VERSION,
+          started_at_ms: 1,
+          working_dir: "/workspace".into(),
+          model: model.clone(),
+          parent_session: None,
+          branched_from_event: None,
+          imported_from: None,
+        })
+        .unwrap()
+    };
+    let mut owner = StoreTrace::new(begin(SessionId::new()));
+    let other = StoreTrace::new(begin(SessionId::new()));
+    let content = b"prefix recovered range suffix";
+    let blob = owner.put_payload(content).unwrap().unwrap();
+    let reference = blob.recovery_ref();
+
+    let range = owner.read_payload_range(&reference, 7, 9).unwrap().unwrap();
+    assert_eq!(range.bytes, b"recovered");
+    assert_eq!(range.total_bytes, content.len() as u64);
+    let large_blob = owner
+      .put_payload(&vec![b'x'; MAX_PAYLOAD_READ_CHUNK_BYTES as usize + 100])
+      .unwrap()
+      .unwrap();
+    let capped = owner
+      .read_payload_range(
+        &large_blob.recovery_ref(),
+        0,
+        MAX_PAYLOAD_READ_CHUNK_BYTES + 100,
+      )
+      .unwrap()
+      .unwrap();
+    assert_eq!(capped.bytes.len() as u64, MAX_PAYLOAD_READ_CHUNK_BYTES);
+    assert!(
+      other.read_payload_range(&reference, 0, 9).is_err(),
+      "a recovery ref cannot cross session blob stores"
+    );
+    assert!(
+      owner
+        .read_payload_range(&format!("{reference}x"), 0, 9)
+        .is_err(),
+      "the abbreviated hash suffix is validated"
+    );
+  }
 
   #[test]
   fn durable_messages_trace_and_recovery_blobs_share_redaction_policy() {

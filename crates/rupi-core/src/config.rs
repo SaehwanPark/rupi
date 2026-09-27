@@ -40,6 +40,15 @@ pub const DEFAULT_MAX_MODEL_REQUESTS_PER_TURN: u32 = 32;
 /// runaway process. This is a policy ceiling, not the normal default.
 pub const MAX_CONFIGURED_MODEL_REQUESTS_PER_TURN: u32 = 256;
 
+/// Default number of tool calls permitted in one user turn, including rejected calls.
+pub const DEFAULT_MAX_TOOL_CALLS_PER_TURN: u32 = 64;
+/// Default number of mutating tool calls permitted in one user turn.
+pub const DEFAULT_MAX_MUTATING_TOOL_CALLS_PER_TURN: u32 = 16;
+/// Hard upper bound for the configurable per-turn tool-call budget.
+pub const MAX_CONFIGURED_TOOL_CALLS_PER_TURN: u32 = 1_024;
+/// Hard upper bound for the configurable per-turn mutating-tool budget.
+pub const MAX_CONFIGURED_MUTATING_TOOL_CALLS_PER_TURN: u32 = 256;
+
 /// Default base URL for remote OpenAI-compatible cloud endpoints.
 pub const DEFAULT_OPENAI_BASE_URL: &str = "https://api.openai.com/v1";
 
@@ -382,6 +391,12 @@ pub struct RuntimeLimits {
   /// Maximum model round-trips for one user input, including retries and failover.
   #[serde(default = "default_max_model_requests_per_turn")]
   pub max_model_requests_per_turn: u32,
+  /// Maximum requested tool calls for one user input, including invalid or unexecuted calls.
+  #[serde(default = "default_max_tool_calls_per_turn")]
+  pub max_tool_calls_per_turn: u32,
+  /// Maximum requested mutating tool calls for one user input. Zero disables mutations.
+  #[serde(default = "default_max_mutating_tool_calls_per_turn")]
+  pub max_mutating_tool_calls_per_turn: u32,
   /// Optional number of model requests that may invoke tools without making
   /// configured progress before the next request is narrowed to progress tools.
   #[serde(default, skip_serializing_if = "Option::is_none")]
@@ -396,6 +411,8 @@ impl Default for RuntimeLimits {
   fn default() -> Self {
     Self {
       max_model_requests_per_turn: DEFAULT_MAX_MODEL_REQUESTS_PER_TURN,
+      max_tool_calls_per_turn: DEFAULT_MAX_TOOL_CALLS_PER_TURN,
+      max_mutating_tool_calls_per_turn: DEFAULT_MAX_MUTATING_TOOL_CALLS_PER_TURN,
       max_model_requests_without_progress: None,
       progress_tool_names: Vec::new(),
     }
@@ -404,6 +421,14 @@ impl Default for RuntimeLimits {
 
 fn default_max_model_requests_per_turn() -> u32 {
   DEFAULT_MAX_MODEL_REQUESTS_PER_TURN
+}
+
+fn default_max_tool_calls_per_turn() -> u32 {
+  DEFAULT_MAX_TOOL_CALLS_PER_TURN
+}
+
+fn default_max_mutating_tool_calls_per_turn() -> u32 {
+  DEFAULT_MAX_MUTATING_TOOL_CALLS_PER_TURN
 }
 
 /// Runtime configuration.
@@ -600,6 +625,22 @@ impl RuntimeConfig {
       return Err(ConfigError(format!(
         "limits.max_model_requests_per_turn must not exceed {MAX_CONFIGURED_MODEL_REQUESTS_PER_TURN}"
       )));
+    }
+    if self.limits.max_tool_calls_per_turn > MAX_CONFIGURED_TOOL_CALLS_PER_TURN {
+      return Err(ConfigError(format!(
+        "limits.max_tool_calls_per_turn must not exceed {MAX_CONFIGURED_TOOL_CALLS_PER_TURN}"
+      )));
+    }
+    if self.limits.max_mutating_tool_calls_per_turn > MAX_CONFIGURED_MUTATING_TOOL_CALLS_PER_TURN {
+      return Err(ConfigError(format!(
+        "limits.max_mutating_tool_calls_per_turn must not exceed {MAX_CONFIGURED_MUTATING_TOOL_CALLS_PER_TURN}"
+      )));
+    }
+    if self.limits.max_mutating_tool_calls_per_turn > self.limits.max_tool_calls_per_turn {
+      return Err(ConfigError(
+        "limits.max_mutating_tool_calls_per_turn must not exceed limits.max_tool_calls_per_turn"
+          .into(),
+      ));
     }
     if let Some(limit) = self.limits.max_model_requests_without_progress {
       if limit == 0 {
@@ -949,6 +990,14 @@ mod tests {
       parsed.limits.max_model_requests_per_turn,
       DEFAULT_MAX_MODEL_REQUESTS_PER_TURN
     );
+    assert_eq!(
+      parsed.limits.max_tool_calls_per_turn,
+      DEFAULT_MAX_TOOL_CALLS_PER_TURN
+    );
+    assert_eq!(
+      parsed.limits.max_mutating_tool_calls_per_turn,
+      DEFAULT_MAX_MUTATING_TOOL_CALLS_PER_TURN
+    );
     assert_eq!(parsed.limits.max_model_requests_without_progress, None);
     assert!(parsed.limits.progress_tool_names.is_empty());
   }
@@ -976,6 +1025,55 @@ mod tests {
     );
     config.limits.max_model_requests_per_turn = MAX_CONFIGURED_MODEL_REQUESTS_PER_TURN + 1;
     assert!(config.validate().unwrap_err().0.contains("must not exceed"));
+  }
+
+  #[test]
+  fn tool_budgets_round_trip_and_enforce_per_turn_ceilings() {
+    let mut config = sample_config();
+    config.limits.max_tool_calls_per_turn = 80;
+    config.limits.max_mutating_tool_calls_per_turn = 12;
+    let parsed = RuntimeConfig::parse(&config.to_json_string().unwrap()).unwrap();
+    assert_eq!(parsed.limits.max_tool_calls_per_turn, 80);
+    assert_eq!(parsed.limits.max_mutating_tool_calls_per_turn, 12);
+
+    config.limits.max_mutating_tool_calls_per_turn = 0;
+    assert!(
+      config.validate().is_ok(),
+      "zero mutations is a supported policy"
+    );
+    config.limits.max_tool_calls_per_turn = 0;
+    assert!(
+      config.validate().is_ok(),
+      "zero tool calls disables all tools"
+    );
+
+    config.limits.max_tool_calls_per_turn = MAX_CONFIGURED_TOOL_CALLS_PER_TURN + 1;
+    assert!(
+      config
+        .validate()
+        .unwrap_err()
+        .0
+        .contains("max_tool_calls_per_turn")
+    );
+    config.limits.max_tool_calls_per_turn = 10;
+    config.limits.max_mutating_tool_calls_per_turn = 11;
+    assert!(
+      config
+        .validate()
+        .unwrap_err()
+        .0
+        .contains("must not exceed limits.max_tool_calls_per_turn")
+    );
+    config.limits.max_tool_calls_per_turn = 100;
+    config.limits.max_mutating_tool_calls_per_turn =
+      MAX_CONFIGURED_MUTATING_TOOL_CALLS_PER_TURN + 1;
+    assert!(
+      config
+        .validate()
+        .unwrap_err()
+        .0
+        .contains("max_mutating_tool_calls_per_turn")
+    );
   }
 
   #[test]
@@ -1025,12 +1123,12 @@ mod tests {
     assert!(error.contains("unknown field"), "{error}");
 
     let mut value = serde_json::to_value(sample_config()).unwrap();
-    value["limits"]["max_mutating_tool_calls_per_turn"] = serde_json::json!(4);
+    value["limits"]["max_mutating_tool_call_per_turn"] = serde_json::json!(4);
     let error = RuntimeConfig::parse(&serde_json::to_string(&value).unwrap())
       .unwrap_err()
       .to_string();
     assert!(
-      error.contains("limits.max_mutating_tool_calls_per_turn"),
+      error.contains("limits.max_mutating_tool_call_per_turn"),
       "{error}"
     );
   }

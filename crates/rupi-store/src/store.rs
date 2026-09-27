@@ -25,16 +25,16 @@ use rupi_core::{
   context::{ContextCapsule, ExternalContextRef},
   event::{
     AgentEvent, Diagnostic, DiagnosticLevel, EventEnvelope, EventMeta, ModelRequestCompleted,
-    ToolFailed,
+    ToolFailed, ToolReconciliationSource,
   },
   ids::{CheckpointId, EventId, EventSeq, SessionId, ToolCallId, TurnId},
   message::{ContentBlock, Message, Role, ToolResultBlock},
   redact::RedactionPolicy,
   session::{
     InterruptedToolCall, SessionCheckpointRecord, SessionHeader, SessionMessage, SessionRecord,
-    SessionSummary,
+    SessionSummary, UnresolvedSideEffect,
   },
-  tool::{ToolExecutionState, ToolRequest},
+  tool::{ReconciliationStatus, ToolExecutionState, ToolRequest},
   trace::{BlobCompression, BlobRef, RawPayloadCapture, TraceRetention},
 };
 
@@ -391,7 +391,9 @@ impl Store {
     // Tool side effects are process state, not checkpoint-scoped history. Scan
     // the complete canonical lifecycle before hiding pre-checkpoint events, so
     // a started mutating call can never disappear behind a later capsule.
-    let interrupted_tools = interrupted_tool_calls(&trace.items)?;
+    let lifecycle = scan_tool_lifecycles(&trace.items)?;
+    let interrupted_tools = interrupted_tool_calls(lifecycle.pending)?;
+    let unresolved_side_effects = lifecycle.unresolved_side_effects;
     // Keep the full trace for integrity and lifecycle checks. Checkpoint
     // filtering belongs only to model-visible projection reconstruction; hiding
     // older canonical events before validation would let a damaged prefix pass.
@@ -406,6 +408,7 @@ impl Store {
       restored.checkpoint_seq,
     )?;
     restored.interrupted_tools = interrupted_tools;
+    restored.unresolved_side_effects = unresolved_side_effects;
     let from_trace = trace
       .items
       .iter()
@@ -2239,6 +2242,7 @@ fn event_kind(event: &AgentEvent) -> &'static str {
     AgentEvent::ToolCompleted(_) => "tool_completed",
     AgentEvent::ToolFailed(_) => "tool_failed",
     AgentEvent::ToolUnknown(_) => "tool_unknown",
+    AgentEvent::ToolReconciliationObserved(_) => "tool_reconciliation_observed",
     AgentEvent::ExternalContextRetrieved(_) => "external_context_retrieved",
     AgentEvent::ContextReduced(_) => "context_reduced",
     AgentEvent::ContextSummary => "context_summary",
@@ -2965,6 +2969,11 @@ fn validate_projection_alignment(
           return Err(fail(entry));
         }
       }
+      AgentEvent::ToolReconciliationObserved(_) => {
+        if !has_message(&entry.envelope.meta.event_id) {
+          return Err(fail(entry));
+        }
+      }
       AgentEvent::ContextReduced(reduced) if reduced.removed_messages > 0 => {
         let Some(projection) = linked_records.iter().find_map(|record| match record {
           SessionRecord::Reduction(reduction)
@@ -3607,6 +3616,20 @@ fn validate_message_projection(
         &invalid,
       )?;
     }
+    AgentEvent::ToolReconciliationObserved(observed) => {
+      if message.role != Role::User
+        || message.message.content.len() != 1
+        || !matches!(
+          message.message.content.first(),
+          Some(rupi_core::ContentBlock::Text { .. })
+        )
+        || message.message.text() != observed.model_notice()
+      {
+        return Err(invalid(
+          "reconciliation notice does not match its durable observation",
+        ));
+      }
+    }
     _ => return Err(invalid("event does not introduce a message")),
   }
   Ok(())
@@ -3656,7 +3679,7 @@ fn unstarted_tool_requests(
   entries: &[rupi_core::TraceEntry],
   _session: &SessionId,
 ) -> Result<Vec<rupi_core::TraceEntry>, StoreError> {
-  let pending = scan_tool_lifecycles(entries)?;
+  let pending = scan_tool_lifecycles(entries)?.pending;
   Ok(
     pending
       .into_iter()
@@ -3724,11 +3747,18 @@ fn lifecycle_invalid(entry: &rupi_core::TraceEntry, detail: &str) -> StoreError 
   ))
 }
 
+struct ScannedToolLifecycles {
+  pending: Vec<PendingToolLifecycle>,
+  unresolved_side_effects: Vec<UnresolvedSideEffect>,
+}
+
 fn scan_tool_lifecycles(
   entries: &[rupi_core::TraceEntry],
-) -> Result<Vec<PendingToolLifecycle>, StoreError> {
+) -> Result<ScannedToolLifecycles, StoreError> {
   let mut pending = BTreeMap::<EventId, PendingToolLifecycle>::new();
   let mut ordered = Vec::<EventId>::new();
+  let mut unresolved = BTreeMap::<EventId, UnresolvedSideEffect>::new();
+  let mut unresolved_order = Vec::<EventId>::new();
 
   for entry in entries {
     match &entry.envelope.event {
@@ -3855,7 +3885,8 @@ fn scan_tool_lifecycles(
         let AgentEvent::ToolRequested(requested) = &call.request.envelope.event else {
           unreachable!("pending tool entries are requests");
         };
-        if unknown.mutating == requested.read_only
+        if !call.started
+          || unknown.mutating == requested.read_only
           || unknown.call_id != requested.call_id
           || unknown.name != requested.name
           || !tool_call_metadata_matches(entry, &unknown.call_id)
@@ -3868,24 +3899,83 @@ fn scan_tool_lifecycles(
             "tool unknown result disagrees with its request",
           ));
         }
+        if unknown.mutating {
+          let turn_id = call
+            .request
+            .envelope
+            .meta
+            .turn_id
+            .clone()
+            .ok_or_else(|| lifecycle_invalid(entry, "mutating Unknown has no turn identity"))?;
+          unresolved_order.push(request_id.clone());
+          unresolved.insert(
+            request_id.clone(),
+            UnresolvedSideEffect {
+              request: ToolRequest {
+                call_id: requested.call_id.clone(),
+                name: requested.name.clone(),
+                arguments: requested.arguments.clone(),
+              },
+              turn_id,
+              request_event_id: request_id,
+              unknown_event_id: entry.envelope.meta.event_id.clone(),
+              latest_status: None,
+            },
+          );
+        }
+      }
+      AgentEvent::ToolReconciliationObserved(observed) => {
+        let Some(side_effect) = unresolved.get_mut(&observed.request_event_id) else {
+          return Err(lifecycle_invalid(
+            entry,
+            "tool reconciliation does not reference an unresolved mutating Unknown",
+          ));
+        };
+        if side_effect.request.call_id != observed.call_id
+          || side_effect.request.name != observed.name
+          || side_effect.unknown_event_id != observed.unknown_event_id
+          || entry.envelope.meta.parent_event_id.as_ref() != Some(&observed.unknown_event_id)
+          || entry.envelope.meta.tool_call_id.as_ref() != Some(&observed.call_id)
+          || (observed.source == ToolReconciliationSource::Operator
+            && !matches!(
+              &observed.status,
+              ReconciliationStatus::Committed { .. } | ReconciliationStatus::Unmodified { .. }
+            ))
+        {
+          return Err(lifecycle_invalid(
+            entry,
+            "tool reconciliation identity disagrees with its Unknown result",
+          ));
+        }
+        if matches!(
+          observed.status,
+          ReconciliationStatus::Committed { .. } | ReconciliationStatus::Unmodified { .. }
+        ) {
+          unresolved.remove(&observed.request_event_id);
+        } else {
+          side_effect.latest_status = Some(observed.status.clone());
+        }
       }
       _ => {}
     }
   }
 
   // Keep the original request order for deterministic recovery.
-  Ok(
-    ordered
+  Ok(ScannedToolLifecycles {
+    pending: ordered
       .into_iter()
       .filter_map(|event_id| pending.remove(&event_id))
       .collect(),
-  )
+    unresolved_side_effects: unresolved_order
+      .into_iter()
+      .filter_map(|event_id| unresolved.remove(&event_id))
+      .collect(),
+  })
 }
 
 fn interrupted_tool_calls(
-  entries: &[rupi_core::TraceEntry],
+  pending: Vec<PendingToolLifecycle>,
 ) -> Result<Vec<InterruptedToolCall>, StoreError> {
-  let pending = scan_tool_lifecycles(entries)?;
   let mut interrupted = Vec::new();
   for call in pending {
     if !call.started {
@@ -4209,6 +4299,19 @@ fn recover_projection_record(
         external_context: None,
       })))
     }
+    AgentEvent::ToolReconciliationObserved(observed) => {
+      let (turn_id, epoch, model) = message_attribution()?;
+      Ok(Some(SessionRecord::Message(SessionMessage {
+        turn_id,
+        role: Role::User,
+        message: Message::user(observed.model_notice()),
+        epoch,
+        model,
+        event_id: trace_entry.envelope.meta.event_id.clone(),
+        seq,
+        external_context: None,
+      })))
+    }
     AgentEvent::ModelRequestCompleted(completed) => {
       if matches!(
         completed.finish_reason.as_deref(),
@@ -4474,11 +4577,13 @@ mod tests {
     event::{
       AgentEvent, CheckpointCreated, ContextReduced, Diagnostic, DiagnosticLevel, EventMeta,
       ModelRequestCompleted, ModelRequestStarted, SessionEndReason, SessionEnded, SessionStarted,
-      ToolCompleted, ToolRequested, ToolStarted, TurnCompleted, TurnStatus, UserMessage,
+      ToolCompleted, ToolReconciliationObserved, ToolReconciliationSource, ToolRequested,
+      ToolStarted, ToolUnknown, TurnCompleted, TurnStatus, UserMessage,
     },
     ids::{EventId, ToolCallId, TraceId, uuidv7},
-    message::ToolCallBlock,
+    message::{ContentBlock, Message, Role, ToolCallBlock, ToolResultBlock},
     session::{SESSION_SCHEMA_VERSION, SessionEpochRecord, SessionReductionRecord},
+    tool::ReconciliationStatus,
     trace::{BlobCompression, TraceRetention},
   };
 
@@ -5180,7 +5285,20 @@ mod tests {
                 read_only: false,
               }),
             );
+            let request_event_id = requested.meta.event_id.clone();
             session.emit(&mut requested).unwrap();
+            if matches!(case, Case::ToolUnknown) {
+              let mut started = EventEnvelope::new(
+                meta(&id, &turn),
+                AgentEvent::ToolStarted(ToolStarted {
+                  call_id: call_id.clone(),
+                  name: name.into(),
+                }),
+              );
+              started.meta.tool_call_id = Some(call_id.clone());
+              started.meta.parent_event_id = Some(request_event_id);
+              session.emit(&mut started).unwrap();
+            }
             let (event, state, text) = if matches!(case, Case::ToolFailed) {
               (
                 AgentEvent::ToolFailed(ToolFailed {
@@ -7045,6 +7163,137 @@ mod tests {
   }
 
   #[test]
+  fn restore_keeps_mutating_unknown_barriers_until_safe_reconciliation_is_recorded() {
+    let tmp = TempDir::new("store-unknown-side-effect");
+    let opened = store(&tmp);
+    let session_id = SessionId::new();
+    let turn_id = TurnId::new();
+    let call_id = ToolCallId::new();
+    let mut session = opened.begin(header(&session_id)).unwrap();
+    let mut requested = EventEnvelope::new(
+      meta(&session_id, &turn_id),
+      AgentEvent::ToolRequested(ToolRequested {
+        call_id: call_id.clone(),
+        name: "write".into(),
+        arguments: serde_json::json!({"path":"a.txt", "content":"x"}),
+        read_only: false,
+      }),
+    );
+    requested.meta.tool_call_id = Some(call_id.clone());
+    let request_id = requested.meta.event_id.clone();
+    session.emit(&mut requested).unwrap();
+
+    let mut started = EventEnvelope::new(
+      meta(&session_id, &turn_id),
+      AgentEvent::ToolStarted(ToolStarted {
+        call_id: call_id.clone(),
+        name: "write".into(),
+      }),
+    );
+    started.meta.tool_call_id = Some(call_id.clone());
+    started.meta.parent_event_id = Some(request_id.clone());
+    let started_id = started.meta.event_id.clone();
+    session.emit(&mut started).unwrap();
+
+    let mut unknown = EventEnvelope::new(
+      meta(&session_id, &turn_id),
+      AgentEvent::ToolUnknown(ToolUnknown {
+        call_id: call_id.clone(),
+        name: "write".into(),
+        why: "completion boundary not observed".into(),
+        mutating: true,
+      }),
+    );
+    unknown.meta.tool_call_id = Some(call_id.clone());
+    unknown.meta.parent_event_id = Some(started_id);
+    let unknown_id = unknown.meta.event_id.clone();
+    let result = Message::new(
+      Role::Tool,
+      vec![ContentBlock::ToolResult(ToolResultBlock {
+        id: call_id.clone(),
+        name: "write".into(),
+        state: rupi_core::ToolExecutionState::Unknown,
+        text: "completion boundary not observed".into(),
+        is_error: true,
+        reduced: false,
+      })],
+    );
+    session.emit_message(&mut unknown, &result).unwrap();
+    session.finish().unwrap();
+
+    let restored = opened.restore(&session_id).unwrap();
+    assert_eq!(restored.unresolved_side_effects.len(), 1);
+    assert_eq!(
+      restored.unresolved_side_effects[0].request_event_id,
+      request_id
+    );
+    assert_eq!(
+      restored.unresolved_side_effects[0].unknown_event_id,
+      unknown_id
+    );
+    assert!(restored.unresolved_side_effects[0].latest_status.is_none());
+
+    let mut session = opened.resume(&session_id).unwrap();
+    let manual_observation = ToolReconciliationObserved {
+      call_id: call_id.clone(),
+      name: "write".into(),
+      request_event_id: request_id.clone(),
+      unknown_event_id: unknown_id.clone(),
+      status: ReconciliationStatus::RequiresManualInspection {
+        details: "cannot inspect this operation automatically".into(),
+      },
+      source: ToolReconciliationSource::Tool,
+    };
+    let manual_message = Message::user(manual_observation.model_notice());
+    let mut manual = EventEnvelope::new(
+      meta(&session_id, &TurnId::new()),
+      AgentEvent::ToolReconciliationObserved(manual_observation),
+    );
+    manual.meta.tool_call_id = Some(call_id.clone());
+    manual.meta.parent_event_id = Some(unknown_id.clone());
+    session.emit_message(&mut manual, &manual_message).unwrap();
+    session.finish().unwrap();
+    let restored = opened.restore(&session_id).unwrap();
+    assert_eq!(restored.unresolved_side_effects.len(), 1);
+    assert!(matches!(
+      restored.unresolved_side_effects[0].latest_status,
+      Some(ReconciliationStatus::RequiresManualInspection { .. })
+    ));
+
+    let mut session = opened.resume(&session_id).unwrap();
+    let resolved_observation = ToolReconciliationObserved {
+      call_id: call_id.clone(),
+      name: "write".into(),
+      request_event_id: request_id,
+      unknown_event_id: unknown_id.clone(),
+      status: ReconciliationStatus::Unmodified {
+        details: "operator confirmed no change after manual inspection".into(),
+      },
+      source: ToolReconciliationSource::Operator,
+    };
+    let resolved_message = Message::user(resolved_observation.model_notice());
+    let mut resolved = EventEnvelope::new(
+      meta(&session_id, &TurnId::new()),
+      AgentEvent::ToolReconciliationObserved(resolved_observation),
+    );
+    resolved.meta.tool_call_id = Some(call_id);
+    resolved.meta.parent_event_id = Some(unknown_id);
+    session
+      .emit_message(&mut resolved, &resolved_message)
+      .unwrap();
+    session.finish().unwrap();
+    let restored = opened.restore(&session_id).unwrap();
+    assert!(restored.unresolved_side_effects.is_empty());
+    assert!(restored.messages.iter().any(|record| {
+      record.message.text().contains("Operator-confirmed")
+        && record
+          .message
+          .text()
+          .contains("operator confirmed no change after manual inspection")
+    }));
+  }
+
+  #[test]
   fn recovery_scopes_parentless_legacy_call_ids_to_active_invocations() {
     let tmp = TempDir::new("store-reused-tool-id");
     let opened = store(&tmp);
@@ -7093,7 +7342,10 @@ mod tests {
     session.finish().unwrap();
     let trace = TraceJournal::read(&trace_path).unwrap();
     assert!(
-      scan_tool_lifecycles(&trace.items).unwrap().is_empty(),
+      scan_tool_lifecycles(&trace.items)
+        .unwrap()
+        .pending
+        .is_empty(),
       "a completed legacy invocation must not reserve its provider id forever"
     );
   }

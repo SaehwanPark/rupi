@@ -34,14 +34,15 @@ use rupi_core::{
     ContextCompactionStarted, ContextReduced, Diagnostic, DiagnosticLevel, EventEnvelope,
     EventMeta, ExternalContextRetrieved, ModelEpochStarted, ModelFailover, ModelRequestCompleted,
     ModelRequestStarted, ModelRetry, ReasoningDelta, SessionEndReason, SessionEnded,
-    SessionStarted, ToolCompleted, ToolFailed, ToolRequested, ToolStarted, ToolUnknown,
-    TurnCompleted, TurnStatus, UserMessage,
+    SessionStarted, ToolCompleted, ToolFailed, ToolReconciliationObserved,
+    ToolReconciliationSource, ToolRequested, ToolStarted, ToolUnknown, TurnCompleted, TurnStatus,
+    UserMessage,
   },
   failure::ModelFailureKind,
   ids::{CheckpointId, EventId, EventSeq, SessionId, ToolCallId, TraceId, TurnId},
   provenance::ReasoningProvenance,
   session::{SESSION_SCHEMA_VERSION, SessionHeader},
-  tool::ToolExecutionState,
+  tool::{ReconciliationStatus, ToolExecutionState},
   trace::{BlobRef, ExternalContextSource, TraceEntry},
 };
 use rupi_store::{Store, StoreError, TraceJournal, WritePolicy, tmp::TempDir};
@@ -136,6 +137,7 @@ fn round_trip(event: AgentEvent) -> TraceEntry {
       | AgentEvent::ToolCompleted(_)
       | AgentEvent::ToolFailed(_)
       | AgentEvent::ToolUnknown(_)
+      | AgentEvent::ToolReconciliationObserved(_)
       | AgentEvent::ContextCompactionStarted(_)
       | AgentEvent::ContextCompactionCompleted(_)
   );
@@ -685,6 +687,27 @@ fn tool_unknown_round_trips() {
 }
 
 #[test]
+fn tool_reconciliation_observed_round_trips() {
+  let request_event_id = EventId::from_string("request-event");
+  let unknown_event_id = EventId::from_string("unknown-event");
+  let original = AgentEvent::ToolReconciliationObserved(ToolReconciliationObserved {
+    call_id: tool_call_id(),
+    name: "write".into(),
+    request_event_id,
+    unknown_event_id,
+    status: ReconciliationStatus::Unmodified {
+      details: "the target is unchanged".into(),
+    },
+    source: ToolReconciliationSource::Tool,
+  });
+  let entry = round_trip(original.clone());
+  let restored = &entry.envelope.event;
+
+  assert_same_variant(restored, &original);
+  assert_eq!(restored, &original);
+}
+
+#[test]
 fn external_context_retrieved_round_trips() {
   let original = AgentEvent::ExternalContextRetrieved(ExternalContextRetrieved {
     source: ExternalContextSource {
@@ -843,6 +866,16 @@ fn turn_completed_round_trips() {
   };
   assert_eq!(body.status, TurnStatus::Completed);
   assert_eq!(body.duration_ms, 1_890);
+}
+
+#[test]
+fn turn_completed_needs_reconciliation_round_trips() {
+  let original = AgentEvent::TurnCompleted(TurnCompleted {
+    status: TurnStatus::NeedsReconciliation,
+    duration_ms: 321,
+  });
+  let entry = round_trip(original.clone());
+  assert_eq!(entry.envelope.event, original);
 }
 
 #[test]

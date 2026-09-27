@@ -38,7 +38,7 @@ use crate::{
   ids::{CheckpointId, EventId, EventSeq, SessionId, ToolCallId, TraceId, TurnId, now_millis},
   message::Message,
   provenance::ReasoningProvenance,
-  tool::ToolExecutionState,
+  tool::{ReconciliationStatus, ToolExecutionState},
   trace::{BlobRef, ExternalContextSource},
 };
 
@@ -150,8 +150,13 @@ pub enum SessionEndReason {
 pub enum TurnStatus {
   Completed,
   Cancelled,
-  /// The turn consumed its request budget without a final model answer.
+  /// The turn consumed its model-request budget without a final answer.
   BudgetExhausted,
+  /// The turn consumed its total or mutating tool-call budget; excess calls were not executed.
+  ToolBudgetExhausted,
+  /// A mutating tool's side effect is unknown; no further autonomous work may proceed
+  /// until its result is reconciled.
+  NeedsReconciliation,
   Failed {
     kind: ModelFailureKind,
   },
@@ -247,6 +252,12 @@ pub enum AgentEvent {
   /// attempted automatically.
   /// UI: emphasized; drives the reconcile path.
   ToolUnknown(ToolUnknown),
+  /// Why: a follow-up inspection resolved or further characterized a mutating
+  /// tool side effect without rewriting its terminal `ToolUnknown` event.
+  /// Ordering: after the original unknown result; never a second tool lifecycle
+  /// terminal. Persistence: always. Replay: clears only a committed/unmodified
+  /// side-effect barrier. UI: exposes the reconciliation evidence.
+  ToolReconciliationObserved(ToolReconciliationObserved),
   /// Why: external knowledge entered context, with citation and provenance.
   /// Ordering: inside the turn that retrieved it.
   /// Persistence: always. Replay: reattaches the reference, not the payload.
@@ -491,6 +502,64 @@ pub struct ToolUnknown {
   pub why: String,
   /// `true` when the call could have changed external state.
   pub mutating: bool,
+}
+
+/// A later observation about a mutating call whose terminal tool state remains Unknown.
+#[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize)]
+pub struct ToolReconciliationObserved {
+  pub call_id: ToolCallId,
+  pub name: String,
+  /// Identifies the exact request even if a provider later reuses its call ID.
+  pub request_event_id: EventId,
+  pub unknown_event_id: EventId,
+  pub status: ReconciliationStatus,
+  /// `operator` means a user explicitly confirmed the outcome after inspection.
+  pub source: ToolReconciliationSource,
+}
+
+impl ToolReconciliationObserved {
+  /// Stable model-visible guidance reconstructed from this durable safety fact.
+  pub fn model_notice(&self) -> String {
+    let (source, guidance) = match (&self.source, &self.status) {
+      (ToolReconciliationSource::Operator, ReconciliationStatus::Committed { .. }) => (
+        "Operator-confirmed",
+        "The side effect is established; do not replay the original call.",
+      ),
+      (ToolReconciliationSource::Operator, ReconciliationStatus::Unmodified { .. }) => (
+        "Operator-confirmed",
+        "The side effect is established as absent; do not automatically replay the original call.",
+      ),
+      (ToolReconciliationSource::Operator, _) => (
+        "Operator-reported",
+        "The outcome remains unresolved; further autonomous work is blocked.",
+      ),
+      (ToolReconciliationSource::Tool, ReconciliationStatus::Committed { .. }) => (
+        "Runtime reconciliation",
+        "The side effect is established; do not replay the original call.",
+      ),
+      (ToolReconciliationSource::Tool, ReconciliationStatus::Unmodified { .. }) => (
+        "Runtime reconciliation",
+        "The side effect is established as absent; do not automatically replay the original call.",
+      ),
+      (ToolReconciliationSource::Tool, _) => (
+        "Runtime reconciliation",
+        "The outcome remains unresolved; further autonomous work is blocked.",
+      ),
+    };
+    format!(
+      "{source} for mutating tool '{}' (request event {}): {}. {guidance}",
+      self.name,
+      self.request_event_id,
+      self.status.summary(),
+    )
+  }
+}
+
+#[derive(Debug, Clone, Copy, PartialEq, Eq, Serialize, Deserialize)]
+#[serde(rename_all = "snake_case")]
+pub enum ToolReconciliationSource {
+  Tool,
+  Operator,
 }
 
 #[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize)]

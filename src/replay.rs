@@ -335,6 +335,9 @@ fn write_human(report: &ReplayReport, sequence: bool, timing: bool) -> Result<()
       rupi_core::AgentEvent::ToolCompleted(tool) => line.push_str(&format!(" {}", tool.name)),
       rupi_core::AgentEvent::ToolFailed(tool) => line.push_str(&format!(" {}", tool.name)),
       rupi_core::AgentEvent::ToolUnknown(tool) => line.push_str(&format!(" {}", tool.name)),
+      rupi_core::AgentEvent::ToolReconciliationObserved(tool) => {
+        line.push_str(&format!(" {} {}", tool.name, tool.status.summary()));
+      }
       _ => {}
     }
     if timing {

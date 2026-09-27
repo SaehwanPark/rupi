@@ -12,8 +12,8 @@ use std::collections::{BTreeMap, BTreeSet};
 use rupi_core::{
   AgentEvent, BlobRef, CapabilityGap, CheckpointId, ContextCapsule, ContextLevel, EpochReason,
   EventId, EventSeq, ExternalContextRef, ExternalizedField, Message, ModelCapabilities, ModelRef,
-  ReasoningProvenance, Role, SessionMessage, SessionRecord, ToolCallId, ToolExecutionState,
-  TraceEntry,
+  ReasoningProvenance, ReconciliationStatus, Role, SessionMessage, SessionRecord, ToolCallId,
+  ToolExecutionState, TraceEntry,
 };
 use serde::{Deserialize, Serialize};
 
@@ -162,6 +162,7 @@ pub enum EventKind {
   ToolCompleted,
   ToolFailed,
   ToolUnknown,
+  ToolReconciliationObserved,
   ExternalContextRetrieved,
   ContextReduced,
   ContextCompactionStarted,
@@ -681,6 +682,8 @@ pub struct ToolReplayState {
   pub state: ToolExecutionState,
   pub read_only: bool,
   pub mutating_unknown: bool,
+  #[serde(default, skip_serializing_if = "Option::is_none")]
+  pub reconciliation_status: Option<ReconciliationStatus>,
   pub reference: HistoricalEventRef,
   pub decision: HistoricalToolDecision,
 }
@@ -697,6 +700,8 @@ pub enum HistoricalToolDecision {
   ReconcileBeforeReplay,
   /// A request exists but no execution boundary was observed.
   RequestedOnly,
+  /// A durable reconciliation observation resolved the uncertain side effect.
+  Reconciled,
 }
 
 /// Timeline item for a model epoch.
@@ -835,6 +840,7 @@ impl EventKind {
       AgentEvent::ToolCompleted(_) => Self::ToolCompleted,
       AgentEvent::ToolFailed(_) => Self::ToolFailed,
       AgentEvent::ToolUnknown(_) => Self::ToolUnknown,
+      AgentEvent::ToolReconciliationObserved(_) => Self::ToolReconciliationObserved,
       AgentEvent::ExternalContextRetrieved(_) => Self::ExternalContextRetrieved,
       AgentEvent::ContextReduced(_) => Self::ContextReduced,
       AgentEvent::ContextCompactionStarted(_) => Self::ContextCompactionStarted,
@@ -892,6 +898,7 @@ fn is_tool_event(event: &AgentEvent) -> bool {
       | AgentEvent::ToolCompleted(_)
       | AgentEvent::ToolFailed(_)
       | AgentEvent::ToolUnknown(_)
+      | AgentEvent::ToolReconciliationObserved(_)
   )
 }
 
@@ -944,9 +951,13 @@ fn timing_fact(entry: &TraceEntry) -> Option<TimingFact> {
 
 fn tool_replay_states_from_entries(entries: &[&TraceEntry]) -> Vec<ToolReplayState> {
   let mut states: BTreeMap<ToolCallId, ToolReplayState> = BTreeMap::new();
+  let mut request_event_ids: BTreeMap<ToolCallId, EventId> = BTreeMap::new();
+  let mut unknown_event_ids: BTreeMap<ToolCallId, EventId> = BTreeMap::new();
   for entry in entries {
     match &entry.envelope.event {
       AgentEvent::ToolRequested(event) => {
+        request_event_ids.insert(event.call_id.clone(), entry.envelope.meta.event_id.clone());
+        unknown_event_ids.remove(&event.call_id);
         states.insert(
           event.call_id.clone(),
           ToolReplayState {
@@ -955,6 +966,7 @@ fn tool_replay_states_from_entries(entries: &[&TraceEntry]) -> Vec<ToolReplaySta
             state: ToolExecutionState::Requested,
             read_only: event.read_only,
             mutating_unknown: false,
+            reconciliation_status: None,
             reference: HistoricalEventRef::from_entry(entry),
             decision: if event.read_only {
               HistoricalToolDecision::SafeToReplayReadOnly
@@ -988,14 +1000,40 @@ fn tool_replay_states_from_entries(entries: &[&TraceEntry]) -> Vec<ToolReplaySta
         ToolExecutionState::Failed,
         None,
       ),
-      AgentEvent::ToolUnknown(event) => update_tool_state(
-        &mut states,
-        entry,
-        &event.call_id,
-        &event.name,
-        ToolExecutionState::Unknown,
-        Some(!event.mutating),
-      ),
+      AgentEvent::ToolUnknown(event) => {
+        update_tool_state(
+          &mut states,
+          entry,
+          &event.call_id,
+          &event.name,
+          ToolExecutionState::Unknown,
+          Some(!event.mutating),
+        );
+        unknown_event_ids.insert(event.call_id.clone(), entry.envelope.meta.event_id.clone());
+      }
+      AgentEvent::ToolReconciliationObserved(observed) => {
+        let matching_request =
+          request_event_ids.get(&observed.call_id) == Some(&observed.request_event_id);
+        let matching_unknown =
+          unknown_event_ids.get(&observed.call_id) == Some(&observed.unknown_event_id);
+        if matching_request
+          && matching_unknown
+          && let Some(state) = states.get_mut(&observed.call_id)
+          && state.name == observed.name
+          && state.state == ToolExecutionState::Unknown
+          && !state.read_only
+        {
+          state.reference = HistoricalEventRef::from_entry(entry);
+          state.reconciliation_status = Some(observed.status.clone());
+          if matches!(
+            &observed.status,
+            ReconciliationStatus::Committed { .. } | ReconciliationStatus::Unmodified { .. }
+          ) {
+            state.mutating_unknown = false;
+            state.decision = HistoricalToolDecision::Reconciled;
+          }
+        }
+      }
       _ => {}
     }
   }
@@ -1047,6 +1085,7 @@ fn update_tool_state(
       state,
       read_only,
       mutating_unknown,
+      reconciliation_status: None,
       reference: HistoricalEventRef::from_entry(entry),
       decision,
     },
@@ -1298,6 +1337,7 @@ fn shape(entry: &TraceEntry) -> EventShape {
     AgentEvent::ToolCompleted(event) => (Some(event.name.clone()), Some(event.state)),
     AgentEvent::ToolFailed(event) => (Some(event.name.clone()), Some(ToolExecutionState::Failed)),
     AgentEvent::ToolUnknown(event) => (Some(event.name.clone()), Some(ToolExecutionState::Unknown)),
+    AgentEvent::ToolReconciliationObserved(event) => (Some(event.name.clone()), None),
     _ => (None, None),
   };
   let reasoning_provenance = match event {
@@ -1328,12 +1368,13 @@ mod tests {
     ContextCompactionEpoch, ContextCompactionStarted, EventEnvelope, EventMeta,
     ExternalContextSource, ModelEpochStarted, ModelFailover, ModelRequestCompleted,
     ModelRequestStarted, ModelRetry, ReasoningDelta, SessionCompactionRecord, SessionHeader,
-    SessionId, SessionStarted, ToolRequested, ToolStarted, ToolUnknown, TraceId, TurnId,
-    UserMessage,
+    SessionId, SessionStarted, ToolReconciliationObserved, ToolReconciliationSource, ToolRequested,
+    ToolStarted, ToolUnknown, TraceId, TurnId, UserMessage,
     context::{CAPSULE_SCHEMA_VERSION, CapsuleDecision},
     failure::ModelFailureKind,
     message::ContentBlock,
     session::SESSION_SCHEMA_VERSION,
+    tool::ReconciliationStatus,
   };
 
   use super::*;
@@ -1725,6 +1766,89 @@ mod tests {
       plan.blocked_tools[0].decision,
       HistoricalToolDecision::ReconcileBeforeReplay
     );
+  }
+
+  #[test]
+  fn branch_plans_stop_blocking_only_after_a_safe_tool_reconciliation() {
+    let call_id = ToolCallId::from_string("tool-1");
+    let request = entry(
+      1,
+      AgentEvent::ToolRequested(ToolRequested {
+        call_id: call_id.clone(),
+        name: "write".into(),
+        arguments: serde_json::json!({"path":"x","contents":"y"}),
+        read_only: false,
+      }),
+    );
+    let request_event_id = request.envelope.meta.event_id.clone();
+    let started = entry(
+      2,
+      AgentEvent::ToolStarted(ToolStarted {
+        call_id: call_id.clone(),
+        name: "write".into(),
+      }),
+    );
+    let unknown = entry(
+      3,
+      AgentEvent::ToolUnknown(ToolUnknown {
+        call_id: call_id.clone(),
+        name: "write".into(),
+        why: "completion not observed".into(),
+        mutating: true,
+      }),
+    );
+    let unknown_event_id = unknown.envelope.meta.event_id.clone();
+    let manual = entry(
+      4,
+      AgentEvent::ToolReconciliationObserved(ToolReconciliationObserved {
+        call_id: call_id.clone(),
+        name: "write".into(),
+        request_event_id: request_event_id.clone(),
+        unknown_event_id: unknown_event_id.clone(),
+        status: ReconciliationStatus::RequiresManualInspection {
+          details: "arbitrary command state cannot be inspected".into(),
+        },
+        source: ToolReconciliationSource::Tool,
+      }),
+    );
+    let resolved = entry(
+      5,
+      AgentEvent::ToolReconciliationObserved(ToolReconciliationObserved {
+        call_id,
+        name: "write".into(),
+        request_event_id,
+        unknown_event_id,
+        status: ReconciliationStatus::Committed {
+          details: "the target already contains the requested contents".into(),
+        },
+        source: ToolReconciliationSource::Operator,
+      }),
+    );
+    let trace = vec![request, started, unknown, manual, resolved];
+
+    for seq in [3, 4] {
+      let plan = plan_historical_branch(&trace, &[], HistoricalTarget::Seq(EventSeq(seq))).unwrap();
+      assert_eq!(plan.blocked_tools.len(), 1);
+      assert_eq!(
+        plan.blocked_tools[0].decision,
+        HistoricalToolDecision::ReconcileBeforeReplay
+      );
+    }
+    let plan = plan_historical_branch(&trace, &[], HistoricalTarget::Seq(EventSeq(5))).unwrap();
+    assert!(plan.blocked_tools.is_empty());
+
+    let entries: Vec<_> = trace.iter().collect();
+    let states = tool_replay_states_from_entries(&entries);
+    let [state] = states.as_slice() else {
+      panic!("the reconciled lifecycle remains visible in replay analysis");
+    };
+    assert_eq!(state.state, ToolExecutionState::Unknown);
+    assert!(!state.mutating_unknown);
+    assert_eq!(state.decision, HistoricalToolDecision::Reconciled);
+    assert!(matches!(
+      &state.reconciliation_status,
+      Some(ReconciliationStatus::Committed { .. })
+    ));
   }
 
   #[test]
