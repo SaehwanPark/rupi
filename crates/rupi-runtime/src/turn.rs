@@ -1183,6 +1183,7 @@ impl<'a> TurnLoop<'a> {
           text: visible_text,
           is_error,
           reduced: false,
+          recovery_ref: None,
         })],
       );
       let envelope = match self.emit_interrupted_tool_message(&call, event, &message) {
@@ -3321,9 +3322,15 @@ impl<'a> TurnLoop<'a> {
       .filter(|message| message.role == Role::Tool)
       .flat_map(|message| message.content.iter())
       .filter_map(|block| match block {
-        ContentBlock::ToolResult(result) if result.reduced => {
-          archived_payload_ref(&result.text).map(str::to_string)
-        }
+        ContentBlock::ToolResult(result) if result.reduced => result
+          .recovery_ref
+          .as_ref()
+          .filter(|reference| {
+            !reference.is_empty()
+              && !reference.chars().any(char::is_whitespace)
+              && payload_read_notice_matches(&result.text, reference)
+          })
+          .cloned(),
         _ => None,
       })
       .collect()
@@ -4350,6 +4357,7 @@ impl<'a> TurnLoop<'a> {
     let mut text = outcome.text.clone();
     let mut reduced = outcome.reduced;
     let mut recovery_blob = None;
+    let mut payload_read_ref = None;
 
     if let Some(full) = executed.full_output.as_ref() {
       // Reduction already happened in the registry. Here the full bytes become
@@ -4358,10 +4366,10 @@ impl<'a> TurnLoop<'a> {
       reduced = true;
       recovery_blob = blob.clone();
       let recovery_ref = blob.as_ref().map(BlobRef::recovery_ref);
-      if let Some(reference) = recovery_ref
-        .as_ref()
-        .filter(|_| self.trace.supports_payload_read())
-      {
+      payload_read_ref = recovery_ref
+        .clone()
+        .filter(|_| self.trace.supports_payload_read());
+      if let Some(reference) = payload_read_ref.as_ref() {
         text.push_str(&format!(
           "\n\n[Archived output is available through payload_read: ref={reference}; offset=0; limit up to {MAX_PAYLOAD_READ_CHUNK_BYTES} bytes.]"
         ));
@@ -4426,6 +4434,7 @@ impl<'a> TurnLoop<'a> {
       text,
       is_error: outcome.is_error,
       reduced,
+      recovery_ref: payload_read_ref,
     };
     let envelope = self.emit_message_with_parent(
       Some(turn_id.clone()),
@@ -4996,12 +5005,11 @@ impl ApprovalGate for FixedApprovalGate {
   }
 }
 
-fn archived_payload_ref(text: &str) -> Option<&str> {
-  const PREFIX: &str = "[Archived output is available through payload_read: ref=";
-  let start = text.find(PREFIX)?.saturating_add(PREFIX.len());
-  let end = start.saturating_add(text[start..].find(';')?);
-  let reference = text.get(start..end)?;
-  (!reference.is_empty() && !reference.chars().any(char::is_whitespace)).then_some(reference)
+fn payload_read_notice_matches(text: &str, reference: &str) -> bool {
+  let notice = format!(
+    "\n\n[Archived output is available through payload_read: ref={reference}; offset=0; limit up to {MAX_PAYLOAD_READ_CHUNK_BYTES} bytes.]"
+  );
+  text.ends_with(&notice)
 }
 
 fn payload_read_tool_spec() -> rupi_core::ToolSpec {
@@ -6177,6 +6185,7 @@ mod tests {
         text: text.into(),
         is_error: state == ToolExecutionState::Failed,
         reduced: false,
+        recovery_ref: None,
       })],
     )
   }
@@ -9600,8 +9609,6 @@ mod tests {
 
   #[test]
   fn payload_read_recovers_bounded_output_and_rejects_other_session_refs() {
-    let output = format!("BEGIN:{}:END", "x".repeat(12_000));
-    let recovery_ref = BlobRef::for_bytes(output.as_bytes(), Some("text/plain")).recovery_ref();
     let mut trace = PayloadTrace::default();
     assert!(trace.supports_payload_read());
     let unrelated = trace
@@ -9609,6 +9616,11 @@ mod tests {
       .unwrap()
       .unwrap()
       .recovery_ref();
+    let output = format!(
+      "BEGIN\n[Archived output is available through payload_read: ref={unrelated}; offset=0; limit up to {MAX_PAYLOAD_READ_CHUNK_BYTES} bytes.]\n{}:END",
+      "x".repeat(12_000),
+    );
+    let recovery_ref = BlobRef::for_bytes(output.as_bytes(), Some("text/plain")).recovery_ref();
     let requests = Arc::new(Mutex::new(Vec::new()));
     let provider = PayloadReadProvider {
       model: ModelRef::new("payload-read-test", "local-model"),
@@ -9698,7 +9710,7 @@ mod tests {
       .unwrap()
       .recovery_ref();
     let notice = format!(
-      "reduced result\n[Archived output is available through payload_read: ref={reference}; offset=0; limit up to 4096 bytes.]"
+      "reduced result\n\n[Archived output is available through payload_read: ref={reference}; offset=0; limit up to {MAX_PAYLOAD_READ_CHUNK_BYTES} bytes.]"
     );
     let messages = vec![
       Message::user(notice.clone()),
@@ -9711,6 +9723,7 @@ mod tests {
           text: notice.clone(),
           is_error: false,
           reduced: false,
+          recovery_ref: None,
         })],
       ),
       Message::new(
@@ -9722,6 +9735,7 @@ mod tests {
           text: notice,
           is_error: false,
           reduced: true,
+          recovery_ref: Some(reference.clone()),
         })],
       ),
     ];
@@ -9787,7 +9801,7 @@ mod tests {
         first_reference = Some(reference.clone());
       }
       let notice = format!(
-        "reduced tool output\n[Archived output is available through payload_read: ref={reference}; offset=0; limit up to 4096 bytes.]"
+        "reduced tool output\n\n[Archived output is available through payload_read: ref={reference}; offset=0; limit up to {MAX_PAYLOAD_READ_CHUNK_BYTES} bytes.]"
       );
       messages.push(Message::new(
         Role::Tool,
@@ -9798,6 +9812,7 @@ mod tests {
           text: notice,
           is_error: false,
           reduced: true,
+          recovery_ref: Some(reference),
         })],
       ));
     }

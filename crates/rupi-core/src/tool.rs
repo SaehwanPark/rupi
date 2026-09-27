@@ -269,6 +269,7 @@ impl ToolOutcome {
       text: self.text.clone(),
       is_error: self.is_error,
       reduced: self.reduced,
+      recovery_ref: None,
     }
   }
 

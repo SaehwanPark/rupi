@@ -1044,6 +1044,7 @@ pub fn plan(source: &PiSession) -> Result<ImportPlan, PiImportError> {
                 is_error: failed,
                 // rupi reduced nothing: these are Pi's bytes as Pi stored them.
                 reduced: false,
+                recovery_ref: None,
               })],
               ..Default::default()
             },

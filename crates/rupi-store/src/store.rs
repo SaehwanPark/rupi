@@ -407,6 +407,7 @@ impl Store {
       session,
       restored.checkpoint_seq,
     )?;
+    rehydrate_tool_recovery_refs(&mut restored.messages, &trace.items);
     restored.interrupted_tools = interrupted_tools;
     restored.unresolved_side_effects = unresolved_side_effects;
     let from_trace = trace
@@ -1562,6 +1563,7 @@ impl Session {
           text: details,
           is_error: true,
           reduced: false,
+          recovery_ref: None,
         })],
       );
       self.emit_message(&mut failed, &message)?;
@@ -1616,6 +1618,7 @@ impl Session {
           text: details,
           is_error: true,
           reduced: false,
+          recovery_ref: None,
         })],
       );
       self.emit_message(&mut envelope, &message)?;
@@ -2881,6 +2884,33 @@ fn validate_checkpoint_lifecycles(
   Ok(())
 }
 
+/// Recover runtime-owned payload references for pre-field session projections.
+/// The canonical tool-completion event, not tool-controlled result text, owns the ref.
+fn rehydrate_tool_recovery_refs(
+  messages: &mut [rupi_core::SessionMessage],
+  entries: &[rupi_core::TraceEntry],
+) {
+  let refs_by_event = entries
+    .iter()
+    .filter_map(|entry| match &entry.envelope.event {
+      AgentEvent::ToolCompleted(completed) if completed.reduced => completed
+        .blob
+        .as_ref()
+        .map(|blob| (entry.envelope.meta.event_id.clone(), blob.recovery_ref())),
+      _ => None,
+    })
+    .collect::<BTreeMap<_, _>>();
+
+  for message in messages {
+    let Some(ContentBlock::ToolResult(result)) = message.message.content.first_mut() else {
+      continue;
+    };
+    if result.reduced && result.recovery_ref.is_none() {
+      result.recovery_ref = refs_by_event.get(&message.event_id).cloned();
+    }
+  }
+}
+
 /// Check the trace/projection join. Low-level callers may still write synthetic
 /// semantic records without a trace; those unlinked records are checked only
 /// when they claim a canonical sequence. Canonical events that imply a runtime
@@ -3603,6 +3633,26 @@ fn validate_message_projection(
           "tool result reduction or visible-byte metadata mismatch",
         ));
       }
+      if result.recovery_ref.as_deref().is_some_and(|reference| {
+        completed
+          .blob
+          .as_ref()
+          .is_none_or(|blob| blob.recovery_ref() != reference)
+      }) {
+        return Err(invalid(
+          "tool result recovery reference does not match its archived payload",
+        ));
+      }
+      if result.recovery_ref.as_deref().is_some_and(|reference| {
+        completed
+          .blob
+          .as_ref()
+          .is_none_or(|blob| blob.recovery_ref() != reference)
+      }) {
+        return Err(invalid(
+          "tool result recovery reference does not match its archived payload",
+        ));
+      }
     }
     AgentEvent::ToolFailed(failed) => {
       validate_tool_result_projection(
@@ -4283,6 +4333,7 @@ fn recover_projection_record(
             text: failed.message.clone(),
             is_error: true,
             reduced: false,
+            recovery_ref: None,
           })],
         ),
         epoch,
@@ -4306,6 +4357,7 @@ fn recover_projection_record(
             text: unknown.why.clone(),
             is_error: true,
             reduced: false,
+            recovery_ref: None,
           })],
         ),
         epoch,
@@ -4662,6 +4714,71 @@ mod tests {
       unresolved: vec!["provider phase".into()],
       next_actions: vec!["cargo test".into()],
     }
+  }
+
+  #[test]
+  fn legacy_reduced_tool_messages_rehydrate_refs_from_canonical_completion_events() {
+    let session_id = SessionId::new();
+    let turn_id = TurnId::new();
+    let model = ModelRef::new("local", "qwen");
+    let call_id = ToolCallId::new();
+    let event_id = EventId::new();
+    let blob = BlobRef::for_bytes(b"archived payload", Some("text/plain"));
+    let reference = blob.recovery_ref();
+    let text = format!(
+      "reduced result\n\n[Archived output is available through payload_read: ref={reference}; offset=0; limit up to 4096 bytes.]"
+    );
+    let visible_bytes = text.len() as u64;
+    let message = SessionMessage {
+      turn_id,
+      role: Role::Tool,
+      message: Message::new(
+        Role::Tool,
+        vec![ContentBlock::ToolResult(ToolResultBlock {
+          id: call_id.clone(),
+          name: "read".into(),
+          state: ToolExecutionState::Succeeded,
+          text,
+          is_error: false,
+          reduced: true,
+          recovery_ref: None,
+        })],
+      ),
+      epoch: 0,
+      model,
+      event_id: event_id.clone(),
+      seq: Some(EventSeq(1)),
+      external_context: None,
+    };
+    let mut envelope = EventEnvelope::new(
+      EventMeta::new(session_id, TraceId::new()),
+      AgentEvent::ToolCompleted(ToolCompleted {
+        call_id,
+        name: "read".into(),
+        state: ToolExecutionState::Succeeded,
+        duration_ms: 1,
+        status: None,
+        reduced: true,
+        blob: Some(blob),
+        visible_bytes,
+      }),
+    );
+    envelope.meta.event_id = event_id;
+    let entry = rupi_core::TraceEntry {
+      envelope,
+      redactions: 0,
+      raw_payload: false,
+      raw_ref: None,
+      externalized: Vec::new(),
+    };
+    let mut messages = vec![message];
+
+    rehydrate_tool_recovery_refs(&mut messages, &[entry]);
+
+    let ContentBlock::ToolResult(result) = &messages[0].message.content[0] else {
+      unreachable!();
+    };
+    assert_eq!(result.recovery_ref.as_deref(), Some(reference.as_str()));
   }
 
   #[test]
@@ -5281,6 +5398,7 @@ mod tests {
                   text: text.into(),
                   is_error: false,
                   reduced,
+                  recovery_ref: None,
                 })],
               ),
             )
@@ -5350,6 +5468,7 @@ mod tests {
                   text: text.into(),
                   is_error: true,
                   reduced: false,
+                  recovery_ref: None,
                 })],
               ),
             )
@@ -5956,6 +6075,7 @@ mod tests {
               text: "ok".into(),
               is_error: false,
               reduced: false,
+              recovery_ref: None,
             })],
           ),
         )
@@ -7232,6 +7352,7 @@ mod tests {
         text: "completion boundary not observed".into(),
         is_error: true,
         reduced: false,
+        recovery_ref: None,
       })],
     );
     session.emit_message(&mut unknown, &result).unwrap();
