@@ -1021,10 +1021,12 @@ bench/results/startup-ci.json` passed (cold 136.49 ms; warm mean 6.33 ms), and
 `bash bench/context_prefill.sh` passed all five budgets. No local llama.cpp comparison was
 run; this is deterministic runtime-safety evidence, not a weak-model performance claim.
 
-### Implemented audit follow-up — Round 7 (PR #128; independent review pending)
+### Implemented audit follow-up — Round 7 (PR #128)
 
 `audits/pi-benchmark-audit/round07.md` findings have regression coverage and passed local
-workspace verification plus the Ubuntu, macOS, and Windows CI matrix:
+workspace verification and the Ubuntu, macOS, and Windows CI matrix. Independent review
+caught a tool-output payload-ref spoof, fixed with typed refs validated against canonical
+completion data and a legacy-session migration; focused re-review confirmed the fix:
 
 - [x] Convert resumed interrupted mutations that require inspection into durable,
       operator-resolvable `Unknown` barriers.
@@ -1040,10 +1042,10 @@ workspace verification plus the Ubuntu, macOS, and Windows CI matrix:
 Evidence: `cargo fmt --all --check`, `cargo check -p rupi-core --all-features`,
 `cargo clippy --workspace --all-targets -- -D warnings`, `cargo test --workspace`, and
 `cargo doc --workspace --no-deps` passed. `bash bench/startup.sh --json
-bench/results/startup-ci.json` passed (cold 132.41 ms; warm mean 7.12 ms), and
+bench/results/startup-ci.json` passed (cold 128.83 ms; warm mean 6.06 ms), and
 `bash bench/context_prefill.sh` passed all five budgets. No local llama.cpp comparison was
-run; these tests verify runtime safety, not weak-model task performance. Independent review
-is pending before merge.
+run; these tests verify runtime safety, not weak-model task performance. The slow-runner
+ambiguous-timeout fixture now allows time for request setup while retaining a delayed response.
 
 ### P2 — Later / deliberately deferred
 
