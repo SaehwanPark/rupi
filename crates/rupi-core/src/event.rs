@@ -827,7 +827,10 @@ mod tests {
       }),
     );
     let encoded = serde_json::to_string(&envelope).unwrap();
-    assert!(encoded.contains("\"v\":1"), "{encoded}");
+    assert!(
+      encoded.contains(&format!("\"v\":{}", EVENT_SCHEMA_VERSION)),
+      "{encoded}"
+    );
     assert!(
       encoded.contains("\"type\":\"session_started\""),
       "{encoded}"
