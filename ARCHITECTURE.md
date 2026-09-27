@@ -339,6 +339,16 @@ That rule is pinned at every hop a claim crosses, in `tests/provenance_roundtrip
   `Reconstructed` is described as rupi inference. Those two predicates are what the
   prose is generated from, so they are asserted directly.
 
+### Message source vs protocol role
+
+A canonical `Message` carries a semantic `origin` independently of its provider-facing
+`Role`. User input alone can establish user-authored objectives and constraints. Runtime
+control, external evidence, reconciliation notices, and derived compaction/checkpoint
+summaries retain their own origin even when an endpoint requires them on the wire as
+`role=user`. Session schema v4 persists this distinction; pre-v4 messages deserialize as
+`ImportedLegacy`, which is deliberately not granted user authority. Context capsules and
+safe eviction boundaries inspect origin rather than inferring authorship from wire role.
+
 ## 9. Tool runtime
 
 All tool execution should have durable lifecycle state.
@@ -371,6 +381,21 @@ or finalization marks calls proven not to have started as `Failed`; uncertain si
 boundaries remain `Unknown`.
 
 Mutating tool operations must not be blindly replayed after an uncertain failure boundary.
+
+The provider's `ToolCallId` is a response-scoped correlation value, not a session-global
+lifecycle key. Durable request-event identity opens each tool lifecycle; `parent_event_id`
+links starts and terminal events, and reconciliation names the exact request and unknown
+event. Parentless legacy events may fall back to a provider call ID only when exactly one
+open request matches.
+
+Each model request captures the exact permitted tool definition binding: registry identity,
+registration generation, name, and risk class. Shared replacement/removal advances the
+binding generation. Dispatch refuses a stale binding as `Failed` before `ToolStarted`; the
+registry holds its read lock across the durable start boundary so replacement cannot race
+between the final check and that event. Unknown, policy-denied, rejected, already-stale, and decoded-but-incomplete calls still
+spend total-call budget but do not spend mutation budget; unavailable calls do not prompt for
+approval. Binding freshness is checked again before dispatch so the selected implementation
+cannot silently change after the model response.
 
 Read-only tools may use more permissive retry semantics.
 
@@ -669,9 +694,12 @@ and trace export all derive from the same canonical records.
 
 Historical branch plans carry a `HistoricalEventRef` and a context snapshot, and explicitly
 separate copied history from a future generated continuation. A branch plan is not execution.
-Unknown or mutating tool states remain marked for reconciliation and are never replayed blindly;
-reasoning provenance remains attached and reconstructed rationale is never claimed as hidden
-model reasoning.
+Tool replay state is keyed by the durable request-event identity, retaining provider call IDs
+only as attributes; exact parent-event and reconciliation links survive provider ID reuse.
+Parentless imported events use the conservative single-open-invocation fallback. Unknown or
+mutating tool states remain marked for reconciliation and are never replayed blindly; reasoning
+provenance remains attached and reconstructed rationale is never claimed as hidden model
+reasoning.
 
 ### 15.2 Optimization experiments and adaptive policies
 

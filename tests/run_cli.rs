@@ -376,7 +376,7 @@ fn one_shot_budget_exhaustion_exits_successfully_with_a_resumable_status() {
 }
 
 #[test]
-fn mutating_tools_are_denied_without_explicit_auto_approval() {
+fn headless_requests_do_not_expose_mutating_tools_without_auto_approval() {
   let temp = TempDir::new().unwrap();
   let workspace = temp.path().join("workspace");
   fs::create_dir(&workspace).unwrap();
@@ -392,7 +392,15 @@ fn mutating_tools_are_denied_without_explicit_auto_approval() {
   let config = write_config(temp.path(), &server.base_url(), false);
 
   let output = run(&config, &workspace, "try to write");
-  server.requests();
+  let requests = server.requests();
+  let request: serde_json::Value = serde_json::from_str(&requests[0].body).unwrap();
+  assert!(
+    request["tools"]
+      .as_array()
+      .into_iter()
+      .flatten()
+      .all(|tool| tool["function"]["name"] != "write")
+  );
   assert!(
     output.status.success(),
     "{}",
@@ -408,7 +416,8 @@ fn mutating_tools_are_denied_without_explicit_auto_approval() {
   assert!(trace.iter().any(|entry| matches!(
     &entry.envelope.event,
     AgentEvent::ToolFailed(failed)
-      if failed.call_id.as_str() == "call_denied" && failed.message.contains("approval is required")
+      if failed.call_id.as_str() == "call_denied"
+        && failed.message.contains("not in this request's permitted tool catalog")
   )));
   assert!(!trace.iter().any(|entry| matches!(
     &entry.envelope.event,
@@ -777,7 +786,7 @@ fn quiet_keeps_trouble_and_drops_routine_work() {
 }
 
 #[test]
-fn quiet_still_reports_a_refused_mutating_tool() {
+fn quiet_still_reports_an_unavailable_mutating_tool() {
   // A policy refusal is news precisely in the log that asked for only news: the model
   // tried to change something and did not.
   let temp = TempDir::new().unwrap();
@@ -792,14 +801,17 @@ fn quiet_still_reports_a_refused_mutating_tool() {
     ),
     text_response("denied as expected"),
   ]);
-  // Mutating tools are not auto-approved, so the write is refused by policy.
+  // Headless execution without auto-approval does not expose mutating tools.
   let config = write_config(temp.path(), &server.base_url(), false);
 
   let output = run_surface(&config, &workspace, "try to write", &["--quiet"]);
   let stderr = String::from_utf8_lossy(&output.stderr);
   assert!(output.status.success(), "{stderr}");
   assert!(stderr.contains("[tool failed] write"), "{stderr}");
-  assert!(stderr.contains("approval is required"), "{stderr}");
+  assert!(
+    stderr.contains("not in this request's permitted tool catalog"),
+    "{stderr}"
+  );
   assert!(!workspace.join("denied.txt").exists());
 }
 

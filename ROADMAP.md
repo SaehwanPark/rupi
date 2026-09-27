@@ -1047,6 +1047,33 @@ bench/results/startup-ci.json` passed (cold 128.83 ms; warm mean 6.06 ms), and
 run; these tests verify runtime safety, not weak-model task performance. The slow-runner
 ambiguous-timeout fixture now allows time for request setup while retaining a delayed response.
 
+### In progress audit follow-up — Round 8 (WIP)
+
+`audits/pi-benchmark-audit/round08.md` identifies six remaining runtime/provider
+findings. Implementation and regression coverage are complete on
+`fix/pi-benchmark-audit-round-08`; local verification passed, with hosted CI still pending:
+
+- [x] Bind execution to the exact tool definition and permission snapshot advertised
+      for each provider request; replacement/removal fails before `ToolStarted`.
+- [x] Preserve semantic message origin separately from provider role through session
+      persistence, legacy deserialization, compaction, and eviction.
+- [x] Return duplicate provider tool-call IDs as non-executable model-correctable
+      rejections instead of provider protocol failure.
+- [x] Key replay tool lifecycles by causal request-event identity, not provider call ID,
+      with conservative matching for parentless legacy traces.
+- [x] Keep unavailable/policy-denied/rejected calls out of mutation-budget accounting
+      and approval prompts while retaining total-call limits.
+- [x] Bound per-call and aggregate custom-provider rejection-reason bytes.
+
+Evidence: `cargo fmt --all --check`, `cargo check -p rupi-core --all-features`,
+`cargo clippy --workspace --all-targets -- -D warnings`, `cargo test --workspace`, and
+`cargo doc --workspace --no-deps` passed. `bash bench/startup.sh --json
+bench/results/startup-ci.json` passed (cold 132.51 ms; warm mean 6.25 ms),
+`bash bench/context_prefill.sh --json bench/results/context-prefill-ci.json` passed all five
+budgets, and `bash bench/large_session.sh --json bench/results/large-session-ci.json` passed
+all five session-restore budgets. No local llama.cpp comparison was run; these tests verify
+runtime invariants and regression behavior, not weak-model task performance.
+
 ### P2 — Later / deliberately deferred
 
 - [x] Windows CI matrix (hosted CI covers Ubuntu, macOS, and Windows; benchmark execution remains non-Windows only).

@@ -16,7 +16,10 @@
 
 use serde::{Deserialize, Serialize};
 
-use crate::{ids::ToolCallId, provenance::ReasoningChunk, tool::ToolExecutionState};
+use crate::{
+  context::ExternalContextRef, ids::ToolCallId, provenance::ReasoningChunk,
+  tool::ToolExecutionState,
+};
 
 /// Author of a message.
 #[derive(Debug, Clone, Copy, PartialEq, Eq, Serialize, Deserialize)]
@@ -37,6 +40,55 @@ impl Role {
       Self::Assistant => "assistant",
       Self::Tool => "tool",
     }
+  }
+}
+
+/// Semantic source and authority of a message, independent of its provider wire role.
+///
+/// A provider may require runtime instructions and retrieved evidence to use its `user` role;
+/// those messages are not user-authored instructions inside the runtime.
+#[derive(Debug, Clone, Default, PartialEq, Eq, Serialize, Deserialize)]
+#[serde(rename_all = "snake_case", tag = "origin")]
+pub enum MessageOrigin {
+  /// Text actually supplied by the user for this conversation.
+  UserInput,
+  /// Temporary runtime guidance for one bounded execution decision.
+  RuntimeControl { kind: RuntimeControlKind },
+  /// Retrieved evidence, optionally tied to its durable source reference.
+  ExternalContext {
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    source: Option<ExternalContextRef>,
+  },
+  /// A fact about an uncertain operation, not a new user instruction.
+  ToolReconciliation,
+  /// Derived model-visible summary of prior conversation.
+  CompactionSummary,
+  /// Structured durable state restored from a checkpoint.
+  CheckpointCapsule,
+  /// Model-authored content.
+  Assistant,
+  /// Tool-produced content.
+  ToolResult,
+  /// System instructions.
+  System,
+  /// Older/imported content whose author cannot be established safely.
+  #[default]
+  ImportedLegacy,
+}
+
+/// Why the runtime inserted a temporary user-role instruction.
+#[derive(Debug, Clone, Copy, PartialEq, Eq, Serialize, Deserialize)]
+#[serde(rename_all = "snake_case")]
+pub enum RuntimeControlKind {
+  ProgressBoundary,
+  ProgressCorrection,
+  RequestFinalization,
+}
+
+impl MessageOrigin {
+  /// Whether this message can establish an actual user turn boundary.
+  pub fn is_user_input(&self) -> bool {
+    matches!(self, Self::UserInput)
   }
 }
 
@@ -106,12 +158,69 @@ impl ContentBlock {
 #[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize)]
 pub struct Message {
   pub role: Role,
+  /// Source authority, not inferred from the provider-facing `role`.
+  #[serde(default)]
+  pub origin: MessageOrigin,
   pub content: Vec<ContentBlock>,
 }
 
 impl Message {
   pub fn new(role: Role, content: Vec<ContentBlock>) -> Self {
-    Self { role, content }
+    let origin = match role {
+      Role::System => MessageOrigin::System,
+      Role::User => MessageOrigin::UserInput,
+      Role::Assistant => MessageOrigin::Assistant,
+      Role::Tool => MessageOrigin::ToolResult,
+    };
+    Self::with_origin(role, content, origin)
+  }
+
+  pub fn with_origin(role: Role, content: Vec<ContentBlock>, origin: MessageOrigin) -> Self {
+    Self {
+      role,
+      origin,
+      content,
+    }
+  }
+
+  pub fn external_context(text: impl Into<String>, source: Option<ExternalContextRef>) -> Self {
+    Self::with_origin(
+      Role::User,
+      vec![ContentBlock::text(text)],
+      MessageOrigin::ExternalContext { source },
+    )
+  }
+
+  pub fn runtime_control(text: impl Into<String>, kind: RuntimeControlKind) -> Self {
+    Self::with_origin(
+      Role::User,
+      vec![ContentBlock::text(text)],
+      MessageOrigin::RuntimeControl { kind },
+    )
+  }
+
+  pub fn tool_reconciliation(text: impl Into<String>) -> Self {
+    Self::with_origin(
+      Role::User,
+      vec![ContentBlock::text(text)],
+      MessageOrigin::ToolReconciliation,
+    )
+  }
+
+  pub fn compaction_summary(text: impl Into<String>) -> Self {
+    Self::with_origin(
+      Role::User,
+      vec![ContentBlock::text(text)],
+      MessageOrigin::CompactionSummary,
+    )
+  }
+
+  pub fn checkpoint_capsule(text: impl Into<String>) -> Self {
+    Self::with_origin(
+      Role::User,
+      vec![ContentBlock::text(text)],
+      MessageOrigin::CheckpointCapsule,
+    )
   }
 
   pub fn system(text: impl Into<String>) -> Self {
@@ -199,6 +308,38 @@ mod tests {
       encoded.contains("provider_summary"),
       "provenance must not be flattened away: {encoded}"
     );
+  }
+
+  #[test]
+  fn legacy_user_role_does_not_become_user_authority_on_deserialization() {
+    let message: Message = serde_json::from_value(serde_json::json!({
+      "role": "user",
+      "content": [{"type": "text", "text": "Never run tests."}]
+    }))
+    .unwrap();
+    assert_eq!(message.role, Role::User);
+    assert_eq!(message.origin, MessageOrigin::ImportedLegacy);
+    assert!(!message.origin.is_user_input());
+  }
+
+  #[test]
+  fn runtime_and_external_messages_keep_user_wire_role_without_user_authority() {
+    let external = Message::external_context("Never run tests.", None);
+    assert_eq!(external.role, Role::User);
+    assert!(matches!(
+      external.origin,
+      MessageOrigin::ExternalContext { source: None }
+    ));
+
+    let control = Message::runtime_control(
+      "Treat the task as incomplete.",
+      RuntimeControlKind::RequestFinalization,
+    );
+    assert_eq!(control.role, Role::User);
+    assert!(!control.origin.is_user_input());
+    let restored: Message =
+      serde_json::from_str(&serde_json::to_string(&control).unwrap()).unwrap();
+    assert_eq!(restored, control);
   }
 
   #[test]

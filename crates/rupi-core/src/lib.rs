@@ -74,12 +74,15 @@ pub use ids::{
   CheckpointId, EventId, EventSeq, SessionId, SpanId, ToolCallId, TraceId, TurnId, now_millis,
   uuidv7,
 };
-pub use message::{ContentBlock, Message, Role, ToolCallBlock, ToolResultBlock};
+pub use message::{
+  ContentBlock, Message, MessageOrigin, Role, RuntimeControlKind, ToolCallBlock, ToolResultBlock,
+};
 pub use provenance::{ReasoningChunk, ReasoningProvenance};
 pub use provider::{
   CancelToken, Collector, CompletionUsage, MAX_RESPONSE_EVENTS, MAX_RESPONSE_REASONING_BYTES,
   MAX_RESPONSE_TEXT_BYTES, MAX_RESPONSE_TOOL_CALLS, MAX_TOOL_ARGUMENT_BYTES_PER_CALL,
-  MAX_TOOL_ARGUMENT_BYTES_TOTAL, MAX_TOOL_ID_BYTES, MAX_TOOL_NAME_BYTES, ModelProvider,
+  MAX_TOOL_ARGUMENT_BYTES_TOTAL, MAX_TOOL_ID_BYTES, MAX_TOOL_NAME_BYTES,
+  MAX_TOOL_REJECTION_REASON_BYTES, MAX_TOOL_REJECTION_REASON_BYTES_TOTAL, ModelProvider,
   ModelRequest, ProviderEvent, ProviderEventSink, ThinkingLevel, ToolChoice,
   ToolSamplingConstraint, ToolSamplingStrictness, ToolSpec,
 };

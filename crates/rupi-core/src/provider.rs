@@ -40,6 +40,10 @@ pub const MAX_TOOL_ID_BYTES: usize = 256;
 pub const MAX_TOOL_ARGUMENT_BYTES_PER_CALL: usize = 1024 * 1024;
 /// Maximum argument JSON bytes retained across all calls in one response.
 pub const MAX_TOOL_ARGUMENT_BYTES_TOTAL: usize = 8 * 1024 * 1024;
+/// Maximum UTF-8 bytes retained for one model-generated tool-call rejection reason.
+pub const MAX_TOOL_REJECTION_REASON_BYTES: usize = 4 * 1024;
+/// Maximum aggregate rejection-reason bytes retained for one model response.
+pub const MAX_TOOL_REJECTION_REASON_BYTES_TOTAL: usize = 64 * 1024;
 
 /// Cooperative cancellation shared between the UI and an in-flight request.
 ///

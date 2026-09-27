@@ -24,7 +24,9 @@ pub use paths::{PathError, Workspace};
 pub use process::ProcessTool;
 pub use read::ReadTool;
 pub use reduce::Reduction;
-pub use registry::{Approval, ApprovalGate, AutoApprove, DenyAll, Executed, ToolRegistry};
+pub use registry::{
+  Approval, ApprovalGate, AutoApprove, BoundToolSpec, DenyAll, Executed, ToolBinding, ToolRegistry,
+};
 pub use rupi_core::ReconciliationStatus;
 pub use write::WriteTool;
 
