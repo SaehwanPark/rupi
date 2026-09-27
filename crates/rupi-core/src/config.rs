@@ -48,7 +48,7 @@ pub const DEFAULT_OPENAI_BASE_URL: &str = "https://api.openai.com/v1";
 /// `None` keeps the provider adapter's default, so older configs retain their
 /// existing behavior while endpoint-specific quirks remain explicit.
 #[derive(Clone, PartialEq, Eq, Serialize, Deserialize, Default)]
-#[serde(default)]
+#[serde(default, deny_unknown_fields)]
 pub struct OpenAiCompatOptions {
   /// Whether to use SSE; `false` is useful for endpoints with broken streams.
   #[serde(skip_serializing_if = "Option::is_none")]
@@ -146,6 +146,7 @@ pub enum OpenAiThinkingDisable {
 
 /// One configured model endpoint.
 #[derive(Clone, PartialEq, Eq, Serialize, Deserialize)]
+#[serde(deny_unknown_fields)]
 pub struct ModelEndpoint {
   /// Provider id used in `provider/model` references.
   pub provider: String,
@@ -279,6 +280,7 @@ impl ModelEndpoint {
 /// normalized to preserve the threshold ladder. Adaptive mode may lower them further
 /// when an observed performance knee requires an earlier compaction point.
 #[derive(Debug, Clone, Copy, PartialEq, Eq, Default, Serialize, Deserialize)]
+#[serde(deny_unknown_fields)]
 pub struct ContextOverrides {
   #[serde(default, skip_serializing_if = "Option::is_none")]
   pub warn_tokens: Option<u64>,
@@ -294,6 +296,7 @@ pub struct ContextOverrides {
 
 /// Tool execution policy.
 #[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize)]
+#[serde(deny_unknown_fields)]
 pub struct ToolPolicy {
   /// Tools the model may call. Empty means the registered default set.
   #[serde(default)]
@@ -352,6 +355,7 @@ impl ToolPolicy {
 
 /// UI preferences.
 #[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize)]
+#[serde(deny_unknown_fields)]
 pub struct UiConfig {
   /// Show reasoning-like output at all.
   pub show_reasoning: bool,
@@ -373,6 +377,7 @@ impl Default for UiConfig {
 
 /// Safety limits that apply to one runtime turn.
 #[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize)]
+#[serde(deny_unknown_fields)]
 pub struct RuntimeLimits {
   /// Maximum model round-trips for one user input, including retries and failover.
   #[serde(default = "default_max_model_requests_per_turn")]
@@ -403,6 +408,7 @@ fn default_max_model_requests_per_turn() -> u32 {
 
 /// Runtime configuration.
 #[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize)]
+#[serde(deny_unknown_fields)]
 pub struct RuntimeConfig {
   pub version: u32,
   pub primary: ModelRef,
@@ -445,6 +451,7 @@ impl OpenAiCompatOptions {
 
 /// Configuration for an external MCP server.
 #[derive(Clone, PartialEq, Eq, Serialize, Deserialize)]
+#[serde(deny_unknown_fields)]
 pub struct McpServerConfig {
   pub name: String,
   /// Stdio command. Required when `url` is absent.
@@ -557,8 +564,19 @@ impl RuntimeConfig {
   }
 
   pub fn parse(json: &str) -> Result<Self, ConfigError> {
-    let config: Self =
-      serde_json::from_str(json).map_err(|error| ConfigError(error.to_string()))?;
+    let mut deserializer = serde_json::Deserializer::from_str(json);
+    let config: Self = serde_path_to_error::deserialize(&mut deserializer).map_err(|error| {
+      let path = error.path().to_string();
+      let path = if path.is_empty() || path == "." {
+        "config".to_string()
+      } else {
+        format!("config.{path}")
+      };
+      ConfigError(format!("{path}: {}", error.inner()))
+    })?;
+    deserializer
+      .end()
+      .map_err(|error| ConfigError(format!("config: {error}")))?;
     config.validate()?;
     Ok(config)
   }
@@ -990,6 +1008,31 @@ mod tests {
     config.limits.max_model_requests_without_progress = Some(2);
     config.limits.progress_tool_names = vec!["write".into(), "write".into()];
     assert!(config.validate().unwrap_err().0.contains("duplicate tool"));
+  }
+
+  #[test]
+  fn unknown_configuration_fields_fail_with_their_nested_path() {
+    let mut value = serde_json::to_value(sample_config()).unwrap();
+    value["endpoints"][0]["openai_compat"]["strict_tool_shema"] =
+      serde_json::Value::String("supported".into());
+    let error = RuntimeConfig::parse(&serde_json::to_string(&value).unwrap())
+      .unwrap_err()
+      .to_string();
+    assert!(
+      error.contains("endpoints[0].openai_compat.strict_tool_shema"),
+      "{error}"
+    );
+    assert!(error.contains("unknown field"), "{error}");
+
+    let mut value = serde_json::to_value(sample_config()).unwrap();
+    value["limits"]["max_mutating_tool_calls_per_turn"] = serde_json::json!(4);
+    let error = RuntimeConfig::parse(&serde_json::to_string(&value).unwrap())
+      .unwrap_err()
+      .to_string();
+    assert!(
+      error.contains("limits.max_mutating_tool_calls_per_turn"),
+      "{error}"
+    );
   }
 
   #[test]
