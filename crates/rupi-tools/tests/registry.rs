@@ -862,8 +862,10 @@ fn binding_is_linearized_through_the_durable_start_observer() {
     .expect("the exact binding passes its final check before ToolStarted");
   let replacement_registry = Arc::clone(&registry);
   let replacement_starts = Arc::clone(&new_starts);
+  let (replacement_started_tx, replacement_started_rx) = mpsc::channel();
   let (replaced_tx, replaced_rx) = mpsc::channel();
   let replacement = thread::spawn(move || {
+    replacement_started_tx.send(()).unwrap();
     replacement_registry.register_shared(probe_tool(
       "inspect_target",
       false,
@@ -873,6 +875,9 @@ fn binding_is_linearized_through_the_durable_start_observer() {
     ));
     replaced_tx.send(()).unwrap();
   });
+  replacement_started_rx
+    .recv_timeout(Duration::from_secs(2))
+    .expect("replacement thread is attempting the shared registration");
   assert!(
     replaced_rx.recv_timeout(Duration::from_millis(25)).is_err(),
     "replacement cannot cross the durable start boundary"
