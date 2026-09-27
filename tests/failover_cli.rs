@@ -250,7 +250,7 @@ fn an_ambiguous_post_timeout_skips_the_fake_same_model_retry() {
   let root = temp.path();
   let primary = FakeServer::answer_delayed(
     vec![text_response("late primary response")],
-    std::time::Duration::from_millis(750),
+    std::time::Duration::from_secs(2),
   );
   let standby = FakeServer::answer(vec![text_response("served by the standby")]);
   let workspace = root.join("workspace");
@@ -260,12 +260,14 @@ fn an_ambiguous_post_timeout_skips_the_fake_same_model_retry() {
     &primary.base_url(),
     Backup::Served(standby.base_url()),
   );
+  // Leave slower CI runners time to establish the local request, while keeping
+  // the scripted response beyond the read deadline to exercise ambiguity.
   config
     .endpoints
     .iter_mut()
     .find(|endpoint| endpoint.model == "agent")
     .expect("primary endpoint")
-    .read_timeout_ms = Some(100);
+    .read_timeout_ms = Some(1_000);
   let config = write_config_from(root, &config);
 
   let output = run(&config, &workspace, "go");
