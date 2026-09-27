@@ -7003,8 +7003,11 @@ mod tests {
   #[test]
   fn restored_derived_summary_is_canonical_and_tampering_is_rejected() {
     let temp = rupi_store::TempDir::new("runtime-derived-summary-resume");
-    let store = rupi_store::Store::open(temp.path(), rupi_store::WritePolicy::default())
-      .expect("store opens");
+    let write_policy = rupi_store::WritePolicy {
+      inline_threshold_bytes: 128,
+      ..rupi_store::WritePolicy::default()
+    };
+    let store = rupi_store::Store::open(temp.path(), write_policy).expect("store opens");
     let session_id = SessionId::new();
     let provider = Scripted::new(
       "summary-state",
@@ -7045,6 +7048,9 @@ mod tests {
       .completed_work
       .push("lexer implementation completed".into());
     capsule
+      .completed_work
+      .push(format!("large derived detail {}", "x".repeat(2048)));
+    capsule
       .unresolved
       .push("integration tests have not run".into());
     let summary_state = DerivedSummary::Phase {
@@ -7063,6 +7069,21 @@ mod tests {
     drop(runtime);
     trace.flush().expect("flush summary state");
     drop(trace);
+    let trace = rupi_store::TraceJournal::read(&store.layout().trace_path(&session_id))
+      .expect("canonical trace reads");
+    let epoch = trace
+      .items
+      .iter()
+      .find(|entry| matches!(entry.envelope.event, AgentEvent::ContextCompactionEpoch(_)))
+      .expect("canonical compaction epoch exists");
+    assert!(
+      epoch
+        .externalized
+        .iter()
+        .any(|field| field.field.starts_with("derived_summary/")),
+      "typed summary state is externalized: {:?}",
+      epoch.externalized
+    );
 
     let restored = store.restore(&session_id).expect("session restores");
     let restored_summary = restored.messages[0].message.clone();
