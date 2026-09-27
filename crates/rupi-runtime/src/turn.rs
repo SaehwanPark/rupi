@@ -4156,14 +4156,32 @@ impl<'a> TurnLoop<'a> {
         execution.outcome.is_error = true;
       }
       let request_event_id = requested.meta.event_id.clone();
-      let (block, seq, outcome_event_id) = self.record_tool_outcome(
+      let terminal = self.record_tool_outcome(
         turn_id.clone(),
         call,
         &execution,
         duration_ms,
         read_only,
-        started_event_id.or(Some(request_event_id.clone())),
-      )?;
+        started_event_id.clone().or(Some(request_event_id.clone())),
+      );
+      let (block, seq, outcome_event_id) = match terminal {
+        Ok(terminal) => terminal,
+        Err(error) => {
+          if execution.started {
+            self.interrupted_tools.push(rupi_core::InterruptedToolCall {
+              request: request.clone(),
+              state: ToolExecutionState::Started,
+              read_only,
+              turn_id: Some(turn_id.clone()),
+              epoch: Some(attribution.epoch),
+              model: Some(attribution.model.clone()),
+              request_event_id: Some(request_event_id),
+              started_event_id,
+            });
+          }
+          return Err(error);
+        }
+      };
       if self.call_makes_progress(call) && execution.state == ToolExecutionState::Succeeded {
         outcome.progress_succeeded = true;
       }
@@ -6331,6 +6349,28 @@ mod tests {
     }
   }
 
+  #[derive(Clone, Default)]
+  struct RejectUnknownOutcomeTrace(Recorder);
+
+  impl Trace for RejectUnknownOutcomeTrace {
+    fn emit(&mut self, envelope: &mut EventEnvelope) -> Result<(), SinkError> {
+      self.0.emit(envelope)
+    }
+
+    fn emit_message(
+      &mut self,
+      envelope: &mut EventEnvelope,
+      message: &Message,
+    ) -> Result<(), SinkError> {
+      if matches!(envelope.event, AgentEvent::ToolUnknown(_)) {
+        return Err(SinkError(
+          "injected terminal-event persistence failure".into(),
+        ));
+      }
+      self.0.emit_message(envelope, message)
+    }
+  }
+
   #[derive(Clone)]
   struct UnknownAfterStartTool(Arc<Mutex<Vec<serde_json::Value>>>);
 
@@ -6575,6 +6615,54 @@ mod tests {
     assert_eq!(provider.requests().len(), 2);
     assert!(runtime.unresolved_side_effects().is_empty());
     assert_eq!(observed_trace.count("tool_reconciliation_observed"), 2);
+  }
+
+  #[test]
+  fn failed_terminal_persistence_keeps_started_mutations_blocked_in_memory() {
+    let mutations = Arc::new(Mutex::new(Vec::new()));
+    let tools = registry_with(vec![Box::new(UnknownAfterStartTool(mutations))]);
+    let provider = Scripted::new(
+      "unknown-terminal-write-failure",
+      vec![
+        vec![ProviderEvent::ToolCall(ToolCallBlock {
+          id: rupi_core::ToolCallId::new(),
+          name: "write_probe".into(),
+          arguments: json!({"path":"a"}),
+        })],
+        text("must not run before reconciliation"),
+      ],
+    );
+    let policy = rupi_core::ProfilePolicy::new(
+      rupi_core::ContextProfile::Balanced,
+      provider.capabilities().context_window,
+    );
+    let mut trace = RejectUnknownOutcomeTrace::default();
+    let observed_trace = trace.0.clone();
+    let mut runtime = TurnLoop::new(
+      &provider,
+      &tools,
+      &policy,
+      &mut trace,
+      SessionId::new(),
+      TraceId::new(),
+    );
+
+    assert!(
+      runtime
+        .run_turn("mutate", &CancelToken::new(), &mut SilentProgress)
+        .is_err()
+    );
+    assert_eq!(runtime.interrupted_tools.len(), 1);
+    assert_eq!(provider.requests().len(), 1);
+    assert_eq!(observed_trace.count("tool_started"), 1);
+    assert_eq!(observed_trace.count("tool_unknown"), 0);
+
+    assert!(
+      runtime
+        .run_turn("continue", &CancelToken::new(), &mut SilentProgress)
+        .is_err()
+    );
+    assert_eq!(provider.requests().len(), 1);
   }
 
   #[test]
