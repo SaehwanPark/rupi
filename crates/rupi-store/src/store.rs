@@ -5375,6 +5375,7 @@ mod tests {
             let reduced = matches!(case, Case::ReducedToolCompleted);
             let text = if reduced { "visible" } else { "complete" };
             let blob = reduced.then(|| session.put_recovery_blob(b"full tool output").unwrap());
+            let recovery_ref = blob.as_ref().map(BlobRef::recovery_ref);
             (
               EventEnvelope::new(
                 meta(&id, &turn),
@@ -5398,7 +5399,7 @@ mod tests {
                   text: text.into(),
                   is_error: false,
                   reduced,
-                  recovery_ref: None,
+                  recovery_ref,
                 })],
               ),
             )
