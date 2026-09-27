@@ -27,19 +27,40 @@ use rupi_core::{
   redact::RedactionPolicy,
   trace::{RawPayloadCapture, TraceEntry},
 };
+use serde::Deserialize;
 use serde_json::{Value, json};
 
 use crate::{
   StoreError,
   blob::BlobStore,
   jsonl::{
-    LineWriter, MAX_JSONL_LINE_BYTES, ReadReport, read_jsonl, read_jsonl_tail, recover_append_tail,
+    LineWriter, MAX_JSONL_LINE_BYTES, ReadReport, read_jsonl_tail, read_jsonl_with_preflight,
+    recover_append_tail,
   },
   payload,
 };
 
 /// Bytes read from the end of a journal to recover the last sequence number.
 const SEQUENCE_RECOVERY_WINDOW: u64 = 256 * 1024;
+
+#[derive(Deserialize)]
+struct EventSchemaOnly {
+  v: u32,
+}
+
+fn validate_event_schema_before_decode(line: &[u8]) -> Result<(), StoreError> {
+  let Ok(EventSchemaOnly { v }) = serde_json::from_slice(line) else {
+    return Ok(());
+  };
+  if rupi_core::event::is_supported_event_schema_version(v) {
+    return Ok(());
+  }
+  Err(StoreError::Invalid(format!(
+    "unsupported trace event schema version {v}; this build supports versions {} through {}",
+    rupi_core::event::MIN_SUPPORTED_EVENT_SCHEMA_VERSION,
+    rupi_core::event::EVENT_SCHEMA_VERSION
+  )))
+}
 
 /// Writer for one session's trace journal.
 #[derive(Debug)]
@@ -235,7 +256,7 @@ impl TraceJournal {
 
   /// Read the whole journal. Prefer [`TraceJournal::read_tail`] for resumption.
   pub fn read(path: &Path) -> Result<ReadReport<TraceEntry>, StoreError> {
-    read_jsonl(path)
+    read_jsonl_with_preflight(path, validate_event_schema_before_decode)
   }
 
   /// Read only the bounded tail window of a journal.
@@ -460,6 +481,62 @@ mod tests {
       .collect();
     assert_eq!(seqs, vec![1, 2, 3], "the log is the ordering authority");
     assert_eq!(entries.malformed, 0);
+  }
+
+  #[test]
+  fn resumed_trace_keeps_v1_events_and_appends_v2_events() {
+    let tmp = TempDir::new("journal-mixed-event-schemas");
+    let path = tmp.child("trace.jsonl");
+    let mut legacy = envelope(diagnostic("legacy event"));
+    legacy.v = rupi_core::event::MIN_SUPPORTED_EVENT_SCHEMA_VERSION;
+    legacy.meta.seq = Some(EventSeq(1));
+    let legacy = rupi_core::TraceEntry {
+      envelope: legacy,
+      redactions: 0,
+      raw_payload: false,
+      raw_ref: None,
+      externalized: Vec::new(),
+    };
+    std::fs::write(
+      &path,
+      format!("{}\n", serde_json::to_string(&legacy).unwrap()),
+    )
+    .unwrap();
+
+    let mut journal = TraceJournal::open(
+      &path,
+      RedactionPolicy::default(),
+      RawPayloadCapture::Disabled,
+    )
+    .unwrap();
+    let current = envelope(diagnostic("new event"));
+    assert_eq!(current.v, rupi_core::event::EVENT_SCHEMA_VERSION);
+    journal.append(&current).unwrap();
+
+    let entries = TraceJournal::read(&path).unwrap();
+    assert_eq!(entries.items.len(), 2);
+    assert_eq!(entries.items[0].envelope.v, 1);
+    assert_eq!(entries.items[1].envelope.v, 2);
+    assert_eq!(entries.items[1].envelope.meta.seq, Some(EventSeq(2)));
+    assert_eq!(entries.malformed, 0);
+  }
+
+  #[test]
+  fn future_event_schema_is_reported_before_unknown_variant_decode() {
+    let tmp = TempDir::new("journal-future-event-schema");
+    let path = tmp.child("trace.jsonl");
+    std::fs::write(
+      &path,
+      concat!(r#"{"v":3,"meta":{},"type":"future_event"}"#, "\n"),
+    )
+    .unwrap();
+
+    let error = TraceJournal::read(&path).expect_err("future schemas fail explicitly");
+    assert!(
+      error
+        .to_string()
+        .contains("unsupported trace event schema version 3")
+    );
   }
 
   #[test]

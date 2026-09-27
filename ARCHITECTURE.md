@@ -285,6 +285,10 @@ Message-bearing runtime events use one WAL transaction with an exact redacted
 message payload: small messages stay inline, while larger messages keep a verified
 session-blob reference. `begin` and `resume` hold the per-session lease for the
 handle lifetime, and retention acquires the same lease before deleting a victim.
+Trace envelope v2 identifies the current event format; readers accept supported v1
+and v2 entries (including mixed append-only histories) and reject unsupported
+versions before decoding event variants. Resuming an old trace appends v2 records
+without rewriting prior v1 lines.
 
 Reduced tool output can be re-read only through the runtime's read-only
 `payload_read` tool. The model receives an opaque recovery reference in the reduced
@@ -354,6 +358,8 @@ compaction/checkpoint summaries retain their own origin even when an endpoint re
 on the wire as `role=user`. Session schema v5 persists this distinction. Migration derives
 origins only from linked, unambiguous canonical events; legacy user-role messages with no
 proof remain `ImportedLegacy` and are carried forward only as opaque unresolved context.
+Schema-only migration preserves historically durable content byte-for-byte; the active redaction
+policy applies to new durable writes rather than silently changing only the semantic projection.
 Context capsules and safe eviction boundaries inspect origin rather than inferring authorship
 from wire role.
 
@@ -409,9 +415,9 @@ mutating operation requires an exact fingerprint match; missing or mismatched id
 manual-inspection barrier, never a guess based on the current name or risk class. Unknown,
 policy-denied, rejected, already-stale, and decoded-but-incomplete calls still spend total-call
 budget but do not spend mutation budget; unavailable calls do not prompt for approval. Mutation
-budget is reserved at execution admission and released only when the typed `stale_binding`
-result proves the replacement race was refused before `ToolStarted`; other refusals and
-uncertain outcomes keep conservative accounting.
+budget counts durable `ToolStarted` boundaries: validation, preflight, approval, cancellation, and
+stale-binding refusals do not spend a slot, while a started operation consumes one even if it later
+fails or becomes `Unknown`.
 
 Read-only tools may use more permissive retry semantics.
 
@@ -500,8 +506,12 @@ threshold. If the failed request committed no reasoning, assistant text, or deco
 tool call, the active turn may compact only the message prefix that predates the turn,
 using one bounded local summary and the exact normal request shape, then reissue once.
 All current-turn messages remain verbatim and in order. A second refusal, an overflow
-after committed output, or a candidate that cannot fit is terminal. Context overflow
-never activates model failover.
+after committed output, or a candidate that cannot fit is terminal. Emergency recovery renders
+semantic capsules with objective, constraints, unresolved work, current state, next action, and
+artifacts ahead of completed details. It preserves the complete typed summary for later recursive
+compaction but requires a nonempty provider-visible floor (up to 512 UTF-8 bytes, scaled down for
+tiny windows); if that floor and the protected current-turn suffix cannot fit, recovery refuses.
+Context overflow never activates model failover.
 
 Context thresholds are derived for the active model's window before explicit
 `ContextOverrides` are applied. The result is normalized to preserve

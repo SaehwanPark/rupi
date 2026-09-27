@@ -51,6 +51,10 @@ use rupi_tools::{Approval, ApprovalGate, BoundToolSpec, Executed, ToolBinding, T
 
 use crate::failover::{FailoverPolicy, Recovery};
 
+/// Upper bound on the model-visible summary floor for overflow recovery.
+/// Tiny context windows scale this floor down to keep a meaningful retry possible.
+const MIN_OVERFLOW_SUMMARY_BYTES: usize = 512;
+
 /// How to handle context pressure when policy recommends compaction.
 #[derive(Debug, Clone, Copy, PartialEq, Eq, Default)]
 pub enum CompactionStrategy {
@@ -2146,10 +2150,24 @@ impl<'a> TurnLoop<'a> {
     let protected_messages = self.messages[..protected].to_vec();
     let suffix = self.messages[prefix_end..].to_vec();
     let source = self.summarize_messages(&prefix);
-    let source_text = source.format_for_model();
+    let original_text = source.format_for_model();
+    if original_text.trim().is_empty() {
+      self.diagnostic(
+        Some(turn_id.clone()),
+        DiagnosticLevel::Warn,
+        "no semantic summary was available for prior history; recovery is unavailable",
+      )?;
+      return Ok(false);
+    }
+    let source_text = overflow_summary_text(&source);
+    let window_floor = usize::try_from(self.provider().capabilities().context_window)
+      .unwrap_or(usize::MAX)
+      .min(MIN_OVERFLOW_SUMMARY_BYTES);
+    let minimum_bytes = source_text.len().min(window_floor);
 
-    // The rendering is reduced at character boundaries while its typed source
-    // remains attached for a later recursive compaction.
+    // The rendering keeps high-priority task anchors first and is reduced only
+    // to a non-empty floor while its complete typed source remains attached for
+    // a later recursive compaction.
     let mut summary_bytes = source_text.len();
     let mut accepted = None;
     for _ in 0..=64 {
@@ -2167,10 +2185,10 @@ impl<'a> TurnLoop<'a> {
         accepted = Some(summary);
         break;
       }
-      if summary_bytes == 0 {
+      if summary_bytes <= minimum_bytes {
         break;
       }
-      let next = summary_bytes / 2;
+      let next = (summary_bytes / 2).max(minimum_bytes);
       let next = truncate_utf8_to_bytes(&source_text, next).len();
       if next == summary_bytes {
         summary_bytes = summary_bytes.saturating_sub(1);
@@ -4467,9 +4485,6 @@ impl<'a> TurnLoop<'a> {
         );
         continue;
       }
-      if reserve_mutation_budget {
-        self.mutating_tool_calls_seen = self.mutating_tool_calls_seen.saturating_add(1);
-      }
       let attribution = StreamAttribution {
         turn_id: turn_id.clone(),
         session_id: self.session_id.clone(),
@@ -4545,8 +4560,10 @@ impl<'a> TurnLoop<'a> {
         (executed, elapsed_ms(clock), started_event_id)
       };
       let (mut execution, duration_ms, started_event_id) = executed;
-      if reserve_mutation_budget && execution.stale_binding {
-        self.mutating_tool_calls_seen = self.mutating_tool_calls_seen.saturating_sub(1);
+      if reserve_mutation_budget && started_event_id.is_some() {
+        // Budget usage records durable execution boundaries, not reservations
+        // that may be refused by validation, preflight, approval, or cancellation.
+        self.mutating_tool_calls_seen = self.mutating_tool_calls_seen.saturating_add(1);
       }
       if started_event_id.is_some() {
         self.tool_calls_started = self.tool_calls_started.saturating_add(1);
@@ -4964,8 +4981,11 @@ impl<'a> Collector<'a> {
       .map(|(_, call)| call.id.as_str().to_string())
       .collect();
 
+    let mut normalized_rejection_ids = BTreeSet::new();
     for (provider_id, indices) in duplicates {
-      let provider_rejection = self.rejected_calls.remove(&provider_id);
+      // The original rejection belongs to an ambiguous provider identity. Do
+      // not clone its provider-controlled reason onto every normalized call.
+      self.rejected_calls.remove(&provider_id);
       for index in indices {
         let call = &mut self.calls[index];
         let normalized_id = loop {
@@ -4982,16 +5002,37 @@ impl<'a> Collector<'a> {
             "provider reused invocation id '{provider_id}' in one response; send unique ids for every tool call"
           )
         };
-        let reason = provider_rejection
-          .as_ref()
-          .map(|reason| format!("{duplicate}; original rejection: {reason}"))
-          .unwrap_or(duplicate);
-        let reason = truncate_utf8_to_bytes(&reason, MAX_TOOL_REJECTION_REASON_BYTES).to_string();
+        let reason =
+          truncate_utf8_to_bytes(&duplicate, MAX_TOOL_REJECTION_REASON_BYTES).to_string();
+        normalized_rejection_ids.insert(normalized_id.as_str().to_string());
         self
           .rejected_calls
           .insert(normalized_id.as_str().to_string(), reason);
       }
     }
+
+    // Normalization can add rejection reasons after collection. Reserve space
+    // for every collision notice first, then trim retained provider reasons to
+    // the same per-call and aggregate limits enforced during ingestion.
+    let mut remaining = MAX_TOOL_REJECTION_REASON_BYTES_TOTAL;
+    for id in &normalized_rejection_ids {
+      let Some(reason) = self.rejected_calls.get_mut(id) else {
+        continue;
+      };
+      let keep = remaining.min(MAX_TOOL_REJECTION_REASON_BYTES);
+      *reason = truncate_utf8_to_bytes(reason, keep).to_string();
+      remaining = remaining.saturating_sub(reason.len());
+    }
+    for (id, reason) in &mut self.rejected_calls {
+      if normalized_rejection_ids.contains(id) {
+        continue;
+      }
+      let keep = remaining.min(MAX_TOOL_REJECTION_REASON_BYTES);
+      *reason = truncate_utf8_to_bytes(reason, keep).to_string();
+      remaining = remaining.saturating_sub(reason.len());
+    }
+    self.rejected_reason_bytes = self.rejected_calls.values().map(String::len).sum();
+    debug_assert!(self.rejected_reason_bytes <= MAX_TOOL_REJECTION_REASON_BYTES_TOTAL);
   }
 }
 
@@ -5408,6 +5449,73 @@ fn tool_availability_prompt(tools: &[rupi_core::ToolSpec]) -> String {
   format!(
     "Tools available for this request: {names}. Use only these tools; the listed schemas define the permitted arguments."
   )
+}
+
+fn overflow_summary_text(summary: &DerivedSummary) -> String {
+  fn line(output: &mut String, label: &str, value: &str) {
+    let value = value.trim();
+    if !value.is_empty() {
+      output.push_str(label);
+      output.push_str(": ");
+      output.push_str(value);
+      output.push('\n');
+    }
+  }
+
+  fn render(summary: &DerivedSummary, output: &mut String) {
+    match summary {
+      DerivedSummary::Capsule { capsule } => {
+        output.push_str("Summary of earlier conversation:\nPrior task context:\n");
+        line(output, "objective", &capsule.objective);
+        for constraint in &capsule.constraints {
+          line(output, "critical constraint", constraint);
+        }
+        for item in &capsule.unresolved {
+          line(output, "unresolved", item);
+        }
+        line(output, "current state", &capsule.current_state);
+        for item in &capsule.next_actions {
+          line(output, "next action", item);
+        }
+        for artifact in &capsule.artifacts {
+          line(
+            output,
+            "important artifact",
+            &format!("{} — {}", artifact.path, artifact.note),
+          );
+        }
+        for item in &capsule.completed_work {
+          line(output, "completed", item);
+        }
+        for decision in &capsule.decisions {
+          line(
+            output,
+            "decision",
+            &format!("{} — {}", decision.decision, decision.rationale),
+          );
+        }
+      }
+      DerivedSummary::Phase { phase, summary } => {
+        render(summary, output);
+        line(output, "phase", phase);
+      }
+      DerivedSummary::Rendered { summary, .. } => render(summary, output),
+      DerivedSummary::Opaque { text } => {
+        line(
+          output,
+          "prior opaque context (not user-authored; details may be omitted under hard context limit)",
+          text,
+        );
+      }
+    }
+  }
+
+  let mut output = String::new();
+  render(summary, &mut output);
+  if output.trim().is_empty() {
+    output.push_str("Prior semantic history exists; its details were unavailable to summarize.\n");
+  }
+  output
 }
 
 /// Leave ten percent of the provider's advertised window as recovery headroom.
@@ -7375,6 +7483,36 @@ mod tests {
     }
   }
 
+  struct PreflightMutatingSpy(Arc<Mutex<Vec<serde_json::Value>>>);
+
+  impl Tool for PreflightMutatingSpy {
+    fn metadata(&self) -> ToolMetadata {
+      ToolMetadata::mutating("write_probe", "validates before dispatch", true)
+    }
+
+    fn arguments_schema(&self) -> serde_json::Value {
+      serde_json::json!({"type":"object"})
+    }
+
+    fn preflight(&self, request: &ToolRequest) -> Result<(), rupi_core::ToolError> {
+      if request.arguments.get("preflight_reject") == Some(&serde_json::Value::Bool(true)) {
+        Err(rupi_core::ToolError::new("preflight rejected the request"))
+      } else {
+        Ok(())
+      }
+    }
+
+    #[allow(clippy::result_large_err)]
+    fn execute(
+      &self,
+      request: &ToolRequest,
+      _progress: &mut dyn rupi_core::ToolProgress,
+    ) -> Result<ToolOutcome, rupi_core::ToolError> {
+      self.0.lock().unwrap().push(request.arguments.clone());
+      Ok(ToolOutcome::succeeded("mutated"))
+    }
+  }
+
   struct ReplaceBindingDuringPreflight {
     registry: Arc<ToolRegistry>,
     replaced: std::sync::atomic::AtomicBool,
@@ -7688,6 +7826,30 @@ mod tests {
     }
   }
 
+  struct ApprovalSequenceProgress {
+    decisions: Vec<Approval>,
+    prompts: usize,
+  }
+
+  impl TurnProgress for ApprovalSequenceProgress {
+    fn mutating_approval_available(&self) -> bool {
+      true
+    }
+
+    fn approve_mutating_tool(
+      &mut self,
+      _metadata: &rupi_core::ToolMetadata,
+      _arguments: &serde_json::Value,
+    ) -> Approval {
+      self.prompts += 1;
+      if self.decisions.is_empty() {
+        Approval::Deny("no test approval decision remains".into())
+      } else {
+        self.decisions.remove(0)
+      }
+    }
+  }
+
   #[test]
   fn mutating_unknown_stops_the_batch_until_an_operator_resolves_it() {
     let mutations = Arc::new(Mutex::new(Vec::new()));
@@ -7750,6 +7912,7 @@ mod tests {
     assert_eq!(observed_trace.count("tool_started"), 1);
     assert_eq!(observed_trace.count("tool_unknown"), 1);
     assert_eq!(observed_trace.count("tool_failed"), 2);
+    assert_eq!(runtime.mutating_tool_calls_seen, 1);
     assert_eq!(mutations.lock().unwrap().len(), 1);
     assert!(reads.lock().unwrap().is_empty());
     assert_eq!(runtime.unresolved_side_effects().len(), 1);
@@ -8141,7 +8304,7 @@ mod tests {
   }
 
   #[test]
-  fn prestart_stale_binding_releases_only_its_mutation_budget_reservation() {
+  fn prestart_stale_binding_refusal_does_not_spend_mutation_budget() {
     let temp = rupi_store::TempDir::new("stale-binding-mutation-budget");
     let replacement_seen = Arc::new(Mutex::new(Vec::new()));
     let stale_seen = Arc::new(Mutex::new(Vec::new()));
@@ -8249,6 +8412,146 @@ mod tests {
     assert_eq!(mutations.lock().unwrap().len(), 1);
     assert_eq!(trace.count("tool_failed"), 1);
     assert_eq!(trace.count("tool_started"), 1);
+  }
+
+  #[test]
+  fn mutation_budget_counts_only_calls_that_cross_tool_started() {
+    let mutations = Arc::new(Mutex::new(Vec::new()));
+    let tools =
+      registry_with_default_deny(vec![Box::new(PreflightMutatingSpy(Arc::clone(&mutations)))]);
+    let provider = Scripted::new(
+      "mutation-budget-start-boundary",
+      vec![
+        vec![
+          ProviderEvent::ToolCall(ToolCallBlock {
+            id: rupi_core::ToolCallId::from_string("invalid-arguments"),
+            name: "write_probe".into(),
+            arguments: json!("not an object"),
+          }),
+          ProviderEvent::ToolCall(ToolCallBlock {
+            id: rupi_core::ToolCallId::from_string("preflight-refusal"),
+            name: "write_probe".into(),
+            arguments: json!({"preflight_reject": true}),
+          }),
+          ProviderEvent::ToolCall(ToolCallBlock {
+            id: rupi_core::ToolCallId::from_string("user-denied"),
+            name: "write_probe".into(),
+            arguments: json!({}),
+          }),
+          ProviderEvent::ToolCall(ToolCallBlock {
+            id: rupi_core::ToolCallId::from_string("user-approved"),
+            name: "write_probe".into(),
+            arguments: json!({}),
+          }),
+        ],
+        text("done"),
+      ],
+    );
+    let policy = rupi_core::ProfilePolicy::new(
+      rupi_core::ContextProfile::Balanced,
+      provider.capabilities().context_window,
+    );
+    let mut trace = Recorder::default();
+    let mut runtime = TurnLoop::new(
+      &provider,
+      &tools,
+      &policy,
+      &mut trace,
+      SessionId::new(),
+      TraceId::new(),
+    )
+    .with_tool_call_budgets(4, 1)
+    .with_interactive_tool_approval(true);
+    let mut progress = ApprovalSequenceProgress {
+      decisions: vec![
+        Approval::Allow,
+        Approval::Allow,
+        Approval::Deny("operator declined".into()),
+        Approval::Allow,
+      ],
+      prompts: 0,
+    };
+
+    let report = runtime
+      .run_turn(
+        "try then perform one mutation",
+        &CancelToken::new(),
+        &mut progress,
+      )
+      .expect("pre-start refusals do not consume the mutation-start budget");
+
+    assert_eq!(report.status, TurnStatus::Completed);
+    assert_eq!(report.tool_calls, 4);
+    assert_eq!(
+      report.tool_calls_started,
+      1,
+      "starts={}, approvals={}, mutations={:?}, failures={}",
+      trace.count("tool_started"),
+      progress.prompts,
+      mutations.lock().unwrap(),
+      trace.count("tool_failed")
+    );
+    assert_eq!(runtime.mutating_tool_calls_seen, 1);
+    assert_eq!(progress.prompts, 4);
+    assert_eq!(mutations.lock().unwrap().len(), 1);
+    assert_eq!(trace.count("tool_started"), 1);
+    assert_eq!(trace.count("tool_failed"), 3);
+  }
+
+  #[test]
+  fn failed_started_mutation_spends_its_mutation_budget_slot() {
+    let mutations = Arc::new(Mutex::new(Vec::new()));
+    let tools = registry_with(vec![Box::new(MutatingSpy {
+      seen: Arc::clone(&mutations),
+      outcome: ToolOutcome::failed("write failed after dispatch"),
+    })]);
+    let provider = Scripted::new(
+      "failed-started-mutation-budget",
+      vec![
+        vec![
+          ProviderEvent::ToolCall(ToolCallBlock {
+            id: rupi_core::ToolCallId::from_string("started-failure"),
+            name: "write_probe".into(),
+            arguments: json!({}),
+          }),
+          ProviderEvent::ToolCall(ToolCallBlock {
+            id: rupi_core::ToolCallId::from_string("budget-refused"),
+            name: "write_probe".into(),
+            arguments: json!({}),
+          }),
+        ],
+        text("done"),
+      ],
+    );
+    let policy = rupi_core::ProfilePolicy::new(
+      rupi_core::ContextProfile::Balanced,
+      provider.capabilities().context_window,
+    );
+    let mut trace = Recorder::default();
+    let mut runtime = TurnLoop::new(
+      &provider,
+      &tools,
+      &policy,
+      &mut trace,
+      SessionId::new(),
+      TraceId::new(),
+    )
+    .with_tool_call_budgets(4, 1);
+
+    let report = runtime
+      .run_turn(
+        "make one bounded mutation",
+        &CancelToken::new(),
+        &mut SilentProgress,
+      )
+      .expect("the failed call remains a terminal tool result");
+
+    assert_eq!(report.status, TurnStatus::ToolBudgetExhausted);
+    assert_eq!(report.tool_calls_started, 1);
+    assert_eq!(runtime.mutating_tool_calls_seen, 1);
+    assert_eq!(mutations.lock().unwrap().len(), 1);
+    assert_eq!(trace.count("tool_started"), 1);
+    assert_eq!(trace.count("tool_failed"), 2);
   }
 
   #[test]
@@ -9910,9 +10213,134 @@ mod tests {
 
     let summary = provider.requests()[1].messages[0].text();
     assert!(std::str::from_utf8(summary.as_bytes()).is_ok());
+    assert!(
+      !summary.trim().is_empty(),
+      "successful recovery exposes prior history"
+    );
+    assert!(summary.contains("prior opaque context"));
     assert!(summary.len() < 128 * 4);
     assert_eq!(truncate_utf8_to_bytes("한국어🙂🚀", 1), "");
     assert_eq!(truncate_utf8_to_bytes("한국어🙂🚀", 9), "한국어");
+  }
+
+  #[test]
+  fn emergency_capsule_rendering_prioritizes_task_anchors() {
+    let summary = DerivedSummary::Capsule {
+      capsule: ContextCapsule {
+        version: rupi_core::context::CAPSULE_SCHEMA_VERSION,
+        objective: "implement the parser".into(),
+        completed_work: vec!["read grammar".into()],
+        decisions: vec![CapsuleDecision {
+          decision: "keep API".into(),
+          rationale: "existing callers depend on it".into(),
+        }],
+        constraints: vec!["do not add dependencies".into()],
+        current_state: "parser tests failing".into(),
+        artifacts: vec![CapsuleArtifact {
+          path: "src/parser.rs".into(),
+          note: "main implementation".into(),
+        }],
+        unresolved: vec!["unterminated strings".into()],
+        next_actions: vec!["fix string handling".into()],
+      },
+    };
+
+    let rendered = overflow_summary_text(&summary);
+    let positions = [
+      rendered.find("objective:").unwrap(),
+      rendered.find("critical constraint:").unwrap(),
+      rendered.find("unresolved:").unwrap(),
+      rendered.find("current state:").unwrap(),
+      rendered.find("next action:").unwrap(),
+      rendered.find("important artifact:").unwrap(),
+      rendered.find("completed:").unwrap(),
+    ];
+    assert!(positions.windows(2).all(|pair| pair[0] < pair[1]));
+    assert!(rendered.contains("implement the parser"));
+  }
+
+  #[test]
+  fn overflow_recovery_refuses_when_only_an_empty_summary_would_fit() {
+    let mut provider = Scripted::new("overflow-minimum-history", vec![text("unused")]).fails(
+      0,
+      ModelFailure::new(
+        ModelFailureKind::ContextOverflow,
+        FailurePhase::WaitingForResponse,
+        "context window exceeded",
+      ),
+    );
+    provider.capabilities.context_window = 512;
+    provider.capabilities.max_output_tokens = None;
+    let tools = registry_with(Vec::new());
+    let policy = rupi_core::ProfilePolicy::new(
+      rupi_core::ContextProfile::Relaxed,
+      provider.capabilities().context_window,
+    );
+    let mut trace = Recorder::default();
+    let error = TurnLoop::new(
+      &provider,
+      &tools,
+      &policy,
+      &mut trace,
+      SessionId::new(),
+      TraceId::new(),
+    )
+    .with_system("x".repeat(1_100))
+    .with_messages(vec![Message::user("old history")])
+    .with_summarizer(|_| "prior objective ".repeat(200))
+    .run_turn("new turn", &CancelToken::new(), &mut SilentProgress)
+    .expect_err("recovery must not erase all model-visible prior history");
+
+    assert_eq!(error.kind(), Some(ModelFailureKind::ContextOverflow));
+    assert_eq!(provider.requests().len(), 1);
+    assert_eq!(
+      trace.count("context_compaction_epoch"),
+      0,
+      "diagnostics: {:?}",
+      trace.diagnostics()
+    );
+    assert!(
+      trace
+        .diagnostics()
+        .iter()
+        .any(|message| message.contains("no bounded compacted request fits")),
+      "the nonempty semantic floor must be the reason recovery is refused: {:?}",
+      trace.diagnostics()
+    );
+  }
+
+  #[test]
+  fn overflow_recovery_refuses_an_empty_custom_summary() {
+    let provider = Scripted::new("overflow-empty-summary", vec![text("unused")]).fails(
+      0,
+      ModelFailure::new(
+        ModelFailureKind::ContextOverflow,
+        FailurePhase::WaitingForResponse,
+        "context window exceeded",
+      ),
+    );
+    let tools = registry_with(Vec::new());
+    let policy = rupi_core::ProfilePolicy::new(
+      rupi_core::ContextProfile::Balanced,
+      provider.capabilities().context_window,
+    );
+    let mut trace = Recorder::default();
+    let error = TurnLoop::new(
+      &provider,
+      &tools,
+      &policy,
+      &mut trace,
+      SessionId::new(),
+      TraceId::new(),
+    )
+    .with_messages(vec![Message::user("old history")])
+    .with_summarizer(|_| String::new())
+    .run_turn("new turn", &CancelToken::new(), &mut SilentProgress)
+    .expect_err("an empty custom summary is not a history-preserving recovery");
+
+    assert_eq!(error.kind(), Some(ModelFailureKind::ContextOverflow));
+    assert_eq!(provider.requests().len(), 1);
+    assert_eq!(trace.count("context_compaction_epoch"), 0);
   }
 
   #[test]
@@ -12266,6 +12694,69 @@ mod tests {
   }
 
   #[test]
+  fn duplicate_id_normalization_preserves_the_aggregate_rejection_reason_bound() {
+    let mut trace = Recorder::default();
+    let mut progress = SilentProgress;
+    let cancel = CancelToken::new();
+    let mut collector = Collector::new(
+      &mut progress,
+      &mut trace,
+      StreamAttribution {
+        turn_id: TurnId::new(),
+        session_id: SessionId::new(),
+        trace_id: TraceId::new(),
+        epoch: 0,
+        model: ModelRef::new("test", "duplicate-reason-bounds"),
+      },
+      cancel.clone(),
+      Instant::now(),
+    );
+    let provider_id = rupi_core::ToolCallId::from_string("reused-call");
+    for _ in 0..MAX_TOOL_REJECTION_REASON_BYTES_TOTAL / MAX_TOOL_REJECTION_REASON_BYTES {
+      rupi_core::ProviderEventSink::emit(
+        &mut collector,
+        &ProviderEvent::ToolCallRejected {
+          id: provider_id.clone(),
+          name: "spy".into(),
+          reason: "x".repeat(MAX_TOOL_REJECTION_REASON_BYTES),
+        },
+      );
+    }
+    assert!(!cancel.is_cancelled());
+    assert_eq!(
+      collector.rejected_reason_bytes,
+      MAX_TOOL_REJECTION_REASON_BYTES_TOTAL
+    );
+
+    collector.normalize_tool_call_ids();
+
+    let reason_bytes = collector
+      .rejected_calls
+      .values()
+      .map(String::len)
+      .sum::<usize>();
+    assert_eq!(collector.calls.len(), 16);
+    assert_eq!(collector.rejected_calls.len(), 16);
+    assert!(reason_bytes <= MAX_TOOL_REJECTION_REASON_BYTES_TOTAL);
+    assert_eq!(collector.rejected_reason_bytes, reason_bytes);
+    assert!(
+      collector.rejected_calls.values().all(|reason| {
+        reason.len() <= MAX_TOOL_REJECTION_REASON_BYTES
+          && reason.contains("provider reused invocation id 'reused-call'")
+          && !reason.starts_with('x')
+      }),
+      "rejections: {:?}",
+      collector.rejected_calls
+    );
+    let unique_ids = collector
+      .calls
+      .iter()
+      .map(|call| call.id.as_str())
+      .collect::<BTreeSet<_>>();
+    assert_eq!(unique_ids.len(), collector.calls.len());
+  }
+
+  #[test]
   fn internal_response_rejection_aborts_request_without_cancelling_the_user_turn() {
     let request_aborted = Arc::new(std::sync::atomic::AtomicBool::new(false));
     let provider = AbortObservingProvider {
@@ -12799,12 +13290,21 @@ mod tests {
   fn cancellation_settles_the_entire_assistant_tool_batch_before_resume() {
     let cancel = CancelToken::new();
     let seen = Arc::new(Mutex::new(Vec::new()));
+    let mutations = Arc::new(Mutex::new(Vec::new()));
     let tools = registry_with(vec![
       Box::new(CancelFirstCall),
       Box::new(Spy(Arc::clone(&seen))),
+      Box::new(MutatingSpy {
+        seen: Arc::clone(&mutations),
+        outcome: ToolOutcome::succeeded("mutated"),
+      }),
     ]);
     let mut batch = Vec::new();
     batch.extend(tool_call("cancel_first", serde_json::json!({})));
+    batch.extend(tool_call(
+      "write_probe",
+      serde_json::json!({"path": "cancelled"}),
+    ));
     batch.extend(tool_call("spy", serde_json::json!({"item": 2})));
     batch.extend(tool_call("spy", serde_json::json!({"item": 3})));
     let provider = Scripted::new("cancelled-batch", vec![batch, text("resumed")]);
@@ -12827,6 +13327,8 @@ mod tests {
       .expect("cancellation is a durable turn result");
     assert_eq!(interrupted.status, TurnStatus::Cancelled);
     assert_eq!(seen.lock().unwrap().len(), 0, "the batch tail never runs");
+    assert_eq!(mutations.lock().unwrap().len(), 0);
+    assert_eq!(runtime.mutating_tool_calls_seen, 0);
 
     let resumed = runtime
       .run_turn("continue", &CancelToken::new(), &mut SilentProgress)
@@ -12855,17 +13357,17 @@ mod tests {
       calls, result_ids,
       "every committed call has one visible result"
     );
-    assert_eq!(results.len(), 3);
+    assert_eq!(results.len(), 4);
     assert_eq!(
       results
         .iter()
         .filter(|result| result.state == ToolExecutionState::Failed)
         .count(),
-      2
+      3
     );
     drop(runtime);
     assert_eq!(trace.count("tool_completed"), 1);
-    assert_eq!(trace.count("tool_failed"), 2);
+    assert_eq!(trace.count("tool_failed"), 3);
   }
 
   #[test]

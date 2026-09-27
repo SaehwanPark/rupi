@@ -43,8 +43,14 @@ use crate::{
   trace::{BlobRef, ExternalContextSource},
 };
 
-/// Schema version stamped onto every journal line.
-pub const EVENT_SCHEMA_VERSION: u32 = 1;
+/// Current schema version stamped onto every newly emitted journal line.
+pub const EVENT_SCHEMA_VERSION: u32 = 2;
+/// Oldest event schema generation this build can normalize into the current model.
+pub const MIN_SUPPORTED_EVENT_SCHEMA_VERSION: u32 = 1;
+
+pub const fn is_supported_event_schema_version(version: u32) -> bool {
+  version >= MIN_SUPPORTED_EVENT_SCHEMA_VERSION && version <= EVENT_SCHEMA_VERSION
+}
 
 /// Identity and ordering metadata shared by every event.
 #[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize)]
@@ -109,6 +115,10 @@ impl EventMeta {
 }
 
 /// Envelope written to disk.
+///
+/// New records use [`EVENT_SCHEMA_VERSION`]. Readers continue to accept v1
+/// records, normalizing fields with explicit serde defaults; append-only traces
+/// may therefore contain both generations after a resumed session is extended.
 #[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize)]
 pub struct EventEnvelope {
   pub v: u32,
@@ -817,7 +827,10 @@ mod tests {
       }),
     );
     let encoded = serde_json::to_string(&envelope).unwrap();
-    assert!(encoded.contains("\"v\":1"), "{encoded}");
+    assert!(
+      encoded.contains(&format!("\"v\":{}", EVENT_SCHEMA_VERSION)),
+      "{encoded}"
+    );
     assert!(
       encoded.contains("\"type\":\"session_started\""),
       "{encoded}"
