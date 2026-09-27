@@ -10273,7 +10273,7 @@ mod tests {
     provider.capabilities.max_output_tokens = None;
     let tools = registry_with(Vec::new());
     let policy = rupi_core::ProfilePolicy::new(
-      rupi_core::ContextProfile::Balanced,
+      rupi_core::ContextProfile::Relaxed,
       provider.capabilities().context_window,
     );
     let mut trace = Recorder::default();
@@ -10297,6 +10297,14 @@ mod tests {
       trace.count("context_compaction_epoch"),
       0,
       "diagnostics: {:?}",
+      trace.diagnostics()
+    );
+    assert!(
+      trace
+        .diagnostics()
+        .iter()
+        .any(|message| message.contains("no bounded compacted request fits")),
+      "the nonempty semantic floor must be the reason recovery is refused: {:?}",
       trace.diagnostics()
     );
   }

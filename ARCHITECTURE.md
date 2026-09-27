@@ -358,6 +358,8 @@ compaction/checkpoint summaries retain their own origin even when an endpoint re
 on the wire as `role=user`. Session schema v5 persists this distinction. Migration derives
 origins only from linked, unambiguous canonical events; legacy user-role messages with no
 proof remain `ImportedLegacy` and are carried forward only as opaque unresolved context.
+Schema-only migration preserves historically durable content byte-for-byte; the active redaction
+policy applies to new durable writes rather than silently changing only the semantic projection.
 Context capsules and safe eviction boundaries inspect origin rather than inferring authorship
 from wire role.
 
