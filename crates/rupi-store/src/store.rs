@@ -832,7 +832,7 @@ impl Session {
     let turn_id = meta
       .turn_id
       .as_ref()
-      .or_else(|| match &envelope.event {
+      .or(match &envelope.event {
         AgentEvent::ToolReconciliationObserved(observed) => observed.related_turn_id.as_ref(),
         _ => None,
       })
