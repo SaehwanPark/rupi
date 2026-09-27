@@ -2890,8 +2890,22 @@ fn rehydrate_tool_recovery_refs(
   messages: &mut [rupi_core::SessionMessage],
   entries: &[rupi_core::TraceEntry],
 ) {
+  let legacy_event_ids = messages
+    .iter()
+    .filter_map(|message| match message.message.content.first() {
+      Some(ContentBlock::ToolResult(result)) if result.reduced && result.recovery_ref.is_none() => {
+        Some(message.event_id.clone())
+      }
+      _ => None,
+    })
+    .collect::<BTreeSet<_>>();
+  if legacy_event_ids.is_empty() {
+    return;
+  }
+
   let refs_by_event = entries
     .iter()
+    .filter(|entry| legacy_event_ids.contains(&entry.envelope.meta.event_id))
     .filter_map(|entry| match &entry.envelope.event {
       AgentEvent::ToolCompleted(completed) if completed.reduced => completed
         .blob
