@@ -11552,6 +11552,137 @@ mod tests {
   }
 
   #[test]
+  fn operator_reconciliation_notice_survives_restart_before_the_next_turn() {
+    let temp = rupi_store::TempDir::new("runtime-confirmation-resume");
+    let store = rupi_store::Store::open(temp.path(), rupi_store::WritePolicy::default())
+      .expect("store opens");
+    let session_id = SessionId::new();
+    let provider = Scripted::new(
+      "confirmation-resume",
+      vec![
+        vec![ProviderEvent::ToolCall(ToolCallBlock {
+          id: rupi_core::ToolCallId::new(),
+          name: "write_probe".into(),
+          arguments: json!({"path":"committed.txt"}),
+        })],
+        text("continue using the confirmed result"),
+      ],
+    );
+    let tools = registry_with(vec![Box::new(UnknownAfterStartTool(Arc::new(Mutex::new(
+      Vec::new(),
+    ))))]);
+    let policy = rupi_core::ProfilePolicy::new(
+      rupi_core::ContextProfile::Balanced,
+      provider.capabilities().context_window,
+    );
+    let session = store
+      .begin(SessionHeader {
+        session_id: session_id.clone(),
+        version: rupi_core::session::SESSION_SCHEMA_VERSION,
+        started_at_ms: 1,
+        working_dir: temp.path().display().to_string(),
+        model: provider.model().clone(),
+        parent_session: None,
+        branched_from_event: None,
+        imported_from: None,
+      })
+      .expect("session begins");
+    let mut trace = StoreTrace::new(session);
+    let mut runtime = TurnLoop::new(
+      &provider,
+      &tools,
+      &policy,
+      &mut trace,
+      session_id.clone(),
+      TraceId::new(),
+    );
+    let first = runtime
+      .run_turn(
+        "perform a mutation",
+        &CancelToken::new(),
+        &mut SilentProgress,
+      )
+      .expect("unknown outcome is reported");
+    assert_eq!(first.status, TurnStatus::NeedsReconciliation);
+    let side_effect = runtime.unresolved_side_effects()[0].clone();
+    runtime
+      .confirm_side_effect_resolution(
+        &side_effect.request_event_id,
+        ReconciliationStatus::Committed {
+          details: "operator verified the change is present".into(),
+        },
+      )
+      .expect("operator confirmation persists");
+    drop(runtime);
+    trace.flush().expect("flush durable state");
+    drop(trace);
+
+    let restored = store
+      .restore(&session_id)
+      .expect("restore after confirmation");
+    assert!(restored.unresolved_side_effects.is_empty());
+    let notice = restored
+      .messages
+      .iter()
+      .map(|message| message.message.text())
+      .find(|text| text.contains("Operator-confirmed for mutating tool 'write_probe'"))
+      .expect("the durable model-visible projection includes the confirmation");
+    assert!(notice.contains("operator verified the change is present"));
+
+    let resumed_session = store.resume(&session_id).expect("reopen session");
+    let mut resumed_trace = StoreTrace::new(resumed_session);
+    let resumed_provider = Scripted::new(
+      "confirmation-resume",
+      vec![text("continue using the confirmed result")],
+    );
+    let resume_state = ResumeState {
+      messages: restored
+        .messages
+        .iter()
+        .map(|message| message.message.clone())
+        .collect(),
+      message_seqs: restored
+        .messages
+        .iter()
+        .map(|message| message.seq)
+        .collect(),
+      epochs: vec![ModelEpoch {
+        index: 0,
+        model: resumed_provider.model().clone(),
+        capabilities: resumed_provider.capabilities(),
+        reason: EpochReason::Initial,
+        started_by_event: None,
+      }],
+      context_epoch: restored.context_epoch,
+      checkpoint_floor: usize::from(restored.checkpoint.is_some()),
+      cited_history: restored.last_seq.map(|last| (EventSeq(1), last)),
+      interrupted_tools: restored.interrupted_tools,
+      unresolved_side_effects: restored.unresolved_side_effects,
+    };
+    let mut resumed = TurnLoop::new(
+      &resumed_provider,
+      &tools,
+      &policy,
+      &mut resumed_trace,
+      session_id,
+      TraceId::new(),
+    )
+    .with_resume_state(resume_state)
+    .expect("restored state validates");
+    resumed
+      .run_turn("continue", &CancelToken::new(), &mut SilentProgress)
+      .expect("resumed request proceeds after reconciliation");
+    assert!(
+      resumed_provider.requests()[0]
+        .messages
+        .iter()
+        .any(|message| message
+          .text()
+          .contains("Operator-confirmed for mutating tool"))
+    );
+  }
+
+  #[test]
   fn resumed_manual_tool_reconciliation_blocks_provider_contact() {
     let provider = Scripted::new("resume-manual", vec![text("must not run")]);
     let temp = rupi_store::TempDir::new("runtime-resume-manual-tool");
