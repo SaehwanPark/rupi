@@ -150,6 +150,32 @@ pub(crate) fn read_jsonl_with_limits<T: DeserializeOwned>(
   max_line_bytes: usize,
   max_items: usize,
 ) -> Result<ReadReport<T>, StoreError> {
+  read_jsonl_with_limits_preflight(path, max_line_bytes, max_items, |_| Ok(()))
+}
+
+/// Decode bounded JSONL while allowing a record's minimal envelope to be
+/// validated before its full typed payload is deserialized.
+pub(crate) fn read_jsonl_with_preflight<T, F>(
+  path: &Path,
+  preflight: F,
+) -> Result<ReadReport<T>, StoreError>
+where
+  T: DeserializeOwned,
+  F: FnMut(&[u8]) -> Result<(), StoreError>,
+{
+  read_jsonl_with_limits_preflight(path, MAX_JSONL_LINE_BYTES, usize::MAX, preflight)
+}
+
+fn read_jsonl_with_limits_preflight<T, F>(
+  path: &Path,
+  max_line_bytes: usize,
+  max_items: usize,
+  mut preflight: F,
+) -> Result<ReadReport<T>, StoreError>
+where
+  T: DeserializeOwned,
+  F: FnMut(&[u8]) -> Result<(), StoreError>,
+{
   let file = open(path)?;
   let mut reader = BufReader::new(file);
   let mut items = Vec::new();
@@ -168,6 +194,7 @@ pub(crate) fn read_jsonl_with_limits<T: DeserializeOwned>(
     if trimmed.iter().all(u8::is_ascii_whitespace) {
       continue;
     }
+    preflight(trimmed)?;
     match serde_json::from_slice(trimmed) {
       Ok(item) => {
         if items.len() >= max_items {

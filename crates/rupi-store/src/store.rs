@@ -2493,10 +2493,13 @@ fn validate_trace_integrity(
   let mut last_seq = None;
   let mut event_ids = BTreeSet::new();
   for entry in entries {
-    if entry.envelope.v != rupi_core::event::EVENT_SCHEMA_VERSION {
+    if !rupi_core::event::is_supported_event_schema_version(entry.envelope.v) {
       return Err(StoreError::Invalid(format!(
-        "session {session} trace event {} has unsupported schema version {}; resume requires recovery",
-        entry.envelope.meta.event_id, entry.envelope.v
+        "session {session} trace event {} has unsupported schema version {}; supported versions are {} through {}; resume requires recovery",
+        entry.envelope.meta.event_id,
+        entry.envelope.v,
+        rupi_core::event::MIN_SUPPORTED_EVENT_SCHEMA_VERSION,
+        rupi_core::event::EVENT_SCHEMA_VERSION
       )));
     }
     if entry.envelope.meta.session_id != *session {

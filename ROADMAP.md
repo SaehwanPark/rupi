@@ -1106,10 +1106,10 @@ active on `fix/pi-benchmark-audit-round-10`:
 
 - [x] Keep schema migration semantics-preserving; apply current redaction only to new writes.
 - [x] Resolve failed/unknown tool projections through their causal invocation, not session-global call IDs.
-- [ ] Spend mutation budget only after the durable `ToolStarted` boundary.
-- [ ] Refuse emergency compaction that hides all prior semantic history from the model.
-- [ ] Preserve aggregate rejection-reason bounds through duplicate-ID normalization.
-- [ ] Version new event semantics as schema v2 while continuing to read supported v1 records.
+- [x] Spend mutation budget only after the durable `ToolStarted` boundary.
+- [x] Refuse emergency compaction that hides all prior semantic history from the model.
+- [x] Preserve aggregate rejection-reason bounds through duplicate-ID normalization.
+- [x] Version new event semantics as schema v2 while continuing to read supported v1 records.
 - [ ] Complete invariant review, workspace verification, and applicable performance checks.
 
 ### P2 — Later / deliberately deferred
