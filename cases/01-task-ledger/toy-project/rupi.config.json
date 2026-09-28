@@ -25,6 +25,6 @@
   },
   "limits": {
     "max_model_requests_without_progress": 1,
-    "progress_tool_names": ["write", "edit"]
+    "progress_tool_names": ["write"]
   }
 }

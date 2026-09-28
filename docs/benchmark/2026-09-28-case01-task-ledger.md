@@ -147,12 +147,6 @@ inference-work tokens) over 901,103 ms. The equal-turn result is not a Rupi win:
 both remain unresolved, and Rupi used more measured inference work. Keep the
 Case 01 slice open.
 
-Next, repeat a matched two-turn run with the llama.cpp server default set to
-`low` as well as both clients requesting `low`. This tests whether the Qwen
-chat template is honoring the per-request effort value when the server default
-is `xhigh`; the earlier direct probe was cancelled before yielding usable
-measurements. Treat the result as a separate environment comparison.
-
 ## Matched low-default comparison: `bench-20260928-case01-progress-v1-low`
 
 The two-turn run kept the one-request progress boundary. The llama.cpp server
@@ -174,6 +168,10 @@ global `low` setting increased Pi's implementation activity but did not change
 Rupi's one-read/one-exec behavior, so Case 01 remains unresolved and is not a
 Rupi win.
 
-Next, narrow the Case 01 progress boundary to `write` only, then rerun Rupi
-under the same low-default two-turn budget. This tests whether presenting one
-progress tool makes the required first mutation easier for the local model.
+## Write-only progress boundary
+
+The low-default Rupi run still read the specification and made one `exec` call
+without writing a project file. The next exploratory variant restricts the
+progress allowlist from `write` and `edit` to `write` only, to test whether the
+smaller tool choice helps the model reach its first mutation. It will use the
+same low-default, two-turn Rupi-only budget; run Pi only if the oracle resolves.
