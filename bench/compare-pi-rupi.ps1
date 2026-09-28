@@ -171,7 +171,12 @@ function New-BenchmarkWorkspace([hashtable]$case, [string]$agentRoot) {
       if ($config.endpoints[0].capabilities) {
         $config.endpoints[0].capabilities.max_output_tokens = 16384
       }
-      $reqTimeout = [math]::Max(600000, ($TurnTimeoutSeconds * 1000))
+      # Let the runtime handle its provider timeout before the outer turn watchdog stops it.
+      $timeoutGraceSeconds = [int][math]::Min(
+        30,
+        [math]::Max(1, [math]::Floor($TurnTimeoutSeconds / 10))
+      )
+      $reqTimeout = ($TurnTimeoutSeconds - $timeoutGraceSeconds) * 1000
       if ($null -eq $config.endpoints[0].PSObject.Properties["request_timeout_ms"]) {
         $config.endpoints[0] | Add-Member -MemberType NoteProperty -Name request_timeout_ms -Value $reqTimeout
       } else {
