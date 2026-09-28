@@ -53,14 +53,15 @@ oracle. Use only Python standard-library modules.
 
 On this Windows host, use the available file and process tools directly for
 known programs and avoid Unix-only shell assumptions or fragile inline quoting.
-Start with a real implementation write after understanding the contract. Your
-first write must create runnable application code, not just `__init__.py`, a
-docstring, a plan, or placeholders. Establish `python -m <package>` and one
-complete command path that persists valid state, then finish the remaining
-commands, README, and tests. Run the project unittest suite, the project-specific
-help commands described by SPEC.md, and a small smoke check before finishing. Do
-not treat your final summary as proof: report exact commands and statuses only
-after running them, and state any incomplete requirement explicitly.
+After reading the contract, make `tasklog/__main__.py` the first source file and
+keep the CLI in that entry point until `add`, `list`, `done`, and `remove` work
+with persistent JSON state. Do not create `__init__.py`, separate model or
+storage modules, a README, tests, or placeholders before that runnable CLI
+exists. Then add the README and focused tests. Run the project unittest suite,
+the project-specific help commands described by SPEC.md, and a small smoke check
+before finishing. Do not treat your final summary as proof: report exact
+commands and statuses only after running them, and state any incomplete
+requirement explicitly.
 "@
 }
 
