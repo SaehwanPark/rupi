@@ -182,6 +182,7 @@ fn fixture_events() -> Vec<(u32, AgentEvent)> {
     (
       0,
       AgentEvent::ToolCompleted(ToolCompleted {
+        effect: rupi_core::ToolEffectDisposition::Unverified,
         call_id: call.clone(),
         name: "read".into(),
         state: ToolExecutionState::Succeeded,
@@ -205,6 +206,7 @@ fn fixture_events() -> Vec<(u32, AgentEvent)> {
     (
       0,
       AgentEvent::ToolFailed(ToolFailed {
+        effect: rupi_core::ToolEffectDisposition::Unverified,
         call_id: exec,
         name: "exec".into(),
         message: "exit 1".into(),
@@ -416,6 +418,7 @@ fn epoch_fixture(root: &Path, id: &str) -> (Vec<(u32, AgentEvent)>, Fixture, Blo
     (
       0,
       AgentEvent::ToolCompleted(ToolCompleted {
+        effect: rupi_core::ToolEffectDisposition::Unverified,
         call_id: ToolCallId::from_string("call-read".to_string()),
         name: "read".into(),
         state: ToolExecutionState::Succeeded,

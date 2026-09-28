@@ -59,26 +59,56 @@ impl ToolExecutionState {
     matches!(self, Self::Succeeded | Self::Failed)
   }
 
-  /// `true` when the outside world may have changed in a way this session did
-  /// not observe.
-  pub fn side_effect_uncertain(self) -> bool {
+  /// Whether a lifecycle state alone says the call lacks a completed result.
+  /// This is not evidence about external effects; consult
+  /// [`ToolEffectDisposition`] for that independent fact.
+  pub fn completion_unobserved(self) -> bool {
     matches!(self, Self::Started | Self::Unknown)
   }
 
-  /// Whether the call may be executed again after an interruption.
-  pub fn replay_decision(self, metadata: &ToolMetadata) -> ReplayDecision {
+  /// Whether the call may be executed again after an interruption, considering
+  /// independent evidence about whether it changed external state.
+  pub fn replay_decision_with_effect(
+    self,
+    metadata: &ToolMetadata,
+    effect: ToolEffectDisposition,
+  ) -> ReplayDecision {
     match self {
       // A committed result is part of canonical history; reuse it.
       Self::Succeeded => ReplayDecision::Never,
-      // Observed failure. Uncertainty must be recorded as `Unknown`, so
-      // retrying an observed failure is allowed.
-      Self::Failed => ReplayDecision::Replay,
+      // An observed failure is replay-safe for mutating tools only when there is
+      // explicit evidence that it had no effect. Missing or uncertain evidence
+      // must not turn a failure into a blind retry.
+      Self::Failed if metadata.read_only || effect == ToolEffectDisposition::None => {
+        ReplayDecision::Replay
+      }
+      Self::Failed => ReplayDecision::ReconcileFirst,
       Self::Requested | Self::Started | Self::Unknown if metadata.read_only => {
         ReplayDecision::Replay
       }
       Self::Requested | Self::Started | Self::Unknown => ReplayDecision::ReconcileFirst,
     }
   }
+}
+
+/// Independent evidence about the external effect of a tool invocation.
+///
+/// Lifecycle state describes whether completion was observed; this disposition
+/// describes what is known about external state. In particular, `None` is a
+/// positive claim that no effect occurred, while missing legacy evidence is
+/// kept `Unverified` rather than inferred from a lifecycle state.
+#[derive(Debug, Clone, Copy, Default, PartialEq, Eq, Serialize, Deserialize)]
+#[serde(rename_all = "snake_case")]
+pub enum ToolEffectDisposition {
+  /// Proven that the invocation caused no observable external change.
+  None,
+  /// Proven that the invocation changed observable external state.
+  Changed,
+  /// The invocation may have changed observable external state.
+  Possible,
+  /// Evidence is absent or insufficient to classify the effect.
+  #[default]
+  Unverified,
 }
 
 /// What the runtime may do with a call that was interrupted.
@@ -269,6 +299,10 @@ impl ToolChunk {
 #[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize)]
 pub struct ToolOutcome {
   pub state: ToolExecutionState,
+  /// Independent evidence about the external effect. Defaults remain
+  /// conservative when a tool does not provide evidence.
+  #[serde(default)]
+  pub effect: ToolEffectDisposition,
   /// Model-visible text. May be a bounded representation when `blob` is set or
   /// when `reduced` is true.
   pub text: String,
@@ -290,6 +324,7 @@ impl ToolOutcome {
   pub fn succeeded(text: impl Into<String>) -> Self {
     Self {
       state: ToolExecutionState::Succeeded,
+      effect: ToolEffectDisposition::Unverified,
       text: text.into(),
       is_error: false,
       reduced: false,
@@ -301,6 +336,7 @@ impl ToolOutcome {
   pub fn failed(text: impl Into<String>) -> Self {
     Self {
       state: ToolExecutionState::Failed,
+      effect: ToolEffectDisposition::Unverified,
       text: text.into(),
       is_error: true,
       reduced: false,
@@ -316,12 +352,18 @@ impl ToolOutcome {
   pub fn unknown(text: impl Into<String>) -> Self {
     Self {
       state: ToolExecutionState::Unknown,
+      effect: ToolEffectDisposition::Possible,
       text: text.into(),
       is_error: true,
       reduced: false,
       blob: None,
       status: None,
     }
+  }
+
+  pub fn with_effect(mut self, effect: ToolEffectDisposition) -> Self {
+    self.effect = effect;
+    self
   }
 
   pub fn with_blob(mut self, blob: BlobRef) -> Self {
@@ -340,6 +382,7 @@ impl ToolOutcome {
       id: call_id,
       name: name.to_string(),
       state: self.state,
+      effect: self.effect,
       text: self.text.clone(),
       is_error: self.is_error,
       reduced: self.reduced,
@@ -558,7 +601,7 @@ mod tests {
       ToolExecutionState::Failed,
     ] {
       assert_eq!(
-        state.replay_decision(&reader()),
+        state.replay_decision_with_effect(&reader(), ToolEffectDisposition::Unverified),
         ReplayDecision::Replay,
         "{}",
         state.as_str()
@@ -567,35 +610,76 @@ mod tests {
   }
 
   #[test]
-  fn mutating_calls_are_never_blindly_replayed() {
+  fn mutating_calls_require_reconciliation_without_no_effect_evidence() {
     for state in [
       ToolExecutionState::Requested,
       ToolExecutionState::Started,
       ToolExecutionState::Unknown,
     ] {
       assert_eq!(
-        state.replay_decision(&writer()),
+        state.replay_decision_with_effect(&writer(), ToolEffectDisposition::None),
         ReplayDecision::ReconcileFirst,
         "{}",
         state.as_str()
       );
     }
+    for effect in [
+      ToolEffectDisposition::Possible,
+      ToolEffectDisposition::Changed,
+      ToolEffectDisposition::Unverified,
+    ] {
+      assert_eq!(
+        ToolExecutionState::Failed.replay_decision_with_effect(&writer(), effect),
+        ReplayDecision::ReconcileFirst,
+        "{effect:?} must not permit replay of a failed mutating call"
+      );
+    }
     assert_eq!(
-      ToolExecutionState::Succeeded.replay_decision(&writer()),
+      ToolExecutionState::Failed
+        .replay_decision_with_effect(&writer(), ToolEffectDisposition::None),
+      ReplayDecision::Replay
+    );
+    assert_eq!(
+      ToolExecutionState::Succeeded
+        .replay_decision_with_effect(&writer(), ToolEffectDisposition::None),
       ReplayDecision::Never
     );
   }
 
   #[test]
-  fn uncertainty_is_distinct_from_failure() {
+  fn completion_state_is_distinct_from_effect_disposition() {
     let unknown = ToolOutcome::unknown("write issued, completion not observed");
     let failed = ToolOutcome::failed("write rejected: permission denied");
     assert_eq!(unknown.state, ToolExecutionState::Unknown);
+    assert_eq!(unknown.effect, ToolEffectDisposition::Possible);
     assert_eq!(failed.state, ToolExecutionState::Failed);
-    assert!(unknown.state.side_effect_uncertain());
-    assert!(!failed.state.side_effect_uncertain());
+    assert_eq!(failed.effect, ToolEffectDisposition::Unverified);
+    assert!(unknown.state.completion_unobserved());
+    assert!(!failed.state.completion_unobserved());
     assert!(failed.state.has_committed_result());
     assert!(!unknown.state.has_committed_result());
+  }
+
+  #[test]
+  fn outcomes_default_conservatively_and_carry_effect_to_result_blocks() {
+    let succeeded = ToolOutcome::succeeded("done");
+    assert_eq!(succeeded.effect, ToolEffectDisposition::Unverified);
+    let failed = ToolOutcome::failed("could not write");
+    assert_eq!(failed.effect, ToolEffectDisposition::Unverified);
+    let outcome = succeeded.with_effect(ToolEffectDisposition::Changed);
+    assert_eq!(outcome.effect, ToolEffectDisposition::Changed);
+    let block = outcome.to_block(ToolCallId::new(), "write");
+    assert_eq!(block.effect, ToolEffectDisposition::Changed);
+  }
+
+  #[test]
+  fn legacy_outcome_without_effect_is_unverified() {
+    let outcome: ToolOutcome = serde_json::from_value(serde_json::json!({
+      "state": "failed",
+      "text": "legacy failure"
+    }))
+    .unwrap();
+    assert_eq!(outcome.effect, ToolEffectDisposition::Unverified);
   }
 
   #[test]

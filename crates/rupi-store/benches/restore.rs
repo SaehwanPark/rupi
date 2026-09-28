@@ -252,6 +252,7 @@ fn create_session_file(
               constraints: vec![],
               current_state: "active".into(),
               artifacts: vec![],
+              archived_payloads: vec![],
               unresolved: vec![],
               next_actions: vec!["Process next turn".into()],
             },

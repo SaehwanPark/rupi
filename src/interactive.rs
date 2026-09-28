@@ -286,7 +286,7 @@ fn after_turn(result: Result<TurnReport, TurnError>) -> AfterTurn {
     }
     Ok(report) if report.status == TurnStatus::NeedsReconciliation => {
       AfterTurn::NeedsReconciliation(
-        "mutating tool outcome is unknown; use /reconcile before continuing",
+        "mutating tool effect remains unresolved; use /reconcile before continuing",
       )
     }
     Ok(_) => AfterTurn::Done,
@@ -298,7 +298,7 @@ fn after_turn(result: Result<TurnReport, TurnError>) -> AfterTurn {
       AfterTurn::ToolBudgetExhausted("tool-call budget exhausted; unexecuted calls were not run")
     }
     Err(TurnError::Aborted(TurnStatus::NeedsReconciliation)) => AfterTurn::NeedsReconciliation(
-      "mutating tool outcome is unknown; use /reconcile before continuing",
+      "mutating tool effect remains unresolved; use /reconcile before continuing",
     ),
     Err(error) => AfterTurn::Failed(run::SessionError::Turn(error)),
   }
@@ -648,7 +648,7 @@ impl Loop {
           "/switch-back switch generation back to the primary model".to_string(),
           "/mcp        list or control MCP servers (/mcp enable <name>, /mcp disable <name>)"
             .to_string(),
-          "/reconcile  inspect or resolve an uncertain mutating tool result".to_string(),
+          "/reconcile  inspect or resolve an unresolved mutating tool effect".to_string(),
           "/quit, /exit  end the session (ctrl-c on an empty draft does the same)".to_string(),
           "tab         complete the command the caret sits on".to_string(),
         ];
@@ -874,7 +874,12 @@ impl Loop {
             } else {
               let mut lines = vec!["Configured MCP servers:".to_string()];
               for s in statuses {
-                let state_str = if s.active {
+                let state_str = if s.catalog_stale {
+                  format!(
+                    "stale catalog ({} tools; re-enable to refresh)",
+                    s.tool_count
+                  )
+                } else if s.active {
                   format!("active ({} tools)", s.tool_count)
                 } else {
                   "inactive".to_string()

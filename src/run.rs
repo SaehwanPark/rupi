@@ -416,6 +416,8 @@ impl SessionHandle<'_> {
 
   /// Enable and connect a configured MCP server, registering its tools into the session.
   pub fn mcp_enable(&mut self, name: &str) -> Result<usize, rupi_mcp::McpError> {
+    let prefix = format!("mcp__{name}__");
+    self.tools.unregister_prefix(&prefix);
     let tools = self.mcp_manager.enable_server(name)?;
     let count = tools.len();
     for tool in tools {

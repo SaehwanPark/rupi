@@ -292,6 +292,7 @@ mod tests {
       seq,
       epoch,
       AgentEvent::ToolCompleted(ToolCompleted {
+        effect: rupi_core::ToolEffectDisposition::Unverified,
         call_id: ToolCallId::new(),
         name: name.into(),
         state: ToolExecutionState::Succeeded,
@@ -309,6 +310,7 @@ mod tests {
       seq,
       Some(0),
       AgentEvent::ToolFailed(ToolFailed {
+        effect: rupi_core::ToolEffectDisposition::Unverified,
         call_id: ToolCallId::new(),
         name: name.into(),
         message: "exit 1".into(),
@@ -475,6 +477,7 @@ mod tests {
         4,
         Some(0),
         AgentEvent::ToolUnknown(ToolUnknown {
+          effect: rupi_core::ToolEffectDisposition::Unverified,
           call_id: ToolCallId::new(),
           name: "exec".into(),
           why: "no recorded status".into(),

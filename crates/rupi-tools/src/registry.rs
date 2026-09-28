@@ -124,7 +124,8 @@ impl Executed {
     let reason = reason.into();
     Self {
       request,
-      outcome: ToolOutcome::failed(reason.clone()),
+      outcome: ToolOutcome::failed(reason.clone())
+        .with_effect(rupi_core::ToolEffectDisposition::None),
       state: ToolExecutionState::Failed,
       started: false,
       refusal: Some(reason),
@@ -149,7 +150,9 @@ impl Executed {
 
   /// Whether the call may be executed again after an interruption.
   pub fn replay_decision(&self, metadata: &ToolMetadata) -> ReplayDecision {
-    self.state.replay_decision(metadata)
+    self
+      .state
+      .replay_decision_with_effect(metadata, self.outcome.effect)
   }
 }
 
@@ -812,6 +815,21 @@ impl ToolRegistry {
             .text
             .push_str(" [completion was not observed before cancellation or deadline]");
         }
+        if !metadata.read_only {
+          match state {
+            ToolExecutionState::Unknown => {
+              outcome.effect = rupi_core::ToolEffectDisposition::Possible;
+            }
+            ToolExecutionState::Failed
+              if outcome.effect == rupi_core::ToolEffectDisposition::Unverified =>
+            {
+              // A started mutating tool that reports failure without proving
+              // the world unchanged must stop the remaining mutation tail.
+              outcome.effect = rupi_core::ToolEffectDisposition::Possible;
+            }
+            _ => {}
+          }
+        }
         Ok(Executed {
           request: request.clone(),
           outcome,
@@ -832,6 +850,11 @@ impl ToolRegistry {
         }
         let outcome = ToolOutcome {
           state,
+          effect: if !metadata.read_only && error.started {
+            rupi_core::ToolEffectDisposition::Possible
+          } else {
+            rupi_core::ToolEffectDisposition::None
+          },
           text: error.message.clone(),
           is_error: true,
           reduced: false,

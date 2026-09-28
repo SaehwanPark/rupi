@@ -263,6 +263,19 @@ pub fn read_jsonl_tail<T: DeserializeOwned>(
   path: &Path,
   max_bytes: u64,
 ) -> Result<ReadReport<T>, StoreError> {
+  read_jsonl_tail_with_preflight(path, max_bytes, |_| Ok(()))
+}
+
+/// Decode a bounded JSONL tail after validating each complete raw line's envelope.
+pub(crate) fn read_jsonl_tail_with_preflight<T, F>(
+  path: &Path,
+  max_bytes: u64,
+  mut preflight: F,
+) -> Result<ReadReport<T>, StoreError>
+where
+  T: DeserializeOwned,
+  F: FnMut(&[u8]) -> Result<(), StoreError>,
+{
   let mut file = open(path)?;
   let size = file.metadata()?.len();
   if size == 0 {
@@ -298,6 +311,7 @@ pub fn read_jsonl_tail<T: DeserializeOwned>(
     if trimmed.is_empty() {
       continue;
     }
+    preflight(trimmed.as_bytes())?;
     match serde_json::from_str(trimmed) {
       Ok(item) => items.push(item),
       Err(_) => {

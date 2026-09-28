@@ -603,6 +603,7 @@ fn tool_started_round_trips() {
 fn tool_completed_round_trips() {
   let blob = BlobRef::for_bytes(b"whole tool output bytes".as_slice(), Some("text/plain"));
   let original = AgentEvent::ToolCompleted(ToolCompleted {
+    effect: rupi_core::ToolEffectDisposition::Unverified,
     call_id: tool_call_id(),
     name: "read".into(),
     state: ToolExecutionState::Succeeded,
@@ -640,6 +641,7 @@ fn tool_completed_round_trips() {
 #[test]
 fn tool_failed_round_trips() {
   let original = AgentEvent::ToolFailed(ToolFailed {
+    effect: rupi_core::ToolEffectDisposition::Unverified,
     call_id: tool_call_id(),
     name: "bash".into(),
     message: "command exited with a non-zero status".into(),
@@ -663,6 +665,7 @@ fn tool_failed_round_trips() {
 #[test]
 fn tool_unknown_round_trips() {
   let original = AgentEvent::ToolUnknown(ToolUnknown {
+    effect: rupi_core::ToolEffectDisposition::Unverified,
     call_id: tool_call_id(),
     name: "write".into(),
     why: "the process exited before completion was observed".into(),
@@ -695,7 +698,7 @@ fn tool_reconciliation_observed_round_trips() {
     call_id: tool_call_id(),
     name: "write".into(),
     request_event_id,
-    unknown_event_id,
+    terminal_event_id: unknown_event_id,
     related_turn_id: Some(rupi_core::TurnId::new()),
     status: ReconciliationStatus::Unmodified {
       details: "the target is unchanged".into(),
@@ -1095,6 +1098,7 @@ fn all_variants() -> Vec<AgentEvent> {
       name: "read".into(),
     }),
     AgentEvent::ToolCompleted(ToolCompleted {
+      effect: rupi_core::ToolEffectDisposition::Unverified,
       call_id: tool_call_id(),
       name: "read".into(),
       state: ToolExecutionState::Succeeded,
@@ -1105,6 +1109,7 @@ fn all_variants() -> Vec<AgentEvent> {
       visible_bytes: 64,
     }),
     AgentEvent::ToolFailed(ToolFailed {
+      effect: rupi_core::ToolEffectDisposition::Unverified,
       call_id: tool_call_id(),
       name: "read".into(),
       message: "no such file".into(),
@@ -1112,6 +1117,7 @@ fn all_variants() -> Vec<AgentEvent> {
       status: None,
     }),
     AgentEvent::ToolUnknown(ToolUnknown {
+      effect: rupi_core::ToolEffectDisposition::Unverified,
       call_id: tool_call_id(),
       name: "write".into(),
       why: "completion was never observed".into(),

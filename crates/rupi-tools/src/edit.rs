@@ -118,12 +118,16 @@ impl EditTool {
     let deadline = Deadline::new(crate::WRITE_BUDGET);
 
     if find == replace {
-      return Ok(ToolOutcome::failed(
-        "edit: 'find' and 'replace' are identical, so nothing would change",
-      ));
+      return Ok(
+        ToolOutcome::failed("edit: 'find' and 'replace' are identical, so nothing would change")
+          .with_effect(rupi_core::ToolEffectDisposition::None),
+      );
     }
     if context.is_cancelled_or_expired() {
-      return Ok(ToolOutcome::failed("edit: cancelled before reading"));
+      return Ok(
+        ToolOutcome::failed("edit: cancelled before reading")
+          .with_effect(rupi_core::ToolEffectDisposition::None),
+      );
     }
 
     let resolved = runtime
@@ -137,21 +141,28 @@ impl EditTool {
       ))
     })?;
     if context.is_cancelled_or_expired() {
-      return Ok(ToolOutcome::failed("edit: cancelled after reading"));
+      return Ok(
+        ToolOutcome::failed("edit: cancelled after reading")
+          .with_effect(rupi_core::ToolEffectDisposition::None),
+      );
     }
 
     let hits = count_overlapping(&original, find);
     if hits == 0 {
-      return Ok(ToolOutcome::failed(
-        edit_failure_text(&original, find, &resolved).into_owned(),
-      ));
+      return Ok(
+        ToolOutcome::failed(edit_failure_text(&original, find, &resolved).into_owned())
+          .with_effect(rupi_core::ToolEffectDisposition::None),
+      );
     }
     if hits > 1 && !replace_all {
-      return Ok(ToolOutcome::failed(format!(
-        "edit: 'find' matches {hits} times in '{}'; it must be unique. \
+      return Ok(
+        ToolOutcome::failed(format!(
+          "edit: 'find' matches {hits} times in '{}'; it must be unique. \
          Add surrounding context, or set replace_all.",
-        resolved.display()
-      )));
+          resolved.display()
+        ))
+        .with_effect(rupi_core::ToolEffectDisposition::None),
+      );
     }
 
     // `str::replace` is deliberately replace-all. When `replace_all` is false we
@@ -162,7 +173,10 @@ impl EditTool {
     debug_assert!(!replace_all || updated.matches(find).count() == 0);
 
     if context.is_cancelled_or_expired() {
-      return Ok(ToolOutcome::failed("edit: cancelled before writing"));
+      return Ok(
+        ToolOutcome::failed("edit: cancelled before writing")
+          .with_effect(rupi_core::ToolEffectDisposition::None),
+      );
     }
     write_atomic(&resolved, updated.as_bytes()).map_err(after_start)?;
     if context.is_cancelled_or_expired() {
@@ -177,13 +191,16 @@ impl EditTool {
     } else {
       "edited".to_string()
     };
-    Ok(ToolOutcome::succeeded(format!(
-      "{verb} '{}' ({} -> {} bytes) [in {} ms]",
-      resolved.display(),
-      original.len(),
-      updated.len(),
-      deadline.elapsed_ms()
-    )))
+    Ok(
+      ToolOutcome::succeeded(format!(
+        "{verb} '{}' ({} -> {} bytes) [in {} ms]",
+        resolved.display(),
+        original.len(),
+        updated.len(),
+        deadline.elapsed_ms()
+      ))
+      .with_effect(rupi_core::ToolEffectDisposition::Changed),
+    )
   }
 
   fn reconcile_inner(&self, request: &ToolRequest) -> Result<ReconciliationStatus, ToolError> {

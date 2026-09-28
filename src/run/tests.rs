@@ -682,7 +682,10 @@ fn session_resumes_across_checkpoint_barrier_with_capsule() {
     let created = session
       .checkpoint(Some(capsule))
       .map_err(|error| turn_error(&error))?;
-    assert_eq!(created.capsule_version, 1);
+    assert_eq!(
+      created.capsule_version,
+      rupi_core::context::CAPSULE_SCHEMA_VERSION
+    );
     let cps = session.list_checkpoints().unwrap();
     assert_eq!(cps.len(), 1);
     assert_eq!(cps[0].1.objective, "Goal: build compiler");

@@ -806,6 +806,7 @@ mod tests {
     let mut surface = surface(TranscriptOptions::default());
     surface
       .event(&AgentEvent::ToolUnknown(ToolUnknown {
+        effect: rupi_core::ToolEffectDisposition::Unverified,
         call_id: rupi_core::ToolCallId::new(),
         name: "exec".into(),
         why: "no exit status".into(),
@@ -998,6 +999,7 @@ mod tests {
       .unwrap();
     surface
       .event(&AgentEvent::ToolUnknown(ToolUnknown {
+        effect: rupi_core::ToolEffectDisposition::Unverified,
         call_id: rupi_core::ToolCallId::new(),
         name: "exec".into(),
         why: "process exited without a recorded status".into(),

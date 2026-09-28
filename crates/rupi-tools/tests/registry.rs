@@ -544,17 +544,17 @@ fn read_only_calls_are_replayable_and_mutations_are_not() {
 
   for state in [State::Started, State::Unknown] {
     assert_eq!(
-      state.replay_decision(&read_meta),
+      state.replay_decision_with_effect(&read_meta, rupi_core::ToolEffectDisposition::Unverified,),
       ReplayDecision::Replay,
       "read may be re-run from {state:?}"
     );
     assert_eq!(
-      state.replay_decision(&write_meta),
+      state.replay_decision_with_effect(&write_meta, rupi_core::ToolEffectDisposition::Possible,),
       ReplayDecision::ReconcileFirst,
       "write must be reconciled from {state:?}"
     );
     assert_eq!(
-      state.replay_decision(&exec_meta),
+      state.replay_decision_with_effect(&exec_meta, rupi_core::ToolEffectDisposition::Unverified,),
       ReplayDecision::ReconcileFirst
     );
   }

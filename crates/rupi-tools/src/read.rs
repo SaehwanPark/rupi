@@ -377,7 +377,8 @@ mod tests {
     let meta = tool.metadata();
     assert!(meta.read_only);
     assert_eq!(
-      ToolExecutionState::Started.replay_decision(&meta),
+      ToolExecutionState::Started
+        .replay_decision_with_effect(&meta, rupi_core::ToolEffectDisposition::Unverified),
       ReplayDecision::Replay
     );
   }

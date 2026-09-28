@@ -2,7 +2,10 @@
 
 use std::{
   collections::HashSet,
-  sync::{Arc, Mutex},
+  sync::{
+    Arc, Mutex,
+    atomic::{AtomicBool, Ordering},
+  },
 };
 
 use rupi_core::ToolExecutionContext;
@@ -28,6 +31,7 @@ pub struct McpClient {
   server_info: Mutex<Option<ServerInfo>>,
   server_capabilities: Mutex<Option<ServerCapabilities>>,
   negotiated_version: Mutex<Option<String>>,
+  catalog_stale: AtomicBool,
 }
 
 impl McpClient {
@@ -38,6 +42,7 @@ impl McpClient {
       server_info: Mutex::new(None),
       server_capabilities: Mutex::new(None),
       negotiated_version: Mutex::new(None),
+      catalog_stale: AtomicBool::new(false),
     }
   }
 
@@ -64,6 +69,29 @@ impl McpClient {
     let res_val = self.transport.call("initialize", Some(params_val))?;
     let init_result: InitializeResult = serde_json::from_value(res_val)
       .map_err(|e| McpError::Protocol(format!("invalid initialize result from MCP server: {e}")))?;
+
+    let tools_list_changed = match init_result.capabilities.tools.as_ref() {
+      None => false,
+      Some(Value::Object(tools)) => match tools.get("listChanged") {
+        None => false,
+        Some(Value::Bool(changed)) => *changed,
+        Some(_) => {
+          return Err(McpError::Protocol(
+            "server tools.listChanged capability must be a boolean".into(),
+          ));
+        }
+      },
+      Some(_) => {
+        return Err(McpError::Protocol(
+          "server tools capability must be an object".into(),
+        ));
+      }
+    };
+    if tools_list_changed && !self.transport.supports_server_notifications() {
+      return Err(McpError::Protocol(
+        "server advertises tools.listChanged, but this transport cannot receive server notifications; catalog is not activated".into(),
+      ));
+    }
 
     let negotiated =
       negotiate_protocol_version(&init_result.protocol_version).ok_or_else(|| {
@@ -143,6 +171,9 @@ impl McpClient {
     arguments: Option<Value>,
     context: &ToolExecutionContext,
   ) -> Result<CallToolResult, McpError> {
+    if self.tool_catalog_stale() {
+      return Err(McpError::CatalogStale);
+    }
     let params = CallToolParams {
       name: name.to_string(),
       arguments,
@@ -179,12 +210,65 @@ impl McpClient {
   pub fn is_alive(&self) -> bool {
     self.transport.is_alive()
   }
+
+  /// Whether a tool-list change notification has disabled the cached catalog.
+  pub fn tool_catalog_stale(&self) -> bool {
+    if self.transport.take_tool_list_changed() {
+      self.catalog_stale.store(true, Ordering::SeqCst);
+    }
+    self.catalog_stale.load(Ordering::SeqCst)
+  }
 }
 
 #[cfg(test)]
 mod tests {
   use super::*;
-  use crate::transport::MockTransport;
+  use crate::transport::{McpTransport, MockTransport};
+
+  struct NotificationBlindTransport(Arc<MockTransport>);
+
+  impl McpTransport for NotificationBlindTransport {
+    fn call(&self, method: &str, params: Option<Value>) -> Result<Value, McpError> {
+      self.0.call(method, params)
+    }
+
+    fn notify(&self, method: &str, params: Option<Value>) -> Result<(), McpError> {
+      self.0.notify(method, params)
+    }
+
+    fn is_alive(&self) -> bool {
+      self.0.is_alive()
+    }
+
+    fn close(&mut self) -> Result<(), McpError> {
+      Ok(())
+    }
+  }
+
+  #[test]
+  fn dynamic_catalog_is_rejected_when_transport_cannot_receive_notifications() {
+    let mock = Arc::new(MockTransport::new());
+    mock.on(
+      "initialize",
+      json!({
+        "protocolVersion": "2024-11-05",
+        "capabilities": {"tools": {"listChanged": true}},
+        "serverInfo": {"name": "dynamic", "version": "1.0.0"}
+      }),
+    );
+    let client = McpClient::new(Arc::new(NotificationBlindTransport(Arc::clone(&mock))));
+
+    let error = client
+      .initialize()
+      .expect_err("a dynamic catalog cannot be treated as frozen on this transport");
+
+    assert!(
+      error
+        .to_string()
+        .contains("cannot receive server notifications")
+    );
+    assert!(mock.recorded_notifications().is_empty());
+  }
 
   #[test]
   fn repeated_tools_cursor_is_rejected() {

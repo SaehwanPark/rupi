@@ -960,7 +960,7 @@ fn tool_replay_states_from_entries(entries: &[&TraceEntry]) -> Vec<ToolReplaySta
   let mut states: BTreeMap<EventId, ToolReplayState> = BTreeMap::new();
   let mut request_order = Vec::new();
   let mut invocations = ToolInvocationIndex::default();
-  let mut unknown_event_ids: BTreeMap<EventId, EventId> = BTreeMap::new();
+  let mut unresolved_terminal_event_ids: BTreeMap<EventId, EventId> = BTreeMap::new();
 
   for entry in entries {
     match &entry.envelope.event {
@@ -1015,10 +1015,31 @@ fn tool_replay_states_from_entries(entries: &[&TraceEntry]) -> Vec<ToolReplaySta
           &mut states,
           &mut invocations,
         ) {
+          if !states[&request_event_id].read_only
+            && event.effect == rupi_core::ToolEffectDisposition::Possible
+          {
+            let state = states
+              .get_mut(&request_event_id)
+              .expect("updated invocation remains in the state map");
+            state.mutating_unknown = true;
+            state.decision = HistoricalToolDecision::ReconcileBeforeReplay;
+            unresolved_terminal_event_ids.insert(
+              request_event_id.clone(),
+              entry.envelope.meta.event_id.clone(),
+            );
+          }
           close_tool_invocation(&request_event_id, &states, &mut invocations);
         }
       }
       AgentEvent::ToolFailed(event) => {
+        let was_started = entry
+          .envelope
+          .meta
+          .parent_event_id
+          .as_ref()
+          .and_then(|parent| invocations.event_to_request.get(parent))
+          .and_then(|request_event_id| states.get(request_event_id))
+          .is_some_and(|state| state.state == ToolExecutionState::Started);
         if let Some(request_event_id) = update_tool_invocation(
           entry,
           &event.call_id,
@@ -1028,6 +1049,20 @@ fn tool_replay_states_from_entries(entries: &[&TraceEntry]) -> Vec<ToolReplaySta
           &mut states,
           &mut invocations,
         ) {
+          if was_started
+            && !states[&request_event_id].read_only
+            && event.effect != rupi_core::ToolEffectDisposition::None
+          {
+            let state = states
+              .get_mut(&request_event_id)
+              .expect("updated invocation remains in the state map");
+            state.mutating_unknown = true;
+            state.decision = HistoricalToolDecision::ReconcileBeforeReplay;
+            unresolved_terminal_event_ids.insert(
+              request_event_id.clone(),
+              entry.envelope.meta.event_id.clone(),
+            );
+          }
           close_tool_invocation(&request_event_id, &states, &mut invocations);
         }
       }
@@ -1041,7 +1076,7 @@ fn tool_replay_states_from_entries(entries: &[&TraceEntry]) -> Vec<ToolReplaySta
           &mut states,
           &mut invocations,
         ) {
-          unknown_event_ids.insert(
+          unresolved_terminal_event_ids.insert(
             request_event_id.clone(),
             entry.envelope.meta.event_id.clone(),
           );
@@ -1049,13 +1084,13 @@ fn tool_replay_states_from_entries(entries: &[&TraceEntry]) -> Vec<ToolReplaySta
         }
       }
       AgentEvent::ToolReconciliationObserved(observed) => {
-        let matching_unknown =
-          unknown_event_ids.get(&observed.request_event_id) == Some(&observed.unknown_event_id);
-        if matching_unknown
+        let matching_terminal = unresolved_terminal_event_ids.get(&observed.request_event_id)
+          == Some(&observed.terminal_event_id);
+        if matching_terminal
           && let Some(state) = states.get_mut(&observed.request_event_id)
           && state.call_id == observed.call_id
           && state.name == observed.name
-          && state.state == ToolExecutionState::Unknown
+          && state.mutating_unknown
           && !state.read_only
         {
           state.reference = HistoricalEventRef::from_entry(entry);
@@ -1827,6 +1862,7 @@ mod tests {
       entry(
         3,
         AgentEvent::ToolUnknown(ToolUnknown {
+          effect: rupi_core::ToolEffectDisposition::Unverified,
           call_id: call_id.clone(),
           name: "write".into(),
           why: "completion not observed".into(),
@@ -1868,6 +1904,7 @@ mod tests {
     let unknown = entry(
       3,
       AgentEvent::ToolUnknown(ToolUnknown {
+        effect: rupi_core::ToolEffectDisposition::Unverified,
         call_id: call_id.clone(),
         name: "write".into(),
         why: "completion not observed".into(),
@@ -1881,7 +1918,7 @@ mod tests {
         call_id: call_id.clone(),
         name: "write".into(),
         request_event_id: EventId::new(),
-        unknown_event_id: unknown_event_id.clone(),
+        terminal_event_id: unknown_event_id.clone(),
         related_turn_id: None,
         status: ReconciliationStatus::Committed {
           details: "this observation belongs to a different request".into(),
@@ -1895,7 +1932,7 @@ mod tests {
         call_id: call_id.clone(),
         name: "write".into(),
         request_event_id: request_event_id.clone(),
-        unknown_event_id: unknown_event_id.clone(),
+        terminal_event_id: unknown_event_id.clone(),
         related_turn_id: None,
         status: ReconciliationStatus::RequiresManualInspection {
           details: "arbitrary command state cannot be inspected".into(),
@@ -1909,7 +1946,7 @@ mod tests {
         call_id,
         name: "write".into(),
         request_event_id,
-        unknown_event_id,
+        terminal_event_id: unknown_event_id,
         related_turn_id: None,
         status: ReconciliationStatus::Committed {
           details: "the target already contains the requested contents".into(),
@@ -1945,6 +1982,90 @@ mod tests {
   }
 
   #[test]
+  fn completed_call_with_possible_effect_requires_reconciliation_before_replay() {
+    let call_id = ToolCallId::from_string("call_possible");
+    let request = entry(
+      1,
+      AgentEvent::ToolRequested(ToolRequested {
+        call_id: call_id.clone(),
+        name: "remote_write".into(),
+        arguments: serde_json::json!({}),
+        read_only: false,
+        definition_fingerprint: None,
+      }),
+    );
+    let request_event_id = request.envelope.meta.event_id.clone();
+    let started = with_parent(
+      entry(
+        2,
+        AgentEvent::ToolStarted(ToolStarted {
+          call_id: call_id.clone(),
+          name: "remote_write".into(),
+        }),
+      ),
+      request_event_id.clone(),
+    );
+    let started_event_id = started.envelope.meta.event_id.clone();
+    let completed = with_parent(
+      entry(
+        3,
+        AgentEvent::ToolCompleted(ToolCompleted {
+          call_id: call_id.clone(),
+          name: "remote_write".into(),
+          state: ToolExecutionState::Succeeded,
+          effect: rupi_core::ToolEffectDisposition::Possible,
+          duration_ms: 1,
+          status: None,
+          reduced: false,
+          blob: None,
+          visible_bytes: 0,
+        }),
+      ),
+      started_event_id,
+    );
+    let terminal_event_id = completed.envelope.meta.event_id.clone();
+    let reconciled = with_parent(
+      entry(
+        4,
+        AgentEvent::ToolReconciliationObserved(ToolReconciliationObserved {
+          call_id,
+          name: "remote_write".into(),
+          request_event_id: request_event_id.clone(),
+          terminal_event_id,
+          related_turn_id: None,
+          status: ReconciliationStatus::Committed {
+            details: "remote state inspected".into(),
+          },
+          source: ToolReconciliationSource::Operator,
+        }),
+      ),
+      completed.envelope.meta.event_id.clone(),
+    );
+
+    let before_reconciliation = [request.clone(), started.clone(), completed.clone()];
+    let entries = before_reconciliation.iter().collect::<Vec<_>>();
+    let states = tool_replay_states_from_entries(&entries);
+    let [state] = states.as_slice() else {
+      panic!("completed invocation remains visible in replay analysis");
+    };
+    assert_eq!(state.state, ToolExecutionState::Succeeded);
+    assert!(state.mutating_unknown);
+    assert_eq!(
+      state.decision,
+      HistoricalToolDecision::ReconcileBeforeReplay
+    );
+
+    let trace = [request, started, completed, reconciled];
+    let entries = trace.iter().collect::<Vec<_>>();
+    let states = tool_replay_states_from_entries(&entries);
+    let [state] = states.as_slice() else {
+      panic!("reconciled invocation remains visible in replay analysis");
+    };
+    assert_eq!(state.decision, HistoricalToolDecision::Reconciled);
+    assert!(!state.mutating_unknown);
+  }
+
+  #[test]
   fn reused_provider_call_ids_keep_distinct_causal_invocations() {
     let call_id = ToolCallId::from_string("call_1");
     let first_request = entry(
@@ -1962,6 +2083,7 @@ mod tests {
       entry(
         2,
         AgentEvent::ToolCompleted(ToolCompleted {
+          effect: rupi_core::ToolEffectDisposition::Unverified,
           call_id: call_id.clone(),
           name: "read".into(),
           state: ToolExecutionState::Succeeded,
@@ -1990,6 +2112,7 @@ mod tests {
       entry(
         4,
         AgentEvent::ToolFailed(rupi_core::ToolFailed {
+          effect: rupi_core::ToolEffectDisposition::Unverified,
           call_id: call_id.clone(),
           name: "grep".into(),
           message: "search failed".into(),
@@ -2026,6 +2149,7 @@ mod tests {
       entry(
         7,
         AgentEvent::ToolUnknown(ToolUnknown {
+          effect: rupi_core::ToolEffectDisposition::Unverified,
           call_id: call_id.clone(),
           name: "write".into(),
           why: "completion not observed".into(),
@@ -2041,7 +2165,7 @@ mod tests {
         call_id: call_id.clone(),
         name: "write".into(),
         request_event_id: third_request_id.clone(),
-        unknown_event_id: third_unknown_id,
+        terminal_event_id: third_unknown_id,
         related_turn_id: None,
         status: ReconciliationStatus::Committed {
           details: "write already committed".into(),
@@ -2100,6 +2224,7 @@ mod tests {
     let ambiguous_terminal = entry(
       3,
       AgentEvent::ToolFailed(rupi_core::ToolFailed {
+        effect: rupi_core::ToolEffectDisposition::Unverified,
         call_id,
         name: "read".into(),
         message: "legacy result".into(),

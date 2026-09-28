@@ -123,15 +123,42 @@ impl WriteTool {
       .write_path(path)
       .map_err(|error| ToolError::new(error.to_string()))?;
     if context.is_cancelled_or_expired() {
-      return Ok(ToolOutcome::failed("write: cancelled before writing"));
+      return Ok(
+        ToolOutcome::failed("write: cancelled before writing")
+          .with_effect(rupi_core::ToolEffectDisposition::None),
+      );
     }
     if let Some(parent) = resolved.parent() {
+      if parent.exists() && !parent.is_dir() {
+        return Err(ToolError::new(format!(
+          "write: parent '{}' is not a directory",
+          parent.display()
+        )));
+      }
       fs::create_dir_all(parent)
-        .map_err(|error| ToolError::new(format!("write: cannot create parent: {error}")))?;
+        .map_err(|error| ToolError::after_start(format!("write: cannot create parent: {error}")))?;
     }
 
-    let existing = fs::metadata(&resolved).map(|m| m.len()).ok();
     let bytes = contents.as_bytes();
+    let existing = match fs::read(&resolved) {
+      Ok(current) if current == bytes => {
+        return Ok(
+          ToolOutcome::succeeded(format!(
+            "'{}' already contains the requested bytes; no state changed",
+            resolved.display()
+          ))
+          .with_effect(rupi_core::ToolEffectDisposition::None),
+        );
+      }
+      Ok(current) => Some(current.len() as u64),
+      Err(error) if error.kind() == std::io::ErrorKind::NotFound => None,
+      Err(error) => {
+        return Err(ToolError::new(format!(
+          "write: cannot inspect '{}': {error}",
+          resolved.display()
+        )));
+      }
+    };
 
     // Sibling temp file, then rename: the target is either the old file or the
     // new one, never a mixture. `create_new` prevents a pre-existing temp
@@ -181,7 +208,8 @@ impl WriteTool {
       existing
         .map(|len| format!(" (replaced a {} byte file)", len))
         .unwrap_or_else(|| " (created)".to_string())
-    ));
+    ))
+    .with_effect(rupi_core::ToolEffectDisposition::Changed);
     outcome
       .text
       .push_str(&format!(" [in {} ms]", deadline.elapsed_ms()));
@@ -283,6 +311,22 @@ mod tests {
       "fn main() {}\n"
     );
     assert!(outcome.text.contains("created"));
+    assert_eq!(outcome.effect, rupi_core::ToolEffectDisposition::Changed);
+  }
+
+  #[test]
+  fn writing_identical_bytes_is_a_success_with_no_effect() {
+    let dir = tempfile::tempdir().unwrap();
+    fs::write(dir.path().join("same.txt"), "same").unwrap();
+
+    let outcome = write(&dir, "same.txt", "same");
+
+    assert_eq!(outcome.state, ToolExecutionState::Succeeded);
+    assert_eq!(outcome.effect, rupi_core::ToolEffectDisposition::None);
+    assert_eq!(
+      fs::read_to_string(dir.path().join("same.txt")).unwrap(),
+      "same"
+    );
   }
 
   #[test]
@@ -380,8 +424,8 @@ mod tests {
 
   #[test]
   fn a_write_into_a_non_directory_parent_fails_before_starting() {
-    // The parent creation step is the first effect; if it fails, the target file
-    // is provably untouched, so this is a clean failure and not `Unknown`.
+    // An existing non-directory parent is rejected before `create_dir_all` can
+    // create any intermediate path, so this refusal has no filesystem effect.
     let dir = tempfile::tempdir().unwrap();
     fs::write(dir.path().join("blocker"), "x").unwrap();
     let tool = WriteTool::new(runtime(&dir));

@@ -248,6 +248,7 @@ fn session() -> Vec<AgentEvent> {
       name: "read".into(),
     }));
     events.push(AgentEvent::ToolCompleted(ToolCompleted {
+      effect: rupi_core::ToolEffectDisposition::Unverified,
       call_id,
       name: "read".into(),
       state: ToolExecutionState::Succeeded,

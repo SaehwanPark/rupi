@@ -116,10 +116,10 @@ impl ProcessTool {
       None => runtime.workspace.root().to_path_buf(),
     };
     if !cwd.is_dir() {
-      return Ok(ToolOutcome::failed(format!(
-        "process: '{}' is not a directory",
-        cwd.display()
-      )));
+      return Ok(
+        ToolOutcome::failed(format!("process: '{}' is not a directory", cwd.display()))
+          .with_effect(rupi_core::ToolEffectDisposition::None),
+      );
     }
 
     let display = display_command(program, &args);

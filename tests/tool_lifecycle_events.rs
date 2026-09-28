@@ -138,11 +138,8 @@ fn each_tool_action_leaves_one_terminal_record_after_its_start() {
 fn a_failing_tool_action_records_a_failure() {
   // `exit 3` is the deterministic failing action: the shell reports status 3.
   let records = turn_records(
-    &[
-      tool_call(FAILING_CALL, "exec", r#"{"command":"exit 3"}"#),
-      text_response("completed"),
-    ],
-    2,
+    &[tool_call(FAILING_CALL, "exec", r#"{"command":"exit 3"}"#)],
+    1,
   );
 
   let action: Vec<&Record> = records
@@ -171,6 +168,11 @@ fn a_failing_tool_action_records_a_failure() {
         event.status,
         Some(3),
         "the failure record did not carry the exit status the command died with"
+      );
+      assert_eq!(
+        event.effect,
+        rupi_core::ToolEffectDisposition::Possible,
+        "a failing mutation is not assumed to have made no external change"
       );
       assert!(
         !event.message.trim().is_empty(),

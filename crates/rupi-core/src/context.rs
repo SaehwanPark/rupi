@@ -598,6 +598,9 @@ pub struct ContextCapsule {
   pub current_state: String,
   #[serde(default)]
   pub artifacts: Vec<CapsuleArtifact>,
+  /// Bounded, typed capabilities for re-reading archived tool output.
+  #[serde(default)]
+  pub archived_payloads: Vec<ArchivedPayloadRef>,
   #[serde(default)]
   pub unresolved: Vec<String>,
   #[serde(default)]
@@ -605,7 +608,49 @@ pub struct ContextCapsule {
 }
 
 /// Current capsule schema version.
-pub const CAPSULE_SCHEMA_VERSION: u32 = 1;
+pub const CAPSULE_SCHEMA_VERSION: u32 = 3;
+/// Oldest structured capsule version accepted by this build.
+pub const MIN_SUPPORTED_CAPSULE_SCHEMA_VERSION: u32 = 1;
+
+pub const fn is_supported_capsule_schema_version(version: u32) -> bool {
+  version >= MIN_SUPPORTED_CAPSULE_SCHEMA_VERSION && version <= CAPSULE_SCHEMA_VERSION
+}
+
+/// Maximum archived tool payload capabilities retained in one summary.
+pub const MAX_ARCHIVED_PAYLOAD_REFS: usize = 64;
+/// Maximum encoded length of one archived payload reference.
+pub const MAX_ARCHIVED_PAYLOAD_REFERENCE_BYTES: usize = 256;
+/// Maximum encoded length of the tool name attached to an archived payload.
+pub const MAX_ARCHIVED_PAYLOAD_TOOL_NAME_BYTES: usize = 128;
+/// Maximum rendered note length for one archived payload.
+pub const MAX_ARCHIVED_PAYLOAD_NOTE_CHARS: usize = 240;
+
+/// A payload-read capability retained across context compaction.
+#[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize)]
+pub struct ArchivedPayloadRef {
+  pub reference: String,
+  pub tool_name: String,
+  pub note: String,
+  #[serde(default, skip_serializing_if = "Option::is_none")]
+  pub total_bytes: Option<u64>,
+}
+
+impl ArchivedPayloadRef {
+  /// Whether this capability has bounded, unambiguous provider-facing fields.
+  pub fn is_well_formed(&self) -> bool {
+    !self.reference.is_empty()
+      && self.reference.len() <= MAX_ARCHIVED_PAYLOAD_REFERENCE_BYTES
+      && !self
+        .reference
+        .chars()
+        .any(|character| character.is_whitespace() || character.is_control())
+      && !self.tool_name.trim().is_empty()
+      && self.tool_name.len() <= MAX_ARCHIVED_PAYLOAD_TOOL_NAME_BYTES
+      && !self.tool_name.chars().any(char::is_control)
+      && self.note.chars().count() <= MAX_ARCHIVED_PAYLOAD_NOTE_CHARS
+      && !self.note.chars().any(char::is_control)
+  }
+}
 
 impl ContextCapsule {
   /// Create a fresh capsule with the given objective and schema version.
@@ -618,6 +663,7 @@ impl ContextCapsule {
       constraints: Vec::new(),
       current_state: String::new(),
       artifacts: Vec::new(),
+      archived_payloads: Vec::new(),
       unresolved: Vec::new(),
       next_actions: Vec::new(),
     }
@@ -656,6 +702,24 @@ impl ContextCapsule {
       out.push_str("important_artifacts:\n");
       for a in &self.artifacts {
         out.push_str(&format!("  - {}: {}\n", a.path.trim(), a.note.trim()));
+      }
+    }
+    if !self.archived_payloads.is_empty() {
+      out.push_str("archived_tool_output:\n");
+      for payload in self
+        .archived_payloads
+        .iter()
+        .take(MAX_ARCHIVED_PAYLOAD_REFS)
+      {
+        if !payload.is_well_formed() {
+          continue;
+        }
+        out.push_str(&format!(
+          "  - {} from `{}`: {}\n",
+          payload.reference,
+          payload.tool_name.trim(),
+          payload.note.trim()
+        ));
       }
     }
     if !self.unresolved.is_empty() {
@@ -1094,6 +1158,7 @@ mod tests {
         path: "crates/rupi-provider".into(),
         note: "openai-compatible".into(),
       }],
+      archived_payloads: vec![],
       unresolved: vec!["failover".into()],
       next_actions: vec!["implement tools".into()],
     };
@@ -1101,6 +1166,15 @@ mod tests {
     let decoded: ContextCapsule = serde_json::from_str(&encoded).unwrap();
     assert_eq!(decoded, capsule);
     assert_eq!(decoded.version, CAPSULE_SCHEMA_VERSION);
+    assert!(is_supported_capsule_schema_version(2));
+    assert!(!is_supported_capsule_schema_version(
+      CAPSULE_SCHEMA_VERSION + 1
+    ));
+    let mut legacy = serde_json::to_value(&capsule).unwrap();
+    legacy["version"] = serde_json::json!(2);
+    legacy.as_object_mut().unwrap().remove("archived_payloads");
+    let decoded_legacy: ContextCapsule = serde_json::from_value(legacy).unwrap();
+    assert!(decoded_legacy.archived_payloads.is_empty());
   }
 
   #[test]
@@ -1157,6 +1231,20 @@ mod tests {
       path: "crates/rupi-core".into(),
       note: "core contracts".into(),
     });
+    capsule.archived_payloads.push(ArchivedPayloadRef {
+      reference: "blobs/ab/abcdef.deflate:abcdef012345".into(),
+      tool_name: "exec".into(),
+      note: "reduced output; inspect with payload_read".into(),
+      total_bytes: Some(4096),
+    });
+    for index in 1..=MAX_ARCHIVED_PAYLOAD_REFS {
+      capsule.archived_payloads.push(ArchivedPayloadRef {
+        reference: format!("blobs/{index:02x}/payload-{index}"),
+        tool_name: "exec".into(),
+        note: "bounded archive".into(),
+        total_bytes: None,
+      });
+    }
     capsule.unresolved.push("extension host".into());
     capsule.next_actions.push("checkpoint runtime".into());
 
@@ -1168,6 +1256,13 @@ mod tests {
     assert!(formatted.contains("constraints:\n  - 100 col line limit"));
     assert!(formatted.contains("current_state: Phase 4 underway"));
     assert!(formatted.contains("important_artifacts:\n  - crates/rupi-core: core contracts"));
+    assert!(formatted.contains(
+      "archived_tool_output:\n  - blobs/ab/abcdef.deflate:abcdef012345 from `exec`: reduced output; inspect with payload_read"
+    ));
+    assert_eq!(
+      formatted.matches(" from `exec`: ").count(),
+      MAX_ARCHIVED_PAYLOAD_REFS
+    );
     assert!(formatted.contains("unresolved:\n  - extension host"));
     assert!(formatted.contains("next_actions:\n  - checkpoint runtime"));
     assert!(formatted.contains("[/Session Checkpoint Capsule]"));

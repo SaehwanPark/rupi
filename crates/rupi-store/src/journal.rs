@@ -34,8 +34,8 @@ use crate::{
   StoreError,
   blob::BlobStore,
   jsonl::{
-    LineWriter, MAX_JSONL_LINE_BYTES, ReadReport, read_jsonl_tail, read_jsonl_with_preflight,
-    recover_append_tail,
+    LineWriter, MAX_JSONL_LINE_BYTES, ReadReport, read_jsonl_tail_with_preflight,
+    read_jsonl_with_preflight, recover_append_tail,
   },
   payload,
 };
@@ -48,7 +48,7 @@ struct EventSchemaOnly {
   v: u32,
 }
 
-fn validate_event_schema_before_decode(line: &[u8]) -> Result<(), StoreError> {
+pub(crate) fn validate_event_schema_before_decode(line: &[u8]) -> Result<(), StoreError> {
   let Ok(EventSchemaOnly { v }) = serde_json::from_slice(line) else {
     return Ok(());
   };
@@ -79,13 +79,22 @@ impl TraceJournal {
     policy: RedactionPolicy,
     raw_capture: RawPayloadCapture,
   ) -> Result<Self, StoreError> {
-    // Sequence recovery and malformed-line reporting must observe the repaired
-    // append boundary, not the torn tail that preceded this writer opening.
+    // Inspect the latest complete record before tail repair can append a newline
+    // or truncate bytes. A future-format record must leave the journal untouched.
+    let recovered_seq = if path.exists() {
+      last_valid_seq(path)?
+    } else {
+      None
+    };
     recover_append_tail(path)?;
     let mut last_seq: Option<EventSeq> = None;
     let mut malformed = 0usize;
     if path.exists() {
-      let tail: ReadReport<TraceEntry> = read_jsonl_tail(path, SEQUENCE_RECOVERY_WINDOW)?;
+      let tail: ReadReport<TraceEntry> = read_jsonl_tail_with_preflight(
+        path,
+        SEQUENCE_RECOVERY_WINDOW,
+        validate_event_schema_before_decode,
+      )?;
       malformed = tail.malformed;
       for entry in &tail.items {
         if let Some(seq) = entry.envelope.meta.seq {
@@ -95,10 +104,10 @@ impl TraceJournal {
       // The normal store path bounds every line, but the low-level journal API
       // intentionally does not. A single valid line larger than the recovery
       // window would otherwise be dropped as a mid-line fragment and the next
-      // append could reuse its sequence. Walk backward to the last complete
-      // decodable line without hydrating earlier history.
-      if let Some(seq) = last_valid_seq(path)? {
-        last_seq = Some(seq);
+      // append could reuse its sequence. The preflighted backward scan above
+      // supplies its sequence without hydrating earlier history.
+      if let Some(seq) = recovered_seq {
+        keep_max(&mut last_seq, seq);
       }
     }
     Ok(Self {
@@ -273,7 +282,11 @@ impl TraceJournal {
         first_malformed_line: None,
       });
     }
-    read_jsonl_tail(path, SEQUENCE_RECOVERY_WINDOW)
+    read_jsonl_tail_with_preflight(
+      path,
+      SEQUENCE_RECOVERY_WINDOW,
+      validate_event_schema_before_decode,
+    )
   }
 
   /// Read events after one sequence number, in order.
@@ -385,6 +398,7 @@ fn last_valid_seq(path: &Path) -> Result<Option<EventSeq>, StoreError> {
     file.seek(SeekFrom::Start(start))?;
     let mut line = vec![0u8; length];
     file.read_exact(&mut line)?;
+    validate_event_schema_before_decode(&line)?;
     if let Ok(entry) = serde_json::from_slice::<TraceEntry>(&line)
       && let Some(seq) = entry.envelope.meta.seq
     {
@@ -484,7 +498,7 @@ mod tests {
   }
 
   #[test]
-  fn resumed_trace_keeps_v1_events_and_appends_v2_events() {
+  fn resumed_trace_keeps_v1_v2_events_and_appends_v3_events() {
     let tmp = TempDir::new("journal-mixed-event-schemas");
     let path = tmp.child("trace.jsonl");
     let mut legacy = envelope(diagnostic("legacy event"));
@@ -497,9 +511,23 @@ mod tests {
       raw_ref: None,
       externalized: Vec::new(),
     };
+    let mut v2 = envelope(diagnostic("v2 event"));
+    v2.v = 2;
+    v2.meta.seq = Some(EventSeq(2));
+    let v2 = rupi_core::TraceEntry {
+      envelope: v2,
+      redactions: 0,
+      raw_payload: false,
+      raw_ref: None,
+      externalized: Vec::new(),
+    };
     std::fs::write(
       &path,
-      format!("{}\n", serde_json::to_string(&legacy).unwrap()),
+      format!(
+        "{}\n{}\n",
+        serde_json::to_string(&legacy).unwrap(),
+        serde_json::to_string(&v2).unwrap()
+      ),
     )
     .unwrap();
 
@@ -514,10 +542,11 @@ mod tests {
     journal.append(&current).unwrap();
 
     let entries = TraceJournal::read(&path).unwrap();
-    assert_eq!(entries.items.len(), 2);
+    assert_eq!(entries.items.len(), 3);
     assert_eq!(entries.items[0].envelope.v, 1);
     assert_eq!(entries.items[1].envelope.v, 2);
-    assert_eq!(entries.items[1].envelope.meta.seq, Some(EventSeq(2)));
+    assert_eq!(entries.items[2].envelope.v, 3);
+    assert_eq!(entries.items[2].envelope.meta.seq, Some(EventSeq(3)));
     assert_eq!(entries.malformed, 0);
   }
 
@@ -527,7 +556,7 @@ mod tests {
     let path = tmp.child("trace.jsonl");
     std::fs::write(
       &path,
-      concat!(r#"{"v":3,"meta":{},"type":"future_event"}"#, "\n"),
+      concat!(r#"{"v":4,"meta":{},"type":"future_event"}"#, "\n"),
     )
     .unwrap();
 
@@ -535,7 +564,64 @@ mod tests {
     assert!(
       error
         .to_string()
-        .contains("unsupported trace event schema version 3")
+        .contains("unsupported trace event schema version 4")
+    );
+    let tail_error =
+      TraceJournal::read_tail(&path).expect_err("tail reads reject future schema before decoding");
+    assert!(
+      tail_error
+        .to_string()
+        .contains("unsupported trace event schema version 4")
+    );
+    let open_error = TraceJournal::open(
+      &path,
+      RedactionPolicy::default(),
+      RawPayloadCapture::Disabled,
+    )
+    .expect_err("open recovery refuses future event schemas before append");
+    assert!(
+      open_error
+        .to_string()
+        .contains("unsupported trace event schema version 4")
+    );
+  }
+
+  #[test]
+  fn opening_unterminated_future_schema_does_not_repair_or_append() {
+    let tmp = TempDir::new("journal-open-unterminated-future-schema");
+    let path = tmp.child("trace.jsonl");
+    let future = br#"{"v":4,"meta":{"seq":1},"type":"future_event"}"#;
+    std::fs::write(&path, future).unwrap();
+
+    let error = TraceJournal::open(
+      &path,
+      RedactionPolicy::default(),
+      RawPayloadCapture::Disabled,
+    )
+    .expect_err("open refuses a future-format tail before repair");
+
+    assert!(
+      error
+        .to_string()
+        .contains("unsupported trace event schema version 4")
+    );
+    assert_eq!(std::fs::read(&path).unwrap(), future);
+  }
+
+  #[test]
+  fn backward_sequence_recovery_preflights_future_event_schema() {
+    let tmp = TempDir::new("journal-backward-future-event-schema");
+    let path = tmp.child("trace.jsonl");
+    let line = format!(
+      "{{\"v\":4,\"meta\":{{\"seq\":1}},\"padding\":\"{}\"}}\n",
+      "x".repeat(SEQUENCE_RECOVERY_WINDOW as usize + 1)
+    );
+    std::fs::write(&path, line).unwrap();
+    let error = last_valid_seq(&path).expect_err("backward scan checks the version envelope");
+    assert!(
+      error
+        .to_string()
+        .contains("unsupported trace event schema version 4")
     );
   }
 
@@ -704,6 +790,7 @@ mod tests {
         compacted: true,
       }),
       AgentEvent::ToolCompleted(ToolCompleted {
+        effect: rupi_core::ToolEffectDisposition::Unverified,
         call_id: ToolCallId::new(),
         name: "write".into(),
         state: ToolExecutionState::Succeeded,

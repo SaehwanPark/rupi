@@ -54,9 +54,10 @@ pub use config::{
   RuntimeConfig, RuntimeLimits, ToolPolicy, UiConfig,
 };
 pub use context::{
-  CAPSULE_SCHEMA_VERSION, CapsuleArtifact, CapsuleDecision, ContextAction, ContextCapsule,
-  ContextDecision, ContextLevel, ContextPolicy, ContextProfile, ContextState, ContextThresholds,
-  ExternalContextItem, ExternalContextRef, ProfilePolicy, ReductionReason,
+  ArchivedPayloadRef, CAPSULE_SCHEMA_VERSION, CapsuleArtifact, CapsuleDecision, ContextAction,
+  ContextCapsule, ContextDecision, ContextLevel, ContextPolicy, ContextProfile, ContextState,
+  ContextThresholds, ExternalContextItem, ExternalContextRef, MIN_SUPPORTED_CAPSULE_SCHEMA_VERSION,
+  ProfilePolicy, ReductionReason, is_supported_capsule_schema_version,
 };
 pub use event::{
   AgentEvent, AssistantDelta, AttributedMessage, CheckpointCreated, ContextCompactionCompleted,
@@ -96,8 +97,8 @@ pub use session::{
 pub use sink::{EventSink, FanOut, MemorySink, NullSink, SinkError};
 pub use tool::{
   ReconciliationStatus, ReplayDecision, Tool, ToolChunk, ToolDefinitionFingerprint,
-  ToolDefinitionIdentity, ToolError, ToolExecutionContext, ToolExecutionState, ToolMetadata,
-  ToolOutcome, ToolProgress, ToolRequest,
+  ToolDefinitionIdentity, ToolEffectDisposition, ToolError, ToolExecutionContext,
+  ToolExecutionState, ToolMetadata, ToolOutcome, ToolProgress, ToolRequest,
 };
 pub use trace::{
   BlobCompression, BlobRef, ExternalContextSource, ExternalizedField, RawPayloadCapture,

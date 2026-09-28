@@ -285,19 +285,18 @@ Message-bearing runtime events use one WAL transaction with an exact redacted
 message payload: small messages stay inline, while larger messages keep a verified
 session-blob reference. `begin` and `resume` hold the per-session lease for the
 handle lifetime, and retention acquires the same lease before deleting a victim.
-Trace envelope v2 identifies the current event format; readers accept supported v1
-and v2 entries (including mixed append-only histories) and reject unsupported
-versions before decoding event variants. Resuming an old trace appends v2 records
-without rewriting prior v1 lines.
+Trace envelope v3 identifies the current event format; readers accept v1 and v2
+entries (including mixed append-only histories) and reject unsupported versions before
+decoding event variants. Resuming an old trace appends v3 records without rewriting prior
+lines. Journal tail, open, and sequence-recovery paths perform the same schema preflight.
 
 Reduced tool output can be re-read only through the runtime's read-only
 `payload_read` tool. The model receives an opaque recovery reference in the reduced
-result; the active turn keeps a bounded allowlist of exposed references and restores
-references found in reduced tool results in the resumed model-visible window. The
-store resolves each reference only inside that session's blob directory after hash
-verification. Reads are byte-ranged (at most 4 KiB per call), and decoded payloads
-are capped at 16 MiB. The tool accepts no paths and is unavailable for references
-that were not exposed in the current session.
+result; a bounded typed capability list carries trusted references through recursive
+L1/L2/L3 compaction and resume. The active turn advertises only references present in
+that session's blob directory; reads verify the referenced blob hash. Reads are byte-ranged
+(at most 4 KiB per call), and decoded payloads are capped at 16 MiB. The tool accepts no
+paths and is unavailable for references that were not exposed in the current session.
 
 ## 8. Reasoning provenance
 
@@ -355,7 +354,8 @@ boundaries. Genuine user input and injected runtime control have distinct canoni
 never proves human authorship. User input alone can establish user-authored objectives and
 constraints. Runtime control, external evidence, reconciliation notices, and derived
 compaction/checkpoint summaries retain their own origin even when an endpoint requires them
-on the wire as `role=user`. Session schema v5 persists this distinction. Migration derives
+on the wire as `role=user`. Session schema v6 persists this distinction plus tool-effect evidence
+and typed archived-payload summary state. Migration derives
 origins only from linked, unambiguous canonical events; legacy user-role messages with no
 proof remain `ImportedLegacy` and are carried forward only as opaque unresolved context.
 Schema-only migration preserves historically durable content byte-for-byte; the active redaction
@@ -396,7 +396,13 @@ model-visible terminal tool result before another provider request is allowed. C
 or finalization marks calls proven not to have started as `Failed`; uncertain side-effect
 boundaries remain `Unknown`.
 
-Mutating tool operations must not be blindly replayed after an uncertain failure boundary.
+Execution lifecycle and world-state effect are independent. `ToolEffectDisposition::None`
+is positive evidence of no observable change; `Changed` is a known change; `Possible` is
+an uncertain change; legacy missing evidence is `Unverified`. An observed mutating `Failed`
+call is replay-safe only with `None` effect evidence. Started mutating failures that lack
+no-effect evidence become `Possible`; a mutating `Possible` effect, `Unknown` completion, or
+`Failed` completion with non-`None` effect stops the remaining same-batch mutation tail while
+recording terminal not-executed results for those calls.
 
 The provider's `ToolCallId` is a response-scoped correlation value, not a session-global
 lifecycle key. Durable request-event identity opens each tool lifecycle; `parent_event_id`
@@ -443,9 +449,10 @@ excluded from model-visible history and final report text, and followed by a cor
 request. Exhausting the request budget without a successful configured progress tool ends
 as `BudgetExhausted`, never `Completed`. With no allowlist, all permitted mutating tools
 are exposed. The normal `Requested`/`Started`/`Succeeded`/`Failed`/`Unknown` lifecycle still
-decides what actually happened. A successful configured progress tool satisfies the
-one-shot boundary for the rest of that turn, and callers must verify the workspace
-independently. When activating the boundary and before each later request, the runtime resolves
+decides whether completion was observed. Progress requires a successful configured
+mutating tool with `effect == Changed`; success or mutating metadata alone is not evidence
+of progress. A qualifying tool satisfies the one-shot boundary for the rest of that turn,
+and callers must verify the workspace independently. When activating the boundary and before each later request, the runtime resolves
 the effective executable mutating-tool set using the active model's tool support, registry policy,
 and current approval availability. An empty set emits a durable error diagnostic and fails before
 another provider request, including after a failover changes capabilities. The default is disabled
@@ -670,9 +677,12 @@ Rules:
 - stdio and the bounded Streamable HTTP adapter are supported; HTTP POST responses are
   bounded, JSON/SSE response ids are checked, session headers are carried, and protocol-owned
   headers cannot be overridden;
-- long-lived server push remains deferred; one-shot HTTP calls run behind a per-request
-  local relay authenticated by a per-attempt nonce, so cancellation closes and joins the
-  in-flight worker without reposting; configured HTTP proxy routes are preserved;
+- stdio observes `notifications/tools/list_changed`; a received change freezes the current
+  activation and makes its wrappers fail closed until explicit re-enable. Servers advertising
+  dynamic tool catalogs are rejected on transports that cannot receive server notifications;
+  one-shot HTTP calls remain behind a per-request local relay authenticated by a per-attempt
+  nonce, so cancellation closes and joins the in-flight worker without reposting; configured
+  HTTP proxy routes are preserved;
 - discovery passes through a bounded admission layer before registry/model exposure:
   provider-safe configured/tool name parts, descriptions up to 4 KiB, schemas up to 16 KiB,
   depth 32 and 4,096 nodes, 64 tools per server and 128 active tools overall, with per-server

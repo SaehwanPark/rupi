@@ -32,6 +32,8 @@ pub struct McpServerStatus {
   pub command: String,
   pub enabled: bool,
   pub active: bool,
+  /// An incoming `tools/list_changed` notification disabled existing bindings.
+  pub catalog_stale: bool,
   pub tool_count: usize,
   pub first_use_latency_ms: Option<u64>,
 }
@@ -256,6 +258,10 @@ impl McpManager {
       .values()
       .map(|cfg| {
         let active = self.is_active(&cfg.name);
+        let catalog_stale = self
+          .clients
+          .get(&cfg.name)
+          .is_some_and(|client| client.tool_catalog_stale());
         let tool_count = self
           .active_tools
           .get(&cfg.name)
@@ -274,6 +280,7 @@ impl McpManager {
             .unwrap_or_else(|| cfg.command.clone()),
           enabled: cfg.enabled,
           active,
+          catalog_stale,
           tool_count,
           first_use_latency_ms,
         }
@@ -287,7 +294,14 @@ impl McpManager {
   pub fn enable_server(&mut self, name: &str) -> Result<Vec<McpTool>, McpError> {
     if let Some(tools) = self.active_tools.get(name) {
       if self.is_active(name) {
-        return Ok(tools.clone());
+        let stale = self
+          .clients
+          .get(name)
+          .is_some_and(|client| client.tool_catalog_stale());
+        if !stale {
+          return Ok(tools.clone());
+        }
+        self.disable_server(name)?;
       }
     }
 

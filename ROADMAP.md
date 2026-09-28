@@ -1120,20 +1120,26 @@ and 6.36 ms warm median; context-prefill cases passed; 1,000-turn checkpointed r
 3.96 ms against a 30 ms budget. This correctness slice makes no local-model completion claim;
 controlled llama.cpp comparison remains separate empirical work.
 
-### In progress audit follow-up — Round 11 (WIP)
+### Completed audit follow-up — Round 11
 
-`audits/pi-benchmark-audit/round11.md` identifies five runtime reliability gaps across tool-effect
+`audits/pi-benchmark-audit/round11.md` identified five runtime reliability gaps across tool-effect
 semantics, progress accounting, context recovery, MCP catalog freshness, and trace schema preflight.
-This follow-up is in progress on `fix/pi-benchmark-audit-round-11`:
+All five findings are implemented on `fix/pi-benchmark-audit-round-11` (PR #132):
 
-- [ ] Separate tool execution state from side-effect disposition; stop same-batch mutating tails
-      and gate replay/progress on effect evidence.
-- [ ] Preserve trusted archived payload references through typed and recursive compaction.
-- [ ] Handle MCP tool-list-change notifications fail-closed or by atomic catalog refresh.
-- [ ] Apply event-schema preflight to every journal tail/open/recovery path.
-- [ ] Complete invariant review, workspace verification, and applicable performance checks.
+- [x] Separate tool execution state from effect disposition; stop same-batch mutation tails after
+      possible effects and gate replay/progress on positive effect evidence.
+- [x] Preserve bounded trusted archived-payload references in typed summaries through recursive
+      L1/L2/L3 compaction and validate them against the active session blob store.
+- [x] Consume MCP tool-list-change notifications, fail stale bindings closed, and reject dynamic
+      catalogs when the transport cannot receive notifications.
+- [x] Apply event-schema preflight to JSONL tail reads and journal open/recovery before tail repair.
+- [x] Complete invariant review, workspace verification, and applicable performance checks.
 
-Verification pending.
+Verification passed: `cargo fmt --all --check`, `cargo check --workspace --all-targets`,
+`cargo clippy --workspace --all-targets -- -D warnings`, `cargo test --workspace`, and
+`cargo doc --workspace --no-deps`. Startup measured 132.18 ms cold and 6.04 ms warm median;
+TUI rendering passed all budgets (3.31–3.90 µs/unit); checkpointed restore measured 3.98 ms for
+1,000 turns against a 30 ms budget.
 
 ### P2 — Later / deliberately deferred
 

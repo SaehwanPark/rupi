@@ -947,6 +947,7 @@ mod tests {
   #[test]
   fn unknown_mutating_completion_is_not_rendered_as_failure() {
     let event = AgentEvent::ToolUnknown(ToolUnknown {
+      effect: rupi_core::ToolEffectDisposition::Unverified,
       call_id: ToolCallId::new(),
       name: "exec".into(),
       why: "connection dropped before exit status".into(),
@@ -961,6 +962,7 @@ mod tests {
   #[test]
   fn unknown_read_only_completion_does_not_ask_for_a_check() {
     let event = AgentEvent::ToolUnknown(ToolUnknown {
+      effect: rupi_core::ToolEffectDisposition::Unverified,
       call_id: ToolCallId::new(),
       name: "grep".into(),
       why: "stream closed before the final count".into(),
@@ -1158,6 +1160,7 @@ mod tests {
   #[test]
   fn reduced_tool_output_shows_its_recovery_reference() {
     let event = AgentEvent::ToolCompleted(ToolCompleted {
+      effect: rupi_core::ToolEffectDisposition::Unverified,
       call_id: ToolCallId::new(),
       name: "exec".into(),
       state: rupi_core::ToolExecutionState::Succeeded,
@@ -1316,6 +1319,7 @@ mod tests {
         name: "read".into(),
       }),
       AgentEvent::ToolCompleted(ToolCompleted {
+        effect: rupi_core::ToolEffectDisposition::Unverified,
         call_id: ToolCallId::new(),
         name: "exec".into(),
         state: rupi_core::ToolExecutionState::Succeeded,
@@ -1326,6 +1330,7 @@ mod tests {
         visible_bytes: 900,
       }),
       AgentEvent::ToolFailed(rupi_core::ToolFailed {
+        effect: rupi_core::ToolEffectDisposition::Unverified,
         call_id: ToolCallId::new(),
         name: "edit".into(),
         message: "old text not found".into(),
@@ -1333,6 +1338,7 @@ mod tests {
         status: None,
       }),
       AgentEvent::ToolUnknown(ToolUnknown {
+        effect: rupi_core::ToolEffectDisposition::Unverified,
         call_id: ToolCallId::new(),
         name: "exec".into(),
         why: "no exit status".into(),
