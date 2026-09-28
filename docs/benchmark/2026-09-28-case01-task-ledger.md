@@ -53,8 +53,13 @@ modules, README, and an empty test initializer; its second project test command
 exited 5 (no tests discovered), and its acceptance oracle still failed. This is
 more visible implementation progress for Pi, but not a resolved case.
 
-The smallest candidate change is to strengthen the runtime's implementation
-guidance so a model writes a runnable end-to-end slice immediately after reading
-the governing spec, before exploratory shell calls or extended planning. The
-matched post-change run must show whether that prompt-level change improves the
-oracle result. Full turn artifacts remain in ignored `.benchmark/` storage.
+## Prompt iteration v1
+
+`src/run.rs` now asks new-project implementation tasks to read the governing
+specification and create a runnable end-to-end slice before broad environment
+probes or extended planning. This directly targets the observed no-write tool
+sequences while preserving the existing instruction to inspect relevant
+instructions before editing. `cargo fmt --all --check` and `cargo build --bin
+rupi` pass. The same-budget Rupi-only rerun is pending; compare it with Pi's
+matched baseline above. Full turn artifacts remain in ignored `.benchmark/`
+storage.
