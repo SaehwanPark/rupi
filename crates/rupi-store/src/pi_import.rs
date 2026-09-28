@@ -1034,6 +1034,7 @@ pub fn plan(source: &PiSession) -> Result<ImportPlan, PiImportError> {
           let record = message_record(
             &Extracted {
               blocks: vec![ContentBlock::ToolResult(ToolResultBlock {
+                effect: rupi_core::ToolEffectDisposition::Unverified,
                 id: call_id.clone(),
                 name: name.clone(),
                 state: if failed {
@@ -1055,6 +1056,7 @@ pub fn plan(source: &PiSession) -> Result<ImportPlan, PiImportError> {
           if failed {
             push(
               AgentEvent::ToolFailed(ToolFailed {
+                effect: rupi_core::ToolEffectDisposition::Unverified,
                 call_id,
                 name,
                 message: extracted.text,
@@ -1068,6 +1070,7 @@ pub fn plan(source: &PiSession) -> Result<ImportPlan, PiImportError> {
             let text = extracted.text;
             push(
               AgentEvent::ToolCompleted(ToolCompleted {
+                effect: rupi_core::ToolEffectDisposition::Unverified,
                 call_id,
                 name,
                 state: ToolExecutionState::Succeeded,

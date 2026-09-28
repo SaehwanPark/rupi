@@ -424,8 +424,11 @@ fn trace_ends_the_session(trace_path: &Path) -> Result<bool, StoreError> {
   if !trace_path.exists() {
     return Ok(false);
   }
-  let tail =
-    crate::jsonl::read_jsonl_tail::<rupi_core::trace::TraceEntry>(trace_path, TAIL_WINDOW)?;
+  let tail = crate::jsonl::read_jsonl_tail_with_preflight::<rupi_core::trace::TraceEntry, _>(
+    trace_path,
+    TAIL_WINDOW,
+    crate::journal::validate_event_schema_before_decode,
+  )?;
   let mut latest = None;
   for entry in &tail.items {
     match &entry.envelope.event {
@@ -468,7 +471,7 @@ pub struct RestoredSession {
   pub reductions: Vec<SessionReductionRecord>,
   /// Tool calls whose terminal lifecycle event was absent from the canonical trace.
   pub interrupted_tools: Vec<rupi_core::InterruptedToolCall>,
-  /// Terminal mutating Unknown results whose side-effect barrier remains active.
+  /// Mutating terminal results whose unresolved side-effect barrier remains active.
   pub unresolved_side_effects: Vec<rupi_core::UnresolvedSideEffect>,
   /// Highest model-visible compaction epoch persisted in the session log.
   pub context_epoch: u32,
@@ -1134,6 +1137,7 @@ mod tests {
           constraints: vec![],
           current_state: "resuming".into(),
           artifacts: vec![],
+          archived_payloads: vec![],
           unresolved: vec![],
           next_actions: vec![],
         },
@@ -1471,6 +1475,7 @@ mod tests {
           constraints: vec![],
           current_state: "resuming".into(),
           artifacts: vec![],
+          archived_payloads: vec![],
           unresolved: vec![],
           next_actions: vec![],
         },

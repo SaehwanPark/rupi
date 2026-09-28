@@ -106,7 +106,7 @@ pub struct ResumeState {
   /// Tool calls whose terminal event was absent when the prior process stopped.
   /// These must be reconciled before a new provider request.
   pub interrupted_tools: Vec<rupi_core::InterruptedToolCall>,
-  /// Terminal mutating Unknown outcomes that still block autonomous side effects.
+  /// Terminal mutating outcomes whose effect evidence still blocks autonomous side effects.
   pub unresolved_side_effects: Vec<UnresolvedSideEffect>,
 }
 
@@ -258,6 +258,16 @@ pub trait Trace: Send {
     Ok(None)
   }
 
+  /// Check whether a recovery reference resolves inside this session's store.
+  /// The actual read still verifies content integrity before returning bytes.
+  fn payload_ref_exists(&self, reference: &str) -> bool {
+    self
+      .read_payload_range(reference, 0, 1)
+      .ok()
+      .flatten()
+      .is_some()
+  }
+
   /// Persist a checkpoint capsule and barrier, returning the checkpoint ID and relative path if supported.
   fn create_checkpoint(
     &mut self,
@@ -324,6 +334,10 @@ impl<T: Trace + ?Sized> Trace for &mut T {
     limit: u64,
   ) -> Result<Option<PayloadRead>, SinkError> {
     (**self).read_payload_range(reference, offset, limit)
+  }
+
+  fn payload_ref_exists(&self, reference: &str) -> bool {
+    (**self).payload_ref_exists(reference)
   }
 
   fn create_checkpoint(
@@ -602,7 +616,7 @@ pub struct TurnLoop<'a> {
   resumed: bool,
   /// Interrupted tool lifecycles recovered from the canonical trace.
   interrupted_tools: Vec<rupi_core::InterruptedToolCall>,
-  /// Terminal mutating Unknown outcomes reconstructed from the durable trace.
+  /// Terminal mutating outcomes with unresolved effect evidence reconstructed from the trace.
   unresolved_side_effects: Vec<UnresolvedSideEffect>,
   /// A failed reconciliation is sticky for this loop. Dropping the queue after
   /// an error would let a caller catch the error and issue a provider request
@@ -953,17 +967,17 @@ impl<'a> TurnLoop<'a> {
     current_state: &str,
   ) -> DerivedSummary {
     if let Some(summarizer) = &self.structured_summarizer {
-      DerivedSummary::Capsule {
-        capsule: summarizer(messages),
-      }
+      let mut capsule = summarizer(messages);
+      preserve_archived_payloads(messages, &mut capsule);
+      DerivedSummary::Capsule { capsule }
     } else if let Some(summarizer) = &self.summarizer {
       DerivedSummary::Opaque {
         text: summarizer(messages),
       }
     } else {
-      DerivedSummary::Capsule {
-        capsule: coding_capsule(messages, self.system.as_deref(), current_state),
-      }
+      let mut capsule = coding_capsule(messages, self.system.as_deref(), current_state);
+      preserve_archived_payloads(messages, &mut capsule);
+      DerivedSummary::Capsule { capsule }
     }
   }
 
@@ -1117,7 +1131,7 @@ impl<'a> TurnLoop<'a> {
     self.tools.reconcile(request)
   }
 
-  /// Mutating Unknown outcomes that still block autonomous actions.
+  /// Mutating terminal outcomes whose effects still block autonomous actions.
   pub fn unresolved_side_effects(&self) -> &[UnresolvedSideEffect] {
     &self.unresolved_side_effects
   }
@@ -1208,14 +1222,24 @@ impl<'a> TurnLoop<'a> {
       } else {
         call.request_event_id.clone()
       };
-      let (state, is_error, event, visible_text) = match &status {
+      let (state, effect, is_error, event, visible_text) = match &status {
         ReconciliationStatus::Committed { details } => (
           ToolExecutionState::Succeeded,
+          if call.read_only {
+            rupi_core::ToolEffectDisposition::None
+          } else {
+            rupi_core::ToolEffectDisposition::Changed
+          },
           false,
           AgentEvent::ToolCompleted(ToolCompleted {
             call_id: call.request.call_id.clone(),
             name: call.request.name.clone(),
             state: ToolExecutionState::Succeeded,
+            effect: if call.read_only {
+              rupi_core::ToolEffectDisposition::None
+            } else {
+              rupi_core::ToolEffectDisposition::Changed
+            },
             duration_ms: 0,
             status: None,
             reduced: false,
@@ -1226,11 +1250,13 @@ impl<'a> TurnLoop<'a> {
         ),
         ReconciliationStatus::Unmodified { details } => (
           ToolExecutionState::Failed,
+          rupi_core::ToolEffectDisposition::None,
           true,
           AgentEvent::ToolFailed(ToolFailed {
             call_id: call.request.call_id.clone(),
             name: call.request.name.clone(),
             message: details.clone(),
+            effect: rupi_core::ToolEffectDisposition::None,
             duration_ms: 0,
             status: None,
           }),
@@ -1248,11 +1274,21 @@ impl<'a> TurnLoop<'a> {
           };
           (
             ToolExecutionState::Unknown,
+            if call.read_only {
+              rupi_core::ToolEffectDisposition::None
+            } else {
+              rupi_core::ToolEffectDisposition::Possible
+            },
             true,
             AgentEvent::ToolUnknown(ToolUnknown {
               call_id: call.request.call_id.clone(),
               name: call.request.name.clone(),
               why: why.clone(),
+              effect: if call.read_only {
+                rupi_core::ToolEffectDisposition::None
+              } else {
+                rupi_core::ToolEffectDisposition::Possible
+              },
               mutating: !call.read_only,
             }),
             why,
@@ -1262,6 +1298,7 @@ impl<'a> TurnLoop<'a> {
       let message = Message::new(
         Role::Tool,
         vec![ContentBlock::ToolResult(ToolResultBlock {
+          effect,
           id: call.request.call_id.clone(),
           name: call.request.name.clone(),
           state,
@@ -1284,7 +1321,7 @@ impl<'a> TurnLoop<'a> {
           turn_id,
           request_event_id: request_event_id
             .expect("unresolved mutations require request identity"),
-          unknown_event_id: envelope.meta.event_id.clone(),
+          terminal_event_id: envelope.meta.event_id.clone(),
           latest_status: Some(status),
           definition_fingerprint: call.definition_fingerprint.clone(),
         });
@@ -1385,7 +1422,7 @@ impl<'a> TurnLoop<'a> {
       call_id: side_effect.request.call_id.clone(),
       name: side_effect.request.name.clone(),
       request_event_id: side_effect.request_event_id.clone(),
-      unknown_event_id: side_effect.unknown_event_id.clone(),
+      terminal_event_id: side_effect.terminal_event_id.clone(),
       related_turn_id: Some(side_effect.turn_id.clone()),
       status,
       source,
@@ -1394,7 +1431,7 @@ impl<'a> TurnLoop<'a> {
     let mut envelope = self.new_envelope_with_parent(
       None,
       AgentEvent::ToolReconciliationObserved(observed),
-      Some(side_effect.unknown_event_id.clone()),
+      Some(side_effect.terminal_event_id.clone()),
     );
     envelope.meta.tool_call_id = Some(side_effect.request.call_id.clone());
     self.trace.emit_message(&mut envelope, &message)?;
@@ -1695,7 +1732,7 @@ impl<'a> TurnLoop<'a> {
         self.diagnostic(
           Some(turn_id.clone()),
           DiagnosticLevel::Error,
-          "a mutating tool outcome is unknown; the rest of the batch was not executed and autonomous work stopped until reconciliation",
+          "a mutating tool effect remains unresolved; the rest of the batch was not executed and autonomous work stopped until reconciliation",
         )?;
         return self.finish(
           report,
@@ -2997,6 +3034,10 @@ impl<'a> TurnLoop<'a> {
       AgentEvent::ContextCompactionStarted(ContextCompactionStarted { level, reason }),
     )?;
 
+    // Archived-output access must survive compaction as typed state, not as a
+    // capability inferred later from whatever summary prose the model sees.
+    let summary =
+      preserve_archived_payloads_in_summary(summary, &self.messages[protected..prefix_end]);
     // Persist model-facing text and typed summary semantics before deleting
     // replaced context. The checkpoint at the front remains an impermeable floor.
     let summary_text = summary.format_for_model();
@@ -3166,15 +3207,18 @@ impl<'a> TurnLoop<'a> {
 
   /// Synthesize a structured ContextCapsule from messages and context state.
   pub fn synthesize_capsule(&self, state: &ContextState, reason: &str) -> ContextCapsule {
-    if let Some(custom) = &self.checkpointer {
-      return custom(&self.messages, state);
-    }
-    let current_state = format!(
-      "Context pressure ({} tokens) in epoch {}; reason: {reason}",
-      state.effective_tokens(),
-      state.context_epoch
-    );
-    coding_capsule(&self.messages, self.system.as_deref(), &current_state)
+    let mut capsule = if let Some(custom) = &self.checkpointer {
+      custom(&self.messages, state)
+    } else {
+      let current_state = format!(
+        "Context pressure ({} tokens) in epoch {}; reason: {reason}",
+        state.effective_tokens(),
+        state.context_epoch
+      );
+      coding_capsule(&self.messages, self.system.as_deref(), &current_state)
+    };
+    preserve_archived_payloads(&self.messages, &mut capsule);
+    capsule
   }
 
   /// Create a checkpoint capsule from current session state, store it, emit
@@ -3182,8 +3226,9 @@ impl<'a> TurnLoop<'a> {
   pub fn checkpoint(
     &mut self,
     turn_id: &TurnId,
-    capsule: ContextCapsule,
+    mut capsule: ContextCapsule,
   ) -> Result<CheckpointCreated, TurnError> {
+    preserve_archived_payloads(&self.messages, &mut capsule);
     self.normalize_message_seqs();
     let protected = self.checkpoint_floor.min(self.messages.len());
     let removed = self.messages.len().saturating_sub(protected);
@@ -3252,9 +3297,10 @@ impl<'a> TurnLoop<'a> {
   fn checkpoint_turn_prefix(
     &mut self,
     turn_id: &TurnId,
-    capsule: ContextCapsule,
+    mut capsule: ContextCapsule,
     turn_history_start: &mut usize,
   ) -> Result<Option<CheckpointCreated>, TurnError> {
+    preserve_archived_payloads(&self.messages, &mut capsule);
     self.normalize_message_seqs();
     let prefix_end = (*turn_history_start).min(self.messages.len());
     if prefix_end == 0 || (self.checkpoint_floor > 0 && prefix_end <= 1) {
@@ -3469,30 +3515,17 @@ impl<'a> TurnLoop<'a> {
     if !self.trace.supports_payload_read() {
       return BTreeSet::new();
     }
-    self
-      .messages
-      .iter()
-      .filter(|message| message.role == Role::Tool)
-      .flat_map(|message| message.content.iter())
-      .filter_map(|block| match block {
-        ContentBlock::ToolResult(result) if result.reduced => result
-          .recovery_ref
-          .as_ref()
-          .filter(|reference| {
-            !reference.is_empty()
-              && !reference.chars().any(char::is_whitespace)
-              && payload_read_notice_matches(&result.text, reference)
-          })
-          .cloned(),
-        _ => None,
-      })
-      .collect()
+    let mut references = BTreeSet::new();
+    collect_archived_payload_refs(&self.messages, &mut references);
+    references.retain(|reference| self.trace.payload_ref_exists(reference));
+    references
   }
 
   fn execute_payload_read(&self, request: &rupi_core::ToolRequest) -> Executed {
     let failed = |message: String| Executed {
       request: request.clone(),
-      outcome: ToolOutcome::failed(message.clone()),
+      outcome: ToolOutcome::failed(message.clone())
+        .with_effect(rupi_core::ToolEffectDisposition::None),
       state: ToolExecutionState::Failed,
       started: true,
       refusal: Some(message),
@@ -3724,10 +3757,9 @@ impl<'a> TurnLoop<'a> {
         .any(|candidate| candidate == name)
   }
 
-  /// A requested tool counts as progress only when it is both permitted and
-  /// classified as mutating. This records an attempted boundary crossing; the
-  /// existing tool lifecycle still decides whether its side effect is
-  /// Succeeded, Failed, or Unknown.
+  /// A candidate tool counts as progress only when permitted and classified as
+  /// mutating. `execute_calls` additionally requires Succeeded plus Changed
+  /// effect evidence; mutating capability alone never proves forward progress.
   fn call_makes_progress(&self, call: &ToolCallBlock, admission: &ToolCallAdmission) -> bool {
     admission
       .binding
@@ -4224,7 +4256,8 @@ impl<'a> TurnLoop<'a> {
         }),
         Some(batch.assistant_event_id.clone()),
       )?;
-      let outcome = ToolOutcome::failed(reason.to_string());
+      let outcome =
+        ToolOutcome::failed(reason.to_string()).with_effect(rupi_core::ToolEffectDisposition::None);
       let message = Message::new(
         Role::Tool,
         vec![ContentBlock::ToolResult(
@@ -4235,6 +4268,7 @@ impl<'a> TurnLoop<'a> {
         call_id: call.id.clone(),
         name: call.name.clone(),
         message: reason.to_string(),
+        effect: rupi_core::ToolEffectDisposition::None,
         duration_ms: 0,
         status: None,
       });
@@ -4606,15 +4640,22 @@ impl<'a> TurnLoop<'a> {
       };
       if self.call_makes_progress(call, &admission)
         && execution.state == ToolExecutionState::Succeeded
+        && execution.outcome.effect == rupi_core::ToolEffectDisposition::Changed
       {
         outcome.progress_succeeded = true;
       }
-      if execution.state == ToolExecutionState::Unknown && !read_only {
+      let unresolved_effect = !read_only
+        && execution.started
+        && (execution.outcome.effect == rupi_core::ToolEffectDisposition::Possible
+          || execution.state == ToolExecutionState::Unknown
+          || (execution.state == ToolExecutionState::Failed
+            && execution.outcome.effect != rupi_core::ToolEffectDisposition::None));
+      if unresolved_effect {
         self.unresolved_side_effects.push(UnresolvedSideEffect {
           request: request.clone(),
           turn_id: turn_id.clone(),
           request_event_id,
-          unknown_event_id: outcome_event_id,
+          terminal_event_id: outcome_event_id,
           latest_status: None,
           definition_fingerprint: definition_fingerprint.clone(),
         });
@@ -4660,6 +4701,11 @@ impl<'a> TurnLoop<'a> {
     parent_event_id: Option<rupi_core::EventId>,
   ) -> Result<(ToolResultBlock, Option<EventSeq>, rupi_core::EventId), TurnError> {
     let outcome = &executed.outcome;
+    let effect = if !executed.started || read_only {
+      rupi_core::ToolEffectDisposition::None
+    } else {
+      outcome.effect
+    };
     let mut text = outcome.text.clone();
     let mut reduced = outcome.reduced;
     let mut recovery_blob = None;
@@ -4708,6 +4754,7 @@ impl<'a> TurnLoop<'a> {
         call_id: call.id.clone(),
         name: call.name.clone(),
         state: ToolExecutionState::Succeeded,
+        effect,
         duration_ms,
         status: outcome.status,
         reduced,
@@ -4718,6 +4765,7 @@ impl<'a> TurnLoop<'a> {
         call_id: call.id.clone(),
         name: call.name.clone(),
         message: text.clone(),
+        effect,
         duration_ms,
         status: outcome.status,
       }),
@@ -4729,6 +4777,7 @@ impl<'a> TurnLoop<'a> {
           call_id: call.id.clone(),
           name: call.name.clone(),
           why: executed.refusal.clone().unwrap_or_else(|| text.clone()),
+          effect,
           mutating,
         })
       }
@@ -4737,6 +4786,7 @@ impl<'a> TurnLoop<'a> {
       id: call.id.clone(),
       name: call.name.clone(),
       state: executed.state,
+      effect,
       text,
       is_error: outcome.is_error,
       reduced,
@@ -5484,6 +5534,16 @@ fn overflow_summary_text(summary: &DerivedSummary) -> String {
             &format!("{} — {}", artifact.path, artifact.note),
           );
         }
+        for payload in &capsule.archived_payloads {
+          line(
+            output,
+            "archived tool output",
+            &format!(
+              "{} from `{}` — {}",
+              payload.reference, payload.tool_name, payload.note
+            ),
+          );
+        }
         for item in &capsule.completed_work {
           line(output, "completed", item);
         }
@@ -5500,6 +5560,22 @@ fn overflow_summary_text(summary: &DerivedSummary) -> String {
         line(output, "phase", phase);
       }
       DerivedSummary::Rendered { summary, .. } => render(summary, output),
+      DerivedSummary::ArchivedPayloads {
+        summary,
+        archived_payloads,
+      } => {
+        render(summary, output);
+        for payload in archived_payloads {
+          line(
+            output,
+            "archived tool output",
+            &format!(
+              "{} from `{}` — {}",
+              payload.reference, payload.tool_name, payload.note
+            ),
+          );
+        }
+      }
       DerivedSummary::Opaque { text } => {
         line(
           output,
@@ -5633,9 +5709,152 @@ struct CapsuleAccumulation<'a> {
   decisions: &'a mut Vec<CapsuleDecision>,
   constraints: &'a mut Vec<String>,
   artifacts: &'a mut Vec<CapsuleArtifact>,
+  archived_payloads: &'a mut Vec<rupi_core::context::ArchivedPayloadRef>,
   unresolved: &'a mut Vec<String>,
   next_actions: &'a mut Vec<String>,
   prior_state: &'a mut String,
+}
+
+fn preserve_archived_payloads(messages: &[Message], capsule: &mut ContextCapsule) {
+  let existing = std::mem::take(&mut capsule.archived_payloads);
+  for payload in existing
+    .into_iter()
+    .chain(archived_payloads_from_messages(messages))
+  {
+    push_archived_payload(&mut capsule.archived_payloads, payload);
+  }
+}
+
+fn preserve_archived_payloads_in_summary(
+  summary: DerivedSummary,
+  messages: &[Message],
+) -> DerivedSummary {
+  let archived_payloads = archived_payloads_from_messages(messages);
+  if archived_payloads.is_empty() {
+    return summary;
+  }
+  match summary {
+    DerivedSummary::Capsule { mut capsule } => {
+      for payload in archived_payloads {
+        push_archived_payload(&mut capsule.archived_payloads, payload);
+      }
+      DerivedSummary::Capsule { capsule }
+    }
+    DerivedSummary::Phase { phase, summary } => DerivedSummary::Phase {
+      phase,
+      summary: Box::new(preserve_archived_payloads_in_summary(*summary, messages)),
+    },
+    DerivedSummary::Rendered { summary, text } => DerivedSummary::Rendered {
+      summary: Box::new(preserve_archived_payloads_in_summary(*summary, messages)),
+      text,
+    },
+    DerivedSummary::ArchivedPayloads {
+      summary,
+      archived_payloads: mut existing,
+    } => {
+      for payload in archived_payloads {
+        push_archived_payload(&mut existing, payload);
+      }
+      DerivedSummary::ArchivedPayloads {
+        summary,
+        archived_payloads: existing,
+      }
+    }
+    DerivedSummary::Opaque { text } => DerivedSummary::ArchivedPayloads {
+      summary: Box::new(DerivedSummary::Opaque { text }),
+      archived_payloads,
+    },
+  }
+}
+
+fn archived_payloads_from_messages(
+  messages: &[Message],
+) -> Vec<rupi_core::context::ArchivedPayloadRef> {
+  let mut payloads = Vec::new();
+  for message in messages {
+    for block in &message.content {
+      let ContentBlock::ToolResult(result) = block else {
+        continue;
+      };
+      if !result.reduced {
+        continue;
+      }
+      let Some(reference) = result.recovery_ref.as_ref().filter(|reference| {
+        !reference.is_empty()
+          && reference.len() <= 256
+          && !reference.chars().any(char::is_whitespace)
+          && payload_read_notice_matches(&result.text, reference)
+      }) else {
+        continue;
+      };
+      push_archived_payload(
+        &mut payloads,
+        rupi_core::context::ArchivedPayloadRef {
+          reference: reference.clone(),
+          tool_name: result.name.clone(),
+          note: "reduced tool output; inspect with payload_read".into(),
+          total_bytes: None,
+        },
+      );
+    }
+    if let Some(summary) = message.derived_summary.as_deref() {
+      collect_archived_payloads_from_summary(summary, &mut payloads);
+    }
+  }
+  payloads
+}
+
+fn collect_archived_payloads_from_summary(
+  summary: &DerivedSummary,
+  payloads: &mut Vec<rupi_core::context::ArchivedPayloadRef>,
+) {
+  match summary {
+    DerivedSummary::Capsule { capsule } => {
+      for payload in &capsule.archived_payloads {
+        push_archived_payload(payloads, payload.clone());
+      }
+    }
+    DerivedSummary::Phase { summary, .. } | DerivedSummary::Rendered { summary, .. } => {
+      collect_archived_payloads_from_summary(summary, payloads);
+    }
+    DerivedSummary::ArchivedPayloads {
+      summary,
+      archived_payloads,
+    } => {
+      for payload in archived_payloads {
+        push_archived_payload(payloads, payload.clone());
+      }
+      collect_archived_payloads_from_summary(summary, payloads);
+    }
+    DerivedSummary::Opaque { .. } => {}
+  }
+}
+
+fn push_archived_payload(
+  payloads: &mut Vec<rupi_core::context::ArchivedPayloadRef>,
+  mut payload: rupi_core::context::ArchivedPayloadRef,
+) {
+  if payloads.len() >= rupi_core::context::MAX_ARCHIVED_PAYLOAD_REFS {
+    return;
+  }
+  payload.note = bounded_text(
+    &payload.note,
+    rupi_core::context::MAX_ARCHIVED_PAYLOAD_NOTE_CHARS,
+  );
+  if !payload.is_well_formed()
+    || payloads
+      .iter()
+      .any(|existing| existing.reference == payload.reference)
+  {
+    return;
+  }
+  payloads.push(payload);
+}
+
+fn collect_archived_payload_refs(messages: &[Message], references: &mut BTreeSet<String>) {
+  for payload in archived_payloads_from_messages(messages) {
+    references.insert(payload.reference);
+  }
 }
 
 /// Unwrap legacy rendering envelopes without assigning authority to their prose.
@@ -5741,6 +5960,9 @@ fn absorb_typed_capsule(source: &ContextCapsule, target: &mut CapsuleAccumulatio
       bounded_text(&artifact.note, 200),
     );
   }
+  for payload in &source.archived_payloads {
+    push_archived_payload(target.archived_payloads, payload.clone());
+  }
   for item in &source.unresolved {
     push_unique(target.unresolved, bounded_text(item, 240));
   }
@@ -5791,6 +6013,15 @@ fn absorb_derived_summary(summary: &DerivedSummary, capsule: &mut CapsuleAccumul
     DerivedSummary::Phase { summary, .. } | DerivedSummary::Rendered { summary, .. } => {
       absorb_derived_summary(summary, capsule);
     }
+    DerivedSummary::ArchivedPayloads {
+      summary,
+      archived_payloads,
+    } => {
+      for payload in archived_payloads {
+        push_archived_payload(capsule.archived_payloads, payload.clone());
+      }
+      absorb_derived_summary(summary, capsule);
+    }
     DerivedSummary::Opaque { text } => {
       add_opaque_context(capsule.unresolved, "Prior summary", text);
     }
@@ -5823,6 +6054,7 @@ fn coding_capsule(
   let mut decisions = Vec::new();
   let mut constraints = Vec::new();
   let mut artifacts = Vec::new();
+  let mut archived_payloads = Vec::new();
   let mut unresolved = Vec::new();
   let mut next_actions = Vec::new();
   let mut prior_state = String::new();
@@ -5857,6 +6089,7 @@ fn coding_capsule(
             decisions: &mut decisions,
             constraints: &mut constraints,
             artifacts: &mut artifacts,
+            archived_payloads: &mut archived_payloads,
             unresolved: &mut unresolved,
             next_actions: &mut next_actions,
             prior_state: &mut prior_state,
@@ -6067,6 +6300,8 @@ fn coding_capsule(
     );
   }
   capsule.artifacts = artifacts;
+  capsule.archived_payloads = archived_payloads;
+  preserve_archived_payloads(messages, &mut capsule);
   capsule.unresolved = unresolved;
   if capsule.unresolved.is_empty() {
     push_unique(
@@ -6829,6 +7064,7 @@ mod tests {
     Message::new(
       Role::Tool,
       vec![ContentBlock::ToolResult(ToolResultBlock {
+        effect: rupi_core::ToolEffectDisposition::Unverified,
         id,
         name: "test_tool".into(),
         state,
@@ -8236,7 +8472,7 @@ mod tests {
       TraceId::new(),
     )
     .with_tool_call_budgets(4, 1)
-    .with_progress_boundary(Some(1), vec!["progress_write".into()])
+    .with_progress_boundary(Some(1), vec!["write_probe".into()])
     .run_turn(
       "inspect, then make progress",
       &CancelToken::new(),
@@ -8499,11 +8735,95 @@ mod tests {
   }
 
   #[test]
+  fn possible_failed_mutation_stops_the_remaining_batch_tail() {
+    let mutations = Arc::new(Mutex::new(Vec::new()));
+    let tools = registry_with(vec![Box::new(MutatingSpy {
+      seen: Arc::clone(&mutations),
+      outcome: ToolOutcome::failed("command exited after partial change")
+        .with_effect(rupi_core::ToolEffectDisposition::Possible),
+    })]);
+    let first_id = rupi_core::ToolCallId::from_string("partial-mutation");
+    let tail_id = rupi_core::ToolCallId::from_string("blocked-tail");
+    let provider = Scripted::new(
+      "failed-partial-mutation-batch",
+      vec![vec![
+        ProviderEvent::ToolCall(ToolCallBlock {
+          id: first_id.clone(),
+          name: "write_probe".into(),
+          arguments: json!({"path":"first"}),
+        }),
+        ProviderEvent::ToolCall(ToolCallBlock {
+          id: tail_id.clone(),
+          name: "write_probe".into(),
+          arguments: json!({"path":"second"}),
+        }),
+      ]],
+    );
+    let policy = rupi_core::ProfilePolicy::new(
+      rupi_core::ContextProfile::Balanced,
+      provider.capabilities().context_window,
+    );
+    let mut trace = Recorder::default();
+    let tools = tools.with_policy(&rupi_core::ToolPolicy {
+      auto_approve_mutating: true,
+      ..rupi_core::ToolPolicy::default()
+    });
+    let mut runtime = TurnLoop::new(
+      &provider,
+      &tools,
+      &policy,
+      &mut trace,
+      SessionId::new(),
+      TraceId::new(),
+    );
+
+    let report = runtime
+      .run_turn(
+        "make two dependent changes",
+        &CancelToken::new(),
+        &mut SilentProgress,
+      )
+      .expect("uncertain failure becomes a reconciliation boundary");
+
+    assert_eq!(report.status, TurnStatus::NeedsReconciliation);
+    assert_eq!(report.tool_calls_started, 1);
+    assert_eq!(provider.requests().len(), 1);
+    assert_eq!(mutations.lock().unwrap().len(), 1);
+    let tail_result = runtime
+      .messages
+      .iter()
+      .flat_map(|message| message.content.iter())
+      .find_map(|block| match block {
+        ContentBlock::ToolResult(result) if result.id == tail_id => Some(result),
+        _ => None,
+      })
+      .expect("the unexecuted tail remains a terminal model-visible result");
+    assert_eq!(tail_result.state, ToolExecutionState::Failed);
+    assert_eq!(tail_result.effect, rupi_core::ToolEffectDisposition::None);
+    assert!(tail_result.text.contains("not executed"));
+    assert!(
+      runtime
+        .messages
+        .iter()
+        .flat_map(|message| message.content.iter())
+        .any(|block| matches!(block,
+          ContentBlock::ToolResult(result)
+            if result.id == first_id
+              && result.effect == rupi_core::ToolEffectDisposition::Possible
+        )),
+      "the uncertain effect must be durable in the result block"
+    );
+    drop(runtime);
+    assert_eq!(trace.count("tool_started"), 1);
+  }
+
+  #[test]
   fn failed_started_mutation_spends_its_mutation_budget_slot() {
     let mutations = Arc::new(Mutex::new(Vec::new()));
     let tools = registry_with(vec![Box::new(MutatingSpy {
       seen: Arc::clone(&mutations),
-      outcome: ToolOutcome::failed("write failed after dispatch"),
+      outcome: ToolOutcome::failed("write failed after dispatch")
+        .with_effect(rupi_core::ToolEffectDisposition::None),
     })]);
     let provider = Scripted::new(
       "failed-started-mutation-budget",
@@ -10240,6 +10560,7 @@ mod tests {
           path: "src/parser.rs".into(),
           note: "main implementation".into(),
         }],
+        archived_payloads: vec![],
         unresolved: vec!["unterminated strings".into()],
         next_actions: vec!["fix string handling".into()],
       },
@@ -11000,7 +11321,8 @@ mod tests {
       Box::new(Spy(Arc::clone(&read_seen))),
       Box::new(MutatingSpy {
         seen: Arc::clone(&write_seen),
-        outcome: ToolOutcome::succeeded("mutated"),
+        outcome: ToolOutcome::succeeded("mutated")
+          .with_effect(rupi_core::ToolEffectDisposition::Changed),
       }),
     ]);
     let provider = Scripted::new(
@@ -11215,7 +11537,8 @@ mod tests {
       Box::new(Spy(Arc::clone(&read_seen))),
       Box::new(MutatingSpy {
         seen: Arc::clone(&write_seen),
-        outcome: ToolOutcome::failed("rejected"),
+        outcome: ToolOutcome::failed("rejected")
+          .with_effect(rupi_core::ToolEffectDisposition::None),
       }),
     ]);
     let provider = Scripted::new(
@@ -11394,6 +11717,7 @@ mod tests {
       Message::new(
         Role::Tool,
         vec![ContentBlock::ToolResult(ToolResultBlock {
+          effect: rupi_core::ToolEffectDisposition::Unverified,
           id: rupi_core::ToolCallId::new(),
           name: "unrelated".into(),
           state: ToolExecutionState::Succeeded,
@@ -11406,6 +11730,7 @@ mod tests {
       Message::new(
         Role::Tool,
         vec![ContentBlock::ToolResult(ToolResultBlock {
+          effect: rupi_core::ToolEffectDisposition::Unverified,
           id: rupi_core::ToolCallId::new(),
           name: "large_output".into(),
           state: ToolExecutionState::Succeeded,
@@ -11457,7 +11782,7 @@ mod tests {
   }
 
   #[test]
-  fn payload_read_authorization_tracks_visible_context_without_a_fifo_cap() {
+  fn payload_read_authorization_preserves_refs_across_bounded_compaction() {
     let provider = Scripted::new("payload-ref-cap", Vec::new());
     let tools = registry_with(Vec::new());
     let policy = rupi_core::ProfilePolicy::new(
@@ -11483,6 +11808,7 @@ mod tests {
       messages.push(Message::new(
         Role::Tool,
         vec![ContentBlock::ToolResult(ToolResultBlock {
+          effect: rupi_core::ToolEffectDisposition::Unverified,
           id: rupi_core::ToolCallId::new(),
           name: "large_output".into(),
           state: ToolExecutionState::Succeeded,
@@ -11521,7 +11847,10 @@ mod tests {
     .with_resume_state(state)
     .expect("resume state validates");
 
-    assert_eq!(runtime.available_payload_refs().len(), 129);
+    assert_eq!(
+      runtime.available_payload_refs().len(),
+      rupi_core::context::MAX_ARCHIVED_PAYLOAD_REFS
+    );
     assert!(
       runtime
         .exposed_tools_for(&provider.capabilities())
@@ -11537,21 +11866,64 @@ mod tests {
     assert_eq!(before_compaction.state, ToolExecutionState::Succeeded);
     assert!(before_compaction.outcome.text.contains("payload-0"));
 
+    let turn_id = TurnId::new();
     assert_eq!(
       runtime
-        .compact(&TurnId::new(), "summary of the first result", 128)
+        .compact(&turn_id, "summary of the first result", 128)
         .expect("compact visible history"),
       1
     );
-    assert_eq!(runtime.available_payload_refs().len(), 128);
+    assert_eq!(
+      runtime.available_payload_refs().len(),
+      rupi_core::context::MAX_ARCHIVED_PAYLOAD_REFS
+    );
     let after_compaction = runtime.execute_payload_read(&request);
-    assert_eq!(after_compaction.state, ToolExecutionState::Failed);
-    assert!(after_compaction.outcome.text.contains("not available"));
+    assert_eq!(after_compaction.state, ToolExecutionState::Succeeded);
+    assert!(after_compaction.outcome.text.contains("payload-0"));
     assert!(
       runtime
         .exposed_tools_for(&provider.capabilities())
         .iter()
         .any(|tool| { tool.name == PAYLOAD_READ_TOOL_NAME })
+    );
+
+    runtime
+      .compact(&turn_id, "recursive opaque summary", 128)
+      .expect("recursive L1 compaction retains archive state");
+    assert_eq!(
+      runtime.available_payload_refs().len(),
+      rupi_core::context::MAX_ARCHIVED_PAYLOAD_REFS
+    );
+    assert_eq!(
+      runtime.execute_payload_read(&request).state,
+      ToolExecutionState::Succeeded
+    );
+
+    runtime
+      .compact_phase(&turn_id, "verification", Some("phase summary"), true)
+      .expect("L2 compaction retains archive state");
+    assert_eq!(
+      runtime.available_payload_refs().len(),
+      rupi_core::context::MAX_ARCHIVED_PAYLOAD_REFS
+    );
+    assert_eq!(
+      runtime.execute_payload_read(&request).state,
+      ToolExecutionState::Succeeded
+    );
+
+    runtime
+      .checkpoint(
+        &turn_id,
+        rupi_core::ContextCapsule::new("continue verification"),
+      )
+      .expect("L3 checkpoint retains archive state");
+    assert_eq!(
+      runtime.available_payload_refs().len(),
+      rupi_core::context::MAX_ARCHIVED_PAYLOAD_REFS
+    );
+    assert_eq!(
+      runtime.execute_payload_read(&request).state,
+      ToolExecutionState::Succeeded
     );
   }
 
@@ -15000,7 +15372,7 @@ mod tests {
         },
         turn_id: TurnId::new(),
         request_event_id: request_event_id.clone(),
-        unknown_event_id: unknown_event_id.clone(),
+        terminal_event_id: unknown_event_id.clone(),
         latest_status: Some(ReconciliationStatus::RequiresManualInspection {
           details: "the latest durable reconciliation still requires inspection".into(),
         }),
@@ -15602,7 +15974,10 @@ mod tests {
     );
 
     let cp_payload = trace.find("checkpoint_created").unwrap();
-    assert_eq!(cp_payload["capsule_version"], 1);
+    assert_eq!(
+      cp_payload["capsule_version"],
+      rupi_core::context::CAPSULE_SCHEMA_VERSION
+    );
 
     let req = &provider.requests()[0];
     assert!(

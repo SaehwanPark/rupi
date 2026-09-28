@@ -39,12 +39,14 @@ use crate::{
   message::Message,
   message::RuntimeControlKind,
   provenance::ReasoningProvenance,
-  tool::{ReconciliationStatus, ToolDefinitionFingerprint, ToolExecutionState},
+  tool::{
+    ReconciliationStatus, ToolDefinitionFingerprint, ToolEffectDisposition, ToolExecutionState,
+  },
   trace::{BlobRef, ExternalContextSource},
 };
 
 /// Current schema version stamped onto every newly emitted journal line.
-pub const EVENT_SCHEMA_VERSION: u32 = 2;
+pub const EVENT_SCHEMA_VERSION: u32 = 3;
 /// Oldest event schema generation this build can normalize into the current model.
 pub const MIN_SUPPORTED_EVENT_SCHEMA_VERSION: u32 = 1;
 
@@ -117,8 +119,8 @@ impl EventMeta {
 /// Envelope written to disk.
 ///
 /// New records use [`EVENT_SCHEMA_VERSION`]. Readers continue to accept v1
-/// records, normalizing fields with explicit serde defaults; append-only traces
-/// may therefore contain both generations after a resumed session is extended.
+/// and v2 records, normalizing fields with explicit serde defaults; append-only
+/// traces may therefore contain multiple generations after a resumed session is extended.
 #[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize)]
 pub struct EventEnvelope {
   pub v: u32,
@@ -274,8 +276,8 @@ pub enum AgentEvent {
   /// UI: emphasized; drives the reconcile path.
   ToolUnknown(ToolUnknown),
   /// Why: a follow-up inspection resolved or further characterized a mutating
-  /// tool side effect without rewriting its terminal `ToolUnknown` event.
-  /// Ordering: after the original unknown result; never a second tool lifecycle
+  /// tool side effect without rewriting its terminal lifecycle event.
+  /// Ordering: after the original terminal result; never a second tool lifecycle
   /// terminal. Persistence: always. Replay: clears only a committed/unmodified
   /// side-effect barrier. UI: exposes the reconciliation evidence.
   ToolReconciliationObserved(ToolReconciliationObserved),
@@ -502,6 +504,10 @@ pub struct ToolCompleted {
   /// Always [`ToolExecutionState::Succeeded`]; kept explicit so that the
   /// journal states the claim instead of implying it.
   pub state: ToolExecutionState,
+  /// Independent evidence about whether the call changed external state.
+  /// Missing legacy evidence remains `Unverified`.
+  #[serde(default)]
+  pub effect: ToolEffectDisposition,
   pub duration_ms: u64,
   #[serde(default, skip_serializing_if = "Option::is_none")]
   pub status: Option<i64>,
@@ -520,6 +526,10 @@ pub struct ToolFailed {
   pub call_id: ToolCallId,
   pub name: String,
   pub message: String,
+  /// Independent evidence about whether the call changed external state.
+  /// Missing legacy evidence remains `Unverified`.
+  #[serde(default)]
+  pub effect: ToolEffectDisposition,
   pub duration_ms: u64,
   #[serde(default, skip_serializing_if = "Option::is_none")]
   pub status: Option<i64>,
@@ -532,18 +542,23 @@ pub struct ToolUnknown {
   /// What is unknown, written for a human reader: the boundary that was not
   /// observed.
   pub why: String,
+  /// Independent evidence about whether the call changed external state.
+  /// Missing legacy evidence remains `Unverified`.
+  #[serde(default)]
+  pub effect: ToolEffectDisposition,
   /// `true` when the call could have changed external state.
   pub mutating: bool,
 }
 
-/// A later observation about a mutating call whose terminal tool state remains Unknown.
+/// A later observation about a mutating call whose effect evidence remains unresolved.
 #[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize)]
 pub struct ToolReconciliationObserved {
   pub call_id: ToolCallId,
   pub name: String,
   /// Identifies the exact request even if a provider later reuses its call ID.
   pub request_event_id: EventId,
-  pub unknown_event_id: EventId,
+  #[serde(alias = "unknown_event_id")]
+  pub terminal_event_id: EventId,
   /// Turn that owns the original request, retained for its session-message projection.
   /// The observation itself is session-level and does not reopen that completed turn.
   #[serde(default, skip_serializing_if = "Option::is_none")]
@@ -840,6 +855,33 @@ mod tests {
   }
 
   #[test]
+  fn event_envelope_reads_v1_and_v2_records_with_missing_effect_as_unverified() {
+    let call_id = ToolCallId::new();
+    for version in [1, 2] {
+      let envelope = EventEnvelope::new(
+        meta().with_tool_call(call_id.clone()),
+        AgentEvent::ToolFailed(ToolFailed {
+          call_id: call_id.clone(),
+          name: "write".into(),
+          message: "legacy failure".into(),
+          effect: ToolEffectDisposition::Unverified,
+          duration_ms: 12,
+          status: None,
+        }),
+      );
+      let mut value = serde_json::to_value(envelope).unwrap();
+      value["v"] = serde_json::json!(version);
+      value.as_object_mut().unwrap().remove("effect");
+      let decoded: EventEnvelope = serde_json::from_value(value).unwrap();
+      assert_eq!(decoded.v, version);
+      let AgentEvent::ToolFailed(event) = decoded.event else {
+        panic!("expected legacy tool failure");
+      };
+      assert_eq!(event.effect, ToolEffectDisposition::Unverified);
+    }
+  }
+
+  #[test]
   fn reasoning_delta_keeps_provenance_in_envelope() {
     let envelope = EventEnvelope::new(
       meta(),
@@ -866,6 +908,7 @@ mod tests {
         call_id,
         name: "read".into(),
         state: ToolExecutionState::Succeeded,
+        effect: ToolEffectDisposition::Unverified,
         duration_ms: 12,
         status: None,
         reduced: false,
@@ -875,6 +918,7 @@ mod tests {
     );
     let encoded = serde_json::to_string(&envelope).unwrap();
     assert!(encoded.contains("\"state\":\"succeeded\""), "{encoded}");
+    assert!(encoded.contains("\"effect\":\"unverified\""), "{encoded}");
     assert!(
       encoded.contains("\"tool_call_id\""),
       "tool completion must be attributable to one call: {encoded}"
@@ -902,11 +946,90 @@ mod tests {
       call_id: ToolCallId::new(),
       name: "exec".into(),
       why: "process exited before status was read".into(),
+      effect: ToolEffectDisposition::Possible,
       mutating: true,
     });
     let encoded = serde_json::to_string(&event).unwrap();
     assert!(encoded.contains("\"type\":\"tool_unknown\""), "{encoded}");
     assert!(encoded.contains("\"mutating\":true"), "{encoded}");
+    assert!(encoded.contains("\"effect\":\"possible\""), "{encoded}");
+  }
+
+  #[test]
+  fn terminal_tool_events_default_missing_effect_to_unverified() {
+    let events = [
+      serde_json::json!({
+        "type": "tool_completed",
+        "call_id": ToolCallId::new(),
+        "name": "write",
+        "state": "succeeded",
+        "duration_ms": 1,
+        "status": null,
+        "reduced": false,
+        "blob": null,
+        "visible_bytes": 4
+      }),
+      serde_json::json!({
+        "type": "tool_failed",
+        "call_id": ToolCallId::new(),
+        "name": "write",
+        "message": "legacy failure",
+        "duration_ms": 1,
+        "status": null
+      }),
+      serde_json::json!({
+        "type": "tool_unknown",
+        "call_id": ToolCallId::new(),
+        "name": "write",
+        "why": "legacy unknown",
+        "mutating": true
+      }),
+    ];
+    for value in events {
+      let decoded: AgentEvent = serde_json::from_value(value).unwrap();
+      let effect = match decoded {
+        AgentEvent::ToolCompleted(event) => event.effect,
+        AgentEvent::ToolFailed(event) => event.effect,
+        AgentEvent::ToolUnknown(event) => event.effect,
+        _ => unreachable!(),
+      };
+      assert_eq!(effect, ToolEffectDisposition::Unverified);
+    }
+  }
+
+  #[test]
+  fn reconciliation_accepts_legacy_unknown_event_id_and_writes_terminal_event_id() {
+    let observed = ToolReconciliationObserved {
+      call_id: ToolCallId::new(),
+      name: "write".into(),
+      request_event_id: EventId::new(),
+      terminal_event_id: EventId::new(),
+      related_turn_id: None,
+      status: ReconciliationStatus::Committed {
+        details: "matching content found".into(),
+      },
+      source: ToolReconciliationSource::Tool,
+    };
+    let mut value = serde_json::to_value(observed).unwrap();
+    let object = value.as_object_mut().unwrap();
+    let terminal_event_id = object.remove("terminal_event_id").unwrap();
+    object.insert("unknown_event_id".into(), terminal_event_id.clone());
+    let expected_terminal_event_id: EventId =
+      serde_json::from_value(terminal_event_id.clone()).unwrap();
+    let decoded: ToolReconciliationObserved = serde_json::from_value(value).unwrap();
+    assert_eq!(decoded.terminal_event_id, expected_terminal_event_id);
+
+    let encoded = serde_json::to_value(decoded).unwrap();
+    assert_eq!(encoded["terminal_event_id"], terminal_event_id);
+    assert!(encoded.get("unknown_event_id").is_none());
+  }
+
+  #[test]
+  fn supported_event_versions_include_v1_v2_and_current_but_reject_future() {
+    assert!(is_supported_event_schema_version(1));
+    assert!(is_supported_event_schema_version(2));
+    assert!(is_supported_event_schema_version(EVENT_SCHEMA_VERSION));
+    assert!(!is_supported_event_schema_version(EVENT_SCHEMA_VERSION + 1));
   }
 
   fn epoch_record(epoch: u32, from: u64, through: u64) -> ContextCompactionEpoch {

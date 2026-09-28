@@ -215,6 +215,19 @@ impl BlobStore {
     self.get_relative_verified_limited(reference, u64::MAX)
   }
 
+  /// Whether a well-formed relative reference names a regular file in this session store.
+  ///
+  /// This is a reachability check, not an integrity claim; `get_relative_verified_limited`
+  /// verifies content-addressed bytes before exposing them to a caller.
+  pub fn contains_relative(&self, reference: &str) -> Result<bool, StoreError> {
+    let (path, _) = self.parse_relative(reference)?;
+    match fs::symlink_metadata(path) {
+      Ok(metadata) => Ok(metadata.file_type().is_file()),
+      Err(error) if StoreError::is_missing(&error) => Ok(false),
+      Err(error) => Err(StoreError::Io(error)),
+    }
+  }
+
   /// Read and verify a payload while bounding decoded bytes, including deflate expansion.
   pub fn get_relative_verified_limited(
     &self,

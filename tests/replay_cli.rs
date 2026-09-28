@@ -66,6 +66,7 @@ fn fixture() -> (TempDir, PathBuf, PathBuf, SessionId) {
       &session,
       4,
       AgentEvent::ToolUnknown(ToolUnknown {
+        effect: rupi_core::ToolEffectDisposition::Unverified,
         call_id: call.clone(),
         name: "write".into(),
         why: "process ended before completion".into(),

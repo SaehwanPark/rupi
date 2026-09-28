@@ -680,6 +680,7 @@ mod tests {
     let message = Message::new(
       Role::Tool,
       vec![ContentBlock::ToolResult(ToolResultBlock {
+        effect: rupi_core::ToolEffectDisposition::Unverified,
         id: ToolCallId::from_string("call_1"),
         name: "read".into(),
         state: rupi_core::ToolExecutionState::Succeeded,

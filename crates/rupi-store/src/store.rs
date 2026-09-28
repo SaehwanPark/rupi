@@ -1624,6 +1624,7 @@ impl Session {
       let mut failed = EventEnvelope::new(
         failed_meta,
         AgentEvent::ToolFailed(rupi_core::ToolFailed {
+          effect: rupi_core::ToolEffectDisposition::None,
           call_id: call.id.clone(),
           name: call.name.clone(),
           message: details.clone(),
@@ -1634,6 +1635,7 @@ impl Session {
       let message = Message::new(
         Role::Tool,
         vec![ContentBlock::ToolResult(ToolResultBlock {
+          effect: rupi_core::ToolEffectDisposition::None,
           id: call.id,
           name: call.name,
           state: ToolExecutionState::Failed,
@@ -1679,6 +1681,7 @@ impl Session {
       let mut envelope = EventEnvelope::new(
         meta,
         AgentEvent::ToolFailed(ToolFailed {
+          effect: rupi_core::ToolEffectDisposition::None,
           call_id: requested.call_id.clone(),
           name: requested.name.clone(),
           message: details.clone(),
@@ -1689,6 +1692,7 @@ impl Session {
       let message = Message::new(
         Role::Tool,
         vec![ContentBlock::ToolResult(ToolResultBlock {
+          effect: rupi_core::ToolEffectDisposition::None,
           id: requested.call_id.clone(),
           name: requested.name.clone(),
           state: ToolExecutionState::Failed,
@@ -2432,8 +2436,8 @@ fn validate_checkpoint_capsules(
       )));
     }
     let capsule = read_checkpoint_capsule(&path, session, &barrier.checkpoint_id)?;
-    if capsule.version != rupi_core::context::CAPSULE_SCHEMA_VERSION
-      || barrier.capsule_version != rupi_core::context::CAPSULE_SCHEMA_VERSION
+    if capsule.version != barrier.capsule_version
+      || !rupi_core::context::is_supported_capsule_schema_version(capsule.version)
       || capsule != barrier.capsule
     {
       return Err(StoreError::Invalid(format!(
@@ -3806,6 +3810,7 @@ fn validate_message_projection(
         completed.call_id.clone(),
         completed.name.as_str(),
         ToolExecutionState::Succeeded,
+        completed.effect,
         false,
         &invalid,
       )?;
@@ -3845,6 +3850,7 @@ fn validate_message_projection(
         failed.call_id.clone(),
         failed.name.as_str(),
         ToolExecutionState::Failed,
+        failed.effect,
         true,
         &invalid,
       )?;
@@ -3855,6 +3861,7 @@ fn validate_message_projection(
         unknown.call_id.clone(),
         unknown.name.as_str(),
         ToolExecutionState::Unknown,
+        unknown.effect,
         true,
         &invalid,
       )?;
@@ -3883,6 +3890,7 @@ fn validate_tool_result_projection(
   call_id: ToolCallId,
   name: &str,
   state: ToolExecutionState,
+  effect: rupi_core::ToolEffectDisposition,
   expected_error: bool,
   invalid: &impl Fn(&str) -> StoreError,
 ) -> Result<(), StoreError> {
@@ -3908,6 +3916,7 @@ fn validate_tool_result_projection(
   if result.id != call_id
     || result.name != name
     || !state_matches
+    || result.effect != effect
     || (expected_error && !result.is_error)
   {
     return Err(invalid("tool result metadata mismatch"));
@@ -4126,6 +4135,27 @@ fn scan_tool_lifecycles(
             "tool completed with a non-success state",
           ));
         }
+        if !requested.read_only && completed.effect == rupi_core::ToolEffectDisposition::Possible {
+          let turn_id = call.request.envelope.meta.turn_id.clone().ok_or_else(|| {
+            lifecycle_invalid(entry, "effect-uncertain ToolCompleted has no turn identity")
+          })?;
+          unresolved_order.push(request_id.clone());
+          unresolved.insert(
+            request_id.clone(),
+            UnresolvedSideEffect {
+              request: ToolRequest {
+                call_id: requested.call_id.clone(),
+                name: requested.name.clone(),
+                arguments: requested.arguments.clone(),
+              },
+              turn_id,
+              request_event_id: request_id,
+              terminal_event_id: entry.envelope.meta.event_id.clone(),
+              latest_status: None,
+              definition_fingerprint: requested.definition_fingerprint.clone(),
+            },
+          );
+        }
       }
       AgentEvent::ToolFailed(failed) => {
         let request_id = resolve_pending_tool(&pending, entry, &failed.call_id)
@@ -4153,6 +4183,30 @@ fn scan_tool_lifecycles(
           ));
         }
         started_by_terminal.insert(entry.envelope.meta.event_id.clone(), call.started);
+        if call.started
+          && !requested.read_only
+          && failed.effect != rupi_core::ToolEffectDisposition::None
+        {
+          let turn_id = call.request.envelope.meta.turn_id.clone().ok_or_else(|| {
+            lifecycle_invalid(entry, "effect-uncertain ToolFailed has no turn identity")
+          })?;
+          unresolved_order.push(request_id.clone());
+          unresolved.insert(
+            request_id.clone(),
+            UnresolvedSideEffect {
+              request: ToolRequest {
+                call_id: requested.call_id.clone(),
+                name: requested.name.clone(),
+                arguments: requested.arguments.clone(),
+              },
+              turn_id,
+              request_event_id: request_id,
+              terminal_event_id: entry.envelope.meta.event_id.clone(),
+              latest_status: None,
+              definition_fingerprint: requested.definition_fingerprint.clone(),
+            },
+          );
+        }
       }
       AgentEvent::ToolUnknown(unknown) => {
         let request_id = resolve_pending_tool(&pending, entry, &unknown.call_id)
@@ -4197,7 +4251,7 @@ fn scan_tool_lifecycles(
               },
               turn_id,
               request_event_id: request_id,
-              unknown_event_id: entry.envelope.meta.event_id.clone(),
+              terminal_event_id: entry.envelope.meta.event_id.clone(),
               latest_status: None,
               definition_fingerprint: requested.definition_fingerprint.clone(),
             },
@@ -4208,13 +4262,13 @@ fn scan_tool_lifecycles(
         let Some(side_effect) = unresolved.get_mut(&observed.request_event_id) else {
           return Err(lifecycle_invalid(
             entry,
-            "tool reconciliation does not reference an unresolved mutating Unknown",
+            "tool reconciliation does not reference an unresolved mutating tool effect",
           ));
         };
         if side_effect.request.call_id != observed.call_id
           || side_effect.request.name != observed.name
-          || side_effect.unknown_event_id != observed.unknown_event_id
-          || entry.envelope.meta.parent_event_id.as_ref() != Some(&observed.unknown_event_id)
+          || side_effect.terminal_event_id != observed.terminal_event_id
+          || entry.envelope.meta.parent_event_id.as_ref() != Some(&observed.terminal_event_id)
           || entry.envelope.meta.tool_call_id.as_ref() != Some(&observed.call_id)
           || (observed.source == ToolReconciliationSource::Operator
             && !matches!(
@@ -4224,7 +4278,7 @@ fn scan_tool_lifecycles(
         {
           return Err(lifecycle_invalid(
             entry,
-            "tool reconciliation identity disagrees with its Unknown result",
+            "tool reconciliation identity disagrees with its terminal result",
           ));
         }
         if matches!(
@@ -4583,6 +4637,7 @@ fn recover_projection_record(
         message: Message::new(
           Role::Tool,
           vec![ContentBlock::ToolResult(ToolResultBlock {
+            effect: failed.effect,
             id: failed.call_id.clone(),
             name: failed.name.clone(),
             state: ToolExecutionState::Failed,
@@ -4607,6 +4662,7 @@ fn recover_projection_record(
         message: Message::new(
           Role::Tool,
           vec![ContentBlock::ToolResult(ToolResultBlock {
+            effect: unknown.effect,
             id: unknown.call_id.clone(),
             name: unknown.name.clone(),
             state: ToolExecutionState::Unknown,
@@ -4967,6 +5023,7 @@ mod tests {
       constraints: vec!["no tokio".into()],
       current_state: "writing tests".into(),
       artifacts: vec![],
+      archived_payloads: vec![],
       unresolved: vec!["provider phase".into()],
       next_actions: vec!["cargo test".into()],
     }
@@ -4991,6 +5048,7 @@ mod tests {
       message: Message::new(
         Role::Tool,
         vec![ContentBlock::ToolResult(ToolResultBlock {
+          effect: rupi_core::ToolEffectDisposition::Unverified,
           id: call_id.clone(),
           name: "read".into(),
           state: ToolExecutionState::Succeeded,
@@ -5009,6 +5067,7 @@ mod tests {
     let mut envelope = EventEnvelope::new(
       EventMeta::new(session_id, TraceId::new()),
       AgentEvent::ToolCompleted(ToolCompleted {
+        effect: rupi_core::ToolEffectDisposition::Unverified,
         call_id,
         name: "read".into(),
         state: ToolExecutionState::Succeeded,
@@ -5177,6 +5236,7 @@ mod tests {
       .emit(&mut EventEnvelope::new(
         meta(&id, &turn),
         AgentEvent::ToolFailed(rupi_core::ToolFailed {
+          effect: rupi_core::ToolEffectDisposition::Unverified,
           call_id: ToolCallId::from_string("77777777-7777-4777-8777-777777777777"),
           name: "write".into(),
           message: "synthetic fixture did not execute".into(),
@@ -5638,6 +5698,7 @@ mod tests {
               EventEnvelope::new(
                 meta(&id, &turn),
                 AgentEvent::ToolCompleted(ToolCompleted {
+                  effect: rupi_core::ToolEffectDisposition::Unverified,
                   call_id: call_id.clone(),
                   name: name.into(),
                   state: ToolExecutionState::Succeeded,
@@ -5651,6 +5712,7 @@ mod tests {
               Message::new(
                 Role::Tool,
                 vec![ContentBlock::ToolResult(ToolResultBlock {
+                  effect: rupi_core::ToolEffectDisposition::Unverified,
                   id: call_id,
                   name: name.into(),
                   state: ToolExecutionState::Succeeded,
@@ -5696,6 +5758,7 @@ mod tests {
             let (event, state, text) = if matches!(case, Case::ToolFailed) {
               (
                 AgentEvent::ToolFailed(ToolFailed {
+                  effect: rupi_core::ToolEffectDisposition::Unverified,
                   call_id: call_id.clone(),
                   name: name.into(),
                   message: "failed output".into(),
@@ -5708,6 +5771,7 @@ mod tests {
             } else {
               (
                 AgentEvent::ToolUnknown(rupi_core::ToolUnknown {
+                  effect: rupi_core::ToolEffectDisposition::Unverified,
                   call_id: call_id.clone(),
                   name: name.into(),
                   why: "completion not observed".into(),
@@ -5722,6 +5786,7 @@ mod tests {
               Message::new(
                 Role::Tool,
                 vec![ContentBlock::ToolResult(ToolResultBlock {
+                  effect: rupi_core::ToolEffectDisposition::Unverified,
                   id: call_id,
                   name: name.into(),
                   state,
@@ -6046,6 +6111,7 @@ mod tests {
       let mut first_terminal = EventEnvelope::new(
         meta(&id, &turn),
         AgentEvent::ToolCompleted(ToolCompleted {
+          effect: rupi_core::ToolEffectDisposition::Unverified,
           call_id: call_id.clone(),
           name: "write_probe".into(),
           state: ToolExecutionState::Succeeded,
@@ -6063,6 +6129,7 @@ mod tests {
           &Message::new(
             Role::Tool,
             vec![ContentBlock::ToolResult(ToolResultBlock {
+              effect: rupi_core::ToolEffectDisposition::Unverified,
               id: call_id.clone(),
               name: "write_probe".into(),
               state: ToolExecutionState::Succeeded,
@@ -6102,6 +6169,7 @@ mod tests {
       let mut later_failure = EventEnvelope::new(
         meta(&id, &turn),
         AgentEvent::ToolFailed(ToolFailed {
+          effect: rupi_core::ToolEffectDisposition::Unverified,
           call_id: call_id.clone(),
           name: "write_probe".into(),
           message: "response ended before execution".into(),
@@ -6647,6 +6715,7 @@ mod tests {
       let mut completed = EventEnvelope::new(
         meta(&id, &turn),
         AgentEvent::ToolCompleted(ToolCompleted {
+          effect: rupi_core::ToolEffectDisposition::Unverified,
           call_id: calls[0].id.clone(),
           name: calls[0].name.clone(),
           state: ToolExecutionState::Succeeded,
@@ -6663,6 +6732,7 @@ mod tests {
           &Message::new(
             Role::Tool,
             vec![ContentBlock::ToolResult(ToolResultBlock {
+              effect: rupi_core::ToolEffectDisposition::Unverified,
               id: calls[0].id.clone(),
               name: calls[0].name.clone(),
               state: ToolExecutionState::Succeeded,
@@ -7932,6 +8002,7 @@ mod tests {
     let mut unknown = EventEnvelope::new(
       meta(&session_id, &turn_id),
       AgentEvent::ToolUnknown(ToolUnknown {
+        effect: rupi_core::ToolEffectDisposition::Unverified,
         call_id: call_id.clone(),
         name: "write".into(),
         why: "completion boundary not observed".into(),
@@ -7944,6 +8015,7 @@ mod tests {
     let result = Message::new(
       Role::Tool,
       vec![ContentBlock::ToolResult(ToolResultBlock {
+        effect: rupi_core::ToolEffectDisposition::Unverified,
         id: call_id.clone(),
         name: "write".into(),
         state: rupi_core::ToolExecutionState::Unknown,
@@ -7963,7 +8035,7 @@ mod tests {
       request_id
     );
     assert_eq!(
-      restored.unresolved_side_effects[0].unknown_event_id,
+      restored.unresolved_side_effects[0].terminal_event_id,
       unknown_id
     );
     assert!(restored.unresolved_side_effects[0].latest_status.is_none());
@@ -7973,7 +8045,7 @@ mod tests {
       call_id: call_id.clone(),
       name: "write".into(),
       request_event_id: request_id.clone(),
-      unknown_event_id: unknown_id.clone(),
+      terminal_event_id: unknown_id.clone(),
       related_turn_id: None,
       status: ReconciliationStatus::RequiresManualInspection {
         details: "cannot inspect this operation automatically".into(),
@@ -8001,7 +8073,7 @@ mod tests {
       call_id: call_id.clone(),
       name: "write".into(),
       request_event_id: request_id,
-      unknown_event_id: unknown_id.clone(),
+      terminal_event_id: unknown_id.clone(),
       related_turn_id: None,
       status: ReconciliationStatus::Unmodified {
         details: "operator confirmed no change after manual inspection".into(),
@@ -8028,6 +8100,85 @@ mod tests {
           .text()
           .contains("operator confirmed no change after manual inspection")
     }));
+  }
+
+  #[test]
+  fn restore_keeps_successful_calls_with_possible_effects_unresolved() {
+    let tmp = TempDir::new("store-success-possible-effect");
+    let opened = store(&tmp);
+    let session_id = SessionId::new();
+    let turn_id = TurnId::new();
+    let call_id = ToolCallId::new();
+    let mut session = opened.begin(header(&session_id)).unwrap();
+    let mut requested = EventEnvelope::new(
+      meta(&session_id, &turn_id),
+      AgentEvent::ToolRequested(ToolRequested {
+        call_id: call_id.clone(),
+        name: "remote_write".into(),
+        arguments: serde_json::json!({}),
+        read_only: false,
+        definition_fingerprint: None,
+      }),
+    );
+    requested.meta.tool_call_id = Some(call_id.clone());
+    let request_id = requested.meta.event_id.clone();
+    session.emit(&mut requested).unwrap();
+
+    let mut started = EventEnvelope::new(
+      meta(&session_id, &turn_id),
+      AgentEvent::ToolStarted(ToolStarted {
+        call_id: call_id.clone(),
+        name: "remote_write".into(),
+      }),
+    );
+    started.meta.tool_call_id = Some(call_id.clone());
+    started.meta.parent_event_id = Some(request_id.clone());
+    let started_id = started.meta.event_id.clone();
+    session.emit(&mut started).unwrap();
+
+    let mut completed = EventEnvelope::new(
+      meta(&session_id, &turn_id),
+      AgentEvent::ToolCompleted(ToolCompleted {
+        call_id: call_id.clone(),
+        name: "remote_write".into(),
+        state: ToolExecutionState::Succeeded,
+        effect: rupi_core::ToolEffectDisposition::Possible,
+        duration_ms: 1,
+        status: None,
+        reduced: false,
+        blob: None,
+        visible_bytes: "completion observed; effect still requires inspection".len() as u64,
+      }),
+    );
+    completed.meta.tool_call_id = Some(call_id.clone());
+    completed.meta.parent_event_id = Some(started_id);
+    let terminal_event_id = completed.meta.event_id.clone();
+    let result = Message::new(
+      Role::Tool,
+      vec![ContentBlock::ToolResult(ToolResultBlock {
+        effect: rupi_core::ToolEffectDisposition::Possible,
+        id: call_id,
+        name: "remote_write".into(),
+        state: ToolExecutionState::Succeeded,
+        text: "completion observed; effect still requires inspection".into(),
+        is_error: false,
+        reduced: false,
+        recovery_ref: None,
+      })],
+    );
+    session.emit_message(&mut completed, &result).unwrap();
+    session.finish().unwrap();
+
+    let restored = opened.restore(&session_id).unwrap();
+    assert_eq!(restored.unresolved_side_effects.len(), 1);
+    assert_eq!(
+      restored.unresolved_side_effects[0].request_event_id,
+      request_id
+    );
+    assert_eq!(
+      restored.unresolved_side_effects[0].terminal_event_id,
+      terminal_event_id
+    );
   }
 
   #[test]
@@ -8064,6 +8215,7 @@ mod tests {
         .emit(&mut EventEnvelope::new(
           meta(&session_id, &turn_id),
           AgentEvent::ToolCompleted(ToolCompleted {
+            effect: rupi_core::ToolEffectDisposition::Unverified,
             call_id: call_id.clone(),
             name: "read".into(),
             state: ToolExecutionState::Succeeded,
@@ -8159,6 +8311,7 @@ mod tests {
             definition_fingerprint: None,
           }),
           AgentEvent::ToolCompleted(ToolCompleted {
+            effect: rupi_core::ToolEffectDisposition::Unverified,
             call_id,
             name: "read".into(),
             state: ToolExecutionState::Succeeded,

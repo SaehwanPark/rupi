@@ -45,6 +45,16 @@ pub trait McpTransport: Send + Sync {
   /// Whether the transport channel is still active and connected.
   fn is_alive(&self) -> bool;
 
+  /// Whether server-initiated notifications can be observed on this transport.
+  fn supports_server_notifications(&self) -> bool {
+    false
+  }
+
+  /// Consume a server's tool-list-changed notification, if one was received.
+  fn take_tool_list_changed(&self) -> bool {
+    false
+  }
+
   /// Record the negotiated MCP protocol version for transports that put it on the wire.
   fn set_protocol_version(&self, _version: &str) {}
 
@@ -62,6 +72,13 @@ const MAX_STDIO_RESPONSE_LINE_BYTES: usize = 1024 * 1024;
 const MAX_STDIO_REQUEST_BYTES: usize = 1024 * 1024;
 const MAX_STDIO_DIAGNOSTIC_LINE_BYTES: usize = 64 * 1024;
 const RESPONSE_POLL_INTERVAL: Duration = Duration::from_millis(50);
+const TOOLS_LIST_CHANGED_NOTIFICATION: &str = "notifications/tools/list_changed";
+
+fn is_tools_list_changed_notification(message: &str) -> bool {
+  serde_json::from_str::<JsonRpcNotification>(message).is_ok_and(|notification| {
+    notification.jsonrpc == "2.0" && notification.method == TOOLS_LIST_CHANGED_NOTIFICATION
+  })
+}
 
 type PendingResponseSender = SyncSender<Result<Value, McpError>>;
 type PendingRequests = Arc<Mutex<HashMap<u64, PendingResponseSender>>>;
@@ -75,6 +92,7 @@ pub struct StdioTransport {
   timeout: Duration,
   child: Arc<Mutex<Option<Child>>>,
   stderr_log: Arc<Mutex<Vec<String>>>,
+  tool_list_changed: Arc<AtomicBool>,
 }
 
 impl StdioTransport {
@@ -118,11 +136,13 @@ impl StdioTransport {
     let pending: PendingRequests = Arc::new(Mutex::new(HashMap::new()));
     let alive = Arc::new(AtomicBool::new(true));
     let stderr_log = Arc::new(Mutex::new(Vec::new()));
+    let tool_list_changed = Arc::new(AtomicBool::new(false));
 
     // Background thread to read stdout JSON-RPC messages.
     {
       let pending_clone = Arc::clone(&pending);
       let alive_clone = Arc::clone(&alive);
+      let tool_list_changed_clone = Arc::clone(&tool_list_changed);
       std::thread::Builder::new()
         .name("mcp-stdout-reader".into())
         .spawn(move || {
@@ -174,6 +194,8 @@ impl StdioTransport {
                   let _ = sender.send(outcome);
                 }
               }
+            } else if is_tools_list_changed_notification(trimmed) {
+              tool_list_changed_clone.store(true, Ordering::SeqCst);
             }
           }
           alive_clone.store(false, Ordering::SeqCst);
@@ -222,6 +244,7 @@ impl StdioTransport {
       timeout: DEFAULT_REQUEST_TIMEOUT,
       child: Arc::new(Mutex::new(Some(child))),
       stderr_log,
+      tool_list_changed,
     })
   }
 
@@ -367,6 +390,14 @@ impl McpTransport for StdioTransport {
 
   fn is_alive(&self) -> bool {
     self.alive.load(Ordering::SeqCst)
+  }
+
+  fn supports_server_notifications(&self) -> bool {
+    true
+  }
+
+  fn take_tool_list_changed(&self) -> bool {
+    self.tool_list_changed.swap(false, Ordering::SeqCst)
   }
 
   fn close(&mut self) -> Result<(), McpError> {
@@ -851,6 +882,7 @@ pub struct MockTransport {
   calls: Mutex<Vec<(String, Option<Value>)>>,
   notifications: Mutex<Vec<(String, Option<Value>)>>,
   alive: AtomicBool,
+  tool_list_changed: AtomicBool,
 }
 
 impl MockTransport {
@@ -860,6 +892,7 @@ impl MockTransport {
       calls: Mutex::new(Vec::new()),
       notifications: Mutex::new(Vec::new()),
       alive: AtomicBool::new(true),
+      tool_list_changed: AtomicBool::new(false),
     }
   }
 
@@ -877,6 +910,10 @@ impl MockTransport {
 
   pub fn recorded_notifications(&self) -> Vec<(String, Option<Value>)> {
     self.notifications.lock().unwrap().clone()
+  }
+
+  pub fn signal_tool_list_changed(&self) {
+    self.tool_list_changed.store(true, Ordering::SeqCst);
   }
 }
 
@@ -913,6 +950,14 @@ impl McpTransport for MockTransport {
     self.alive.load(Ordering::SeqCst)
   }
 
+  fn supports_server_notifications(&self) -> bool {
+    true
+  }
+
+  fn take_tool_list_changed(&self) -> bool {
+    self.tool_list_changed.swap(false, Ordering::SeqCst)
+  }
+
   fn close(&mut self) -> Result<(), McpError> {
     self.alive.store(false, Ordering::SeqCst);
     Ok(())
@@ -924,6 +969,19 @@ mod tests {
   use super::*;
   use serde_json::json;
   use std::{net::TcpListener, sync::mpsc, thread};
+
+  #[test]
+  fn recognizes_only_valid_tool_list_change_notifications() {
+    assert!(is_tools_list_changed_notification(
+      r#"{"jsonrpc":"2.0","method":"notifications/tools/list_changed"}"#
+    ));
+    assert!(!is_tools_list_changed_notification(
+      r#"{"jsonrpc":"1.0","method":"notifications/tools/list_changed"}"#
+    ));
+    assert!(!is_tools_list_changed_notification(
+      r#"{"jsonrpc":"2.0","method":"notifications/prompts/list_changed"}"#
+    ));
+  }
 
   fn http_fixture(
     responses: Vec<String>,

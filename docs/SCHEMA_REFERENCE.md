@@ -1,6 +1,6 @@
 # Schema reference: events, session records, provenance
 
-> **Current for v0.2.2 (2026-09-20).** This document describes the serialized schemas and
+> **Current for v0.2.2 (2026-09-28).** This document describes the serialized schemas and
 > verified production boundaries from the audited mainline. Source remains authoritative
 > when a line reference changes; release-specific history belongs in `CHANGELOG.md` and
 > `docs/archive/`.
@@ -43,13 +43,14 @@ Every durable event line is an `EventEnvelope` (`event.rs:110`):
 
 | Field | Type | Notes |
 | --- | --- | --- |
-| `v` | `u32` | stamped from `EVENT_SCHEMA_VERSION: u32 = 1` (`event.rs:44`) |
+| `v` | `u32` | stamped from `EVENT_SCHEMA_VERSION: u32 = 3`; readers also support v1/v2 (`event.rs:49`) |
 | `meta` | `EventMeta` | identity and ordering, below |
 | `event` | `AgentEvent` | `#[serde(flatten)]` (`event.rs:113`) |
 
 `AgentEvent` is internally tagged `#[serde(rename_all = "snake_case", tag = "type")]`
-(`event.rs:162`), so one journal line is
-`{"v":1,"meta":{…},"type":"<variant>","<payload fields…>"}`.
+(`event.rs:162`), so a new journal line is
+`{"v":3,"meta":{…},"type":"<variant>","<payload fields…>"}`. Older supported
+records may retain `v:1` or `v:2` in a mixed append-only trace.
 
 `EventMeta` (`event.rs:48`) is carried by every event:
 
@@ -187,21 +188,25 @@ Producers: yes (`crates/rupi-runtime/src/turn.rs:1110`)
 Purpose: the call completed with a committed result.
 Fields: `call_id: ToolCallId`, `name: String`, `state: ToolExecutionState` (*"Always
 [`ToolExecutionState::Succeeded`]; kept explicit so that the journal states the claim
-instead of implying it."*), `duration_ms: u64`, `status: Option<i64>`, `reduced: bool`
-(`#[serde(default)]`), `blob: Option<BlobRef>`, `visible_bytes: u64`.
+instead of implying it."*), `effect: ToolEffectDisposition`, `duration_ms: u64`,
+`status: Option<i64>`, `reduced: bool` (`#[serde(default)]`), `blob: Option<BlobRef>`,
+`visible_bytes: u64`. Missing legacy `effect` fields deserialize as `Unverified`; execution
+state and external effect evidence are independent.
 Producers: yes (`crates/rupi-runtime/src/turn.rs:1175`)
 
 #### `tool_failed` — `AgentEvent::ToolFailed` (`event.rs:231`), payload `event.rs:414`
 
 Purpose: the call completed with an observed failure.
-Fields: `call_id: ToolCallId`, `name: String`, `message: String`, `duration_ms: u64`,
-`status: Option<i64>`.
+Fields: `call_id: ToolCallId`, `name: String`, `message: String`,
+`effect: ToolEffectDisposition`, `duration_ms: u64`, `status: Option<i64>`. A failed
+mutating call may have crossed an external mutation boundary.
 Producers: yes (`crates/rupi-runtime/src/turn.rs:1023`)
 
 #### `tool_unknown` — `AgentEvent::ToolUnknown` (`event.rs:237`), payload `event.rs:424`
 
 Purpose: completion could not be observed, which is not the same as failure.
-Fields: `call_id: ToolCallId`, `name: String`, `why: String`, `mutating: bool`.
+Fields: `call_id: ToolCallId`, `name: String`, `why: String`,
+`effect: ToolEffectDisposition`, `mutating: bool`.
 Producers: yes (`crates/rupi-runtime/src/turn.rs:1196`)
 
 #### `external_context_retrieved` — `AgentEvent::ExternalContextRetrieved` (`event.rs:242`), payload `event.rs:435`
@@ -378,12 +383,14 @@ strings for an internally-tagged union is the event-side one at
 `"model_epoch_started"`, `"user_message"`, `"model_request_started"`,
 `"model_request_completed"`, `"turn_completed"`).
 
-`SESSION_SCHEMA_VERSION: u32 = 3` (`session.rs`) is stamped into new headers.
-Version 1 remains readable for files using only its original record variants;
-version-1 files containing the version-2 `reduction` record are rejected rather
-than partially read or silently shortened. Version 2 remains readable with a
-zero/default checkpoint context epoch. A file claiming a newer version is also
-refused (`crates/rupi-store/src/session_log.rs`).
+`SESSION_SCHEMA_VERSION: u32 = 6` (`session.rs`) is stamped into new headers.
+Version 2 added the `reduction` record, version 3 added checkpoint context epochs,
+version 4 persisted message origin, version 5 bound origin to canonical event evidence
+and stored typed derived-summary state, and version 6 adds tool-effect evidence plus
+typed archived-payload summary state. Older supported versions are migrated or read with
+serde defaults; a version-1 file containing the version-2 `reduction` record is refused
+rather than partially read, and a future version is rejected
+(`crates/rupi-store/src/session_log.rs`).
 
 ### 2.3 Record payload fields, quoted from `session.rs`
 
@@ -431,7 +438,9 @@ than re-expanding history after failover or resume.
 `CheckpointCreated` event and L3 completion. Modern `Store::restore` refuses an
 incomplete barrier lifecycle rather than guessing the retained tail; direct
 legacy session-log reads may still stage a barrier for compatibility. The
-capsule is "duplicated here so that resume needs one read" (`session.rs:110-111`).
+capsule is "duplicated here so that resume needs one read" (`session.rs:110-111`). Capsule
+schema v3 adds bounded typed `archived_payloads`; v1/v2 capsules remain readable with an
+empty collection when the field is absent.
 
 `SessionSummary` (`session.rs:120`) is not a journal line. It is the listing entry —
 `session_id: SessionId`, `started_at_ms: u64`, `working_dir: String`, `model: ModelRef`,

@@ -149,10 +149,10 @@ impl ExecTool {
       None => runtime.workspace.root().to_path_buf(),
     };
     if !cwd.is_dir() {
-      return Ok(ToolOutcome::failed(format!(
-        "exec: '{}' is not a directory",
-        cwd.display()
-      )));
+      return Ok(
+        ToolOutcome::failed(format!("exec: '{}' is not a directory", cwd.display()))
+          .with_effect(rupi_core::ToolEffectDisposition::None),
+      );
     }
 
     // The command is *itself* the escape hatch. Passing it through a shell is the
@@ -427,11 +427,15 @@ fn finish(
     if text.trim().is_empty() {
       text.push_str("(no output)");
     }
-    let mut outcome = ToolOutcome::succeeded(text).with_status(code);
+    let mut outcome = ToolOutcome::succeeded(text)
+      .with_effect(rupi_core::ToolEffectDisposition::Unverified)
+      .with_status(code);
     outcome.reduced = drained.truncated;
     return Ok(with_elapsed(outcome, elapsed));
   }
-  let mut outcome = ToolOutcome::failed(text).with_status(code);
+  let mut outcome = ToolOutcome::failed(text)
+    .with_effect(rupi_core::ToolEffectDisposition::Possible)
+    .with_status(code);
   outcome.reduced = drained.truncated;
   Ok(with_elapsed(outcome, elapsed))
 }
@@ -584,6 +588,7 @@ mod tests {
     assert!(outcome.text.contains("boom"), "{}", outcome.text);
     assert_eq!(outcome.status, Some(7));
     assert_eq!(outcome.state, ToolExecutionState::Failed);
+    assert_eq!(outcome.effect, rupi_core::ToolEffectDisposition::Possible);
   }
 
   #[test]

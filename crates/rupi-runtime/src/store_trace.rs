@@ -226,6 +226,14 @@ impl Trace for StoreTrace {
     true
   }
 
+  fn payload_ref_exists(&self, reference: &str) -> bool {
+    self
+      .session
+      .blobs()
+      .contains_relative(reference)
+      .unwrap_or(false)
+  }
+
   fn read_payload_range(
     &self,
     reference: &str,
@@ -596,6 +604,7 @@ mod tests {
     let mut failed = EventEnvelope::new(
       failed_meta,
       AgentEvent::ToolFailed(ToolFailed {
+        effect: rupi_core::ToolEffectDisposition::Unverified,
         call_id,
         name: "write".into(),
         message: "tool was not executed".into(),

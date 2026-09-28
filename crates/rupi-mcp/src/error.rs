@@ -23,6 +23,8 @@ pub enum McpError {
   Timeout,
   /// Execution was cancelled by the caller.
   Cancelled,
+  /// MCP tool catalog changed and its bindings are disabled until re-enabled.
+  CatalogStale,
   /// MCP tool call failed.
   ToolExecution(String),
   /// Protocol version negotiation failed.
@@ -52,6 +54,10 @@ impl fmt::Display for McpError {
       },
       Self::Timeout => write!(f, "MCP operation timed out"),
       Self::Cancelled => write!(f, "MCP operation was cancelled"),
+      Self::CatalogStale => write!(
+        f,
+        "MCP tool catalog changed; disable and re-enable the server to refresh its tool bindings"
+      ),
       Self::ToolExecution(msg) => write!(f, "MCP tool execution error: {msg}"),
       Self::NegotiationFailed(msg) => write!(f, "MCP negotiation failed: {msg}"),
     }

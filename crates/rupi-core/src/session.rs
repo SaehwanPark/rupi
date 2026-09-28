@@ -33,8 +33,9 @@ use crate::{
 /// bounds on compaction records. Version 3 adds the checkpoint context epoch;
 /// version 4 persists message origin independently of provider role. Version 5
 /// binds origins to canonical event evidence and persists typed derived-summary
-/// state. Ambiguous legacy user events remain unattributed.
-pub const SESSION_SCHEMA_VERSION: u32 = 5;
+/// state. Version 6 adds tool-effect evidence and typed archived-payload summary state.
+/// Ambiguous legacy user events remain unattributed.
+pub const SESSION_SCHEMA_VERSION: u32 = 6;
 
 /// One line of `session.jsonl`.
 #[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize)]
@@ -188,13 +189,13 @@ pub struct InterruptedToolCall {
   pub definition_fingerprint: Option<ToolDefinitionFingerprint>,
 }
 
-/// A terminal `ToolUnknown` that may still have an unresolved mutating side effect.
+/// A terminal mutating tool outcome whose effect evidence is still unresolved.
 #[derive(Debug, Clone, PartialEq, Eq)]
 pub struct UnresolvedSideEffect {
   pub request: ToolRequest,
   pub turn_id: TurnId,
   pub request_event_id: EventId,
-  pub unknown_event_id: EventId,
+  pub terminal_event_id: EventId,
   /// Latest persisted inspection result, if reconciliation has already been attempted.
   pub latest_status: Option<ReconciliationStatus>,
   /// Definition identity captured at request time; mismatches require manual inspection.
@@ -275,7 +276,10 @@ mod tests {
     });
     let line = serde_json::to_string(&header).unwrap();
     assert!(line.contains("\"type\":\"header\""), "{line}");
-    assert!(line.contains("\"version\":5"), "{line}");
+    assert!(
+      line.contains(&format!("\"version\":{SESSION_SCHEMA_VERSION}")),
+      "{line}"
+    );
     assert_eq!(
       serde_json::from_str::<SessionRecord>(&line).unwrap(),
       header
@@ -319,6 +323,7 @@ mod tests {
         path: "crates/rupi-core/src/session.rs".into(),
         note: "schema".into(),
       }],
+      archived_payloads: Vec::new(),
       unresolved: Vec::new(),
       next_actions: vec!["store implementation".into()],
     };

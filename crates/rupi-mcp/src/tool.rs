@@ -75,6 +75,16 @@ impl Tool for McpTool {
     self.definition.input_schema.clone()
   }
 
+  fn preflight(&self, _request: &ToolRequest) -> Result<(), ToolError> {
+    if self.client.tool_catalog_stale() {
+      Err(ToolError::new(
+        "MCP tool catalog changed; disable and re-enable the server to refresh its tool bindings",
+      ))
+    } else {
+      Ok(())
+    }
+  }
+
   fn execute(
     &self,
     request: &ToolRequest,
@@ -95,11 +105,7 @@ impl Tool for McpTool {
       } else {
         "MCP tool call exceeded its deadline before dispatch"
       };
-      return Ok(if self.read_only {
-        ToolOutcome::failed(message)
-      } else {
-        ToolOutcome::unknown(message)
-      });
+      return Ok(ToolOutcome::failed(message).with_effect(rupi_core::ToolEffectDisposition::None));
     }
     match self.client.call_tool_with_context(
       &self.definition.name,
@@ -113,11 +119,24 @@ impl Tool for McpTool {
         }
 
         if res.is_error == Some(true) {
-          Ok(ToolOutcome::failed(text))
+          let outcome = ToolOutcome::failed(text);
+          Ok(if self.read_only {
+            outcome
+          } else {
+            outcome.with_effect(rupi_core::ToolEffectDisposition::Possible)
+          })
         } else {
-          Ok(ToolOutcome::succeeded(text))
+          Ok(ToolOutcome::succeeded(text).with_effect(if self.read_only {
+            rupi_core::ToolEffectDisposition::None
+          } else {
+            rupi_core::ToolEffectDisposition::Unverified
+          }))
         }
       }
+      Err(crate::error::McpError::CatalogStale) => Ok(ToolOutcome::failed(
+        "MCP tool catalog changed before dispatch; no remote call was made. Disable and re-enable the server to refresh bindings.",
+      )
+      .with_effect(rupi_core::ToolEffectDisposition::None)),
       Err(err) => {
         let err_msg = err.to_string();
         // Invariant defense: If a mutating tool's execution status is uncertain
@@ -186,6 +205,87 @@ mod tests {
   }
 
   #[test]
+  fn stale_catalog_fails_before_mutating_dispatch() {
+    let mock = Arc::new(MockTransport::new());
+    mock.on(
+      "initialize",
+      json!({
+        "protocolVersion": "2024-11-05",
+        "capabilities": {"tools": {"listChanged": true}},
+        "serverInfo": {"name": "db", "version": "1.0.0"}
+      }),
+    );
+    let client = Arc::new(McpClient::new(mock.clone()));
+    client
+      .initialize()
+      .expect("notification-capable client activates");
+    let tool = McpTool::new(
+      "db",
+      McpToolDefinition {
+        name: "delete_record".into(),
+        description: None,
+        input_schema: json!({"type":"object"}),
+      },
+      Arc::clone(&client),
+      false,
+    );
+    let request = ToolRequest {
+      call_id: ToolCallId::new(),
+      name: "mcp__db__delete_record".into(),
+      arguments: json!({"id": 7}),
+    };
+    mock.signal_tool_list_changed();
+    assert!(tool.preflight(&request).is_err());
+
+    let outcome = tool
+      .execute(&request, &mut ChunkCollector(Vec::new()))
+      .expect("stale binding becomes a terminal failed outcome");
+
+    assert_eq!(outcome.state, ToolExecutionState::Failed);
+    assert_eq!(outcome.effect, rupi_core::ToolEffectDisposition::None);
+    assert!(client.tool_catalog_stale());
+    assert!(
+      mock
+        .recorded_calls()
+        .iter()
+        .all(|(method, _)| method != "tools/call"),
+      "stale tool binding must not dispatch to the server"
+    );
+  }
+
+  #[test]
+  fn mutating_tool_error_has_possible_effect() {
+    let mock = Arc::new(MockTransport::new());
+    mock.on(
+      "tools/call",
+      json!({"content":[{"type":"text","text":"partial update failed"}],"isError":true}),
+    );
+    let client = Arc::new(McpClient::new(mock));
+    let tool = McpTool::new(
+      "db",
+      McpToolDefinition {
+        name: "update_record".into(),
+        description: None,
+        input_schema: json!({"type":"object"}),
+      },
+      client,
+      false,
+    );
+    let request = ToolRequest {
+      call_id: ToolCallId::new(),
+      name: "mcp__db__update_record".into(),
+      arguments: json!({"id": 7}),
+    };
+
+    let outcome = tool
+      .execute(&request, &mut ChunkCollector(Vec::new()))
+      .expect("tool-level error is an observed failed result");
+
+    assert_eq!(outcome.state, ToolExecutionState::Failed);
+    assert_eq!(outcome.effect, rupi_core::ToolEffectDisposition::Possible);
+  }
+
+  #[test]
   fn test_mcp_mutating_tool_uncertainty_defense() {
     let mock = Arc::new(MockTransport::new());
     // No mock response registered -> transport returns error
@@ -210,7 +310,9 @@ mod tests {
     // Must be unknown because mutation completion could not be observed!
     assert_eq!(outcome.state, ToolExecutionState::Unknown);
     assert_eq!(
-      outcome.state.replay_decision(&tool.metadata()),
+      outcome
+        .state
+        .replay_decision_with_effect(&tool.metadata(), outcome.effect),
       ReplayDecision::ReconcileFirst
     );
   }

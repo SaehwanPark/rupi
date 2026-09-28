@@ -108,18 +108,29 @@ impl AppendTool {
     let path = arg_str(request, "path")?;
     let contents = arg_str(request, "contents")?;
     if context.is_cancelled_or_expired() {
-      return Ok(ToolOutcome::failed(
-        "append: cancelled before opening the file",
-      ));
+      return Ok(
+        ToolOutcome::failed("append: cancelled before opening the file")
+          .with_effect(rupi_core::ToolEffectDisposition::None),
+      );
     }
     let resolved = self
       .runtime
       .workspace
       .write_path(path)
       .map_err(|error| ToolError::new(error.to_string()))?;
+    if contents.is_empty() {
+      return Ok(
+        ToolOutcome::succeeded(format!(
+          "append to '{}' contained no bytes; no state changed",
+          resolved.display()
+        ))
+        .with_effect(rupi_core::ToolEffectDisposition::None),
+      );
+    }
     if let Some(parent) = resolved.parent() {
-      fs::create_dir_all(parent)
-        .map_err(|error| ToolError::new(format!("append: cannot create parent: {error}")))?;
+      fs::create_dir_all(parent).map_err(|error| {
+        ToolError::after_start(format!("append: cannot create parent: {error}"))
+      })?;
     }
 
     let deadline = Deadline::new(Duration::from_secs(30));
@@ -144,12 +155,15 @@ impl AppendTool {
       )));
     }
 
-    Ok(ToolOutcome::succeeded(format!(
-      "appended {} bytes to '{}' [in {} ms]",
-      contents.len(),
-      resolved.display(),
-      deadline.elapsed_ms()
-    )))
+    Ok(
+      ToolOutcome::succeeded(format!(
+        "appended {} bytes to '{}' [in {} ms]",
+        contents.len(),
+        resolved.display(),
+        deadline.elapsed_ms()
+      ))
+      .with_effect(rupi_core::ToolEffectDisposition::Changed),
+    )
   }
 }
 
@@ -189,9 +203,29 @@ mod tests {
       .execute(&request("log.txt", "second\n"), &mut recorder)
       .unwrap();
     assert!(!outcome.is_error);
+    assert_eq!(outcome.effect, rupi_core::ToolEffectDisposition::Changed);
     assert_eq!(
       fs::read_to_string(dir.path().join("log.txt")).unwrap(),
       "first\nsecond\n"
+    );
+  }
+
+  #[test]
+  fn empty_append_is_a_no_effect_success() {
+    let dir = tempfile::tempdir().unwrap();
+    fs::write(dir.path().join("log.txt"), "existing\n").unwrap();
+    let tool = AppendTool::new(Runtime::new(Workspace::new(dir.path()).unwrap()));
+    let mut recorder = Recorder::default();
+
+    let outcome = tool
+      .execute(&request("log.txt", ""), &mut recorder)
+      .unwrap();
+
+    assert_eq!(outcome.state, ToolExecutionState::Succeeded);
+    assert_eq!(outcome.effect, rupi_core::ToolEffectDisposition::None);
+    assert_eq!(
+      fs::read_to_string(dir.path().join("log.txt")).unwrap(),
+      "existing\n"
     );
   }
 
@@ -206,7 +240,8 @@ mod tests {
       ReconciliationStatus::RequiresManualInspection { .. }
     ));
     assert_eq!(
-      ToolExecutionState::Unknown.replay_decision(&tool.metadata()),
+      ToolExecutionState::Unknown
+        .replay_decision_with_effect(&tool.metadata(), rupi_core::ToolEffectDisposition::Possible,),
       rupi_core::ReplayDecision::ReconcileFirst
     );
   }
