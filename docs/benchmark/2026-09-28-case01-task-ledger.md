@@ -449,4 +449,39 @@ enabled, at both low and off reasoning levels. This does not reproduce the
 long-task timeout. An upstream [llama.cpp issue about required tool choice on
 preserve-reasoning templates](https://github.com/ggml-org/llama.cpp/issues/27217)
 matches one endpoint capability, but the local smoke calls did not show the
-failure. Next, compare low and off reasoning in the full matched benchmark.
+failure. The matched off reasoning run is recorded below.
+
+## Matched off reasoning comparison: `bench-20260928-case01-thinking-off-matched3`
+
+Commit `7c68ce8` made the client thinking level configurable so both agents
+could use `off`; it remains `low` by default. This run kept the same model,
+prompts, three-turn limit, 300-second outer timeout, eight-request cap, and
+Rupi progress-tool configuration. The local endpoint was build
+`b10909-a2878d30d`.
+
+Checks are project tests / oracle / help; `1` means the command failed.
+
+| Rupi turn | Elapsed | Input / output | Tools | Checks | Runtime result |
+| --- | ---: | ---: | --- | --- | --- |
+| 1 | 300,208 ms (timeout) | 7,084 / 3,065 | read, write, write | 1 / 1 / 1 | timed out |
+| 2 | 4,971 ms | 149 / 53 | exec | 1 / 1 / 1 | needs reconciliation |
+| 3 | 246 ms | 0 / 0 | none | 1 / 1 / 1 | needs reconciliation |
+
+Rupi used 7,233 input and 3,118 output tokens (10,351 inference-work tokens)
+over 305,425 ms. It wrote only `tasklog/__init__.py` and `tasklog/model.py`.
+The package had no `__main__.py`, so the oracle reported that `tasklog` could
+not be run as a module. The `tests/` directory was also absent. The unresolved
+`exec` effect stopped progress in turn 2; turn 3 made no model request.
+
+| Pi turn | Elapsed | Input / output | Tools | Checks | Runtime result |
+| --- | ---: | ---: | --- | --- | --- |
+| 1 | 300,279 ms (timeout) | 3,525 / 293 | ls, read, bash | 1 / 1 / 1 | timed out |
+| 2 | 300,371 ms (timeout) | 149 / 116 | bash | 1 / 1 / 1 | timed out |
+| 3 | 300,232 ms (timeout) | 0 / 0 | none | 1 / 1 / 1 | timed out |
+
+Pi used 3,674 input and 409 output tokens (4,083 inference-work tokens) over
+900,882 ms and created no project files. The oracle could not import `tasklog`,
+and unittest discovery failed because there was no importable `tests/`
+directory. Neither agent resolved Case 01, so this is not a win. Off reasoning
+did not get either agent past the first implementation step; Rupi's quick
+reconciliation stop accounts for its lower elapsed time than the low run.
