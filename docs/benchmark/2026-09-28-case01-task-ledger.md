@@ -438,8 +438,15 @@ resolved Case 01. The first-write prompt did not make Rupi write in turn 1 and
 helped Pi reach further into the implementation, so it did not improve Rupi's
 result against Pi.
 
-The progress boundary remains advisory: after it was injected, Rupi still spent
-a request on reasoning and timed out without calling `write`. Next, review a
-bounded enforcement option that restricts the post-boundary request to its
-configured progress tools, while preserving the unresolved-effect stop for
-mutating tool calls.
+The runtime already narrows the next request to configured progress tools,
+marks tool choice as required, and rejects a text-only response until a progress
+tool succeeds. Unit coverage exercises those rules. The provider adapter maps
+`ToolChoice::Required` to the OpenAI-compatible `tool_choice: "required"` field.
+The local llama.cpp endpoint is build `b10909-a2878d30d` and reports
+`supports_preserve_reasoning: true`. A minimal direct request returned the
+required tool call once with prompt caching disabled and 3/3 times with caching
+enabled, at both low and off reasoning levels. This does not reproduce the
+long-task timeout. An upstream [llama.cpp issue about required tool choice on
+preserve-reasoning templates](https://github.com/ggml-org/llama.cpp/issues/27217)
+matches one endpoint capability, but the local smoke calls did not show the
+failure. Next, compare low and off reasoning in the full matched benchmark.
