@@ -27,10 +27,26 @@ the local ignored benchmark run directory. The broader original benchmark also
 recorded 0/10 resolved cases for each client. Those results predate the current
 runtime and must be treated as historical baseline only.
 
-## Current-run status
+## Current matched run
 
-Pending. Rebuild the merged `main` runtime, run the matched Case 01 comparison,
-inspect per-turn outputs and oracle results, and identify one concrete `rupi`
-runtime cause before changing code. Record the run ID, exact command, outcome,
-token and wall measurements, checks, review, and residual limitations below as
-work proceeds.
+- Run ID: `bench-20260928-case01-main`
+- Command: `pwsh -NoProfile -File bench/compare-pi-rupi.ps1 -RunId
+  bench-20260928-case01-main -CaseId 01-task-ledger -Agent all -MaxTurns 2
+  -TurnTimeoutSeconds 300 -MaxModelRequestsPerTurn 8`
+- Server: llama.cpp `0.4.0-dev` build `10909`, `qwen3.8-flash-next`, 262,144
+  context, `xhigh` server default; both clients request `low` thinking.
+- Current build: merged `main` at PR #132 (`6e8a1e6`).
+
+| Agent / turn | Result | Requests | Input / output tokens | Tools | Project / oracle |
+| --- | --- | ---: | ---: | ---: | --- |
+| `rupi` 1 | timeout, 300,311 ms; no generated files | 4 started, 3 completed | 6,683 / 4,901 | 5, all completed | 1 / 1 |
+| `rupi` 2 | timeout, 300,321 ms; no generated files | 2 completed | 149 / 107 | 1, completed | 1 / 1 |
+| Pi 1 | timeout, 300,330 ms; wrote three package files | 5 | 3,740 / 4,603 | 5 | 1 / 1 |
+| Pi 2 | in progress | — | — | — | — |
+
+Both agents' project/oracle failures after the first turn establish that the
+initial attempt is incomplete. Rupi has not yet reached a write call in this
+run; all six recorded tool calls completed without a tool failure. Pi's three
+files are partial progress, not resolution. Do not attribute the gap to a
+runtime defect until Pi's recovery completes and the request/tool traces are
+compared. Full turn artifacts remain in ignored `.benchmark/` storage.
