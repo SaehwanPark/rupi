@@ -401,3 +401,45 @@ executable package entry point with working task creation, then measure again.
 The timeout setting is per provider request, so a request started late in a turn
 can still outlast the remaining outer budget; Rupi's first turn hit that case
 after starting its third request.
+
+## Matched first-write prompt comparison
+
+Run: `bench-20260928-case01-first-write-code-low-matched3`.
+
+Commit `afa3ccd` strengthened the shared initial prompt: the first write had to
+create runnable application code with one persistent command path. Both agents
+used the same clarified case spec from `3125fe6`, model, low server default,
+write-only Rupi boundary, 270-second provider timeout, and three 300-second turns.
+
+| Agent / turn | Elapsed | Requests started / completed | Input / output | Project / oracle / help |
+| --- | ---: | ---: | ---: | ---: |
+| Rupi 1 | 291,376 ms | 2 / 2 | 3,391 / 68 | 1 / 1 / 1 |
+| Rupi 2 | 300,270 ms | 3 / 2 | 3,304 / 1,803 | 1 / 1 / 1 |
+| Rupi 3 | 300,262 ms | 2 / 2 | 149 / 4,038 | 1 / 1 / 1 |
+| Pi 1 | 300,318 ms | 3 / 3 | 3,821 / 5,124 | 1 / 1 / 1 |
+| Pi 2 | 300,259 ms | 4 / 4 | 319 / 4,423 | 1 / 1 / 1 |
+| Pi 3 | 300,283 ms | 8 / 8 | 571 / 5,419 | 1 / 1 / 0 |
+
+Rupi used 6,844 input and 5,909 output tokens (12,753 inference-work tokens)
+over 891,908 ms. Its first turn read and inspected, then ended with a recorded
+provider timeout before the outer watchdog; it did not write. Turns 2 and 3
+were killed by the outer watchdog after writing `tasklog/__init__.py`,
+`tasklog/__main__.py`, `tasklog/errors.py`, and `tasklog/model.py`. The entry
+point imports the missing `tasklog.cli`, and no storage module, README, or tests
+were created. Project test discovery, oracle, and help failed in every turn.
+
+Pi used 4,711 input and 14,966 output tokens (19,677 inference-work tokens) over
+900,860 ms. It created `__init__.py`, `__main__.py`, `cli.py`, `errors.py`,
+`models.py`, and `store.py`, but no README or tests. Help passed in turn 3. The
+oracle reached list output but failed its exact output assertion: Pi emitted
+extra spaces and a blank line and printed `2 open tasks` instead of `2 open`.
+Project test discovery and the oracle failed in every turn. Neither agent
+resolved Case 01. The first-write prompt did not make Rupi write in turn 1 and
+helped Pi reach further into the implementation, so it did not improve Rupi's
+result against Pi.
+
+The progress boundary remains advisory: after it was injected, Rupi still spent
+a request on reasoning and timed out without calling `write`. Next, review a
+bounded enforcement option that restricts the post-boundary request to its
+configured progress tools, while preserving the unresolved-effect stop for
+mutating tool calls.
