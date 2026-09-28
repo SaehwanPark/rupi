@@ -75,4 +75,28 @@ The Case 01 `rupi.config.json` now opts into the existing progress boundary:
 after one tool-bearing request without a successful change, the next request is
 restricted to `write` and `edit`. The runtime's enforced tool choice and effect
 evidence still determine whether progress occurred. This configuration keeps the
-behavior scoped to this coding case. The Rupi-only two-turn rerun is pending.
+behavior scoped to this coding case.
+
+Run ID: `bench-20260928-case01-progress-v1`. The Rupi-only run used the same
+two-turn, 300-second protocol as the matched baseline:
+
+| Turn | Result | Requests | Input / output tokens | Tools | Project / oracle |
+| --- | --- | ---: | ---: | ---: | --- |
+| 1 | timeout, 300,552 ms | 4 started, 3 completed | 11,182 / 4,950 | 1 `read`, 4 `write` | 1 / 1 |
+| 2 | timeout, 300,323 ms | 4 completed | 18,121 / 2,571 | `exec`, `read`, 2 `write`, 2 `edit` | 5 / 1 |
+
+The first write occurred after the runtime injected the boundary, and both turns
+completed all tool calls without a tool failure. Rupi used 29,303 input and
+7,521 output tokens, 36,824 inference-work tokens, and 600,875 ms total. It
+created `tasklog/{__init__,__main__,cli,ledger}.py`, `README.md`, and
+`tests/helpers.py`, but no `test_*.py` file. The second project test command
+reported `Ran 0 tests` (exit 5); the oracle failed both after turn 1 and turn 2.
+Two representative oracle mismatches were the empty-list text (`No matching
+open tasks.` rather than the required `No open tasks`) and the invalid-ID text
+(`not a valid id` rather than containing `invalid id`).
+
+This demonstrates better early file progress, but no oracle resolution. The
+matched Pi baseline remained unresolved after two turns and produced more
+implementation files, so Case 01 is not a `rupi` win. Keep the boundary
+configuration for the next matched iteration, which needs to carry the work
+through tests and fresh-process acceptance.
