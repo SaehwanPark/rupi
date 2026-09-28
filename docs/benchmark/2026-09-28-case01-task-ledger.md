@@ -124,3 +124,31 @@ than v1, which created source and a README under the same budget.
 The case configuration is restored to one request before the boundary; the v2
 setting is discarded. No matched Pi run is warranted because the oracle
 remained unresolved.
+
+## Matched recovery comparison: `bench-20260928-case01-progress-v1-matched3`
+
+This matched run gave both clients three turns of 300 seconds each with the
+one-request progress boundary enabled for Rupi. The server's global reasoning
+effort was `xhigh`; both clients requested `low`.
+
+| Agent / turn | Result | Requests | Input / output tokens | Tools | Project / oracle / help |
+| --- | --- | ---: | ---: | --- | --- |
+| `rupi` 1 | timeout, 300,775 ms | 2 started, 1 completed | 3,275 / 41 | `read` | 1 / 1 / 1 |
+| `rupi` 2 | timeout, 300,377 ms | 3 / 3 | 3,143 / 1,326 | `exec`, 2 `write` | 1 / 1 / 1 |
+| `rupi` 3 | timeout, 300,363 ms | 1 / 1, abandoned | 0 / 0 | none | 1 / 1 / 1 |
+| Pi 1 | timeout, 300,373 ms | 3 / 3 | 3,694 / 146 | `read`, 2 `bash` | 1 / 1 / 1 |
+| Pi 2 | timeout, 300,367 ms | 1 / 1 | 149 / 141 | `bash` | 1 / 1 / 1 |
+| Pi 3 | timeout, 300,363 ms | 0 / 0 | 0 / 0 | none | 1 / 1 / 1 |
+
+Neither client created a project that passed tests or the fresh-process oracle.
+Rupi used 6,418 input and 1,367 output tokens (7,785 inference-work tokens)
+over 901,515 ms. Pi used 3,843 input and 287 output tokens (4,130
+inference-work tokens) over 901,103 ms. The equal-turn result is not a Rupi win:
+both remain unresolved, and Rupi used more measured inference work. Keep the
+Case 01 slice open.
+
+Next, repeat a matched two-turn run with the llama.cpp server default set to
+`low` as well as both clients requesting `low`. This tests whether the Qwen
+chat template is honoring the per-request effort value when the server default
+is `xhigh`; the earlier direct probe was cancelled before yielding usable
+measurements. Treat the result as a separate environment comparison.
