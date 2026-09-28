@@ -31,7 +31,8 @@ Required commands:
      multiple trailing arguments joined with single spaces;
    - assign a stable positive integer id; command-line ids use ASCII decimal
      digits with an optional sign and must be positive;
-   - print the created task in a concise, human-readable form.
+   - print a concise confirmation beginning with `Added task <ID>`, substituting
+     the created numeric id and including the task description.
 2. `list`
    - show open tasks in ascending id order;
    - `list --all` shows both open and completed tasks;
