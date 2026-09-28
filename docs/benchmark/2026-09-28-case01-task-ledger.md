@@ -362,7 +362,42 @@ README, and tests. The project test command still failed in turns 1 and 2 becaus
 Pi used 3,878 input and 269 output tokens (4,147 inference-work tokens) over
 900,737 ms. Its outer watchdog timed out all three turns; it created no project
 package, and the project tests, oracle, and help checks failed each time. Neither
-agent passed the oracle, so there is no Case 01 win. The timeout adjustment fixes
-the provider-versus-harness ordering, but the current implementation still needs
-clearer task-output requirements and a safe way to finish after a failed
-verification command.
+agent passed the oracle, so there is no Case 01 win. The adjusted per-request
+deadline let Rupi record a provider timeout before the outer watchdog when enough
+turn budget remained. A later request can still outlast the remaining turn time,
+as the next run's third request did. The implementation also needs clearer task
+output requirements and complete, runnable files before verification.
+
+## Matched add-output spec comparison: `bench-20260928-case01-add-output-spec-low-matched3`
+
+Commit `3125fe6` made the successful `add` confirmation explicit after the
+previous oracle failure showed that the output must contain `Added task <ID>`.
+The run otherwise kept the same model, low server default, prompts, write-only
+Rupi boundary, provider timeout, and three 300-second turns.
+
+| Agent / turn | Elapsed | Requests started / completed | Input / output | Project / oracle / help |
+| --- | ---: | ---: | ---: | ---: |
+| Rupi 1 | 300,247 ms | 3 / 2 | 6,976 / 2,015 | 1 / 1 / 1 |
+| Rupi 2 | 276,579 ms | 2 / 3 | 149 / 44 | 1 / 1 / 1 |
+| Rupi 3 | 271,399 ms | 1 / 1 | 0 / 0 | 1 / 1 / 1 |
+| Pi 1 | 300,244 ms | 3 / 3 | 3,706 / 134 | 1 / 1 / 1 |
+| Pi 2 | 300,297 ms | 1 / 1 | 149 / 77 | 1 / 1 / 1 |
+| Pi 3 | 300,262 ms | 0 / 0 | 0 / 0 | 1 / 1 / 1 |
+
+Rupi used 7,125 input and 2,059 output tokens (9,184 inference-work tokens) over
+848,225 ms. It read the spec and wrote only `tasklog/__init__.py` in turn 1;
+that file imports the missing `tasklog.store` module. Turn 1's third request
+remained incomplete until the outer watchdog killed the process. Turns 2 and 3
+ended with recorded provider timeouts before the outer watchdog. The project test
+command failed because `tests/` was absent, and the oracle and help checks failed
+because there was no runnable CLI. The added output requirement was not exercised.
+
+Pi used 3,855 input and 211 output tokens (4,066 inference-work tokens) over
+900,803 ms. It created no project files, and its project tests, oracle, and help
+checks failed in every turn. Neither agent passed the oracle, so this iteration
+does not win Case 01. The spec clarification did not get the implementation past
+the first write; the next iteration should make that first progress action an
+executable package entry point with working task creation, then measure again.
+The timeout setting is per provider request, so a request started late in a turn
+can still outlast the remaining outer budget; Rupi's first turn hit that case
+after starting its third request.
