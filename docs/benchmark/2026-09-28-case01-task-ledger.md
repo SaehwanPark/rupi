@@ -60,6 +60,13 @@ specification and create a runnable end-to-end slice before broad environment
 probes or extended planning. This directly targets the observed no-write tool
 sequences while preserving the existing instruction to inspect relevant
 instructions before editing. `cargo fmt --all --check` and `cargo build --bin
-rupi` pass. The same-budget Rupi-only rerun is pending; compare it with Pi's
-matched baseline above. Full turn artifacts remain in ignored `.benchmark/`
-storage.
+rupi` pass.
+
+Post-change run ID: `bench-20260928-case01-prompt-v1`. The first turn timed out
+at 300,632 ms after 5 model requests and 5 successful tool calls; it created no
+project files and the oracle exited 1. This does not show an early-write
+improvement. Recovery turn 2 is still running. After it completes, try the
+existing opt-in progress boundary in the case config: after one tool-bearing
+request without a change, expose only `write` and `edit` and require an actual
+successful change before the boundary is satisfied. This uses the existing
+runtime contract and keeps the behavior case-scoped.
