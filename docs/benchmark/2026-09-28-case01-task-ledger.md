@@ -42,11 +42,19 @@ runtime and must be treated as historical baseline only.
 | `rupi` 1 | timeout, 300,311 ms; no generated files | 4 started, 3 completed | 6,683 / 4,901 | 5, all completed | 1 / 1 |
 | `rupi` 2 | timeout, 300,321 ms; no generated files | 2 completed | 149 / 107 | 1, completed | 1 / 1 |
 | Pi 1 | timeout, 300,330 ms; wrote three package files | 5 | 3,740 / 4,603 | 5 | 1 / 1 |
-| Pi 2 | in progress | — | — | — | — |
+| Pi 2 | timeout, 300,310 ms; wrote the package, README, and test initializer | 8 | 954 / 4,682 | 8 | 5 / 1 |
 
 Both agents' project/oracle failures after the first turn establish that the
-initial attempt is incomplete. Rupi has not yet reached a write call in this
-run; all six recorded tool calls completed without a tool failure. Pi's three
-files are partial progress, not resolution. Do not attribute the gap to a
-runtime defect until Pi's recovery completes and the request/tool traces are
-compared. Full turn artifacts remain in ignored `.benchmark/` storage.
+initial attempt is incomplete. Both remained unresolved after the full two-turn
+budget. `rupi` used 6,832 input and 5,008 output tokens over 600,632 ms; all six
+tool calls completed without a tool failure, but none wrote project files. Pi
+used 4,694 input and 9,285 output tokens over 600,640 ms and created the package
+modules, README, and an empty test initializer; its second project test command
+exited 5 (no tests discovered), and its acceptance oracle still failed. This is
+more visible implementation progress for Pi, but not a resolved case.
+
+The smallest candidate change is to strengthen the runtime's implementation
+guidance so a model writes a runnable end-to-end slice immediately after reading
+the governing spec, before exploratory shell calls or extended planning. The
+matched post-change run must show whether that prompt-level change improves the
+oracle result. Full turn artifacts remain in ignored `.benchmark/` storage.
