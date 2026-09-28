@@ -190,7 +190,29 @@ empty-ledger output did not contain the required `No open tasks` text. This is
 earlier implementation progress than the `write`/`edit` configuration, but it
 does not resolve Case 01.
 
-Next, run a fresh three-turn Rupi-only attempt with this write-only boundary and
-the low server default. The standard recovery prompt will give Rupi a third
-chance to finish the implementation and add tests; the external oracle remains
-hidden from the agent. Run a matched Pi comparison only if the oracle passes.
+## Three-turn write-only exploration: `bench-20260928-case01-write-only-low3`
+
+This fresh Rupi-only run used the same write-only boundary and low server
+default, with three 300-second turns.
+
+| Turn | Result | Requests | Input / output tokens | Tools | Project / oracle / help |
+| --- | --- | ---: | ---: | --- | --- |
+| 1 | timeout, 300,208 ms | 4 started, 3 completed | 8,558 / 5,615 | `read`, 2 `write` | 1 / 1 / 1 |
+| 2 | timeout, 300,401 ms | 8 / 8 | 14,394 / 4,005 | `exec`, `read`, 3 `edit`, 3 `write` | 5 / 1 / 0 |
+| 3 | timeout, 300,171 ms | 4 started, 5 completion records | 13,488 / 4,322 | `read`, 2 `write`, 2 `exec` | 1 / 1 / 0 |
+
+Rupi used 36,440 input and 13,942 output tokens (50,382 inference-work tokens)
+over 900,780 ms. It created `tests/test_cli.py` and `tests/test_ledger.py` by
+turn 3; 39 tests ran and 8 failed. Test discovery had reported no tests in turn
+2. The oracle still failed: multiword `add` input was rejected, and the empty
+ledger printed `No matching tasks.` rather than containing `No open tasks`.
+`--help` passed in turns 2 and 3.
+
+Turn 3 ended in `needs_reconciliation` after an `exec` result remained an
+unresolved mutating side effect. The runtime stopped the session instead of
+replaying it. Case 01 remains unresolved and this is not a Rupi win.
+
+Next, run a fresh matched three-turn campaign with both clients under the low
+server default and this write-only Rupi configuration. This records a direct
+Pi comparison of the more productive boundary setting without continuing the
+session whose `exec` effect remains unresolved.
