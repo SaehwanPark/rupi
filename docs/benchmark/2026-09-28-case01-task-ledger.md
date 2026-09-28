@@ -242,3 +242,36 @@ Keep the Case 01 slice open. The recurring acceptance gaps are now concrete:
 the package entry point and test package are missing from Rupi's output, and
 multiword descriptions remain unhandled by Pi. The next iteration should
 target a verified Rupi behavior change before another matched comparison.
+
+## Matched five-turn recovery-depth diagnostic: `bench-20260928-case01-write-only-low-matched5`
+
+This run held the low server default, write-only Rupi boundary, prompts, and
+300-second timeout constant, extending both agents from three to five turns.
+Project, oracle, and help columns contain exit codes in that order.
+
+| Agent / turn | Elapsed | Requests | Input / output | Project / oracle / help |
+| --- | ---: | ---: | ---: | ---: |
+| Rupi 1 | 300,262 ms | 3 / 2 | 6,860 / 3,519 | 1 / 1 / 1 |
+| Rupi 2 | 13,667 ms | 1 / 2 | 149 / 179 | 1 / 1 / 1 |
+| Rupi 3 | 854 ms | 0 / 0 | 0 / 0 | 1 / 1 / 1 |
+| Rupi 4 | 854 ms | 0 / 0 | 0 / 0 | 1 / 1 / 1 |
+| Rupi 5 | 846 ms | 0 / 0 | 0 / 0 | 1 / 1 / 1 |
+| Pi 1 | 300,250 ms | 4 / 4 | 3,525 / 5,948 | 1 / 1 / 1 |
+| Pi 2 | 300,292 ms | 6 / 6 | 821 / 5,950 | 1 / 1 / 0 |
+| Pi 3 | 300,225 ms | 4 / 4 | 225 / 5,717 | 0 / 1 / 0 |
+| Pi 4 | 300,253 ms | 6 / 6 | 2,127 / 4,400 | 0 / 1 / 0 |
+| Pi 5 | 300,230 ms | 3 / 3 | 1,905 / 4,844 | 1 / 1 / 0 |
+
+Rupi used 7,009 input and 3,698 output tokens (10,707 inference-work tokens)
+over 316,483 ms. It wrote two files in turn 1. In turn 2, it prefixed a shell
+command with `cmd.exe /C`; that command failed, and the following read in the
+same batch was deferred. The runtime stopped with `needs_reconciliation` because
+the `exec` effect remained unresolved. Turns 3–5 made no model requests.
+
+Pi used 8,603 input and 26,859 output tokens (35,462 inference-work tokens)
+over 1,501,250 ms. Its project tests passed in turns 3 and 4, then failed in
+turn 5. The fresh-process oracle failed in every turn, so five turns gave
+neither client a win. The result narrows the next runtime experiment to clearer
+Windows `exec` guidance: `exec` already chooses `cmd.exe /C`, so a command must
+not include that shell prefix. Preserve the unresolved-effect stop and measure
+the guidance change in a fresh matched comparison.
