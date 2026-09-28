@@ -10,6 +10,8 @@ param(
   [int]$TurnTimeoutSeconds = 900,
   [ValidateRange(1, 100)]
   [int]$MaxModelRequestsPerTurn = 24,
+  [ValidateSet("off", "low")]
+  [string]$ThinkingLevel = "low",
   [switch]$DryRun
 )
 
@@ -142,7 +144,7 @@ function Invoke-External {
   }
 }
 
-function New-BenchmarkWorkspace([hashtable]$case, [string]$agentRoot) {
+function New-BenchmarkWorkspace([hashtable]$case, [string]$agentRoot, [string]$thinkingLevel) {
   $source = Join-Path $repoRoot $case.Source
   $project = Join-Path $agentRoot $case.ProjectDir
   New-Item -ItemType Directory -Force -Path $project | Out-Null
@@ -160,7 +162,7 @@ function New-BenchmarkWorkspace([hashtable]$case, [string]$agentRoot) {
   $configSourcePath = Join-Path $project "rupi.config.json"
   if (Test-Path $configSourcePath) {
     $config = Get-Content -Raw $configSourcePath | ConvertFrom-Json
-    $config.thinking = "low"
+    $config.thinking = $thinkingLevel
     $config.state_dir = ".rupi-state"
     if ($null -eq $config.limits) {
       $config | Add-Member -MemberType NoteProperty -Name limits -Value ([pscustomobject]@{})
@@ -374,10 +376,10 @@ function Invoke-Verification([hashtable]$case, [string]$agentRoot, [string]$proj
   [pscustomobject]@{ project_tests = $projectTest; oracle = $oracle; help = @($help); resolved = ($oracle.exit_code -eq 0 -and -not $oracle.timed_out) }
 }
 
-function Invoke-AgentCase([hashtable]$case, [string]$agent, [string]$root) {
+function Invoke-AgentCase([hashtable]$case, [string]$agent, [string]$root, [string]$thinkingLevel) {
   $agentRoot = Join-Path $root $agent
   New-Item -ItemType Directory -Force -Path $agentRoot | Out-Null
-  $workspace = New-BenchmarkWorkspace $case $agentRoot
+  $workspace = New-BenchmarkWorkspace $case $agentRoot $thinkingLevel
   $piConfig = New-PiConfig $agentRoot
   $turns = [Collections.Generic.List[object]]::new()
   $resolved = $false; $sessionId = $null
@@ -397,7 +399,9 @@ function Invoke-AgentCase([hashtable]$case, [string]$agent, [string]$root) {
     } else {
       $sessionDir = Join-Path $agentRoot "pi-sessions"
       New-Item -ItemType Directory -Force -Path $sessionDir | Out-Null
-      $args.Add("--provider"); $args.Add("unsloth"); $args.Add("--model"); $args.Add("qwen3.8-flash-next"); $args.Add("--thinking"); $args.Add("low")
+      $args.Add("--provider"); $args.Add("unsloth")
+      $args.Add("--model"); $args.Add("qwen3.8-flash-next")
+      $args.Add("--thinking"); $args.Add($thinkingLevel)
       $args.Add("--mode"); $args.Add("json"); $args.Add("--print"); $args.Add("--offline"); $args.Add("--session-dir"); $args.Add($sessionDir)
       $args.Add("--no-context-files"); $args.Add("--no-extensions"); $args.Add("--no-skills"); $args.Add("--no-prompt-templates"); $args.Add("--no-themes")
       $args.Add("--tools"); $args.Add("read,write,edit,bash,powershell,grep,find,ls")
@@ -442,6 +446,7 @@ if ($CaseId.Count -gt 0) {
   if ($cases.Count -eq 0) { throw "No matching cases: $($requestedIds -join ', ')" }
 }
 if ($DryRun) {
+  Write-Host "Thinking level: $ThinkingLevel"
   $cases | ForEach-Object { "{0}: {1}" -f $_.Id, (Get-InitialPrompt $_).Split("`n")[0] }
   exit 0
 }
@@ -452,13 +457,23 @@ $results = [Collections.Generic.List[object]]::new()
 foreach ($case in $cases) {
   foreach ($selectedAgent in $selectedAgents) {
     Write-Host ("[{0}] {1}/{2}" -f (Get-Date -Format "HH:mm:ss"), $selectedAgent, $case.Id)
-    [void]$results.Add((Invoke-AgentCase $case $selectedAgent (Join-Path $runRoot $case.Id)))
-    Write-Json (Join-Path $runRoot "partial.json") ([ordered]@{ run_id = $RunId; results = @($results) })
+    [void]$results.Add((Invoke-AgentCase $case $selectedAgent (Join-Path $runRoot $case.Id) $ThinkingLevel))
+    $partial = [ordered]@{
+      run_id = $RunId
+      thinking_level = $ThinkingLevel
+      results = @($results)
+    }
+    Write-Json (Join-Path $runRoot "partial.json") $partial
   }
 }
 $summary = [ordered]@{
-  run_id = $RunId; generated_at = (Get-Date).ToUniversalTime().ToString("o"); model = "qwen3.8-flash-next"
-  endpoint = "http://127.0.0.1:8000/v1"; max_turns = $MaxTurns; turn_timeout_seconds = $TurnTimeoutSeconds
+  run_id = $RunId
+  generated_at = (Get-Date).ToUniversalTime().ToString("o")
+  model = "qwen3.8-flash-next"
+  thinking_level = $ThinkingLevel
+  endpoint = "http://127.0.0.1:8000/v1"
+  max_turns = $MaxTurns
+  turn_timeout_seconds = $TurnTimeoutSeconds
   results = @($results)
 }
 Write-Json (Join-Path $runRoot "results.json") $summary
