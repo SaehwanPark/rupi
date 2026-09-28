@@ -170,8 +170,27 @@ Rupi win.
 
 ## Write-only progress boundary
 
-The low-default Rupi run still read the specification and made one `exec` call
-without writing a project file. The next exploratory variant restricts the
-progress allowlist from `write` and `edit` to `write` only, to test whether the
-smaller tool choice helps the model reach its first mutation. It will use the
-same low-default, two-turn Rupi-only budget; run Pi only if the oracle resolves.
+The Case 01 config restricts the progress allowlist from `write` and `edit` to
+`write` only. The exploratory Rupi-only run used the same low-default, two-turn
+budget.
+
+Run ID: `bench-20260928-case01-write-only-low`.
+
+| Turn | Result | Requests | Input / output tokens | Tools | Project / oracle / help |
+| --- | --- | ---: | ---: | --- | --- |
+| 1 | timeout, 300,374 ms | 3 started, 2 completed | 6,854 / 4,838 | `read`, 3 `write` | 1 / 1 / 1 |
+| 2 | timeout, 300,276 ms | 3 / 3 | 7,091 / 2,370 | `exec`, `read`, 2 `write` | 1 / 1 / 0 |
+
+Rupi used 13,945 input and 7,208 output tokens (21,153 inference-work tokens)
+over 600,650 ms. It created `tasklog/{__init__,__main__,cli,ledger,storage}.py`
+but no README or `tests/` directory. The turn-two `--help` check passed, but
+project test discovery failed because `tests/` was absent. The acceptance oracle
+reported that `add` rejected multiword task text as extra arguments, and the
+empty-ledger output did not contain the required `No open tasks` text. This is
+earlier implementation progress than the `write`/`edit` configuration, but it
+does not resolve Case 01.
+
+Next, run a fresh three-turn Rupi-only attempt with this write-only boundary and
+the low server default. The standard recovery prompt will give Rupi a third
+chance to finish the implementation and add tests; the external oracle remains
+hidden from the agent. Run a matched Pi comparison only if the oracle passes.
