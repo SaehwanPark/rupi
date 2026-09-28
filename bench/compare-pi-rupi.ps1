@@ -51,11 +51,14 @@ oracle. Use only Python standard-library modules.
 
 On this Windows host, use the available file and process tools directly for
 known programs and avoid Unix-only shell assumptions or fragile inline quoting.
-Start with a real implementation write after understanding the contract. Run the
-project unittest suite, the project-specific help commands described by SPEC.md,
-and a small smoke check before finishing. Do not treat your final summary as proof:
-report exact commands and statuses only after running them, and state any
-incomplete requirement explicitly.
+Start with a real implementation write after understanding the contract. Your
+first write must create runnable application code, not just `__init__.py`, a
+docstring, a plan, or placeholders. Establish `python -m <package>` and one
+complete command path that persists valid state, then finish the remaining
+commands, README, and tests. Run the project unittest suite, the project-specific
+help commands described by SPEC.md, and a small smoke check before finishing. Do
+not treat your final summary as proof: report exact commands and statuses only
+after running them, and state any incomplete requirement explicitly.
 "@
 }
 
