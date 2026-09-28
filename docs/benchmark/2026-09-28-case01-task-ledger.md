@@ -212,7 +212,33 @@ Turn 3 ended in `needs_reconciliation` after an `exec` result remained an
 unresolved mutating side effect. The runtime stopped the session instead of
 replaying it. Case 01 remains unresolved and this is not a Rupi win.
 
-Next, run a fresh matched three-turn campaign with both clients under the low
-server default and this write-only Rupi configuration. This records a direct
-Pi comparison of the more productive boundary setting without continuing the
-session whose `exec` effect remains unresolved.
+## Matched three-turn write-only comparison: `bench-20260928-case01-write-only-low-matched3`
+
+Both clients received up to three 300-second turns under the low server
+default, with fresh-process verification after each. Rupi used the write-only
+progress boundary. All six turns timed out at approximately 300 seconds.
+
+| Agent / turn | Requests | Input / output | Tools | Project / oracle / help |
+| --- | ---: | ---: | --- | --- |
+| Rupi 1 | 2 started, 1 completed | 3,275 / 41 | `read` | 1 / 1 / 1 |
+| Rupi 2 | 3 / 3 | 4,387 / 4,227 | `exec`, `read`, 3 `write` | 1 / 1 / 1 |
+| Rupi 3 | 3 / 3 | 1,805 / 5,321 | 2 `write` | 1 / 1 / 1 |
+| Pi 1 | 5 / 5 | 3,753 / 5,854 | `read`, 2 `bash`, 3 `write` | 1 / 1 / 1 |
+| Pi 2 | 8 / 8 | 569 / 6,138 | `bash`, `write`, 2 `edit`, `write`, 3 `bash` | 1 / 1 / 0 |
+| Pi 3 | 5 / 5 | 751 / 4,206 | `read`, 2 `write`, 2 `edit` | 5 / 1 / 0 |
+
+Rupi used 9,467 input and 9,589 output tokens (19,056 inference-work tokens)
+over 900,722 ms. Pi used 5,073 input and 16,198 output tokens (21,271
+inference-work tokens) over 900,685 ms. Rupi used 10.4% fewer inference-work
+tokens, but both remain unresolved, so Case 01 has no winner. Rupi's project test discovery
+failed because it never wrote `tasklog/__main__.py` or a `tests/` package. Its
+oracle's three failures all came from `python -m tasklog` being unavailable.
+Pi wrote a runnable module and a test helper, but no test cases; its project
+test command therefore exited 5. Its oracle still failed because multiword task
+text was parsed as extra arguments. Rupi's `--help` check failed on every turn;
+Pi's passed on turns 2 and 3.
+
+Keep the Case 01 slice open. The recurring acceptance gaps are now concrete:
+the package entry point and test package are missing from Rupi's output, and
+multiword descriptions remain unhandled by Pi. The next iteration should
+target a verified Rupi behavior change before another matched comparison.
