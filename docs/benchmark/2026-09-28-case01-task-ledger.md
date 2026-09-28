@@ -275,3 +275,33 @@ neither client a win. The result narrows the next runtime experiment to clearer
 Windows `exec` guidance: `exec` already chooses `cmd.exe /C`, so a command must
 not include that shell prefix. Preserve the unresolved-effect stop and measure
 the guidance change in a fresh matched comparison.
+
+## Matched shell-guidance comparison: `bench-20260928-case01-exec-guidance-low-matched3`
+
+This matched three-turn run used the tool descriptions from commit `268a24f`.
+The low server default, write-only Rupi boundary, prompts, and 300-second turn
+timeout stayed fixed.
+
+| Agent / turn | Requests | Input / output | Project / oracle / help |
+| --- | ---: | ---: | ---: |
+| Rupi 1 | 4 / 3 | 9,930 / 4,590 | 1 / 1 / 1 |
+| Rupi 2 | 4 / 4 | 10,514 / 4,234 | 0 / 1 / 0 |
+| Rupi 3 | 3 / 3 | 3,896 / 5,667 | 1 / 1 / 0 |
+| Pi 1 | 5 / 5 | 3,574 / 6,219 | 1 / 1 / 1 |
+| Pi 2 | 4 / 4 | 537 / 5,127 | 1 / 1 / 1 |
+| Pi 3 | 7 / 7 | 1,554 / 5,141 | 1 / 1 / 0 |
+
+Rupi used 24,340 input and 14,491 output tokens (38,831 inference-work tokens)
+over 901,040 ms. Pi used 5,665 input and 16,487 output tokens (22,152
+inference-work tokens) over 900,699 ms. Rupi's turn-two project tests and help
+passed; Pi's project tests failed in all three turns. Rupi then regressed its
+project tests in turn three. Both agents failed the fresh-process oracle in all
+turns, so this is not a Case 01 win.
+
+Rupi's turn-two `exec` was followed by four writes with no tool failure,
+unknown-effect record, or `needs_reconciliation` status. This confirms useful
+progress from the clearer shell guidance while preserving effect safety. The
+remaining acceptance output shows that multiword `add` text is rejected, but
+`SPEC.md` only says `add TEXT` and does not say whether unquoted multiple words
+form one description. Clarify that contract against the intended CLI behavior
+before the next matched run; keep the external oracle unchanged.
