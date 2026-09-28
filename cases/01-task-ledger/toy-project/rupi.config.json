@@ -24,7 +24,7 @@
     "max_output_bytes": 8192
   },
   "limits": {
-    "max_model_requests_without_progress": 1,
+    "max_model_requests_without_progress": 2,
     "progress_tool_names": ["write", "edit"]
   }
 }

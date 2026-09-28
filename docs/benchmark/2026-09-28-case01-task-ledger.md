@@ -100,3 +100,13 @@ matched Pi baseline remained unresolved after two turns and produced more
 implementation files, so Case 01 is not a `rupi` win. Keep the boundary
 configuration for the next matched iteration, which needs to carry the work
 through tests and fresh-process acceptance.
+
+## Progress-boundary iteration v2
+
+The first boundary request was triggered after the initial spec read. That made
+Rupi write implementation files earlier, but its two-turn run still ended with
+no project test modules. The next exploratory variant raises the inspection
+allowance to two model requests before requiring a write. This tests whether an
+extra specification/design pass helps produce a more complete first
+implementation. The run will use the same two-turn, 300-second Rupi-only budget;
+a matched Pi comparison is only useful if Rupi resolves the independent oracle.
