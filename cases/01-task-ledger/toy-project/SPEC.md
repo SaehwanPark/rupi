@@ -27,6 +27,8 @@ Required commands:
 
 1. `add TEXT`
    - create one open task;
+   - accept a multiword description either as one quoted argument or as
+     multiple trailing arguments joined with single spaces;
    - assign a stable positive integer id; command-line ids use ASCII decimal
      digits with an optional sign and must be positive;
    - print the created task in a concise, human-readable form.
