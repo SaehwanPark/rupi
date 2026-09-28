@@ -53,20 +53,26 @@ modules, README, and an empty test initializer; its second project test command
 exited 5 (no tests discovered), and its acceptance oracle still failed. This is
 more visible implementation progress for Pi, but not a resolved case.
 
-## Prompt iteration v1
+## Prompt iteration v1 (reverted)
 
-`src/run.rs` now asks new-project implementation tasks to read the governing
-specification and create a runnable end-to-end slice before broad environment
-probes or extended planning. This directly targets the observed no-write tool
-sequences while preserving the existing instruction to inspect relevant
-instructions before editing. `cargo fmt --all --check` and `cargo build --bin
-rupi` pass.
+A temporary `src/run.rs` prompt change asked new-project implementation tasks to
+create a runnable end-to-end slice after reading the governing specification.
+`cargo fmt --all --check` and `cargo build --bin rupi` passed with that change,
+but it did not produce an early write or improve the oracle result. The change
+was reverted; the final branch keeps the existing general prompt.
 
-Post-change run ID: `bench-20260928-case01-prompt-v1`. The first turn timed out
-at 300,632 ms after 5 model requests and 5 successful tool calls; it created no
-project files and the oracle exited 1. This does not show an early-write
-improvement. Recovery turn 2 is still running. After it completes, try the
-existing opt-in progress boundary in the case config: after one tool-bearing
-request without a change, expose only `write` and `edit` and require an actual
-successful change before the boundary is satisfied. This uses the existing
-runtime contract and keeps the behavior case-scoped.
+Post-change run ID: `bench-20260928-case01-prompt-v1`. Both turns timed out;
+neither created project files, and both oracle checks exited 1. Turn 1 timed out
+at 300,632 ms after 5 model requests and 5 successful tools. Turn 2 timed out at
+300,247 ms before a request completed or any tool ran. The llama.cpp log shows
+generation was active until the client timeout cancelled it, and the endpoint
+remained healthy. The prompt-only change did not improve resolution or produce
+an early write; the prompt change has been removed.
+
+## Progress-boundary iteration v1
+
+The Case 01 `rupi.config.json` now opts into the existing progress boundary:
+after one tool-bearing request without a successful change, the next request is
+restricted to `write` and `edit`. The runtime's enforced tool choice and effect
+evidence still determine whether progress occurred. This configuration keeps the
+behavior scoped to this coding case. The Rupi-only two-turn rerun is pending.
