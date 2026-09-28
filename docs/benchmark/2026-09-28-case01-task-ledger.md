@@ -301,7 +301,37 @@ turns, so this is not a Case 01 win.
 Rupi's turn-two `exec` was followed by four writes with no tool failure,
 unknown-effect record, or `needs_reconciliation` status. This confirms useful
 progress from the clearer shell guidance while preserving effect safety. The
-remaining acceptance output shows that multiword `add` text is rejected, but
-`SPEC.md` only says `add TEXT` and does not say whether unquoted multiple words
-form one description. Clarify that contract against the intended CLI behavior
-before the next matched run; keep the external oracle unchanged.
+oracle rejected multiword `add` text, and `SPEC.md` did not say whether
+unquoted trailing words form one description. Commit `4609c94` added that
+contract; the matched run below used the updated spec and left the oracle intact.
+
+## Matched explicit-text spec comparison: `bench-20260928-case01-multiword-spec-low-matched3`
+
+This run used the clarified shared `add TEXT` contract from commit `4609c94`.
+The model, low server default, prompts, write-only Rupi boundary, and three
+300-second turns stayed fixed.
+
+| Agent / turn | Requests | Input / output | Project / oracle / help |
+| --- | ---: | ---: | ---: |
+| Rupi 1 | 2 / 1 | 3,335 / 41 | 1 / 1 / 1 |
+| Rupi 2 | 1 / 1 | 0 / 0 | 1 / 1 / 1 |
+| Rupi 3 | 3 / 3 | 2,029 / 3,811 | 1 / 1 / 1 |
+| Pi 1 | 5 / 5 | 3,800 / 5,513 | 1 / 1 / 1 |
+| Pi 2 | 4 / 4 | 876 / 5,041 | 1 / 1 / 1 |
+| Pi 3 | 5 / 5 | 1,447 / 4,610 | 1 / 1 / 0 |
+
+Rupi used 5,364 input and 3,852 output tokens (9,216 inference-work tokens)
+over 900,732 ms. It read in turn 1, produced no output or tools in turn 2, and
+used `exec` plus two writes in turn 3. Project test discovery still failed
+because no `tests/` package was created. Pi used 6,123 input and 15,164 output
+tokens (21,287 inference-work tokens) over 900,848 ms. Neither client created a
+project test package or passed the oracle in any turn; the clarified text
+requirement did not produce a Case 01 win.
+
+The run config shows Rupi's provider `request_timeout_ms` at 600,000 while the
+benchmark kills each turn after 300 seconds. Thus the harness deadline can kill
+Rupi before its provider deadline. This mismatch is a plausible contributor to
+the incomplete turns, though the metrics alone do not prove it caused turn 2's
+zero-output result. Next, set the provider timeout to the turn budget and run
+the same matched campaign. This will test orderly timeout and recovery with the
+same 300-second limit for both agents.
