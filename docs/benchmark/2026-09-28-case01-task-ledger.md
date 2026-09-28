@@ -152,3 +152,28 @@ Next, repeat a matched two-turn run with the llama.cpp server default set to
 chat template is honoring the per-request effort value when the server default
 is `xhigh`; the earlier direct probe was cancelled before yielding usable
 measurements. Treat the result as a separate environment comparison.
+
+## Matched low-default comparison: `bench-20260928-case01-progress-v1-low`
+
+The two-turn run kept the one-request progress boundary. The llama.cpp server
+used `--reasoning-effort low`; both clients also requested `low`.
+
+| Agent / turn | Result | Requests | Input / output tokens | Tools | Project / oracle / help |
+| --- | --- | ---: | ---: | --- | --- |
+| `rupi` 1 | timeout, 300,333 ms | 2 started, 1 completed | 3,273 / 41 | `read` | 1 / 1 / 1 |
+| `rupi` 2 | timeout, 300,336 ms | 2 / 2 | 1,445 / 48 | `exec` | 1 / 1 / 1 |
+| Pi 1 | timeout, 300,381 ms | 5 / 5 | 3,492 / 5,891 | `read`, 2 `ls`, 2 `write` | 1 / 1 / 1 |
+| Pi 2 | timeout, 300,352 ms | 7 / 7 | 490 / 5,265 | 2 `read`, `find`, `ls`, 4 `write` | 5 / 1 / 0 |
+
+Rupi created no project files and used 4,718 input and 89 output tokens (4,807
+inference-work tokens) over 600,669 ms. Pi created package modules, README, and
+an empty test initializer; its second project test discovery exited 5 because
+there were no test cases. Pi used 3,982 input and 11,156 output tokens (15,138
+inference-work tokens) over 600,733 ms. Neither agent passed the oracle. The
+global `low` setting increased Pi's implementation activity but did not change
+Rupi's one-read/one-exec behavior, so Case 01 remains unresolved and is not a
+Rupi win.
+
+Next, narrow the Case 01 progress boundary to `write` only, then rerun Rupi
+under the same low-default two-turn budget. This tests whether presenting one
+progress tool makes the required first mutation easier for the local model.
