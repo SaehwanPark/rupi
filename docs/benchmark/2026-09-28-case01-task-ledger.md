@@ -98,15 +98,29 @@ open tasks.` rather than the required `No open tasks`) and the invalid-ID text
 This demonstrates better early file progress, but no oracle resolution. The
 matched Pi baseline remained unresolved after two turns and produced more
 implementation files, so Case 01 is not a `rupi` win. Keep the boundary
-configuration for the next matched iteration, which needs to carry the work
-through tests and fresh-process acceptance.
+configuration at one request for the next iteration, which needs to carry the
+work through tests and fresh-process acceptance.
 
 ## Progress-boundary iteration v2
 
 The first boundary request was triggered after the initial spec read. That made
 Rupi write implementation files earlier, but its two-turn run still ended with
-no project test modules. The next exploratory variant raises the inspection
-allowance to two model requests before requiring a write. This tests whether an
-extra specification/design pass helps produce a more complete first
-implementation. The run will use the same two-turn, 300-second Rupi-only budget;
-a matched Pi comparison is only useful if Rupi resolves the independent oracle.
+no project test modules. The exploratory v2 variant raised the inspection
+allowance to two model requests before requiring a write. It used the same
+two-turn, 300-second Rupi-only budget.
+
+Run ID: `bench-20260928-case01-progress-v2`.
+
+| Turn | Result | Requests | Input / output tokens | Tools | Project / oracle |
+| --- | --- | ---: | ---: | --- | --- |
+| 1 | timeout, 300,359 ms | 3 started, 2 completed | 4,509 / 122 | `read`, failed `exec`, `read` | 1 / 1 |
+| 2 | timeout, 300,341 ms | 1 abandoned, no usage | 0 / 0 | none | 1 / 1 |
+
+Rupi used 4,631 inference-work tokens over 600,700 ms and created no
+implementation files. The first turn completed a `read`, a failed `exec`, and a
+second `read`; its third model request hit the time limit before producing tools.
+The second turn was cancelled before producing output or tools. This is worse
+than v1, which created source and a README under the same budget.
+The case configuration is restored to one request before the boundary; the v2
+setting is discarded. No matched Pi run is warranted because the oracle
+remained unresolved.
