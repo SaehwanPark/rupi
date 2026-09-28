@@ -328,10 +328,41 @@ tokens (21,287 inference-work tokens) over 900,848 ms. Neither client created a
 project test package or passed the oracle in any turn; the clarified text
 requirement did not produce a Case 01 win.
 
-The run config shows Rupi's provider `request_timeout_ms` at 600,000 while the
-benchmark kills each turn after 300 seconds. Thus the harness deadline can kill
-Rupi before its provider deadline. This mismatch is a plausible contributor to
-the incomplete turns, though the metrics alone do not prove it caused turn 2's
-zero-output result. Next, set the provider timeout to the turn budget and run
-the same matched campaign. This will test orderly timeout and recovery with the
-same 300-second limit for both agents.
+The run config showed Rupi's provider `request_timeout_ms` at 600,000 while the
+benchmark killed each turn after 300 seconds. That left the harness able to kill
+Rupi before its provider deadline. The next comparison sets the provider timeout
+below the turn budget with a 30-second grace and checks whether the runtime records
+the provider timeout before the outer watchdog intervenes.
+
+## Matched provider-deadline comparison: `bench-20260928-case01-provider-deadline-low-matched3`
+
+This run used `request_timeout_ms=270,000` inside each 300-second Rupi turn. The
+model, low server default, prompts, write-only Rupi boundary, and three-turn
+budget stayed fixed.
+
+| Agent / turn | Elapsed | Requests | Input / output | Project / oracle / help |
+| --- | ---: | ---: | ---: | ---: |
+| Rupi 1 | 288,816 ms | 2 / 2 | 3,336 / 42 | 1 / 1 / 1 |
+| Rupi 2 | 219,112 ms | 3 / 3 | 8,605 / 3,986 | 1 / 1 / 0 |
+| Rupi 3 | 293,225 ms | 3 / 3 | 10,728 / 4,936 | 1 / 1 / 0 |
+| Pi 1 | 300,277 ms | 2 / 2 | 3,729 / 148 | 1 / 1 / 1 |
+| Pi 2 | 300,234 ms | 1 / 1 | 149 / 121 | 1 / 1 / 1 |
+| Pi 3 | 300,226 ms | 0 / 0 | 0 / 0 | 1 / 1 / 1 |
+
+Rupi used 22,669 input and 8,964 output tokens (31,633 inference-work tokens)
+over 801,153 ms. Turn 1 returned the configured provider timeout after 288,816 ms;
+the child process was not killed by the 300-second outer watchdog. This confirms
+that the internal deadline is now reported first. Turns 2 and 3 wrote the package,
+README, and tests. The project test command still failed in turns 1 and 2 because
+`tests/` was absent, then ran 47 tests with one failure in turn 3. Turn 3's batched
+`exec` failed and left a mutating effect unresolved, so Rupi stopped with
+`needs_reconciliation`. The oracle failed every turn: the CLI printed
+`[1] (open) write the docs` where the acceptance check expected `Added task 1`.
+
+Pi used 3,878 input and 269 output tokens (4,147 inference-work tokens) over
+900,737 ms. Its outer watchdog timed out all three turns; it created no project
+package, and the project tests, oracle, and help checks failed each time. Neither
+agent passed the oracle, so there is no Case 01 win. The timeout adjustment fixes
+the provider-versus-harness ordering, but the current implementation still needs
+clearer task-output requirements and a safe way to finish after a failed
+verification command.
