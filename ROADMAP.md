@@ -1120,6 +1120,21 @@ and 6.36 ms warm median; context-prefill cases passed; 1,000-turn checkpointed r
 3.96 ms against a 30 ms budget. This correctness slice makes no local-model completion claim;
 controlled llama.cpp comparison remains separate empirical work.
 
+### In progress audit follow-up — Round 11 (WIP)
+
+`audits/pi-benchmark-audit/round11.md` identifies five runtime reliability gaps across tool-effect
+semantics, progress accounting, context recovery, MCP catalog freshness, and trace schema preflight.
+This follow-up is in progress on `fix/pi-benchmark-audit-round-11`:
+
+- [ ] Separate tool execution state from side-effect disposition; stop same-batch mutating tails
+      and gate replay/progress on effect evidence.
+- [ ] Preserve trusted archived payload references through typed and recursive compaction.
+- [ ] Handle MCP tool-list-change notifications fail-closed or by atomic catalog refresh.
+- [ ] Apply event-schema preflight to every journal tail/open/recovery path.
+- [ ] Complete invariant review, workspace verification, and applicable performance checks.
+
+Verification pending.
+
 ### P2 — Later / deliberately deferred
 
 - [x] Windows CI matrix (hosted CI covers Ubuntu, macOS, and Windows; benchmark execution remains non-Windows only).
