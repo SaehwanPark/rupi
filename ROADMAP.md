@@ -1156,10 +1156,17 @@ TUI rendering passed all budgets (3.31–3.90 µs/unit); checkpointed restore me
 
 ## Ongoing cross-cutting work
 
-### Empirical local-model comparison — Case 01 target-version gate in progress
+### Empirical local-model comparison — Case 01 oracle gate passed; series active
 
-- [ ] Beat Pi 0.86.1 on `01-task-ledger` with the local `qwen3.8-flash-next` model.
-- Corrected-prompt matched evidence against pinned Pi 0.86.1:
+- [x] Beat Pi 0.86.1 on the Case 01 acceptance oracle with the local
+  `qwen3.8-flash-next` model. Latest matched evidence:
+  `bench-20260929-case01-focused-contract-low-matched4`. Rupi passed the oracle
+  and help in turn 4 (13,590 inference-work tokens; 1,086,371 ms); Pi did not
+  pass after four turns (9,631 tokens; 1,201,171 ms). Rupi was faster but used
+  more work tokens. Rupi still lacks a README and `tests/`, accepts a leading
+  `+` in task IDs despite the spec, and ended `needs_reconciliation` after a
+  failed inline verification command. See the experiment ledger for details.
+- Earlier corrected-prompt matched evidence against pinned Pi 0.86.1:
   `bench-20260928-case01-target0861-low-matched4`. Rupi did not pass the oracle
   in four turns (11,328 inference-work tokens; 1,148,608 ms); Pi passed in turn
   3 (20,487 tokens; 901,036 ms). Both failed project-test discovery because
@@ -1167,9 +1174,10 @@ TUI rendering passed all budgets (3.31–3.90 µs/unit); checkpointed restore me
   3. See `docs/benchmark/2026-09-28-case01-task-ledger.md` for turn data.
 - A separate corrected-prompt run against installed Pi 0.87.1 was a provisional
   Rupi oracle win, but does not change the pinned 0.86.1 result.
-- The gate is per case and remains open until matched evidence against Pi 0.86.1
-  shows a `rupi` win. The original ten-case summary is not evidence of current behavior.
-- The next matched prompt foregrounds both `--state PATH` positions, non-zero
+- The comparison gate is per case. Case 01 now has a target-version oracle win;
+  the remaining cases still need matched evidence. The original ten-case
+  summary is not evidence of current behavior.
+- The successful run's prompt foregrounded both `--state PATH` positions, non-zero
   malformed-input handling, IDs written with ASCII decimal digits that denote
   positive integers, and byte-for-byte state preservation. It keeps the project
   directory as the Windows working directory; prompt rendering passed the

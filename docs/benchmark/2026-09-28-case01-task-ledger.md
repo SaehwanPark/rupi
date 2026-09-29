@@ -717,3 +717,51 @@ project directory, avoiding the extended-path `cd` error from the separate
 0.87.1 run. The prompt change is derived from the visible SPEC and local Windows
 execution behavior; acceptance output remains excluded from initial and recovery
 prompts.
+
+## Focused-contract matched run — `bench-20260929-case01-focused-contract-low-matched4`
+
+The run used Pi 0.86.1 from the isolated temporary prefix and matched the prior
+target run's settings: low reasoning, four 300-second turns, an eight-request
+cap, and local project-test/help feedback only. Both saved turn-1 prompts
+preserve the new contract emphasis. Recovery prompts contain no acceptance
+output.
+
+Checks are project tests / oracle / help; `1` means the command failed.
+
+| Rupi turn | Elapsed | Input / output | Tools | Checks | End |
+| --- | ---: | ---: | --- | --- | --- |
+| 1 | 289,909 ms | 3,557 / 41 | read | 1 / 1 / 1 | timeout |
+| 2 | 296,547 ms | 2,167 / 291 | exec | 1 / 1 / 1 | timeout |
+| 3 | 271,491 ms | 0 / 0 | none | 1 / 1 / 1 | provider timeout |
+| 4 | 228,424 ms | 3,762 / 3,772 | write, process x6, exec x3 | 1 / 0 / 0 | needs reconciliation |
+
+Rupi used 9,486 input and 4,104 output tokens (13,590 inference-work tokens)
+over 1,086,371 ms. It passed the oracle and help in turn 4. Its only authored
+project source was `tasklog/__main__.py` (7,714 bytes), and it left two smoke
+state files. It created no README or project tests, so unittest discovery
+failed in every turn.
+
+The turn-4 trace records a self-check where `done abc` reported exit status 0.
+A following inline Python `-c` verification failed with an unterminated-string
+SyntaxError, ending the turn as `needs_reconciliation`. The saved implementation
+accepts an optional leading `+` in IDs, contrary to SPEC.md. These remain
+implementation gaps even though the external oracle passed.
+
+| Pi 0.86.1 turn | Elapsed | Input / output | Tools | Checks | End |
+| --- | ---: | ---: | --- | --- | --- |
+| 1 | 300,332 ms | 3,931 / 120 | read, bash | 1 / 1 / 1 | timeout |
+| 2 | 300,264 ms | 625 / 73 | bash | 1 / 1 / 1 | timeout |
+| 3 | 300,271 ms | 0 / 0 | none | 1 / 1 / 1 | timeout |
+| 4 | 300,304 ms | 625 / 4,257 | read | 1 / 1 / 1 | timeout |
+
+Pi used 5,181 input and 4,450 output tokens (9,631 inference-work tokens) over
+1,201,171 ms. It did not pass the oracle or help in any turn and created no
+project source files, README, or tests. Project-test discovery also failed in
+all turns.
+
+Under the oracle-based Case 01 comparison gate, Rupi won this matched run by
+passing the oracle while Pi did not resolve in four turns. Rupi finished
+114,800 ms sooner but used 3,959 more inference-work tokens (about 41% more).
+This closes the target-version oracle comparison gate; the missing README,
+tests, strict ID validation, and `needs_reconciliation` status remain visible
+limitations. The ten-case comparison remains active.
