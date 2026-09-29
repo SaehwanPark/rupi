@@ -1256,6 +1256,10 @@ TUI rendering passed all budgets (3.31–3.90 µs/unit); checkpointed restore me
   Rupi used 10,705 work tokens over 1,190,317 ms but created no package; two
   provider timeouts and a failed `dir /s /b` exec left it unresolved. Case 02
   remains open. See the ledger.
+- Active Case 02 slice: compare the current `readqueue` config with the opt-in
+  `write` progress boundary. Keep Pi 0.86.1, prompts, request limits, and turn
+  deadlines matched; require oracle and help checks. The pre-change baseline is
+  pending. The project suite and README remain additional requirements.
 - Case 03 baseline `bench-20260929-case03-baseline-low-matched4-600s` was
   inconclusive. Rupi wrote only `outbox/__init__.py` before a failed recursive
   `dir` exec; it used 17,180 work tokens over 614,821 ms. Pi created no source
