@@ -111,7 +111,8 @@ the file tool, then run that file in a separate command-tool call.
 Keep file inspection inside this workspace; do not read Python installation
 files or personal/global skill directories.
 Use the available `read` tool for workspace file inspection. Reserve `exec`
-for one direct command invocation; avoid shell searches such as `findstr`.
+for one direct command invocation. Do not use shell commands to list or search
+workspace files, including `dir /s`, `find`, `findstr`, `grep`, or `ls`.
 '@
 }
 
@@ -162,6 +163,8 @@ them, and state any incomplete requirement explicitly.
     'write a temporary `.py` file'
     'do not read Python installation'
     'Use the available `read` tool for workspace file inspection'
+    'Do not use shell commands to list or search'
+    'including `dir /s`, `find`, `findstr`, `grep`, or `ls`.'
   )
   foreach ($instruction in $requiredInstructions) {
     if (-not $prompt.Contains($instruction)) {
