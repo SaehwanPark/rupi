@@ -40,18 +40,56 @@ function Get-CaseDefinitions {
   )
 }
 
-function Get-InitialPrompt([hashtable]$case) {
-  $prompt = @'
-You are implementing a new small project from scratch in the current workspace.
-Read SPEC.md completely before acting. Build the complete dependency-free Python
-3 project described by the specification, including its package, a readable
-README.md, and focused unittest tests. The project focus is {{PROJECT_FOCUS}}.
+function Get-CaseGuidance([hashtable]$case) {
+  switch ($case.Id) {
+    "01-task-ledger" {
+      return (@(
+        'Prioritize this SPEC.md detail: `--state PATH` must work both before'
+        'the command and after a subcommand.'
+        'Unknown commands and missing required arguments return non-zero without changing state.'
+        'IDs use ASCII decimal digits only and represent positive integers; `+1` is invalid.'
+        ''
+        'Make `tasklog/__main__.py` the first source file and keep the CLI there until'
+        '`add`, `list`, `done`, and `remove` work with persistent JSON state.'
+        'Do not create `__init__.py`, separate model or storage modules, a README,'
+        'or tests before that runnable CLI exists.'
+        'Then add the README and focused tests for both `--state PATH` positions,'
+        'malformed commands, missing arguments, and invalid IDs.'
+        'Verify invalid input leaves the existing state file byte-for-byte unchanged.'
+      ) -join "`n")
+    }
+    "02-reading-queue" {
+      return (@(
+        'Run the service with `python -m readqueue serve --db PATH --host HOST --port PORT`.'
+        'Prioritize the documented HTTP routes, deterministic JSON, and'
+        'SQLite persistence across a server restart.'
+        'Successful responses use `application/json`; error responses include'
+        'an `error` string and a suitable 4xx status.'
+        'Duplicate URLs return 409; unknown IDs return 404; invalid requests'
+        'leave existing data unchanged.'
+        'Add focused tests for the documented routes, failure preservation, and'
+        'restart persistence.'
+      ) -join "`n")
+    }
+    default {
+      return (@(
+        "Prioritize the complete $($case.Focus) workflow described in SPEC.md."
+        'Preserve its documented persistent state and failure behavior.'
+        'Add focused tests for successful workflows and state-preserving failures.'
+      ) -join "`n")
+    }
+  }
+}
 
-Prioritize these contract details from SPEC.md: `--state PATH` must work both
-before the command and after a subcommand. Unknown commands and missing required
-arguments must return a non-zero status without changing existing state. IDs
-must contain ASCII decimal digits only and denote a positive integer; malformed
-IDs must be rejected without changing state.
+function Get-InitialPrompt([hashtable]$case) {
+  $guidance = Get-CaseGuidance $case
+  $prompt = @'
+You are implementing the `{{PACKAGE}}` Python package in the current workspace.
+Read SPEC.md completely before acting. Build a complete dependency-free Python 3
+project for the `{{PACKAGE}}` package described by SPEC.md, including a readable
+README.md and focused unittest tests. The project focus is {{PROJECT_FOCUS}}.
+
+{{CASE_GUIDANCE}}
 
 Work only inside this project workspace. Do not edit SPEC.md, any rupi config,
 or files outside this workspace. Do not inspect or run the external acceptance
@@ -61,37 +99,81 @@ On this Windows host, use the available file and process tools directly for
 known programs and avoid Unix-only shell assumptions or fragile inline quoting.
 The project directory is already the working directory; do not change
 directories to its extended Windows path with `cd` or `cd /d`.
-After reading the contract, make `tasklog/__main__.py` the first source file and
-keep the CLI in that entry point until `add`, `list`, `done`, and `remove` work
-with persistent JSON state. Do not create `__init__.py`, separate model or
-storage modules, a README, tests, or placeholders before that runnable CLI
-exists. Then add the README and focused tests proving both `--state PATH`
-positions work. Test that unknown commands, missing required arguments, and
-malformed IDs return a non-zero status without changing state. Check the
-existing state file byte-for-byte after each invalid-input case. Run the project
-unittest suite, the project-specific help commands described by SPEC.md, and a
-small smoke check. Do not treat your final summary as proof: report exact
-commands and statuses only after running them, and state any incomplete
-requirement explicitly.
+
+Complete the smallest runnable workflow described in SPEC.md first, then add
+the README and focused tests. Run the project unittest suite and project-specific
+help commands described by SPEC.md, plus a small smoke check. Do not treat your
+final summary as proof: report exact commands and statuses only after running
+them, and state any incomplete requirement explicitly.
 '@
+  $prompt = $prompt.Replace('{{PACKAGE}}', [string]$case.Package)
   $prompt = $prompt.Replace('{{PROJECT_FOCUS}}', [string]$case.Focus)
+  $prompt = $prompt.Replace('{{CASE_GUIDANCE}}', $guidance)
+
   $requiredInstructions = @(
-    'make `tasklog/__main__.py` the first source file'
-    'until `add`, `list`, `done`, and `remove` work'
-    '`--state PATH` must work both'
-    'Unknown commands and missing required'
-    'must contain ASCII decimal digits only'
-    'denote a positive integer; malformed'
-    'focused tests proving both `--state PATH`'
-    'unknown commands, missing required arguments, and'
-    'malformed IDs return a non-zero status without changing state'
-    'existing state file byte-for-byte after each invalid-input case'
-    'do not change'
-    'its extended Windows path with `cd` or `cd /d`'
+    'Read SPEC.md completely before acting'
+    'complete dependency-free Python 3'
+    'README.md and focused unittest tests'
+    'The project focus is '
+    'Do not inspect or run the external acceptance'
+    'Use only Python standard-library modules'
+    'The project directory is already the working directory'
+    'Run the project unittest suite'
   )
   foreach ($instruction in $requiredInstructions) {
     if (-not $prompt.Contains($instruction)) {
       throw "Initial benchmark prompt is missing an instruction: $instruction"
+    }
+  }
+  if (-not $prompt.Contains([string]$case.Package)) {
+    throw "Initial benchmark prompt is missing package $($case.Package)."
+  }
+  if (-not $prompt.Contains([string]$case.Focus)) {
+    throw "Initial benchmark prompt is missing focus for $($case.Id)."
+  }
+  if (-not $prompt.Contains($guidance)) {
+    throw "Initial benchmark prompt is missing case guidance for $($case.Id)."
+  }
+  if ($prompt.Contains('{{') -or $prompt.Contains('}}')) {
+    throw "Initial benchmark prompt has an unresolved template for $($case.Id)."
+  }
+  $unexpectedControls = @($prompt.ToCharArray() | Where-Object {
+      [int]$_ -lt 32 -and [int]$_ -notin @(10, 13)
+    })
+  if ($unexpectedControls.Count -gt 0) {
+    throw "Initial benchmark prompt has a control character for $($case.Id)."
+  }
+
+  $caseSpecificInstructions = @()
+  if ($case.Id -eq "01-task-ledger") {
+    $caseSpecificInstructions = @(
+      '`--state PATH` must work both before'
+      'the command and after a subcommand.'
+      'IDs use ASCII decimal digits only and represent positive integers'
+      '`+1` is invalid'
+      'Make `tasklog/__main__.py` the first source file'
+      '`add`, `list`, `done`, and `remove` work with persistent JSON state.'
+      'focused tests for both `--state PATH` positions'
+      'byte-for-byte unchanged'
+    )
+  } elseif ($case.Id -eq "02-reading-queue") {
+    $caseSpecificInstructions = @(
+      'python -m readqueue serve --db PATH --host HOST --port PORT'
+      'SQLite persistence across a server restart.'
+      'Successful responses use `application/json`'
+      'error responses include'
+      'an `error` string and a suitable 4xx status.'
+      'Duplicate URLs return 409; unknown IDs return 404; invalid requests'
+      'leave existing data unchanged.'
+      'focused tests for the documented routes'
+    )
+    if ($prompt.Contains('tasklog/__main__.py') -or $prompt.Contains('`--state PATH`')) {
+      throw 'Case 02 initial prompt contains Case 01 instructions.'
+    }
+  }
+  foreach ($instruction in $caseSpecificInstructions) {
+    if (-not $prompt.Contains($instruction)) {
+      throw "Initial benchmark prompt for $($case.Id) is missing: $instruction"
     }
   }
   return $prompt
@@ -535,7 +617,10 @@ if ($CaseId.Count -gt 0) {
 if ($DryRun) {
   Write-Host "Thinking level: $ThinkingLevel"
   Write-Host "Recovery feedback: project tests and help only"
-  $cases | ForEach-Object { "{0}: {1}" -f $_.Id, (Get-InitialPrompt $_).Split("`n")[0] }
+  $cases | ForEach-Object {
+    [void](Get-InitialPrompt $_)
+    "{0}: package={1}; focus={2}" -f $_.Id, $_.Package, $_.Focus
+  }
   exit 0
 }
 if (-not (Test-Path $rupiBinary)) { throw "Missing $rupiBinary; run cargo build --bin rupi first." }

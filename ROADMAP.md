@@ -1182,6 +1182,10 @@ TUI rendering passed all budgets (3.31–3.90 µs/unit); checkpointed restore me
   positive integers, and byte-for-byte state preservation. It keeps the project
   directory as the Windows working directory; prompt rendering passed the
   PowerShell parser, dry run, and direct integrity checks.
+- Case 02 (`02-reading-queue`) is queued next. Initial prompts now use each
+  case's package and focus; Case 02 prioritizes SQLite restart persistence,
+  deterministic JSON, and state-preserving HTTP errors. Parser, all-case dry
+  run, and direct Case 01/02 prompt checks pass. A matched Pi 0.86.1 run is next.
 
 ### Performance
 
