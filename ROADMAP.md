@@ -1266,9 +1266,16 @@ TUI rendering passed all budgets (3.31–3.90 µs/unit); checkpointed restore me
   `pi_version: 0.86.1` but was inconclusive: neither agent resolved in four turns.
   Rupi used 62,291 work tokens over 2,401,168 ms; Pi used 6,284 over 2,401,033 ms.
   Rupi passed help only on turn 4; Pi did not pass help. Both failed oracle and project
-  test discovery. The earlier unversioned result is provisional. Case 04 remains open;
-  Case 05 is next. See the
+  test discovery. The earlier unversioned result is provisional. Case 04 remains open; see its
   [Case 04 ledger](docs/benchmark/2026-09-29-case04-webhook-inbox-ledger.md).
+
+  Case 05 used the pinned Pi 0.86.1 run `bench-20260929-case05-pi0861-low-matched4-600s`.
+  Both resolved in turn 3 and passed the acceptance oracle and all help checks. Rupi used 61,387
+  work tokens over 1,785,865 ms; Pi used 37,207 over 1,800,734 ms. Rupi finished 14,869 ms
+  sooner but used 24,180 more work tokens, so the result is mixed rather than a strict oracle win.
+  Both project-test discovery checks failed because the `tests` start directory was not importable.
+  Case 06 is next. See the
+  [Case 05 ledger](docs/benchmark/2026-09-29-case05-batch-relay-ledger.md).
 
 ### Performance
 
