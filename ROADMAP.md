@@ -1156,6 +1156,150 @@ TUI rendering passed all budgets (3.31–3.90 µs/unit); checkpointed restore me
 
 ## Ongoing cross-cutting work
 
+### Empirical local-model comparison — Case 01 oracle gate passed; series active
+
+- [x] Beat Pi 0.86.1 on the Case 01 acceptance oracle with the local
+  `qwen3.8-flash-next` model. Latest matched evidence:
+  `bench-20260929-case01-focused-contract-low-matched4`. Rupi passed the oracle
+  and help in turn 4 (13,590 inference-work tokens; 1,086,371 ms); Pi did not
+  pass after four turns (9,631 tokens; 1,201,171 ms). Rupi was faster but used
+  more work tokens. Rupi still lacks a README and `tests/`, accepts a leading
+  `+` in task IDs despite the spec, and ended `needs_reconciliation` after a
+  failed inline verification command. See the experiment ledger for details.
+- Earlier corrected-prompt matched evidence against pinned Pi 0.86.1:
+  `bench-20260928-case01-target0861-low-matched4`. Rupi did not pass the oracle
+  in four turns (11,328 inference-work tokens; 1,148,608 ms); Pi passed in turn
+  3 (20,487 tokens; 901,036 ms). Both failed project-test discovery because
+  neither created `tests/`. Help passed only for Rupi in turn 4 and Pi in turn
+  3. See `docs/benchmark/2026-09-28-case01-task-ledger.md` for turn data.
+- A separate corrected-prompt run against installed Pi 0.87.1 was a provisional
+  Rupi oracle win, but does not change the pinned 0.86.1 result.
+- The comparison gate is per case. Case 01 now has a target-version oracle win;
+  the remaining cases still need matched evidence. The original ten-case
+  summary is not evidence of current behavior.
+- The successful run's prompt foregrounded both `--state PATH` positions, non-zero
+  malformed-input handling, IDs written with ASCII decimal digits that denote
+  positive integers, and byte-for-byte state preservation. It keeps the project
+  directory as the Windows working directory; prompt rendering passed the
+  PowerShell parser, dry run, and direct integrity checks.
+- Case 02 matched run `bench-20260929-case02-readqueue-low-matched4` was a Pi
+  win: Pi passed the oracle and both help commands in turn 3 (17,626 tokens;
+  900,984 ms). Rupi stopped after its first active turn with
+  `needs_reconciliation` from a Windows inline `python -c` quoting error; no
+  project source was created. Both project test checks failed because no
+  `tests/` directory existed. Case 02 remains open; the experiment ledger has
+  exact turn data.
+- Diagnostic retry `bench-20260929-case02-argv-safe-low-matched4` did not
+  resolve for either agent. Rupi used 11,572 inference-work tokens before
+  `needs_reconciliation`: it tried `process python --version`, but `process`
+  was not a listed tool and was rejected as a shell command. Turns 2–4 had no
+  model requests or tools. Pi timed out in all four turns (18,764 tokens;
+  1,200,945 ms), passing neither the oracle nor help checks. Both agents failed
+  test discovery because no `tests/` directory existed. The ledger records the
+  turn metrics and created files; Case 02 remains open.
+- The next Case 02 retry will use precise Windows tool guidance: call a
+  dedicated process tool only when it is listed, otherwise run the executable
+  directly through shell/exec one command per invocation. The prompt also
+  prohibits `python -c` and chained commands and directs one-off checks to a
+  temporary `.py` file inside the project workspace. Case-specific guidance
+  continues to emphasize SQLite restart persistence, deterministic JSON, and
+  state-preserving HTTP errors.
+- Retry `bench-20260929-case02-tool-listed-low-matched4` still did not resolve
+  for either agent. Rupi used 17,271 inference-work tokens over 1,144,139 ms;
+  it attempted `python -c` despite the new guidance, wrote only package entry
+  points, and ended its last two turns on provider timeouts. Pi used 16,950
+  tokens over 1,200,979 ms and timed out in all four turns. Neither passed the
+  oracle or help checks; both failed test discovery. Rupi was faster but used
+  more tokens, so Case 02 remains open. See the ledger for details.
+- The next retry will keep the CLI, handler, and SQLite logic in
+  `readqueue/__main__.py` until the service and help work, and defer module
+  splitting, README, and tests until then. Windows guidance will require one
+  executable per command-tool call, prohibit `&`, `&&`, `;`, `|`, and inline
+  Python, and keep file reads inside the project workspace.
+- Entrypoint-first retry `bench-20260929-case02-entrypoint-first-low-matched4`
+  was another Pi win: Pi passed the oracle and both help commands in turn 3
+  (16,365 inference-work tokens; 900,676 ms). Rupi used 6,494 tokens over
+  1,124,404 ms, produced no source, and its later calls hit the configured
+  270,000 ms provider timeout. Both failed project test discovery. Case 02
+  remains open; see the ledger for per-turn evidence.
+- The next matched diagnostic will preserve the prompt, low reasoning, request
+  cap, and Pi 0.86.1 target, but allow 600 seconds per turn and a 570-second
+  Rupi provider deadline. This checks whether the current provider cutoff is
+  preventing source output.
+- Extended entrypoint-first run `bench-20260929-case02-entrypoint-first-low-matched4-600s`
+  still favored Pi: it passed the oracle and both help commands in turn 2
+  (24,997 work tokens; 1,200,459 ms). Rupi used 29,501 tokens over 1,466,279
+  ms; help passed, but POST returned HTTP 500. Its final source defines
+  `Store._session` while CRUD methods call missing `Store._connect`, and a
+  failed `findstr` exec left the last turn unable to continue. Pi's generated
+  project still lacked a README and discoverable tests. Case 02 remains open;
+  see the ledger for the per-turn record and next diagnostic.
+- Read-tool-guidance run `bench-20260929-case02-read-tool-low-matched4-600s`
+  was another Pi win. Pi passed the oracle and help in turn 2 (28,419 work
+  tokens; 1,200,455 ms). Rupi used 105,134 tokens over 2,117,416 ms; its help
+  passed, but its request reader used `self.r` instead of `self.rfile`, causing
+  HTTP 500 responses. Both generated projects still lacked a README and
+  discoverable tests. Case 02 remains open; see the ledger for per-turn data.
+- Explicit `rfile` and health-first retry remained a Pi win in
+  `bench-20260929-case02-rfile-health-first-low-matched4-600s`. Pi passed the
+  oracle, 34 project tests, and both help
+  commands using 20,207 work tokens over 600,157 ms. Rupi used 52,278 tokens
+  over 1,284,606 ms; its PATCH request disconnected and test discovery failed.
+  Neither generated a README. Case 02 remains open; see the ledger.
+- PATCH-readback run `bench-20260929-case02-patch-readback-low-matched4-600s`
+  favored Pi: it passed oracle/help in one turn (17,117 work tokens; 600,254 ms).
+  Rupi passed in turn 2 after 32,357 tokens and 1,200,705 ms. Both missed the
+  README and test suite. Rupi's first service command exited 0 without output;
+  Case 02 remains open. See the ledger.
+- Module-startup retry `bench-20260929-case02-entrypoint-check-low-matched4-600s`
+  favored Pi: it passed oracle/help in one turn (17,102 work tokens; 600,302 ms).
+  Rupi used 10,705 work tokens over 1,190,317 ms but created no package; two
+  provider timeouts and a failed `dir /s /b` exec left it unresolved. Case 02
+  remains open. See the ledger.
+- Case 03 baseline `bench-20260929-case03-baseline-low-matched4-600s` was
+  inconclusive. Rupi wrote only `outbox/__init__.py` before a failed recursive
+  `dir` exec; it used 17,180 work tokens over 614,821 ms. Pi created no source
+  after four outer timeouts (6,303 tokens; 2,400,993 ms). Neither resolved.
+  Case 03 remains open. See the
+  [Case 03 ledger](docs/benchmark/2026-09-29-case03-event-outbox-ledger.md).
+- Pinned Case 04 run `bench-20260929-case04-pi0861-low-matched4-600s` recorded
+  `pi_version: 0.86.1` but was inconclusive: neither agent resolved in four turns.
+  Rupi used 62,291 work tokens over 2,401,168 ms; Pi used 6,284 over 2,401,033 ms.
+  Rupi passed help only on turn 4; Pi did not pass help. Both failed oracle and project
+  test discovery. The earlier unversioned result is provisional. Case 04 remains open; see its
+  [Case 04 ledger](docs/benchmark/2026-09-29-case04-webhook-inbox-ledger.md).
+
+  Case 05 used the pinned Pi 0.86.1 run `bench-20260929-case05-pi0861-low-matched4-600s`.
+  Both resolved in turn 3 and passed the acceptance oracle and all help checks. Rupi used 61,387
+  work tokens over 1,785,865 ms; Pi used 37,207 over 1,800,734 ms. Rupi finished 14,869 ms
+  sooner but used 24,180 more work tokens, so the result is mixed rather than a strict oracle win.
+  Both project-test discovery checks failed because the `tests` start directory was not importable.
+  See the
+  [Case 05 ledger](docs/benchmark/2026-09-29-case05-batch-relay-ledger.md).
+
+  Case 06 ran with the pinned Pi 0.86.1 baseline. Pi resolved on turn 4 after its outer timeout,
+  passing the oracle, all 61 project tests, and every help check. Rupi did not resolve; its oracle
+  runs could not reach a healthy server, test discovery could not import `tests`, and all help
+  checks failed. Pi used 45,632 work tokens over 2,401,085 ms; Rupi used 69,551 over 2,214,433
+  ms. Pi was 186,652 ms slower but used 23,919 fewer work tokens, a strict oracle win. See the
+  [Case 06 ledger](docs/benchmark/2026-09-29-case06-artifact-pipeline-ledger.md).
+
+  Case 07 used the pinned Pi 0.86.1 run `bench-20260929-case07-pi0861-low-matched4-600s`. Pi
+  resolved on turn 4 after its outer timeout, passing all five oracle tests, 53 project tests, and
+  every help check. Rupi did not resolve: project-test discovery could not import `tests`, oracle
+  requests disconnected, and `worker` help still failed. Pi used 62,288 work tokens over
+  2,401,022 ms; Rupi used 69,765 over 2,288,759 ms. Pi took 112,263 ms longer but used 7,477
+  fewer work tokens, a strict oracle win. See the
+  [Case 07 ledger](docs/benchmark/2026-09-29-case07-lease-cascade-ledger.md).
+
+  Case 10 used the pinned Pi 0.86.1 run `bench-20260929-case10-pi0861-low-matched4-600s`.
+  Neither agent resolved in four turns. Rupi used 89,125 work tokens over 2,337,401 ms; Pi used
+  9,202 over 2,401,150 ms. Both failed all oracle and project-test checks, and every help check.
+  Rupi's launcher could not find `receiptledger.__main__`; Pi's Python could not import
+  `receiptledger`. The result is inconclusive: Pi used 79,923 fewer work tokens but finished
+  63,749 ms later; neither resolved the oracle. See
+  [Case 10 ledger](docs/benchmark/2026-09-29-case10-receipt-ledger.md).
+
 ### Performance
 
 - [ ] Track cold startup regression.

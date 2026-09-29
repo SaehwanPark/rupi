@@ -4,12 +4,16 @@ param(
   [string]$Agent = "all",
   [string[]]$CaseId = @(),
   [string]$RunId = "",
+  [string]$PiExecutable = "",
+  [string]$ExpectedPiVersion = "0.86.1",
   [ValidateRange(1, 10)]
   [int]$MaxTurns = 4,
   [ValidateRange(30, 3600)]
   [int]$TurnTimeoutSeconds = 900,
   [ValidateRange(1, 100)]
   [int]$MaxModelRequestsPerTurn = 24,
+  [ValidateSet("off", "low")]
+  [string]$ThinkingLevel = "low",
   [switch]$DryRun
 )
 
@@ -38,29 +42,252 @@ function Get-CaseDefinitions {
   )
 }
 
+function Get-CaseGuidance([hashtable]$case) {
+  switch ($case.Id) {
+    "01-task-ledger" {
+      return (@(
+        'Prioritize this SPEC.md detail: `--state PATH` must work both before'
+        'the command and after a subcommand.'
+        'Unknown commands and missing required arguments return non-zero without changing state.'
+        'IDs use ASCII decimal digits only and represent positive integers; `+1` is invalid.'
+        ''
+        'Make `tasklog/__main__.py` the first source file and keep the CLI there until'
+        '`add`, `list`, `done`, and `remove` work with persistent JSON state.'
+        'Do not create `__init__.py`, separate model or storage modules, a README,'
+        'or tests before that runnable CLI exists.'
+        'Then add the README and focused tests for both `--state PATH` positions,'
+        'malformed commands, missing arguments, and invalid IDs.'
+        'Verify invalid input leaves the existing state file byte-for-byte unchanged.'
+      ) -join "`n")
+    }
+    "02-reading-queue" {
+      return (@(
+        'Run the service with `python -m readqueue serve --db PATH --host HOST --port PORT`.'
+        'Start with `readqueue/__main__.py` and keep the CLI, HTTP handler, and'
+        'SQLite operations in that file until the complete service and help commands work.'
+        'Do not split into `cli.py`, `server.py`, `store.py`, or `validation.py`,'
+        'or write the README and tests, before the service is runnable.'
+        'Call `main()` under the `__name__ == "__main__"` guard in `readqueue/__main__.py`.'
+        'Before route checks, confirm the `serve` command prints its address and stays running.'
+        'A zero exit with no startup output means the module entry point is incomplete.'
+        'Prioritize the documented HTTP routes, deterministic JSON, and'
+        'SQLite persistence across a server restart.'
+        'Keep the SQLite connection helper and all CRUD call sites consistent after a rename.'
+        'After service and help work, write a readable `README.md`.'
+        'Include the run command and examples for documented routes.'
+        'Use `self.rfile` to read HTTP request bodies.'
+        'It is the input stream provided by `BaseHTTPRequestHandler`.'
+        'Smoke-test `GET /healthz`, then `POST /items` and `GET /items`.'
+        'PATCH the created `/items/{id}` to status `reading`, then GET it again.'
+        'Send an invalid PATCH, verify JSON 4xx, and confirm the item is unchanged.'
+        'If a smoke request disconnects, inspect service stderr, fix the error, and rerun.'
+        'Use a temporary SQLite database for that smoke check before finishing.'
+        'Successful responses use `application/json`; error responses include'
+        'an `error` string and a suitable 4xx status.'
+        'Duplicate URLs return 409; unknown IDs return 404; invalid requests'
+        'leave existing data unchanged.'
+        'Add focused tests for the documented routes, failure preservation, and'
+        'restart persistence.'
+      ) -join "`n")
+    }
+    default {
+      return (@(
+        "Prioritize the complete $($case.Focus) workflow described in SPEC.md."
+        'Preserve its documented persistent state and failure behavior.'
+        'Add focused tests for successful workflows and state-preserving failures.'
+      ) -join "`n")
+    }
+  }
+}
+
+function Get-WindowsToolGuidance {
+  @'
+On Windows, use a dedicated process tool only if it is listed in your available
+tools, calling it through its actual tool interface. Never type tool names such
+as `process` as command prefixes in a shell. If there is no process tool, run
+one executable directly through the available shell or exec tool per call.
+Do not combine shell commands with `&`, `&&`, `;`, or `|`.
+Do not use `python -c` or put Python source inside a shell command. For a one-off
+Python check, write a temporary `.py` file inside this project workspace with
+the file tool, then run that file in a separate command-tool call.
+Keep file inspection inside this workspace; do not read Python installation
+files or personal/global skill directories.
+Use the available `read` tool for workspace file inspection. Reserve `exec`
+for one direct command invocation. Do not use shell commands to list or search
+workspace files, including `dir /s`, `find`, `findstr`, `grep`, or `ls`.
+'@
+}
+
 function Get-InitialPrompt([hashtable]$case) {
-  @"
-You are implementing a new small project from scratch in the current workspace.
-Read SPEC.md completely before acting. Build the complete dependency-free Python
-3 project described by the specification, including its package, a readable
-README.md, and focused unittest tests. The project focus is $($case.Focus).
+  $guidance = Get-CaseGuidance $case
+  $toolingGuidance = Get-WindowsToolGuidance
+  $prompt = @'
+You are implementing the `{{PACKAGE}}` Python package in the current workspace.
+Read SPEC.md completely before acting. Build a complete dependency-free Python 3
+project for the `{{PACKAGE}}` package described by SPEC.md, including a readable
+README.md and focused unittest tests. The project focus is {{PROJECT_FOCUS}}.
+
+{{CASE_GUIDANCE}}
 
 Work only inside this project workspace. Do not edit SPEC.md, any rupi config,
 or files outside this workspace. Do not inspect or run the external acceptance
 oracle. Use only Python standard-library modules.
 
-On this Windows host, use the available file and process tools directly for
-known programs and avoid Unix-only shell assumptions or fragile inline quoting.
-Start with a real implementation write after understanding the contract. Run the
-project unittest suite, the project-specific help commands described by SPEC.md,
-and a small smoke check before finishing. Do not treat your final summary as proof:
-report exact commands and statuses only after running them, and state any
-incomplete requirement explicitly.
-"@
+{{WINDOWS_TOOL_GUIDANCE}}
+The project directory is already the working directory; do not change
+directories to its extended Windows path with `cd` or `cd /d`.
+
+Complete the smallest runnable workflow described in SPEC.md first, then add
+the README and focused tests. Run the project unittest suite and project-specific
+help commands described by SPEC.md, plus a small smoke check. Do not treat your
+final summary as proof: report exact commands and statuses only after running
+them, and state any incomplete requirement explicitly.
+'@
+  $prompt = $prompt.Replace('{{PACKAGE}}', [string]$case.Package)
+  $prompt = $prompt.Replace('{{PROJECT_FOCUS}}', [string]$case.Focus)
+  $prompt = $prompt.Replace('{{CASE_GUIDANCE}}', $guidance)
+  $prompt = $prompt.Replace('{{WINDOWS_TOOL_GUIDANCE}}', $toolingGuidance)
+
+  $requiredInstructions = @(
+    'Read SPEC.md completely before acting'
+    'complete dependency-free Python 3'
+    'README.md and focused unittest tests'
+    'The project focus is '
+    'Do not inspect or run the external acceptance'
+    'Use only Python standard-library modules'
+    'The project directory is already the working directory'
+    'Run the project unittest suite'
+    'use a dedicated process tool only if it is listed in your available'
+    '`process` as command prefixes in a shell'
+    'one executable directly through the available shell or exec tool per call'
+    'Do not combine shell commands with `&`, `&&`, `;`, or `|`'
+    'Do not use `python -c`'
+    'write a temporary `.py` file'
+    'do not read Python installation'
+    'Use the available `read` tool for workspace file inspection'
+    'Do not use shell commands to list or search'
+    'including `dir /s`, `find`, `findstr`, `grep`, or `ls`.'
+  )
+  foreach ($instruction in $requiredInstructions) {
+    if (-not $prompt.Contains($instruction)) {
+      throw "Initial benchmark prompt is missing an instruction: $instruction"
+    }
+  }
+  if (-not $prompt.Contains([string]$case.Package)) {
+    throw "Initial benchmark prompt is missing package $($case.Package)."
+  }
+  if (-not $prompt.Contains([string]$case.Focus)) {
+    throw "Initial benchmark prompt is missing focus for $($case.Id)."
+  }
+  if (-not $prompt.Contains($guidance)) {
+    throw "Initial benchmark prompt is missing case guidance for $($case.Id)."
+  }
+  if ($prompt.Contains('{{') -or $prompt.Contains('}}')) {
+    throw "Initial benchmark prompt has an unresolved template for $($case.Id)."
+  }
+  $unexpectedControls = @($prompt.ToCharArray() | Where-Object {
+      [int]$_ -lt 32 -and [int]$_ -notin @(10, 13)
+    })
+  if ($unexpectedControls.Count -gt 0) {
+    throw "Initial benchmark prompt has a control character for $($case.Id)."
+  }
+
+  $caseSpecificInstructions = @()
+  if ($case.Id -eq "01-task-ledger") {
+    $caseSpecificInstructions = @(
+      '`--state PATH` must work both before'
+      'the command and after a subcommand.'
+      'IDs use ASCII decimal digits only and represent positive integers'
+      '`+1` is invalid'
+      'Make `tasklog/__main__.py` the first source file'
+      '`add`, `list`, `done`, and `remove` work with persistent JSON state.'
+      'focused tests for both `--state PATH` positions'
+      'byte-for-byte unchanged'
+    )
+  } elseif ($case.Id -eq "02-reading-queue") {
+    $caseSpecificInstructions = @(
+      'python -m readqueue serve --db PATH --host HOST --port PORT'
+      'SQLite persistence across a server restart.'
+      'Call `main()` under the `__name__ == "__main__"` guard in `readqueue/__main__.py`.'
+      'Before route checks, confirm the `serve` command prints its address and stays running.'
+      'A zero exit with no startup output means the module entry point is incomplete.'
+      'Keep the SQLite connection helper and all CRUD call sites consistent after a rename.'
+      'After service and help work, write a readable `README.md`.'
+      'Include the run command and examples for documented routes.'
+      'Use `self.rfile` to read HTTP request bodies.'
+      'It is the input stream provided by `BaseHTTPRequestHandler`.'
+      'Smoke-test `GET /healthz`, then `POST /items` and `GET /items`.'
+      'PATCH the created `/items/{id}` to status `reading`, then GET it again.'
+      'Send an invalid PATCH, verify JSON 4xx, and confirm the item is unchanged.'
+      'If a smoke request disconnects, inspect service stderr, fix the error, and rerun.'
+      'Use a temporary SQLite database for that smoke check before finishing.'
+      'Successful responses use `application/json`'
+      'error responses include'
+      'an `error` string and a suitable 4xx status.'
+      'Duplicate URLs return 409; unknown IDs return 404; invalid requests'
+      'leave existing data unchanged.'
+      'focused tests for the documented routes'
+    )
+    if ($prompt.Contains('tasklog/__main__.py') -or $prompt.Contains('`--state PATH`')) {
+      throw 'Case 02 initial prompt contains Case 01 instructions.'
+    }
+  }
+  foreach ($instruction in $caseSpecificInstructions) {
+    if (-not $prompt.Contains($instruction)) {
+      throw "Initial benchmark prompt for $($case.Id) is missing: $instruction"
+    }
+  }
+  return $prompt
 }
 
-function Get-RecoveryPrompt([hashtable]$case) {
-  @"
+function Get-RecoveryFeedback([object]$verification) {
+  $checks = [Collections.Generic.List[object]]::new()
+  [void]$checks.Add([pscustomobject]@{
+    name = "project tests"
+    result = $verification.project_tests
+  })
+  for ($index = 0; $index -lt $verification.help.Count; $index++) {
+    [void]$checks.Add([pscustomobject]@{
+      name = "help command {0}" -f ($index + 1)
+      result = $verification.help[$index]
+    })
+  }
+
+  $lines = [Collections.Generic.List[string]]::new()
+  foreach ($check in $checks) {
+    $result = $check.result
+    $status = if ($result.timed_out) {
+      "timed out"
+    } elseif ($result.exit_code -eq 0) {
+      "passed"
+    } else {
+      "failed with exit code $($result.exit_code)"
+    }
+    [void]$lines.Add("$($check.name): $status")
+    if (-not $result.timed_out -and $result.exit_code -eq 0) { continue }
+
+    $excerpt = ""
+    foreach ($path in @($result.stderr_path, $result.stdout_path)) {
+      if (-not $path -or -not (Test-Path -LiteralPath $path)) { continue }
+      $outputLines = @(Get-Content -LiteralPath $path -Tail 18 -ErrorAction SilentlyContinue)
+      if ($outputLines.Count -gt 0) {
+        $excerpt = $outputLines -join "`n"
+        break
+      }
+    }
+    if ($excerpt.Length -gt 1200) {
+      $excerpt = $excerpt.Substring($excerpt.Length - 1200)
+    }
+    if ($excerpt) { [void]$lines.Add("Diagnostic excerpt:`n$excerpt") }
+  }
+  $lines -join "`n"
+}
+
+function Get-RecoveryPrompt([hashtable]$case, [object]$verification) {
+  $feedback = Get-RecoveryFeedback $verification
+  $toolingGuidance = Get-WindowsToolGuidance
+  $caseGuidance = Get-CaseGuidance $case
+  $prompt = @"
 Continue the incomplete $($case.Package) implementation in this workspace.
 Read SPEC.md and inspect the files already present. Work only inside this
 workspace and do not edit the specification, rupi configs, or the external
@@ -68,11 +295,38 @@ acceptance oracle. Finish every missing implementation, README section, and
 focused test required by the spec. Prioritize the full reliability contract:
 $($case.Focus).
 
-Use only Python standard-library modules and direct process arguments on Windows.
-Run the complete project unittest suite and the project-specific help commands. If
-anything remains incomplete or a check fails, say exactly what failed instead of
-claiming success.
+$caseGuidance
+
+Use only Python standard-library modules.
+$toolingGuidance
+
+Previous local verification results (project tests and help commands):
+$feedback
+
+Use any failing local results above to correct the implementation. Continue
+working through the missing items in SPEC.md, then run the complete project
+unittest suite, the project-specific help commands, and a smoke sequence. If
+anything remains incomplete, state it instead of claiming success.
 "@
+  $requiredInstructions = @(
+    'use a dedicated process tool only if it is listed in your available'
+    '`process` as command prefixes in a shell'
+    'one executable directly through the available shell or exec tool per call'
+    'Do not combine shell commands with `&`, `&&`, `;`, or `|`'
+    'Do not use `python -c`'
+    'write a temporary `.py` file'
+    'do not read Python installation'
+    'Use the available `read` tool for workspace file inspection'
+  )
+  foreach ($instruction in $requiredInstructions) {
+    if (-not $prompt.Contains($instruction)) {
+      throw "Recovery benchmark prompt is missing Windows tool guidance: $instruction"
+    }
+  }
+  if (-not $prompt.Contains($caseGuidance)) {
+    throw "Recovery benchmark prompt is missing case guidance for $($case.Id)."
+  }
+  return $prompt
 }
 
 function Write-Text([string]$path, [string]$text) {
@@ -139,7 +393,7 @@ function Invoke-External {
   }
 }
 
-function New-BenchmarkWorkspace([hashtable]$case, [string]$agentRoot) {
+function New-BenchmarkWorkspace([hashtable]$case, [string]$agentRoot, [string]$thinkingLevel) {
   $source = Join-Path $repoRoot $case.Source
   $project = Join-Path $agentRoot $case.ProjectDir
   New-Item -ItemType Directory -Force -Path $project | Out-Null
@@ -157,7 +411,7 @@ function New-BenchmarkWorkspace([hashtable]$case, [string]$agentRoot) {
   $configSourcePath = Join-Path $project "rupi.config.json"
   if (Test-Path $configSourcePath) {
     $config = Get-Content -Raw $configSourcePath | ConvertFrom-Json
-    $config.thinking = "low"
+    $config.thinking = $thinkingLevel
     $config.state_dir = ".rupi-state"
     if ($null -eq $config.limits) {
       $config | Add-Member -MemberType NoteProperty -Name limits -Value ([pscustomobject]@{})
@@ -171,7 +425,12 @@ function New-BenchmarkWorkspace([hashtable]$case, [string]$agentRoot) {
       if ($config.endpoints[0].capabilities) {
         $config.endpoints[0].capabilities.max_output_tokens = 16384
       }
-      $reqTimeout = [math]::Max(600000, ($TurnTimeoutSeconds * 1000))
+      # Let the runtime handle its provider timeout before the outer turn watchdog stops it.
+      $timeoutGraceSeconds = [int][math]::Min(
+        30,
+        [math]::Max(1, [math]::Floor($TurnTimeoutSeconds / 10))
+      )
+      $reqTimeout = ($TurnTimeoutSeconds - $timeoutGraceSeconds) * 1000
       if ($null -eq $config.endpoints[0].PSObject.Properties["request_timeout_ms"]) {
         $config.endpoints[0] | Add-Member -MemberType NoteProperty -Name request_timeout_ms -Value $reqTimeout
       } else {
@@ -366,17 +625,22 @@ function Invoke-Verification([hashtable]$case, [string]$agentRoot, [string]$proj
   [pscustomobject]@{ project_tests = $projectTest; oracle = $oracle; help = @($help); resolved = ($oracle.exit_code -eq 0 -and -not $oracle.timed_out) }
 }
 
-function Invoke-AgentCase([hashtable]$case, [string]$agent, [string]$root) {
+function Invoke-AgentCase([hashtable]$case, [string]$agent, [string]$root, [string]$thinkingLevel) {
   $agentRoot = Join-Path $root $agent
   New-Item -ItemType Directory -Force -Path $agentRoot | Out-Null
-  $workspace = New-BenchmarkWorkspace $case $agentRoot
+  $workspace = New-BenchmarkWorkspace $case $agentRoot $thinkingLevel
   $piConfig = New-PiConfig $agentRoot
   $turns = [Collections.Generic.List[object]]::new()
-  $resolved = $false; $sessionId = $null
+  $resolved = $false; $sessionId = $null; $lastVerification = $null
   for ($turn = 1; $turn -le $MaxTurns; $turn++) {
-    $prompt = if ($turn -eq 1) { Get-InitialPrompt $case } else { Get-RecoveryPrompt $case }
+    $prompt = if ($turn -eq 1) {
+      Get-InitialPrompt $case
+    } else {
+      Get-RecoveryPrompt $case $lastVerification
+    }
     $turnRoot = Join-Path $agentRoot ("turn-{0:D2}" -f $turn)
     New-Item -ItemType Directory -Force -Path $turnRoot | Out-Null
+    Set-Content -LiteralPath (Join-Path $turnRoot "prompt.txt") -Value $prompt -NoNewline -Encoding utf8
     $args = [Collections.Generic.List[string]]::new(); $env = @{}
     if ($agent -eq "rupi") {
       $traceLinesBefore = Get-RupiTraceLineCount $workspace.project
@@ -389,14 +653,16 @@ function Invoke-AgentCase([hashtable]$case, [string]$agent, [string]$root) {
     } else {
       $sessionDir = Join-Path $agentRoot "pi-sessions"
       New-Item -ItemType Directory -Force -Path $sessionDir | Out-Null
-      $args.Add("--provider"); $args.Add("unsloth"); $args.Add("--model"); $args.Add("qwen3.8-flash-next"); $args.Add("--thinking"); $args.Add("low")
+      $args.Add("--provider"); $args.Add("unsloth")
+      $args.Add("--model"); $args.Add("qwen3.8-flash-next")
+      $args.Add("--thinking"); $args.Add($thinkingLevel)
       $args.Add("--mode"); $args.Add("json"); $args.Add("--print"); $args.Add("--offline"); $args.Add("--session-dir"); $args.Add($sessionDir)
       $args.Add("--no-context-files"); $args.Add("--no-extensions"); $args.Add("--no-skills"); $args.Add("--no-prompt-templates"); $args.Add("--no-themes")
       $args.Add("--tools"); $args.Add("read,write,edit,bash,powershell,grep,find,ls")
       if ($turn -gt 1) { $args.Add("--continue") }
       $args.Add("--"); $args.Add($prompt)
       $env["PI_CODING_AGENT_DIR"] = $piConfig; $env["PI_OFFLINE"] = "1"
-      $piLauncher = (Get-Command pi -ErrorAction Stop).Source
+      $piLauncher = $script:piLauncher
       $nodeExe = (Get-Command node.exe -ErrorAction SilentlyContinue)
       $piBundle = Join-Path (Split-Path $piLauncher -Parent) "node_modules\@earendil-works\pi-coding-agent\dist\bundle\cli.js"
       if ($nodeExe -and (Test-Path $piBundle)) {
@@ -415,6 +681,7 @@ function Invoke-AgentCase([hashtable]$case, [string]$agent, [string]$root) {
     }
     Save-FileSnapshot $workspace.project (Join-Path $turnRoot "files.json")
     $verification = Invoke-Verification $case $agentRoot $workspace.project $turn
+    $lastVerification = $verification
     $turnRecord = [ordered]@{ turn = $turn; call = $call; metrics = $metrics; verification = $verification; session_id = $sessionId }
     Write-Json (Join-Path $turnRoot "summary.json") $turnRecord
     [void]$turns.Add($turnRecord)
@@ -434,8 +701,52 @@ if ($CaseId.Count -gt 0) {
   if ($cases.Count -eq 0) { throw "No matching cases: $($requestedIds -join ', ')" }
 }
 if ($DryRun) {
-  $cases | ForEach-Object { "{0}: {1}" -f $_.Id, (Get-InitialPrompt $_).Split("`n")[0] }
+  Write-Host "Thinking level: $ThinkingLevel"
+  Write-Host "Recovery feedback: project tests and help only"
+  $cases | ForEach-Object {
+    [void](Get-InitialPrompt $_)
+    $dryRunHelp = @($_.Help | ForEach-Object {
+        [pscustomobject]@{
+          timed_out = $false
+          exit_code = 0
+          stderr_path = $null
+          stdout_path = $null
+        }
+      })
+    $dryRunVerification = [pscustomobject]@{
+      project_tests = [pscustomobject]@{
+        timed_out = $false
+        exit_code = 0
+        stderr_path = $null
+        stdout_path = $null
+      }
+      help = $dryRunHelp
+    }
+    [void](Get-RecoveryPrompt $_ $dryRunVerification)
+    "{0}: package={1}; focus={2}" -f $_.Id, $_.Package, $_.Focus
+  }
   exit 0
+}
+if ($Agent -ne "rupi") {
+  $piLauncher = if ([string]::IsNullOrWhiteSpace($PiExecutable)) {
+    (Get-Command pi -ErrorAction Stop).Source
+  } else {
+    (Resolve-Path -LiteralPath $PiExecutable -ErrorAction Stop).Path
+  }
+  if ([IO.Path]::GetExtension($piLauncher) -eq ".ps1") {
+    $pwsh = (Get-Command pwsh.exe -ErrorAction Stop).Source
+    $piVersionOutput = @(& $pwsh -NoProfile -ExecutionPolicy Bypass -File $piLauncher --version)
+  } else {
+    $piVersionOutput = @(& $piLauncher --version)
+  }
+  $piVersion = ($piVersionOutput -join "`n").Trim()
+  if ($piVersion -ne $ExpectedPiVersion) {
+    throw "Expected Pi $ExpectedPiVersion, but '$piLauncher' reported '$piVersion'."
+  }
+  Write-Host "Pi version: $piVersion"
+} else {
+  $piLauncher = $null
+  $piVersion = $null
 }
 if (-not (Test-Path $rupiBinary)) { throw "Missing $rupiBinary; run cargo build --bin rupi first." }
 New-Item -ItemType Directory -Force -Path $runRoot | Out-Null
@@ -444,13 +755,27 @@ $results = [Collections.Generic.List[object]]::new()
 foreach ($case in $cases) {
   foreach ($selectedAgent in $selectedAgents) {
     Write-Host ("[{0}] {1}/{2}" -f (Get-Date -Format "HH:mm:ss"), $selectedAgent, $case.Id)
-    [void]$results.Add((Invoke-AgentCase $case $selectedAgent (Join-Path $runRoot $case.Id)))
-    Write-Json (Join-Path $runRoot "partial.json") ([ordered]@{ run_id = $RunId; results = @($results) })
+    [void]$results.Add((Invoke-AgentCase $case $selectedAgent (Join-Path $runRoot $case.Id) $ThinkingLevel))
+    $partial = [ordered]@{
+      run_id = $RunId
+      pi_version = $piVersion
+      thinking_level = $ThinkingLevel
+      recovery_feedback_scope = "project_tests_and_help"
+      results = @($results)
+    }
+    Write-Json (Join-Path $runRoot "partial.json") $partial
   }
 }
 $summary = [ordered]@{
-  run_id = $RunId; generated_at = (Get-Date).ToUniversalTime().ToString("o"); model = "qwen3.8-flash-next"
-  endpoint = "http://127.0.0.1:8000/v1"; max_turns = $MaxTurns; turn_timeout_seconds = $TurnTimeoutSeconds
+  run_id = $RunId
+  generated_at = (Get-Date).ToUniversalTime().ToString("o")
+  pi_version = $piVersion
+  model = "qwen3.8-flash-next"
+  thinking_level = $ThinkingLevel
+  recovery_feedback_scope = "project_tests_and_help"
+  endpoint = "http://127.0.0.1:8000/v1"
+  max_turns = $MaxTurns
+  turn_timeout_seconds = $TurnTimeoutSeconds
   results = @($results)
 }
 Write-Json (Join-Path $runRoot "results.json") $summary

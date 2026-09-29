@@ -39,9 +39,10 @@ pub struct ExecTool {
 }
 
 const EXEC_COMMAND_DESCRIPTION: &str = concat!(
-  "Shell command to run. Uses cmd.exe /C on Windows and sh -c on Unix-like ",
-  "systems; use dir rather than Unix ls on Windows; prefer process for a known ",
-  "executable."
+  "Shell command to run. The runtime chooses cmd.exe /C on Windows and sh -c ",
+  "on Unix-like systems. Pass only the command body; do not prefix it with ",
+  "cmd.exe /C or wrap the entire command in quotes. Quote arguments as needed. ",
+  "Use dir rather than Unix ls on Windows; prefer process for a known executable."
 );
 
 pub(crate) struct CommandExecution<'a> {
@@ -65,10 +66,12 @@ impl Tool for ExecTool {
     ToolMetadata::mutating(
       "exec",
       concat!(
-        "Run a shell command in the workspace and return its output. Shell: ",
-        "cmd.exe /C on Windows, sh -c on Unix-like systems. On Windows use ",
-        "dir rather than Unix ls. Prefer process for a known executable and ",
-        "argv list. Mutating and not idempotent."
+        "Run a shell command in the workspace and return its output. The runtime ",
+        "chooses cmd.exe /C on Windows and sh -c on Unix-like systems. Pass only ",
+        "the command body; do not prefix it with cmd.exe /C or wrap the entire ",
+        "command in quotes. Quote arguments as needed. On Windows use dir rather ",
+        "than Unix ls. Prefer process for a known executable and argv list. ",
+        "Mutating and not idempotent."
       ),
       false,
     )
@@ -842,6 +845,27 @@ mod tests {
     assert!(!meta.read_only);
     assert!(!meta.idempotent, "a second commit is a different act");
     assert!(meta.description.contains("dir rather than Unix ls"));
+  }
+
+  #[test]
+  fn descriptions_say_exec_selects_the_shell() {
+    let dir = tempfile::tempdir().unwrap();
+    let tool = ExecTool::new(runtime(&dir));
+    let metadata = tool.metadata();
+    let schema = tool.arguments_schema();
+
+    assert!(metadata.description.contains("Pass only the command body"));
+    assert!(
+      metadata
+        .description
+        .contains("do not prefix it with cmd.exe /C")
+    );
+    let command_description = schema["properties"]["command"]["description"]
+      .as_str()
+      .expect("exec command description should be a string");
+    assert!(command_description.contains("Pass only the command body"));
+    assert!(command_description.contains("do not prefix it with cmd.exe /C"));
+    assert!(command_description.contains("Quote arguments as needed"));
   }
 
   #[test]

@@ -22,5 +22,9 @@
     "auto_approve_mutating": true,
     "shell_timeout_ms": 120000,
     "max_output_bytes": 8192
+  },
+  "limits": {
+    "max_model_requests_without_progress": 1,
+    "progress_tool_names": ["write"]
   }
 }
