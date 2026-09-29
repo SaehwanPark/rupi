@@ -47,19 +47,30 @@ Read SPEC.md completely before acting. Build the complete dependency-free Python
 3 project described by the specification, including its package, a readable
 README.md, and focused unittest tests. The project focus is {{PROJECT_FOCUS}}.
 
+Prioritize these contract details from SPEC.md: `--state PATH` must work both
+before the command and after a subcommand. Unknown commands and missing required
+arguments must return a non-zero status without changing existing state. IDs
+must contain ASCII decimal digits only and denote a positive integer; malformed
+IDs must be rejected without changing state.
+
 Work only inside this project workspace. Do not edit SPEC.md, any rupi config,
 or files outside this workspace. Do not inspect or run the external acceptance
 oracle. Use only Python standard-library modules.
 
 On this Windows host, use the available file and process tools directly for
 known programs and avoid Unix-only shell assumptions or fragile inline quoting.
+The project directory is already the working directory; do not change
+directories to its extended Windows path with `cd` or `cd /d`.
 After reading the contract, make `tasklog/__main__.py` the first source file and
 keep the CLI in that entry point until `add`, `list`, `done`, and `remove` work
 with persistent JSON state. Do not create `__init__.py`, separate model or
 storage modules, a README, tests, or placeholders before that runnable CLI
-exists. Then add the README and focused tests. Run the project unittest suite,
-the project-specific help commands described by SPEC.md, and a small smoke check
-before finishing. Do not treat your final summary as proof: report exact
+exists. Then add the README and focused tests proving both `--state PATH`
+positions work. Test that unknown commands, missing required arguments, and
+malformed IDs return a non-zero status without changing state. Check the
+existing state file byte-for-byte after each invalid-input case. Run the project
+unittest suite, the project-specific help commands described by SPEC.md, and a
+small smoke check. Do not treat your final summary as proof: report exact
 commands and statuses only after running them, and state any incomplete
 requirement explicitly.
 '@
@@ -67,6 +78,16 @@ requirement explicitly.
   $requiredInstructions = @(
     'make `tasklog/__main__.py` the first source file'
     'until `add`, `list`, `done`, and `remove` work'
+    '`--state PATH` must work both'
+    'Unknown commands and missing required'
+    'must contain ASCII decimal digits only'
+    'denote a positive integer; malformed'
+    'focused tests proving both `--state PATH`'
+    'unknown commands, missing required arguments, and'
+    'malformed IDs return a non-zero status without changing state'
+    'existing state file byte-for-byte after each invalid-input case'
+    'do not change'
+    'its extended Windows path with `cd` or `cd /d`'
   )
   foreach ($instruction in $requiredInstructions) {
     if (-not $prompt.Contains($instruction)) {

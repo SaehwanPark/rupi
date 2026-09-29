@@ -694,3 +694,26 @@ turns because no `tests/` directory was created.
 Pi 0.86.1 passed the oracle in three turns while Rupi did not pass in four, so
 the pinned Case 01 gate remains open. The 0.87.1 run remains a separate
 provisional Rupi win against that newer installed version.
+
+## Failure analysis and next prompt
+
+Rupi's turn-4 oracle output reports that the global custom state file was not
+created and that an invalid-input subprocess returned status 0. The complete
+fresh-process persistence sequence passed. The saved Rupi entry point declares
+`--state` on the root parser and again on each subparser with `default=None`.
+A direct `argparse` reproduction of that option layout parsed
+`['--state', 'custom.json', 'add']` as `Namespace(state=None, command='add')`,
+which explains the lost global path. The saved ID validator also accepts an
+optional leading `+`, while SPEC.md requires IDs to use ASCII decimal digits
+only and represent a positive integer. That could explain the invalid-input
+success, but the failure output does not identify the argument. This remains a
+likely cause rather than a confirmed test diagnosis.
+
+The next matched prompt now foregrounds both `--state PATH` positions, non-zero
+errors for unknown commands and missing arguments, and IDs that use only ASCII
+decimal digits and denote a positive integer. It requests byte-for-byte state
+preservation after invalid input. It instructs agents to use the already-current
+project directory, avoiding the extended-path `cd` error from the separate
+0.87.1 run. The prompt change is derived from the visible SPEC and local Windows
+execution behavior; acceptance output remains excluded from initial and recovery
+prompts.

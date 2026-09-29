@@ -1169,6 +1169,11 @@ TUI rendering passed all budgets (3.31–3.90 µs/unit); checkpointed restore me
   Rupi oracle win, but does not change the pinned 0.86.1 result.
 - The gate is per case and remains open until matched evidence against Pi 0.86.1
   shows a `rupi` win. The original ten-case summary is not evidence of current behavior.
+- The next matched prompt foregrounds both `--state PATH` positions, non-zero
+  malformed-input handling, IDs written with ASCII decimal digits that denote
+  positive integers, and byte-for-byte state preservation. It keeps the project
+  directory as the Windows working directory; prompt rendering passed the
+  PowerShell parser, dry run, and direct integrity checks.
 
 ### Performance
 
