@@ -43,6 +43,49 @@ created `readqueue/__init__.py`, `__main__.py`, `cli.py`, `server.py`,
 test discovery failed in all turns because `tests/` was not created.
 
 Pi won this matched comparison. Rupi's lower token count and short elapsed time
-reflect its early reconciliation stop, not a successful implementation. The
-next Case 02 experiment will give both agents explicit Windows guidance to use
-direct process arguments and avoid inline Python source and shell command chains.
+reflect its early reconciliation stop, not a successful implementation.
+
+## Windows-command diagnostic retry — `bench-20260929-case02-argv-safe-low-matched4`
+
+The retry used the same Pi 0.86.1 prefix, model, reasoning level, four 300-second
+turns, eight-request cap, and project-test/help-only recovery feedback. Both
+agents received Windows guidance to avoid inline Python and chained shell
+commands. Recovery prompts did not include acceptance output or Case 01 task
+guidance.
+
+| Rupi turn | Elapsed | Input / output | Work tokens | Requests | Tools | End |
+| --- | ---: | ---: | ---: | ---: | --- | --- |
+| 1 | 293,200 ms | 5,810 / 5,762 | 11,572 | 3 | 6 (4 ok, 2 failed) | needs reconciliation |
+| 2 | 835 ms | 0 / 0 | 0 | 0 | 0 | needs reconciliation |
+| 3 | 850 ms | 0 / 0 | 0 | 0 | 0 | needs reconciliation |
+| 4 | 823 ms | 0 / 0 | 0 | 0 | 0 | needs reconciliation |
+
+Rupi's first turn was unresolved after it tried to read a global skill file
+outside the workspace, then ran `process python --version` through its shell
+tool. The read was rejected as out of scope and `process` was not recognized as
+a command. The runtime stopped with `needs_reconciliation`. Rupi made no project
+source files, README, or tests; its project tests, oracle, and help checks all
+failed. The four turn records total 295,708 ms; turns 2–4 had no model requests
+or tool calls.
+
+| Pi turn | Elapsed | Input / output | Work tokens | Requests | Tools | End |
+| --- | ---: | ---: | ---: | ---: | ---: | --- |
+| 1 | 300,244 ms | 4,122 / 278 | 4,400 | 3 | 4 | timeout |
+| 2 | 300,216 ms | 754 / 96 | 850 | 1 | 1 | timeout |
+| 3 | 300,269 ms | 1,893 / 6,255 | 8,148 | 2 | 3 | timeout |
+| 4 | 300,216 ms | 826 / 4,540 | 5,366 | 3 | 5 | timeout |
+
+Pi used 7,595 input and 11,169 output tokens (18,764 inference-work tokens)
+over 1,200,945 ms. Neither agent passed the acceptance oracle or help checks.
+Pi created `readqueue/__init__.py`, `errors.py`, `service.py`, and `store.py`,
+but no README or tests. Both project test-discovery checks failed because no
+`tests/` directory existed. This diagnostic retry is inconclusive and does not
+change the earlier matched Pi win; Case 02 remains open.
+
+The retry exposed ambiguity in "direct process invocation": Rupi interpreted
+`process` as a shell prefix even though no process tool was listed. The next
+prompt will say to use a dedicated process tool only when it appears in the
+available-tool list; otherwise, run the executable directly through the shell
+or exec tool, one command per invocation. It will continue to prohibit
+`python -c` and command chaining, and direct one-off Python checks to a
+temporary `.py` file inside the project workspace.

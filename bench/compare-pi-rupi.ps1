@@ -81,8 +81,22 @@ function Get-CaseGuidance([hashtable]$case) {
   }
 }
 
+function Get-WindowsToolGuidance {
+  @'
+On Windows, use a dedicated process tool with separate executable and argument
+fields only when that tool is listed in your available tools. Never type
+`process` as a command prefix in a shell; it is not a shell command. If no
+dedicated process tool is listed, run the executable directly through your
+shell or exec tool, one command per invocation; never chain commands with `&&`.
+Do not use `python -c` or put Python source inside a shell command. For a one-off
+Python check, write a temporary `.py` file inside this project workspace with
+the file tool and run it in a separate process or shell command.
+'@
+}
+
 function Get-InitialPrompt([hashtable]$case) {
   $guidance = Get-CaseGuidance $case
+  $toolingGuidance = Get-WindowsToolGuidance
   $prompt = @'
 You are implementing the `{{PACKAGE}}` Python package in the current workspace.
 Read SPEC.md completely before acting. Build a complete dependency-free Python 3
@@ -95,8 +109,7 @@ Work only inside this project workspace. Do not edit SPEC.md, any rupi config,
 or files outside this workspace. Do not inspect or run the external acceptance
 oracle. Use only Python standard-library modules.
 
-On this Windows host, use the available file and process tools directly for
-known programs and avoid Unix-only shell assumptions or fragile inline quoting.
+{{WINDOWS_TOOL_GUIDANCE}}
 The project directory is already the working directory; do not change
 directories to its extended Windows path with `cd` or `cd /d`.
 
@@ -109,6 +122,7 @@ them, and state any incomplete requirement explicitly.
   $prompt = $prompt.Replace('{{PACKAGE}}', [string]$case.Package)
   $prompt = $prompt.Replace('{{PROJECT_FOCUS}}', [string]$case.Focus)
   $prompt = $prompt.Replace('{{CASE_GUIDANCE}}', $guidance)
+  $prompt = $prompt.Replace('{{WINDOWS_TOOL_GUIDANCE}}', $toolingGuidance)
 
   $requiredInstructions = @(
     'Read SPEC.md completely before acting'
@@ -119,6 +133,12 @@ them, and state any incomplete requirement explicitly.
     'Use only Python standard-library modules'
     'The project directory is already the working directory'
     'Run the project unittest suite'
+    'use a dedicated process tool with separate executable and argument'
+    '`process` as a command prefix in a shell; it is not a shell command'
+    'run the executable directly through your'
+    'never chain commands with `&&`'
+    'Do not use `python -c`'
+    'write a temporary `.py` file'
   )
   foreach ($instruction in $requiredInstructions) {
     if (-not $prompt.Contains($instruction)) {
@@ -224,7 +244,8 @@ function Get-RecoveryFeedback([object]$verification) {
 
 function Get-RecoveryPrompt([hashtable]$case, [object]$verification) {
   $feedback = Get-RecoveryFeedback $verification
-  @"
+  $toolingGuidance = Get-WindowsToolGuidance
+  $prompt = @"
 Continue the incomplete $($case.Package) implementation in this workspace.
 Read SPEC.md and inspect the files already present. Work only inside this
 workspace and do not edit the specification, rupi configs, or the external
@@ -232,7 +253,9 @@ acceptance oracle. Finish every missing implementation, README section, and
 focused test required by the spec. Prioritize the full reliability contract:
 $($case.Focus).
 
-Use only Python standard-library modules and direct process arguments on Windows.
+Use only Python standard-library modules.
+$toolingGuidance
+
 Previous local verification results (project tests and help commands):
 $feedback
 
@@ -241,6 +264,20 @@ working through the missing items in SPEC.md, then run the complete project
 unittest suite, the project-specific help commands, and a smoke sequence. If
 anything remains incomplete, state it instead of claiming success.
 "@
+  $requiredInstructions = @(
+    'use a dedicated process tool with separate executable and argument'
+    '`process` as a command prefix in a shell; it is not a shell command'
+    'run the executable directly through your'
+    'never chain commands with `&&`'
+    'Do not use `python -c`'
+    'write a temporary `.py` file'
+  )
+  foreach ($instruction in $requiredInstructions) {
+    if (-not $prompt.Contains($instruction)) {
+      throw "Recovery benchmark prompt is missing Windows tool guidance: $instruction"
+    }
+  }
+  return $prompt
 }
 
 function Write-Text([string]$path, [string]$text) {
@@ -619,6 +656,24 @@ if ($DryRun) {
   Write-Host "Recovery feedback: project tests and help only"
   $cases | ForEach-Object {
     [void](Get-InitialPrompt $_)
+    $dryRunHelp = @($_.Help | ForEach-Object {
+        [pscustomobject]@{
+          timed_out = $false
+          exit_code = 0
+          stderr_path = $null
+          stdout_path = $null
+        }
+      })
+    $dryRunVerification = [pscustomobject]@{
+      project_tests = [pscustomobject]@{
+        timed_out = $false
+        exit_code = 0
+        stderr_path = $null
+        stdout_path = $null
+      }
+      help = $dryRunHelp
+    }
+    [void](Get-RecoveryPrompt $_ $dryRunVerification)
     "{0}: package={1}; focus={2}" -f $_.Id, $_.Package, $_.Focus
   }
   exit 0

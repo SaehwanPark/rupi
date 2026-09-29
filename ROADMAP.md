@@ -1189,10 +1189,21 @@ TUI rendering passed all budgets (3.31–3.90 µs/unit); checkpointed restore me
   project source was created. Both project test checks failed because no
   `tests/` directory existed. Case 02 remains open; the experiment ledger has
   exact turn data.
-- The next Case 02 retry will instruct agents to use direct process arguments
-  and avoid inline Python code and chained shell commands. The case-specific
-  prompt already emphasizes SQLite restart persistence, deterministic JSON,
-  and state-preserving HTTP errors.
+- Diagnostic retry `bench-20260929-case02-argv-safe-low-matched4` did not
+  resolve for either agent. Rupi used 11,572 inference-work tokens before
+  `needs_reconciliation`: it tried `process python --version`, but `process`
+  was not a listed tool and was rejected as a shell command. Turns 2–4 had no
+  model requests or tools. Pi timed out in all four turns (18,764 tokens;
+  1,200,945 ms), passing neither the oracle nor help checks. Both agents failed
+  test discovery because no `tests/` directory existed. The ledger records the
+  turn metrics and created files; Case 02 remains open.
+- The next Case 02 retry will use precise Windows tool guidance: call a
+  dedicated process tool only when it is listed, otherwise run the executable
+  directly through shell/exec one command per invocation. The prompt also
+  prohibits `python -c` and chained commands and directs one-off checks to a
+  temporary `.py` file inside the project workspace. Case-specific guidance
+  continues to emphasize SQLite restart persistence, deterministic JSON, and
+  state-preserving HTTP errors.
 
 ### Performance
 
