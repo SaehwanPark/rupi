@@ -1234,6 +1234,12 @@ TUI rendering passed all budgets (3.31–3.90 µs/unit); checkpointed restore me
   failed `findstr` exec left the last turn unable to continue. Pi's generated
   project still lacked a README and discoverable tests. Case 02 remains open;
   see the ledger for the per-turn record and next diagnostic.
+- Read-tool-guidance run `bench-20260929-case02-read-tool-low-matched4-600s`
+  was another Pi win. Pi passed the oracle and help in turn 2 (28,419 work
+  tokens; 1,200,455 ms). Rupi used 105,134 tokens over 2,117,416 ms; its help
+  passed, but its request reader used `self.r` instead of `self.rfile`, causing
+  HTTP 500 responses. Both generated projects still lacked a README and
+  discoverable tests. Case 02 remains open; see the ledger for per-turn data.
 
 ### Performance
 

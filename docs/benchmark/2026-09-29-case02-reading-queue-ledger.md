@@ -213,3 +213,47 @@ still missed the requested README and discoverable tests. Case 02 remains open.
 The next bounded diagnostic should focus on Rupi's failed storage-helper edit
 and safe source inspection, then use a matched run before recording any Rupi
 win.
+
+## Read-tool and recovery-guidance retry — `bench-20260929-case02-read-tool-low-matched4-600s`
+
+This matched run preserved the Pi 0.86.1 target, low reasoning, four 600-second
+turns, eight requests per turn, and project-test/help-only recovery feedback.
+The shared prompt now directs source inspection through `read`, repeats
+case-specific guidance during recovery, asks for consistent SQLite helper
+call sites, and requests an HTTP POST-to-GET smoke check.
+
+| Rupi turn | Elapsed | Input / output | Work tokens | Requests | Tools | Result |
+| --- | ---: | ---: | ---: | ---: | ---: | --- |
+| 1 | 600,264 ms | 10,394 / 10,735 | 21,129 | 8 | 7 | outer timeout |
+| 2 | 568,820 ms | 12,720 / 10,044 | 22,764 | 6 | 5 | completed |
+| 3 | 485,582 ms | 34,813 / 6,927 | 41,740 | 8 | 9 | budget exhausted |
+| 4 | 462,750 ms | 13,074 / 6,427 | 19,501 | 8 | 8 | budget exhausted |
+
+Rupi used 105,134 inference-work tokens over 2,117,416 ms, with no failed tool
+calls. It created `readqueue/__init__.py`, `readqueue/__main__.py`, and
+`tests/helpers.py`, but no README or test module. Both help commands passed in
+all turns; the oracle and project tests did not. Test discovery returned exit
+code 5 in turn 4.
+
+The turn-2 oracle failure reported HTTP 500 for POST. In turn 3, Rupi changed
+the handler to read the request body before routing, but its reader still uses
+`self.r.read(...)`; this makes `/healthz` fail with HTTP 500 as well. The
+standard handler input stream is `self.rfile`. Rupi spent 41,740 work tokens in
+turn 3 and 19,501 in turn 4 without correcting that call.
+
+| Pi turn | Elapsed | Input / output | Work tokens | Requests | Tools | Result |
+| --- | ---: | ---: | ---: | ---: | ---: | --- |
+| 1 | 600,222 ms | 4,597 / 10,786 | 15,383 | 4 | 4 | outer timeout |
+| 2 | 600,233 ms | 2,945 / 10,091 | 13,036 | 11 | 11 | timeout; resolved |
+
+Pi used 28,419 inference-work tokens over 1,200,455 ms. It passed the oracle
+and both help commands in turn 2, so the harness marked the case resolved
+despite the outer timeout. Project test discovery returned exit code 5. Pi
+created `readqueue/__init__.py`, `readqueue/__main__.py`, `tests/server_harness.py`,
+and `smoke_check.py`, but no README or test module.
+
+Pi won this matched run by using 76,715 fewer work tokens and finishing
+916,961 ms sooner under the oracle/help criteria. Neither generated project
+met the prompt's README and discoverable-test requirements. Case 02 remains
+open. The next matched retry should make the `BaseHTTPRequestHandler.rfile`
+contract explicit and verify `GET /healthz` before the POST/GET smoke sequence.
