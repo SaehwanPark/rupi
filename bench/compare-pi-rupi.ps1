@@ -41,11 +41,11 @@ function Get-CaseDefinitions {
 }
 
 function Get-InitialPrompt([hashtable]$case) {
-  @"
+  $prompt = @'
 You are implementing a new small project from scratch in the current workspace.
 Read SPEC.md completely before acting. Build the complete dependency-free Python
 3 project described by the specification, including its package, a readable
-README.md, and focused unittest tests. The project focus is $($case.Focus).
+README.md, and focused unittest tests. The project focus is {{PROJECT_FOCUS}}.
 
 Work only inside this project workspace. Do not edit SPEC.md, any rupi config,
 or files outside this workspace. Do not inspect or run the external acceptance
@@ -62,7 +62,18 @@ the project-specific help commands described by SPEC.md, and a small smoke check
 before finishing. Do not treat your final summary as proof: report exact
 commands and statuses only after running them, and state any incomplete
 requirement explicitly.
-"@
+'@
+  $prompt = $prompt.Replace('{{PROJECT_FOCUS}}', [string]$case.Focus)
+  $requiredInstructions = @(
+    'make `tasklog/__main__.py` the first source file'
+    'until `add`, `list`, `done`, and `remove` work'
+  )
+  foreach ($instruction in $requiredInstructions) {
+    if (-not $prompt.Contains($instruction)) {
+      throw "Initial benchmark prompt is missing an instruction: $instruction"
+    }
+  }
+  return $prompt
 }
 
 function Get-RecoveryFeedback([object]$verification) {

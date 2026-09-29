@@ -565,3 +565,49 @@ Neither agent passed the oracle, so this is not a Case 01 win. The clarified
 contract did not change Rupi's first-write delay: it wrote code in the final
 turn, where a simple argument mismatch made the package unrunnable. Pi again
 made no source write. The long first-write stall remains the main open issue.
+
+## Four-turn local-feedback run — `bench-20260928-case01-local-feedback-low-matched4` (invalidated)
+
+This run added local project-test and help diagnostics to recovery prompts and
+used low reasoning, four turns, 300-second outer limits, and an eight-request
+cap. The run metadata records `project_tests_and_help`; saved recovery prompts
+for turns 2–4 contain only those local diagnostics, with no oracle output.
+
+The run exposed a prompt-integrity bug, so it is not valid evidence for the
+intended entry-point-first task. `Get-InitialPrompt` used an expandable
+PowerShell here-string around Markdown backticks. PowerShell converted the
+opening backtick before `tasklog`, `add`, and `remove` into a tab, BEL, and
+carriage return, removing each command's first letter in the saved turn-1
+prompt. Both agents received the same malformed instruction. The results below
+are retained as observations but do not close or advance the Case 01 gate.
+
+Checks are project tests / oracle / help; `1` means the command failed.
+
+| Rupi turn | Elapsed | Input / output | Tools | Checks | End |
+| --- | ---: | ---: | --- | --- | --- |
+| 1 | 289,715 ms | 3,408 / 40 | read | 1 / 1 / 1 | timeout |
+| 2 | 285,988 ms | 2,167 / 44 | exec | 1 / 1 / 1 | timeout |
+| 3 | 271,499 ms | 0 / 0 | none | 1 / 1 / 1 | provider timeout |
+| 4 | 272,229 ms | 0 / 0 | none | 1 / 1 / 1 | provider timeout |
+
+Rupi used 5,575 input and 84 output tokens (5,659 inference-work tokens) over
+1,119,431 ms and created no project files. Project tests, oracle, and help
+failed in every turn.
+
+| Pi turn | Elapsed | Input / output | Tools | Checks | End |
+| --- | ---: | ---: | --- | --- | --- |
+| 1 | 300,280 ms | 3,929 / 129 | read, bash x2 | 1 / 1 / 1 | outer timeout |
+| 2 | 300,273 ms | 933 / 5,781 | bash x2 | 1 / 1 / 1 | outer timeout |
+| 3 | 300,339 ms | 1,174 / 5,252 | bash x3 | 1 / 1 / 1 | outer timeout |
+| 4 | 300,329 ms | 5,188 / 4,993 | write, bash x2 | 1 / 1 / 0 | outer timeout |
+
+Pi used 11,224 input and 16,155 output tokens (27,379 inference-work tokens)
+over 1,201,221 ms. It created `tasklog/__main__.py` and `.tasklog.json`, but no
+README or tests. Help passed only in turn 4; project tests and oracle failed in
+every turn. Neither agent resolved Case 01.
+
+The initial prompt now uses a literal here-string and validates that the
+entry-point and command-name instructions survive template expansion. The
+PowerShell parser, dry run, and direct prompt-function check pass. Re-run the
+four-turn low comparison with the corrected prompt before drawing another
+Rupi-versus-Pi conclusion.
