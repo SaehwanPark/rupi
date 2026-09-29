@@ -65,7 +65,51 @@ requirement explicitly.
 "@
 }
 
-function Get-RecoveryPrompt([hashtable]$case) {
+function Get-RecoveryFeedback([object]$verification) {
+  $checks = [Collections.Generic.List[object]]::new()
+  [void]$checks.Add([pscustomobject]@{
+    name = "project tests"
+    result = $verification.project_tests
+  })
+  for ($index = 0; $index -lt $verification.help.Count; $index++) {
+    [void]$checks.Add([pscustomobject]@{
+      name = "help command {0}" -f ($index + 1)
+      result = $verification.help[$index]
+    })
+  }
+
+  $lines = [Collections.Generic.List[string]]::new()
+  foreach ($check in $checks) {
+    $result = $check.result
+    $status = if ($result.timed_out) {
+      "timed out"
+    } elseif ($result.exit_code -eq 0) {
+      "passed"
+    } else {
+      "failed with exit code $($result.exit_code)"
+    }
+    [void]$lines.Add("$($check.name): $status")
+    if (-not $result.timed_out -and $result.exit_code -eq 0) { continue }
+
+    $excerpt = ""
+    foreach ($path in @($result.stderr_path, $result.stdout_path)) {
+      if (-not $path -or -not (Test-Path -LiteralPath $path)) { continue }
+      $outputLines = @(Get-Content -LiteralPath $path -Tail 18 -ErrorAction SilentlyContinue)
+      if ($outputLines.Count -gt 0) {
+        $excerpt = $outputLines -join "`n"
+        break
+      }
+    }
+    if ($excerpt.Length -gt 1200) {
+      $excerpt = $excerpt.Substring($excerpt.Length - 1200)
+    }
+    if ($excerpt) { [void]$lines.Add("Diagnostic excerpt:`n$excerpt") }
+  }
+  $lines -join "`n"
+}
+
+function Get-RecoveryPrompt([hashtable]$case, [object]$verification) {
+  $feedback = Get-RecoveryFeedback $verification
   @"
 Continue the incomplete $($case.Package) implementation in this workspace.
 Read SPEC.md and inspect the files already present. Work only inside this
@@ -75,9 +119,13 @@ focused test required by the spec. Prioritize the full reliability contract:
 $($case.Focus).
 
 Use only Python standard-library modules and direct process arguments on Windows.
-Run the complete project unittest suite and the project-specific help commands. If
-anything remains incomplete or a check fails, say exactly what failed instead of
-claiming success.
+Previous local verification results (project tests and help commands):
+$feedback
+
+Use any failing local results above to correct the implementation. Continue
+working through the missing items in SPEC.md, then run the complete project
+unittest suite, the project-specific help commands, and a smoke sequence. If
+anything remains incomplete, state it instead of claiming success.
 "@
 }
 
@@ -383,11 +431,16 @@ function Invoke-AgentCase([hashtable]$case, [string]$agent, [string]$root, [stri
   $workspace = New-BenchmarkWorkspace $case $agentRoot $thinkingLevel
   $piConfig = New-PiConfig $agentRoot
   $turns = [Collections.Generic.List[object]]::new()
-  $resolved = $false; $sessionId = $null
+  $resolved = $false; $sessionId = $null; $lastVerification = $null
   for ($turn = 1; $turn -le $MaxTurns; $turn++) {
-    $prompt = if ($turn -eq 1) { Get-InitialPrompt $case } else { Get-RecoveryPrompt $case }
+    $prompt = if ($turn -eq 1) {
+      Get-InitialPrompt $case
+    } else {
+      Get-RecoveryPrompt $case $lastVerification
+    }
     $turnRoot = Join-Path $agentRoot ("turn-{0:D2}" -f $turn)
     New-Item -ItemType Directory -Force -Path $turnRoot | Out-Null
+    Set-Content -LiteralPath (Join-Path $turnRoot "prompt.txt") -Value $prompt -NoNewline -Encoding utf8
     $args = [Collections.Generic.List[string]]::new(); $env = @{}
     if ($agent -eq "rupi") {
       $traceLinesBefore = Get-RupiTraceLineCount $workspace.project
@@ -428,6 +481,7 @@ function Invoke-AgentCase([hashtable]$case, [string]$agent, [string]$root, [stri
     }
     Save-FileSnapshot $workspace.project (Join-Path $turnRoot "files.json")
     $verification = Invoke-Verification $case $agentRoot $workspace.project $turn
+    $lastVerification = $verification
     $turnRecord = [ordered]@{ turn = $turn; call = $call; metrics = $metrics; verification = $verification; session_id = $sessionId }
     Write-Json (Join-Path $turnRoot "summary.json") $turnRecord
     [void]$turns.Add($turnRecord)
@@ -448,6 +502,7 @@ if ($CaseId.Count -gt 0) {
 }
 if ($DryRun) {
   Write-Host "Thinking level: $ThinkingLevel"
+  Write-Host "Recovery feedback: project tests and help only"
   $cases | ForEach-Object { "{0}: {1}" -f $_.Id, (Get-InitialPrompt $_).Split("`n")[0] }
   exit 0
 }
@@ -462,6 +517,7 @@ foreach ($case in $cases) {
     $partial = [ordered]@{
       run_id = $RunId
       thinking_level = $ThinkingLevel
+      recovery_feedback_scope = "project_tests_and_help"
       results = @($results)
     }
     Write-Json (Join-Path $runRoot "partial.json") $partial
@@ -472,6 +528,7 @@ $summary = [ordered]@{
   generated_at = (Get-Date).ToUniversalTime().ToString("o")
   model = "qwen3.8-flash-next"
   thinking_level = $ThinkingLevel
+  recovery_feedback_scope = "project_tests_and_help"
   endpoint = "http://127.0.0.1:8000/v1"
   max_turns = $MaxTurns
   turn_timeout_seconds = $TurnTimeoutSeconds
