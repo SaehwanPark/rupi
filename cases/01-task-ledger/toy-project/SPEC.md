@@ -35,21 +35,30 @@ Required commands:
      the created numeric id and including the task description.
 2. `list`
    - show open tasks in ascending id order;
-   - `list --all` shows both open and completed tasks;
-   - the summary counts only displayed open tasks for `list`, and reports both
-     open and completed counts for `list --all`;
-   - an empty ledger succeeds and says that there are no matching tasks.
+   - print each row with a right-aligned four-character ID, a space, `[ ]`, a
+     space, and the task text; for example: `   1 [ ] write the docs`;
+   - end with the exact summary `<N> open`, counting only displayed open tasks;
+   - `list --all` shows open tasks with `[ ]` and completed tasks with `[x]`,
+     then ends with the exact summary `<N> open, <M> done`;
+   - an empty `list` succeeds and prints `No open tasks`; an empty `list --all`
+     succeeds and prints `No tasks`.
 3. `done ID`
    - mark an existing open task complete;
    - be idempotent for an already-completed task or report that state clearly;
+   - on success, print a confirmation beginning with `Completed task <ID>`;
    - reject a missing or malformed id without changing the ledger.
 4. `remove ID`
    - delete an existing task;
    - reject a missing or malformed id without changing the ledger.
+   - on success, print a confirmation beginning with `Removed task <ID>`.
 
 The CLI must also provide `--help` text and non-zero exit status for malformed
 commands or missing required arguments. Error messages go to stderr and should
 identify the corrective action where practical.
+
+Malformed IDs must be rejected unless they use ASCII decimal digits and denote
+a positive integer. Their error text must contain `invalid id` and explain the
+accepted form.
 
 ## Data and safety requirements
 
