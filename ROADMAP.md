@@ -1182,10 +1182,17 @@ TUI rendering passed all budgets (3.31–3.90 µs/unit); checkpointed restore me
   positive integers, and byte-for-byte state preservation. It keeps the project
   directory as the Windows working directory; prompt rendering passed the
   PowerShell parser, dry run, and direct integrity checks.
-- Case 02 (`02-reading-queue`) is queued next. Initial prompts now use each
-  case's package and focus; Case 02 prioritizes SQLite restart persistence,
-  deterministic JSON, and state-preserving HTTP errors. Parser, all-case dry
-  run, and direct Case 01/02 prompt checks pass. A matched Pi 0.86.1 run is next.
+- Case 02 matched run `bench-20260929-case02-readqueue-low-matched4` was a Pi
+  win: Pi passed the oracle and both help commands in turn 3 (17,626 tokens;
+  900,984 ms). Rupi stopped after its first active turn with
+  `needs_reconciliation` from a Windows inline `python -c` quoting error; no
+  project source was created. Both project test checks failed because no
+  `tests/` directory existed. Case 02 remains open; the experiment ledger has
+  exact turn data.
+- The next Case 02 retry will instruct agents to use direct process arguments
+  and avoid inline Python code and chained shell commands. The case-specific
+  prompt already emphasizes SQLite restart persistence, deterministic JSON,
+  and state-preserving HTTP errors.
 
 ### Performance
 
