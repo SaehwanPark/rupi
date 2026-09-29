@@ -67,6 +67,8 @@ function Get-CaseGuidance([hashtable]$case) {
         'or write the README and tests, before the service is runnable.'
         'Prioritize the documented HTTP routes, deterministic JSON, and'
         'SQLite persistence across a server restart.'
+        'Keep the SQLite connection helper and all CRUD call sites consistent after a rename.'
+        'Smoke-test HTTP POST then GET with a temporary SQLite database before finishing.'
         'Successful responses use `application/json`; error responses include'
         'an `error` string and a suitable 4xx status.'
         'Duplicate URLs return 409; unknown IDs return 404; invalid requests'
@@ -97,6 +99,8 @@ Python check, write a temporary `.py` file inside this project workspace with
 the file tool, then run that file in a separate command-tool call.
 Keep file inspection inside this workspace; do not read Python installation
 files or personal/global skill directories.
+Use the available `read` tool for workspace file inspection. Reserve `exec`
+for one direct command invocation; avoid shell searches such as `findstr`.
 '@
 }
 
@@ -146,6 +150,7 @@ them, and state any incomplete requirement explicitly.
     'Do not use `python -c`'
     'write a temporary `.py` file'
     'do not read Python installation'
+    'Use the available `read` tool for workspace file inspection'
   )
   foreach ($instruction in $requiredInstructions) {
     if (-not $prompt.Contains($instruction)) {
@@ -187,6 +192,8 @@ them, and state any incomplete requirement explicitly.
     $caseSpecificInstructions = @(
       'python -m readqueue serve --db PATH --host HOST --port PORT'
       'SQLite persistence across a server restart.'
+      'Keep the SQLite connection helper and all CRUD call sites consistent after a rename.'
+      'Smoke-test HTTP POST then GET with a temporary SQLite database before finishing.'
       'Successful responses use `application/json`'
       'error responses include'
       'an `error` string and a suitable 4xx status.'
@@ -252,6 +259,7 @@ function Get-RecoveryFeedback([object]$verification) {
 function Get-RecoveryPrompt([hashtable]$case, [object]$verification) {
   $feedback = Get-RecoveryFeedback $verification
   $toolingGuidance = Get-WindowsToolGuidance
+  $caseGuidance = Get-CaseGuidance $case
   $prompt = @"
 Continue the incomplete $($case.Package) implementation in this workspace.
 Read SPEC.md and inspect the files already present. Work only inside this
@@ -259,6 +267,8 @@ workspace and do not edit the specification, rupi configs, or the external
 acceptance oracle. Finish every missing implementation, README section, and
 focused test required by the spec. Prioritize the full reliability contract:
 $($case.Focus).
+
+$caseGuidance
 
 Use only Python standard-library modules.
 $toolingGuidance
@@ -279,11 +289,15 @@ anything remains incomplete, state it instead of claiming success.
     'Do not use `python -c`'
     'write a temporary `.py` file'
     'do not read Python installation'
+    'Use the available `read` tool for workspace file inspection'
   )
   foreach ($instruction in $requiredInstructions) {
     if (-not $prompt.Contains($instruction)) {
       throw "Recovery benchmark prompt is missing Windows tool guidance: $instruction"
     }
+  }
+  if (-not $prompt.Contains($caseGuidance)) {
+    throw "Recovery benchmark prompt is missing case guidance for $($case.Id)."
   }
   return $prompt
 }
