@@ -527,3 +527,41 @@ Neither agent passed the oracle, so this remains no Case 01 win. The explicit
 entry-point instruction produced more complete first-turn code from Rupi, but
 the visible spec does not define the exact row format or phrases required by
 acceptance. Align those requirements before the next comparison.
+
+## Matched clarified-contract run: `bench-20260928-case01-contract-clarified-low-matched3`
+
+Commit `0f72012` made the task spec explicit about list rows and summaries,
+empty-list text, success messages, and invalid-ID wording. The prompt remained
+entry-point-first; both agents used low reasoning, the same model, three
+300-second turns, and an eight-request cap.
+
+Checks are project tests / oracle / help; `1` means the command failed.
+
+| Rupi turn | Elapsed | Input / output | Actions | Checks | End |
+| --- | ---: | ---: | --- | --- | --- |
+| 1 | 293,076 ms | 3,411 / 68 | read, exec | 1 / 1 / 1 | provider timeout |
+| 2 | 270,907 ms | 0 / 0 | none | 1 / 1 / 1 | provider timeout |
+| 3 | 300,416 ms | 3,682 / 5,502 | write, edit | 1 / 1 / 0 | outer timeout |
+
+Rupi used 7,093 input and 5,570 output tokens (12,663 inference-work tokens)
+over 864,399 ms. It wrote no project files until turn 3, when it created
+`tasklog/__main__.py`. The oracle then failed all three checks because
+`resolve_state_path()` takes one argument but its caller passed two. The
+project tests failed because there was no `tests/` directory; help passed only
+in turn 3.
+
+| Pi turn | Elapsed | Input / output | Actions | Checks | End |
+| --- | ---: | ---: | --- | --- | --- |
+| 1 | 300,332 ms | 3,996 / 446 | read, bash, read | 1 / 1 / 1 | outer timeout |
+| 2 | 300,381 ms | 149 / 156 | bash | 1 / 1 / 1 | outer timeout |
+| 3 | 300,234 ms | 149 / 3,103 | bash | 1 / 1 / 1 | outer timeout |
+
+Pi used 4,294 input and 3,705 output tokens (7,999 inference-work tokens)
+over 900,947 ms and created no project files. Its acceptance checks failed
+because Python could not import `tasklog`; project test discovery and help
+also failed in every turn.
+
+Neither agent passed the oracle, so this is not a Case 01 win. The clarified
+contract did not change Rupi's first-write delay: it wrote code in the final
+turn, where a simple argument mismatch made the package unrunnable. Pi again
+made no source write. The long first-write stall remains the main open issue.
