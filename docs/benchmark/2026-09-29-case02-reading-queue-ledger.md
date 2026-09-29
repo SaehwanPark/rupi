@@ -257,3 +257,36 @@ Pi won this matched run by using 76,715 fewer work tokens and finishing
 met the prompt's README and discoverable-test requirements. Case 02 remains
 open. The next matched retry should make the `BaseHTTPRequestHandler.rfile`
 contract explicit and verify `GET /healthz` before the POST/GET smoke sequence.
+
+## Explicit request-stream and health-first retry
+
+Run: `bench-20260929-case02-rfile-health-first-low-matched4-600s`.
+
+This matched run used Pi 0.86.1, low reasoning, four turns, 600-second turn
+timeouts, and project-test/help recovery feedback. The prompt explicitly named
+`BaseHTTPRequestHandler.rfile` and asked for `GET /healthz` before POST/GET
+smoke checks.
+
+| Rupi turn | Elapsed | Input / output | Work tokens | Requests | Tools | Result |
+| --- | ---: | ---: | ---: | ---: | ---: | --- |
+| 1 | 600,254 ms | 6,426 / 7,415 | 13,841 | 4 | 5 | outer timeout |
+| 2 | 541,148 ms | 21,333 / 9,576 | 30,909 | 8 | 7 | budget exhausted |
+| 3 | 141,345 ms | 5,493 / 2,035 | 7,528 | 3 | 3 | reconciliation; one tool failed |
+| 4 | 1,859 ms | 0 / 0 | 0 | 0 | 0 | reconciliation; no work |
+
+Rupi used 52,278 inference-work tokens over 1,284,606 ms. Help passed in turns
+2 through 4, but the oracle failed on `PATCH /items/1`: the server closed the
+connection without a response. Project test discovery failed because no
+importable `tests/` directory existed. Rupi created `readqueue/__init__.py`,
+`readqueue/__main__.py`, and `smoke_check.py`, but no README or tests.
+
+| Pi turn | Elapsed | Input / output | Work tokens | Requests | Tools | Result |
+| --- | ---: | ---: | ---: | ---: | ---: | --- |
+| 1 | 600,157 ms | 8,621 / 11,586 | 20,207 | 12 | 17 | outer timeout; resolved |
+
+Pi used 20,207 inference-work tokens over 600,157 ms. It passed the oracle, all
+34 project unittests, and both help commands before the outer timeout. It
+created three test modules but no README. Pi won this matched run using 32,071
+fewer work tokens and 684,449 ms less elapsed time. Case 02 remains open. The
+next retry should smoke-test a valid PATCH followed by GET readback, and keep
+server diagnostics visible if a request disconnects.

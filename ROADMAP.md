@@ -1240,6 +1240,12 @@ TUI rendering passed all budgets (3.31–3.90 µs/unit); checkpointed restore me
   passed, but its request reader used `self.r` instead of `self.rfile`, causing
   HTTP 500 responses. Both generated projects still lacked a README and
   discoverable tests. Case 02 remains open; see the ledger for per-turn data.
+- Explicit `rfile` and health-first retry remained a Pi win in
+  `bench-20260929-case02-rfile-health-first-low-matched4-600s`. Pi passed the
+  oracle, 34 project tests, and both help
+  commands using 20,207 work tokens over 600,157 ms. Rupi used 52,278 tokens
+  over 1,284,606 ms; its PATCH request disconnected and test discovery failed.
+  Neither generated a README. Case 02 remains open; see the ledger.
 
 ### Performance
 
