@@ -1281,9 +1281,16 @@ TUI rendering passed all budgets (3.31–3.90 µs/unit); checkpointed restore me
   passing the oracle, all 61 project tests, and every help check. Rupi did not resolve; its oracle
   runs could not reach a healthy server, test discovery could not import `tests`, and all help
   checks failed. Pi used 45,632 work tokens over 2,401,085 ms; Rupi used 69,551 over 2,214,433
-  ms. Pi was 186,652 ms slower but used 23,919 fewer work tokens, a strict oracle win. Case 07
-  is next. See the
+  ms. Pi was 186,652 ms slower but used 23,919 fewer work tokens, a strict oracle win. See the
   [Case 06 ledger](docs/benchmark/2026-09-29-case06-artifact-pipeline-ledger.md).
+
+  Case 07 used the pinned Pi 0.86.1 run `bench-20260929-case07-pi0861-low-matched4-600s`. Pi
+  resolved on turn 4 after its outer timeout, passing all five oracle tests, 53 project tests, and
+  every help check. Rupi did not resolve: project-test discovery could not import `tests`, oracle
+  requests disconnected, and `worker` help still failed. Pi used 62,288 work tokens over
+  2,401,022 ms; Rupi used 69,765 over 2,288,759 ms. Pi took 112,263 ms longer but used 7,477
+  fewer work tokens, a strict oracle win. Case 08 is next. See the
+  [Case 07 ledger](docs/benchmark/2026-09-29-case07-lease-cascade-ledger.md).
 
 ### Performance
 
