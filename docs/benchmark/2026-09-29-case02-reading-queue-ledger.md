@@ -84,8 +84,49 @@ change the earlier matched Pi win; Case 02 remains open.
 
 The retry exposed ambiguity in "direct process invocation": Rupi interpreted
 `process` as a shell prefix even though no process tool was listed. The next
-prompt will say to use a dedicated process tool only when it appears in the
-available-tool list; otherwise, run the executable directly through the shell
-or exec tool, one command per invocation. It will continue to prohibit
-`python -c` and command chaining, and direct one-off Python checks to a
-temporary `.py` file inside the project workspace.
+prompt clarified that only listed process tools should be used, with direct
+shell/exec calls as the fallback. The following retry tests that clarification
+and adds an entrypoint-first implementation order.
+
+## Explicit-tool diagnostic retry — `bench-20260929-case02-tool-listed-low-matched4`
+
+This matched run used the same Pi 0.86.1 prefix, model, low reasoning, four
+300-second turns, eight-request cap, and project-test/help-only feedback.
+Initial and recovery prompts both had the clarified process-tool fallback,
+prohibited inline Python and command chaining, and kept recovery output free of
+oracle results and Case 01 instructions.
+
+| Rupi turn | Elapsed | Input / output | Work tokens | Requests | Tools | Outcome |
+| --- | ---: | ---: | ---: | ---: | ---: | --- |
+| 1 | 300,293 ms | 6,946 / 4,700 | 11,646 | 5 | 7 succeeded | timeout |
+| 2 | 300,244 ms | 1,417 / 4,208 | 5,625 | 3 | 1 ok, 1 failed | timeout |
+| 3 | 271,540 ms | 0 / 0 | 0 | 1 timed out | 0 | provider timeout |
+| 4 | 272,062 ms | 0 / 0 | 0 | 1 timed out | 0 | provider timeout |
+
+Rupi used 17,271 inference-work tokens over 1,144,139 ms. It invoked
+`python --version & python -c "print(1)"` despite the prompt's single-command
+and no-inline-source guidance; the tool call succeeded. It then wrote only
+`readqueue/__init__.py` and `readqueue/__main__.py`. A later read of the Python
+installation's `unittest/loader.py` was rejected as outside the workspace.
+Turns 3 and 4 ended after provider timeouts with no output tokens or tools.
+Project tests, oracle, and both help checks failed; no README or tests were
+created.
+
+| Pi turn | Elapsed | Input / output | Work tokens | Requests | Tools | Outcome |
+| --- | ---: | ---: | ---: | ---: | ---: | --- |
+| 1 | 300,239 ms | 4,161 / 280 | 4,441 | 3 | 4 | timeout |
+| 2 | 300,227 ms | 0 / 0 | 0 | 0 | 0 | timeout |
+| 3 | 300,206 ms | 793 / 5,839 | 6,632 | 1 | 1 | timeout |
+| 4 | 300,307 ms | 1,301 / 4,576 | 5,877 | 5 | 6 | timeout |
+
+Pi used 16,950 inference-work tokens over 1,200,979 ms. It created
+`readqueue/__init__.py`, `store.py`, and `validation.py`, but no README or tests.
+Neither agent passed the oracle or help checks, and both failed project test
+discovery. Rupi was 56.8 seconds faster but used 321 more work tokens; this is
+an inconclusive retry, not a Case 02 win.
+
+The next prompt will keep the service implementation in
+`readqueue/__main__.py` until the routes, persistence, and help commands work,
+then add README and tests. It will prohibit all shell chaining characters
+(`&`, `&&`, `;`, and `|`), inline Python, and reads outside the project; one
+executable will run per command-tool call. Case 02 remains open.

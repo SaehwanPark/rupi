@@ -1204,6 +1204,18 @@ TUI rendering passed all budgets (3.31–3.90 µs/unit); checkpointed restore me
   temporary `.py` file inside the project workspace. Case-specific guidance
   continues to emphasize SQLite restart persistence, deterministic JSON, and
   state-preserving HTTP errors.
+- Retry `bench-20260929-case02-tool-listed-low-matched4` still did not resolve
+  for either agent. Rupi used 17,271 inference-work tokens over 1,144,139 ms;
+  it attempted `python -c` despite the new guidance, wrote only package entry
+  points, and ended its last two turns on provider timeouts. Pi used 16,950
+  tokens over 1,200,979 ms and timed out in all four turns. Neither passed the
+  oracle or help checks; both failed test discovery. Rupi was faster but used
+  more tokens, so Case 02 remains open. See the ledger for details.
+- The next retry will keep the CLI, handler, and SQLite logic in
+  `readqueue/__main__.py` until the service and help work, and defer module
+  splitting, README, and tests until then. Windows guidance will require one
+  executable per command-tool call, prohibit `&`, `&&`, `;`, `|`, and inline
+  Python, and keep file reads inside the project workspace.
 
 ### Performance
 

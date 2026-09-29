@@ -61,6 +61,10 @@ function Get-CaseGuidance([hashtable]$case) {
     "02-reading-queue" {
       return (@(
         'Run the service with `python -m readqueue serve --db PATH --host HOST --port PORT`.'
+        'Start with `readqueue/__main__.py` and keep the CLI, HTTP handler, and'
+        'SQLite operations in that file until the complete service and help commands work.'
+        'Do not split into `cli.py`, `server.py`, `store.py`, or `validation.py`,'
+        'or write the README and tests, before the service is runnable.'
         'Prioritize the documented HTTP routes, deterministic JSON, and'
         'SQLite persistence across a server restart.'
         'Successful responses use `application/json`; error responses include'
@@ -83,14 +87,16 @@ function Get-CaseGuidance([hashtable]$case) {
 
 function Get-WindowsToolGuidance {
   @'
-On Windows, use a dedicated process tool with separate executable and argument
-fields only when that tool is listed in your available tools. Never type
-`process` as a command prefix in a shell; it is not a shell command. If no
-dedicated process tool is listed, run the executable directly through your
-shell or exec tool, one command per invocation; never chain commands with `&&`.
+On Windows, use a dedicated process tool only if it is listed in your available
+tools, calling it through its actual tool interface. Never type tool names such
+as `process` as command prefixes in a shell. If there is no process tool, run
+one executable directly through the available shell or exec tool per call.
+Do not combine shell commands with `&`, `&&`, `;`, or `|`.
 Do not use `python -c` or put Python source inside a shell command. For a one-off
 Python check, write a temporary `.py` file inside this project workspace with
-the file tool and run it in a separate process or shell command.
+the file tool, then run that file in a separate command-tool call.
+Keep file inspection inside this workspace; do not read Python installation
+files or personal/global skill directories.
 '@
 }
 
@@ -133,12 +139,13 @@ them, and state any incomplete requirement explicitly.
     'Use only Python standard-library modules'
     'The project directory is already the working directory'
     'Run the project unittest suite'
-    'use a dedicated process tool with separate executable and argument'
-    '`process` as a command prefix in a shell; it is not a shell command'
-    'run the executable directly through your'
-    'never chain commands with `&&`'
+    'use a dedicated process tool only if it is listed in your available'
+    '`process` as command prefixes in a shell'
+    'one executable directly through the available shell or exec tool per call'
+    'Do not combine shell commands with `&`, `&&`, `;`, or `|`'
     'Do not use `python -c`'
     'write a temporary `.py` file'
+    'do not read Python installation'
   )
   foreach ($instruction in $requiredInstructions) {
     if (-not $prompt.Contains($instruction)) {
@@ -265,12 +272,13 @@ unittest suite, the project-specific help commands, and a smoke sequence. If
 anything remains incomplete, state it instead of claiming success.
 "@
   $requiredInstructions = @(
-    'use a dedicated process tool with separate executable and argument'
-    '`process` as a command prefix in a shell; it is not a shell command'
-    'run the executable directly through your'
-    'never chain commands with `&&`'
+    'use a dedicated process tool only if it is listed in your available'
+    '`process` as command prefixes in a shell'
+    'one executable directly through the available shell or exec tool per call'
+    'Do not combine shell commands with `&`, `&&`, `;`, or `|`'
     'Do not use `python -c`'
     'write a temporary `.py` file'
+    'do not read Python installation'
   )
   foreach ($instruction in $requiredInstructions) {
     if (-not $prompt.Contains($instruction)) {
