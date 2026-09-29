@@ -608,6 +608,55 @@ every turn. Neither agent resolved Case 01.
 
 The initial prompt now uses a literal here-string and validates that the
 entry-point and command-name instructions survive template expansion. The
-PowerShell parser, dry run, and direct prompt-function check pass. Re-run the
-four-turn low comparison with the corrected prompt before drawing another
-Rupi-versus-Pi conclusion.
+PowerShell parser, dry run, and direct prompt-function check pass. The
+corrected-prompt comparison below uses installed Pi 0.87.1; the pinned 0.86.1
+target-version run remains pending.
+
+## Corrected-prompt matched run — `bench-20260928-case01-literal-prompt-low-matched4`
+
+The saved turn-1 prompts for both agents preserve `tasklog/__main__.py` and all
+four command names. The run used low reasoning, four 300-second turns, an
+eight-request cap, and local project-test/help feedback on recovery turns.
+Recovery prompts contain no acceptance-oracle output.
+
+The installed Pi package was `@earendil-works/pi-coding-agent` 0.87.1. This is
+a valid matched result against 0.87.1, but the roadmap's pinned target is
+Pi 0.86.1, so this run does not close that gate.
+
+Checks are project tests / oracle / help; `1` means the command failed.
+
+| Rupi turn | Elapsed | Input / output | Tools | Checks | End |
+| --- | ---: | ---: | --- | --- | --- |
+| 1 | 291,658 ms | 3,412 / 40 | read | 1 / 1 / 1 | timeout |
+| 2 | 282,979 ms | 2,167 / 47 | exec | 1 / 1 / 1 | timeout |
+| 3 | 136,117 ms | 4,365 / 2,231 | write, exec | 1 / 0 / 0 | needs reconciliation |
+
+Rupi resolved the acceptance oracle and help checks in turn 3. It used 9,944
+input and 2,318 output tokens (12,262 inference-work tokens) over 710,754 ms.
+It created only `tasklog/__main__.py` (7,437 bytes); no README or project tests
+were created, so project unittest discovery failed in every turn. After the
+write, the agent's `exec` attempted `cd /d` to the extended `\\?\C:` workspace
+path. `cmd.exe` rejected that current directory, and the runtime stopped with
+`needs_reconciliation` instead of replaying the failed mutating tool call.
+
+| Pi turn | Elapsed | Input / output | Tools | Checks | End |
+| --- | ---: | ---: | --- | --- | --- |
+| 1 | 300,384 ms | 6,205 / 2,592 | read, ls, read | 1 / 1 / 1 | outer timeout |
+| 2 | 300,300 ms | 625 / 62 | bash | 1 / 1 / 1 | outer timeout |
+| 3 | 300,258 ms | 0 / 0 | none | 1 / 1 / 1 | outer timeout |
+| 4 | 300,278 ms | 0 / 0 | none | 1 / 1 / 1 | outer timeout |
+
+Pi used 6,830 input and 2,654 output tokens (9,484 inference-work tokens) over
+1,201,220 ms. It created no project files and did not pass the oracle or help
+in any turn. Rupi therefore won this corrected matched run against installed
+Pi 0.87.1 by resolving the oracle in three turns while Pi did not resolve in
+four. Rupi's project-test failure and unresolved tool state remain explicit;
+the comparison against the roadmap's exact Pi 0.86.1 target is still pending.
+
+## Roadmap target-version rerun pending
+
+The local Pi installation reports 0.87.1, while the roadmap pins the Case 01
+gate to 0.86.1. The corrected run above is a valid win against 0.87.1, but it
+does not close the pinned gate. The exact `@earendil-works/pi-coding-agent`
+0.86.1 package is available from npm; rerun both agents with that version
+isolated from the global installation before marking Case 01 complete.
