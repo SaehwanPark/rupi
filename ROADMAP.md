@@ -1292,13 +1292,13 @@ TUI rendering passed all budgets (3.31–3.90 µs/unit); checkpointed restore me
   fewer work tokens, a strict oracle win. See the
   [Case 07 ledger](docs/benchmark/2026-09-29-case07-lease-cascade-ledger.md).
 
-  Case 09 used the pinned Pi 0.86.1 run `bench-20260929-case09-pi0861-low-matched4-600s`.
-  Neither agent resolved in four turns. Rupi used 77,774 work tokens over 2,401,257 ms; Pi used
-  53,433 over 2,400,852 ms. Both failed all oracle and project-test checks; final help checks
-  passed. Pi's generated service closed connections; Rupi's failed to start because its SQLite
-  schema referenced a nonexistent `rowid` column. The result is inconclusive: Pi used 24,341 fewer
-  work tokens and finished 405 ms sooner. Case 10 is next. See the
-  [Case 09 ledger](docs/benchmark/2026-09-29-case09-lease-receipt-ledger.md).
+  Case 10 used the pinned Pi 0.86.1 run `bench-20260929-case10-pi0861-low-matched4-600s`.
+  Neither agent resolved in four turns. Rupi used 89,125 work tokens over 2,337,401 ms; Pi used
+  9,202 over 2,401,150 ms. Both failed all oracle and project-test checks, and every help check.
+  Rupi's launcher could not find `receiptledger.__main__`; Pi's Python could not import
+  `receiptledger`. The result is inconclusive: Pi used 79,923 fewer work tokens but finished
+  63,749 ms later; neither resolved the oracle. See
+  [Case 10 ledger](docs/benchmark/2026-09-29-case10-receipt-ledger.md).
 
 ### Performance
 
