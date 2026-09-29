@@ -1289,8 +1289,17 @@ TUI rendering passed all budgets (3.31–3.90 µs/unit); checkpointed restore me
   every help check. Rupi did not resolve: project-test discovery could not import `tests`, oracle
   requests disconnected, and `worker` help still failed. Pi used 62,288 work tokens over
   2,401,022 ms; Rupi used 69,765 over 2,288,759 ms. Pi took 112,263 ms longer but used 7,477
-  fewer work tokens, a strict oracle win. Case 08 is next. See the
+  fewer work tokens, a strict oracle win. See the
   [Case 07 ledger](docs/benchmark/2026-09-29-case07-lease-cascade-ledger.md).
+
+  Case 08 used the pinned Pi 0.86.1 run `bench-20260929-case08-pi0861-low-matched4-600s`.
+  Neither agent resolved in four turns. Rupi used 56,418 work tokens over 2,401,054 ms; Pi used
+  61,496 over 2,400,912 ms. Rupi lacked `leasefence.__main__`, and project-test discovery could
+  not import `tests`. Pi passed help throughout and project tests on turns 1 and 4, but the final
+  oracle failed when a stale-worker claim did not appear before timeout. The result is inconclusive:
+  Pi used 5,078 more work tokens and finished 142 ms sooner, but did not resolve the oracle.
+  Case 09 is next. See the
+  [Case 08 ledger](docs/benchmark/2026-09-29-case08-lease-fence-ledger.md).
 
 ### Performance
 
