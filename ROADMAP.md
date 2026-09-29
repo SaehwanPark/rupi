@@ -1262,13 +1262,12 @@ TUI rendering passed all budgets (3.31–3.90 µs/unit); checkpointed restore me
   after four outer timeouts (6,303 tokens; 2,400,993 ms). Neither resolved.
   Case 03 remains open. See the
   [Case 03 ledger](docs/benchmark/2026-09-29-case03-event-outbox-ledger.md).
-- Case 04 matched run `bench-20260929-case04-baseline-low-matched4-600s` favored Pi:
-  Pi passed the oracle and all three help checks in turn 3 (28,305 work tokens;
-  1,800,669 ms) after its outer timeout. Rupi passed in turn 4 (79,414 work
-  tokens; 2,152,646 ms). Both failed project-test discovery because neither
-  generated an importable `tests/` directory. Case 04 remains an optimization
-  target; see the [Case 04 ledger](docs/benchmark/2026-09-29-case04-webhook-inbox-ledger.md).
-  Case 05 is next.
+- Provisional Case 04 run `bench-20260929-case04-baseline-low-matched4-600s` favored Pi,
+  but the artifact omitted Pi version. The current PATH installation reports 0.87.1,
+  so this does not establish the target 0.86.1 result. The harness now requires and
+  records the expected Pi version; rerun Case 04 pinned to 0.86.1 before Case 05.
+  Both agents passed oracle/help but lacked an importable `tests/` directory. See the
+  [Case 04 ledger](docs/benchmark/2026-09-29-case04-webhook-inbox-ledger.md).
 
 ### Performance
 

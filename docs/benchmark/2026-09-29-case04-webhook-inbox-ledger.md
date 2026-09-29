@@ -1,7 +1,9 @@
 # Case 04 webhook inbox comparison ledger
 
-This ledger records the matched `04-webhook-inbox` run against Pi 0.86.1 with the local
-`qwen3.8-flash-next` model.
+This ledger records the first matched `04-webhook-inbox` run with the local
+`qwen3.8-flash-next` model. Its artifact omitted the Pi version. The harness resolved Pi
+from `PATH`; the current default installation reports 0.87.1, so treat this result as
+provisional until the case is rerun with an explicit 0.86.1 executable.
 
 ## Matched baseline
 
@@ -35,6 +37,7 @@ generated project had no importable `tests/` directory.
 
 ## Outcome
 
-This is a Pi win: it resolved one turn earlier with 51,109 fewer work tokens and 351,977 fewer
-milliseconds. Both agents passed the case oracle and help checks, but neither produced a
-discoverable test suite. Case 04 remains an optimization target; Case 05 is next.
+This provisional run favors Pi: it resolved one turn earlier with 51,109 fewer work tokens and
+351,977 fewer milliseconds. Both agents passed the case oracle and help checks, but neither
+produced a discoverable test suite. It does not establish the Pi 0.86.1 comparison gate; a
+pinned 0.86.1 rerun will establish Case 04 before Case 05.

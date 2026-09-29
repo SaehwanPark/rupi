@@ -4,6 +4,8 @@ param(
   [string]$Agent = "all",
   [string[]]$CaseId = @(),
   [string]$RunId = "",
+  [string]$PiExecutable = "",
+  [string]$ExpectedPiVersion = "0.86.1",
   [ValidateRange(1, 10)]
   [int]$MaxTurns = 4,
   [ValidateRange(30, 3600)]
@@ -660,7 +662,7 @@ function Invoke-AgentCase([hashtable]$case, [string]$agent, [string]$root, [stri
       if ($turn -gt 1) { $args.Add("--continue") }
       $args.Add("--"); $args.Add($prompt)
       $env["PI_CODING_AGENT_DIR"] = $piConfig; $env["PI_OFFLINE"] = "1"
-      $piLauncher = (Get-Command pi -ErrorAction Stop).Source
+      $piLauncher = $script:piLauncher
       $nodeExe = (Get-Command node.exe -ErrorAction SilentlyContinue)
       $piBundle = Join-Path (Split-Path $piLauncher -Parent) "node_modules\@earendil-works\pi-coding-agent\dist\bundle\cli.js"
       if ($nodeExe -and (Test-Path $piBundle)) {
@@ -725,6 +727,27 @@ if ($DryRun) {
   }
   exit 0
 }
+if ($Agent -ne "rupi") {
+  $piLauncher = if ([string]::IsNullOrWhiteSpace($PiExecutable)) {
+    (Get-Command pi -ErrorAction Stop).Source
+  } else {
+    (Resolve-Path -LiteralPath $PiExecutable -ErrorAction Stop).Path
+  }
+  if ([IO.Path]::GetExtension($piLauncher) -eq ".ps1") {
+    $pwsh = (Get-Command pwsh.exe -ErrorAction Stop).Source
+    $piVersionOutput = @(& $pwsh -NoProfile -ExecutionPolicy Bypass -File $piLauncher --version)
+  } else {
+    $piVersionOutput = @(& $piLauncher --version)
+  }
+  $piVersion = ($piVersionOutput -join "`n").Trim()
+  if ($piVersion -ne $ExpectedPiVersion) {
+    throw "Expected Pi $ExpectedPiVersion, but '$piLauncher' reported '$piVersion'."
+  }
+  Write-Host "Pi version: $piVersion"
+} else {
+  $piLauncher = $null
+  $piVersion = $null
+}
 if (-not (Test-Path $rupiBinary)) { throw "Missing $rupiBinary; run cargo build --bin rupi first." }
 New-Item -ItemType Directory -Force -Path $runRoot | Out-Null
 $selectedAgents = if ($Agent -eq "all") { @("rupi", "pi") } else { @($Agent) }
@@ -735,6 +758,7 @@ foreach ($case in $cases) {
     [void]$results.Add((Invoke-AgentCase $case $selectedAgent (Join-Path $runRoot $case.Id) $ThinkingLevel))
     $partial = [ordered]@{
       run_id = $RunId
+      pi_version = $piVersion
       thinking_level = $ThinkingLevel
       recovery_feedback_scope = "project_tests_and_help"
       results = @($results)
@@ -745,6 +769,7 @@ foreach ($case in $cases) {
 $summary = [ordered]@{
   run_id = $RunId
   generated_at = (Get-Date).ToUniversalTime().ToString("o")
+  pi_version = $piVersion
   model = "qwen3.8-flash-next"
   thinking_level = $ThinkingLevel
   recovery_feedback_scope = "project_tests_and_help"
