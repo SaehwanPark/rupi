@@ -485,3 +485,45 @@ and unittest discovery failed because there was no importable `tests/`
 directory. Neither agent resolved Case 01, so this is not a win. Off reasoning
 did not get either agent past the first implementation step; Rupi's quick
 reconciliation stop accounts for its lower elapsed time than the low run.
+
+## Matched entry-point-first run: `bench-20260928-case01-entrypoint-first-low-matched3`
+
+Commit `a11c982` asked both agents to create `tasklog/__main__.py` first and
+keep the commands in that file until persistent task operations worked. The
+run used low reasoning, the same model, three 300-second turns, and an
+eight-request cap.
+
+Checks are project tests / oracle / help; `1` means the command failed.
+
+| Rupi turn | Elapsed | Input / output | Actions | Checks | End |
+| --- | ---: | ---: | --- | --- | --- |
+| 1 | 300,212 ms | 12,708 / 4,876 | read, write, exec, process/edit x2 | 1 / 1 / 0 | outer timeout |
+| 2 | 284,366 ms | 443 / 76 | read, exec | 1 / 1 / 0 | provider timeout |
+| 3 | 294,029 ms | 3,724 / 50 | read | 1 / 1 / 0 | provider timeout |
+
+Rupi used 16,875 input and 5,002 output tokens (21,877 inference-work tokens)
+over 878,607 ms. It created `tasklog/__main__.py` first, and `--help` passed
+in all turns. The final oracle invocation passed two of three checks. In the
+fresh-process sequence, Rupi printed `[ ] 1: write the docs`; the fixture
+expects `   1 [ ] write the docs`. Project tests failed because `tests/` was
+absent; Rupi created no README.
+
+| Pi turn | Elapsed | Input / output | Actions | Checks | End |
+| --- | ---: | ---: | --- | --- | --- |
+| 1 | 300,397 ms | 3,812 / 4,255 | read, bash x2 | 1 / 1 / 1 | outer timeout |
+| 2 | 300,274 ms | 2,169 / 5,374 | bash, write, edit, bash x4 | 1 / 1 / 0 | outer timeout |
+| 3 | 300,347 ms | 3,933 / 3,783 | bash, read, edit, write x2 | 1 / 1 / 0 | outer timeout |
+
+Pi used 9,914 input and 13,412 output tokens (23,326 inference-work tokens)
+over 901,018 ms. It created `tasklog/__init__.py`, `tasklog/__main__.py`, a
+README, and task state, but no project tests. Its final oracle invocation
+failed all three checks. `No matching tasks.` fits the existing spec wording
+but fails the fixture's `No open tasks` check. The error `invalid task id`
+explains the problem but lacks the fixture's exact `invalid id` phrase. Pi's
+list rows omit checkboxes, add a blank line, and report `2 open task(s)` rather
+than the expected `2 open`. Help passed in turns 2 and 3.
+
+Neither agent passed the oracle, so this remains no Case 01 win. The explicit
+entry-point instruction produced more complete first-turn code from Rupi, but
+the visible spec does not define the exact row format or phrases required by
+acceptance. Align those requirements before the next comparison.
