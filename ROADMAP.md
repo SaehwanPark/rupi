@@ -1255,7 +1255,13 @@ TUI rendering passed all budgets (3.31–3.90 µs/unit); checkpointed restore me
   favored Pi: it passed oracle/help in one turn (17,102 work tokens; 600,302 ms).
   Rupi used 10,705 work tokens over 1,190,317 ms but created no package; two
   provider timeouts and a failed `dir /s /b` exec left it unresolved. Case 02
-  remains open; Case 03 is next. See the ledger.
+  remains open. See the ledger.
+- Case 03 baseline `bench-20260929-case03-baseline-low-matched4-600s` was
+  inconclusive. Rupi wrote only `outbox/__init__.py` before a failed recursive
+  `dir` exec; it used 17,180 work tokens over 614,821 ms. Pi created no source
+  after four outer timeouts (6,303 tokens; 2,400,993 ms). Neither resolved.
+  Case 03 remains open; Case 04 is next. See the
+  [Case 03 ledger](docs/benchmark/2026-09-29-case03-event-outbox-ledger.md).
 
 ### Performance
 
