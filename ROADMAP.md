@@ -1251,6 +1251,11 @@ TUI rendering passed all budgets (3.31–3.90 µs/unit); checkpointed restore me
   Rupi passed in turn 2 after 32,357 tokens and 1,200,705 ms. Both missed the
   README and test suite. Rupi's first service command exited 0 without output;
   Case 02 remains open. See the ledger.
+- Module-startup retry `bench-20260929-case02-entrypoint-check-low-matched4-600s`
+  favored Pi: it passed oracle/help in one turn (17,102 work tokens; 600,302 ms).
+  Rupi used 10,705 work tokens over 1,190,317 ms but created no package; two
+  provider timeouts and a failed `dir /s /b` exec left it unresolved. Case 02
+  remains open; Case 03 is next. See the ledger.
 
 ### Performance
 

@@ -321,3 +321,33 @@ the outer timeout. Pi won this retry using 15,240 fewer work tokens and
 600,451 ms less elapsed time. Case 02 remains open. The next diagnostic should
 check that the module entry point starts and keeps the service running before
 route smoke checks begin.
+
+## Module-startup diagnostic retry
+
+Run: `bench-20260929-case02-entrypoint-check-low-matched4-600s`.
+
+This retry kept the prior matched settings and added an explicit
+`__main__`-guard and live-server check before route smoke tests.
+
+| Rupi turn | Elapsed | Input / output | Work tokens | Requests | Tools | Result |
+| --- | ---: | ---: | ---: | ---: | ---: | --- |
+| 1 | 600,591 ms | 5,413 / 3,983 | 9,396 | 4 | 3 | outer timeout; no package |
+| 2 | 571,830 ms | 0 / 0 | 0 | 1 | 0 | provider timeout |
+| 3 | 14,480 ms | 1,252 / 57 | 1,309 | 1 | 1 | reconciliation; tool failed |
+| 4 | 3,416 ms | 0 / 0 | 0 | 0 | 0 | reconciliation; no work |
+
+Rupi used 10,705 inference-work tokens over 1,190,317 ms and did not resolve.
+The first two turns produced no `readqueue` package; turn 2 timed out at the
+570-second provider deadline. Turn 3 tried `dir /s /b`, which failed as a
+shell command and left an unresolved mutating tool. Help and test discovery
+failed in every verified turn.
+
+| Pi turn | Elapsed | Input / output | Work tokens | Requests | Tools | Result |
+| --- | ---: | ---: | ---: | ---: | ---: | --- |
+| 1 | 600,302 ms | 4,770 / 12,332 | 17,102 | 5 | 5 | outer timeout; resolved |
+
+Pi passed oracle and help in turn 1, though project test discovery failed.
+It created `readqueue/__init__.py` and `readqueue/__main__.py`, but no README
+or tests. Rupi used 6,397 fewer work tokens, but remained unresolved and took
+590,015 ms longer. Pi won this comparison. Case 02 remains open; proceed to
+Case 03 and retain the Case 02 findings for later prompt work.
