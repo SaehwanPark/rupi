@@ -1159,17 +1159,14 @@ TUI rendering passed all budgets (3.31–3.90 µs/unit); checkpointed restore me
 ### Empirical local-model comparison — Case 01 target-version gate in progress
 
 - [ ] Beat Pi 0.86.1 on `01-task-ledger` with the local `qwen3.8-flash-next` model.
-- Corrected-prompt matched evidence: `bench-20260928-case01-literal-prompt-low-matched4`
-  used the installed Pi 0.87.1. Rupi passed the oracle in turn 3 (12,262
-  inference-work tokens; 710,754 ms); Pi remained unresolved after four turns
-  (9,484 tokens; 1,201,220 ms). Rupi's project test discovery failed because
-  it created no `tests/` directory, and a failed Windows `exec` left the turn in
-  `needs_reconciliation`. Details and prior invalidated runs are in
-  `docs/benchmark/2026-09-28-case01-task-ledger.md`.
-- The 0.87.1 comparison is a provisional win but does not close this pinned
-  0.86.1 gate. Run both agents with Pi explicitly pinned to 0.86.1 before
-  selecting a runtime change. Report oracle completion, turns, measured tokens,
-  and agent wall time from that same run.
+- Corrected-prompt matched evidence against pinned Pi 0.86.1:
+  `bench-20260928-case01-target0861-low-matched4`. Rupi did not pass the oracle
+  in four turns (11,328 inference-work tokens; 1,148,608 ms); Pi passed in turn
+  3 (20,487 tokens; 901,036 ms). Both failed project-test discovery because
+  neither created `tests/`. Help passed only for Rupi in turn 4 and Pi in turn
+  3. See `docs/benchmark/2026-09-28-case01-task-ledger.md` for turn data.
+- A separate corrected-prompt run against installed Pi 0.87.1 was a provisional
+  Rupi oracle win, but does not change the pinned 0.86.1 result.
 - The gate is per case and remains open until matched evidence against Pi 0.86.1
   shows a `rupi` win. The original ten-case summary is not evidence of current behavior.
 

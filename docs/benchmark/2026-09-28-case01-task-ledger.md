@@ -653,10 +653,44 @@ Pi 0.87.1 by resolving the oracle in three turns while Pi did not resolve in
 four. Rupi's project-test failure and unresolved tool state remain explicit;
 the comparison against the roadmap's exact Pi 0.86.1 target is still pending.
 
-## Roadmap target-version rerun pending
+## Exact Pi 0.86.1 target-version run — `bench-20260928-case01-target0861-low-matched4`
 
-The local Pi installation reports 0.87.1, while the roadmap pins the Case 01
-gate to 0.86.1. The corrected run above is a valid win against 0.87.1, but it
-does not close the pinned gate. The exact `@earendil-works/pi-coding-agent`
-0.86.1 package is available from npm; rerun both agents with that version
-isolated from the global installation before marking Case 01 complete.
+The run used the published `@earendil-works/pi-coding-agent` 0.86.1 package
+installed under an isolated temporary prefix. The prefix's `pi --version`
+reported 0.86.1; the global 0.87.1 installation was unchanged. npm blocked
+install scripts for three dependencies, but the bundled offline CLI ran with
+extensions disabled. This leaves those optional integrations unverified.
+
+The corrected turn-1 prompt names the entry point and CLI verbs literally.
+Settings matched the prior run: low reasoning, four 300-second turns, an
+eight-request cap, and project-test/help feedback only on recovery turns. No
+acceptance-oracle output was included in any recovery prompt.
+
+Checks are project tests / oracle / help; `1` means the command failed.
+
+| Rupi turn | Elapsed | Input / output | Tools | Checks | End |
+| --- | ---: | ---: | --- | --- | --- |
+| 1 | 290,720 ms | 3,413 / 42 | read | 1 / 1 / 1 | timeout |
+| 2 | 286,451 ms | 2,167 / 58 | exec | 1 / 1 / 1 | timeout |
+| 3 | 271,242 ms | 0 / 0 | none | 1 / 1 / 1 | provider timeout |
+| 4 | 300,195 ms | 625 / 5,023 | write | 1 / 1 / 0 | outer timeout |
+
+Rupi used 6,205 input and 5,123 output tokens (11,328 inference-work tokens)
+over 1,148,608 ms. It created only `tasklog/__main__.py` (8,731 bytes), with
+no README or project tests. Help passed in turn 4, but the oracle failed in all
+four turns. Rupi did not resolve Case 01 against the pinned Pi version.
+
+| Pi 0.86.1 turn | Elapsed | Input / output | Tools | Checks | End |
+| --- | ---: | ---: | --- | --- | --- |
+| 1 | 300,335 ms | 4,063 / 5,941 | read, bash x2 | 1 / 1 / 1 | outer timeout |
+| 2 | 300,355 ms | 2,508 / 1,655 | bash, read, bash x2 | 1 / 1 / 1 | outer timeout |
+| 3 | 300,346 ms | 815 / 5,505 | bash, write, bash | 1 / 0 / 0 | outer timeout |
+
+Pi resolved the oracle and help checks in turn 3. It used 7,386 input and
+13,101 output tokens (20,487 inference-work tokens) over 901,036 ms and created
+only `tasklog/__main__.py` (16,456 bytes). Project test discovery failed in all
+turns because no `tests/` directory was created.
+
+Pi 0.86.1 passed the oracle in three turns while Rupi did not pass in four, so
+the pinned Case 01 gate remains open. The 0.87.1 run remains a separate
+provisional Rupi win against that newer installed version.
