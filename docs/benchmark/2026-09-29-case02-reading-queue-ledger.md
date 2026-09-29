@@ -130,3 +130,43 @@ The next prompt will keep the service implementation in
 then add README and tests. It will prohibit all shell chaining characters
 (`&`, `&&`, `;`, and `|`), inline Python, and reads outside the project; one
 executable will run per command-tool call. Case 02 remains open.
+
+## Entrypoint-first matched retry — `bench-20260929-case02-entrypoint-first-low-matched4`
+
+This run used the isolated Pi 0.86.1 prefix, low reasoning, four 300-second
+turns, eight requests per turn, and project-test/help-only recovery feedback.
+Both agents received the single-file `readqueue/__main__.py` order and the
+stricter Windows command and workspace rules. Recovery prompts contained no
+acceptance output or Case 01 guidance.
+
+| Rupi turn | Elapsed | Input / output | Work tokens | Requests | Tools | Result |
+| --- | ---: | ---: | ---: | ---: | ---: | --- |
+| 1 | 300,322 ms | 5,459 / 163 | 5,622 | 4 (3 completed) | 4 | outer timeout |
+| 2 | 279,563 ms | 820 / 52 | 872 | 2 | 1 | provider timeout |
+| 3 | 271,850 ms | 0 / 0 | 0 | 1 timed out | 0 | provider timeout |
+| 4 | 272,669 ms | 0 / 0 | 0 | 1 timed out | 0 | provider timeout |
+
+Rupi used 6,494 inference-work tokens over 1,124,404 ms and created no project
+source, README, or tests. Its first turn followed the one-command rule and ran
+`python --version` by itself, but timed out before writing. The next turn's
+local help feedback reported that `readqueue` did not exist. Turns 2–4 ended
+with provider timeouts; the trace shows the configured 270,000 ms request
+deadline. Rupi's project tests, oracle, and both help checks failed in all four
+turns.
+
+| Pi turn | Elapsed | Input / output | Work tokens | Requests | Tools | Result |
+| --- | ---: | ---: | ---: | ---: | ---: | --- |
+| 1 | 300,215 ms | 4,259 / 319 | 4,578 | 3 | 3 | timeout |
+| 2 | 300,218 ms | 882 / 4,347 | 5,229 | 2 | 2 | timeout |
+| 3 | 300,243 ms | 1,148 / 5,410 | 6,558 | 5 | 5 | timeout; oracle passed |
+
+Pi used 16,365 inference-work tokens over 900,676 ms. It passed the acceptance
+oracle and both help checks in turn 3; project test discovery failed because
+there was no `tests/` directory. It created `readqueue/__init__.py`,
+`readqueue/__main__.py`, and `readqueue/validation.py`, but no README or tests.
+Pi won this matched run. Case 02 remains open.
+
+The 270-second provider deadline ended Rupi's last three active requests before
+it produced source. The next matched diagnostic will use 600-second turns and
+the corresponding 570-second Rupi request deadline, leaving reasoning level,
+prompt, request cap, and pinned Pi version unchanged.

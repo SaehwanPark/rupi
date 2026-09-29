@@ -1216,6 +1216,16 @@ TUI rendering passed all budgets (3.31–3.90 µs/unit); checkpointed restore me
   splitting, README, and tests until then. Windows guidance will require one
   executable per command-tool call, prohibit `&`, `&&`, `;`, `|`, and inline
   Python, and keep file reads inside the project workspace.
+- Entrypoint-first retry `bench-20260929-case02-entrypoint-first-low-matched4`
+  was another Pi win: Pi passed the oracle and both help commands in turn 3
+  (16,365 inference-work tokens; 900,676 ms). Rupi used 6,494 tokens over
+  1,124,404 ms, produced no source, and its later calls hit the configured
+  270,000 ms provider timeout. Both failed project test discovery. Case 02
+  remains open; see the ledger for per-turn evidence.
+- The next matched diagnostic will preserve the prompt, low reasoning, request
+  cap, and Pi 0.86.1 target, but allow 600 seconds per turn and a 570-second
+  Rupi provider deadline. This checks whether the current provider cutoff is
+  preventing source output.
 
 ### Performance
 
