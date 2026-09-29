@@ -290,3 +290,34 @@ created three test modules but no README. Pi won this matched run using 32,071
 fewer work tokens and 684,449 ms less elapsed time. Case 02 remains open. The
 next retry should smoke-test a valid PATCH followed by GET readback, and keep
 server diagnostics visible if a request disconnects.
+
+## PATCH-readback matched retry
+
+Run: `bench-20260929-case02-patch-readback-low-matched4-600s`.
+
+This matched retry kept low reasoning, four turns, 600-second turn timeouts,
+and project-test/help recovery feedback. The prompt added valid and invalid
+PATCH checks, GET readback, visible server diagnostics, and README sequencing.
+
+| Rupi turn | Elapsed | Input / output | Work tokens | Requests | Tools | Result |
+| --- | ---: | ---: | ---: | ---: | ---: | --- |
+| 1 | 600,334 ms | 5,421 / 7,519 | 12,940 | 5 | 4 | outer timeout; oracle failed |
+| 2 | 600,371 ms | 9,897 / 9,520 | 19,417 | 6 | 5 | outer timeout; resolved |
+
+Rupi used 32,357 inference-work tokens over 1,200,705 ms. It passed the
+oracle and both help commands in turn 2. Turn 1's oracle check reported that
+the service exited with code 0 and no output. Test discovery failed in both
+turns because no importable `tests/` directory existed. Rupi created only
+`readqueue/__main__.py`; it created no README or tests.
+
+| Pi turn | Elapsed | Input / output | Work tokens | Requests | Tools | Result |
+| --- | ---: | ---: | ---: | ---: | ---: | --- |
+| 1 | 600,254 ms | 4,498 / 12,619 | 17,117 | 5 | 8 | outer timeout; resolved |
+
+Pi passed the oracle and both help commands in turn 1. Test discovery also
+failed, and Pi created `readqueue/__init__.py` and `readqueue/__main__.py` but
+no README or tests. Both agents resolved only the oracle/help criteria before
+the outer timeout. Pi won this retry using 15,240 fewer work tokens and
+600,451 ms less elapsed time. Case 02 remains open. The next diagnostic should
+check that the module entry point starts and keeps the service running before
+route smoke checks begin.

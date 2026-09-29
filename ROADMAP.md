@@ -1246,6 +1246,11 @@ TUI rendering passed all budgets (3.31–3.90 µs/unit); checkpointed restore me
   commands using 20,207 work tokens over 600,157 ms. Rupi used 52,278 tokens
   over 1,284,606 ms; its PATCH request disconnected and test discovery failed.
   Neither generated a README. Case 02 remains open; see the ledger.
+- PATCH-readback run `bench-20260929-case02-patch-readback-low-matched4-600s`
+  favored Pi: it passed oracle/help in one turn (17,117 work tokens; 600,254 ms).
+  Rupi passed in turn 2 after 32,357 tokens and 1,200,705 ms. Both missed the
+  README and test suite. Rupi's first service command exited 0 without output;
+  Case 02 remains open. See the ledger.
 
 ### Performance
 
