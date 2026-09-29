@@ -1226,6 +1226,14 @@ TUI rendering passed all budgets (3.31–3.90 µs/unit); checkpointed restore me
   cap, and Pi 0.86.1 target, but allow 600 seconds per turn and a 570-second
   Rupi provider deadline. This checks whether the current provider cutoff is
   preventing source output.
+- Extended entrypoint-first run `bench-20260929-case02-entrypoint-first-low-matched4-600s`
+  still favored Pi: it passed the oracle and both help commands in turn 2
+  (24,997 work tokens; 1,200,459 ms). Rupi used 29,501 tokens over 1,466,279
+  ms; help passed, but POST returned HTTP 500. Its final source defines
+  `Store._session` while CRUD methods call missing `Store._connect`, and a
+  failed `findstr` exec left the last turn unable to continue. Pi's generated
+  project still lacked a README and discoverable tests. Case 02 remains open;
+  see the ledger for the per-turn record and next diagnostic.
 
 ### Performance
 

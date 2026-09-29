@@ -170,3 +170,46 @@ The 270-second provider deadline ended Rupi's last three active requests before
 it produced source. The next matched diagnostic will use 600-second turns and
 the corresponding 570-second Rupi request deadline, leaving reasoning level,
 prompt, request cap, and pinned Pi version unchanged.
+
+## Extended entrypoint-first retry — `bench-20260929-case02-entrypoint-first-low-matched4-600s`
+
+This matched run preserved the previous entrypoint-first prompt, Pi 0.86.1,
+low reasoning, the eight-request cap, and project-test/help-only recovery
+feedback. Both agents received four turns of up to 600 seconds; Rupi's provider
+deadline was 570 seconds. The initial and recovery prompts still contained no
+acceptance-oracle output.
+
+| Rupi turn | Elapsed | Input / output | Work tokens | Tools | Result |
+| --- | ---: | ---: | ---: | --- | --- |
+| 1 | 600,273 ms | 5,937 / 4,248 | 10,185 | 5 succeeded | timeout |
+| 2 | 600,256 ms | 2,969 / 9,718 | 12,687 | 2 succeeded | timeout |
+| 3 | 263,067 ms | 1,574 / 5,055 | 6,629 | 3 succeeded, 1 failed | needs reconciliation |
+| 4 | 2,683 ms | 0 / 0 | 0 | none | needs reconciliation |
+
+Rupi used 29,501 inference-work tokens over 1,466,279 ms. It created
+`readqueue/__init__.py` and `readqueue/__main__.py`. Its help commands passed
+in turns 3 and 4, but the acceptance oracle returned HTTP 500 and project test
+discovery failed because there was no `tests/` directory. The final entrypoint
+defines `Store._session`, while its CRUD methods still call the missing
+`Store._connect`; that leaves the POST handler failing. During turn 3, Rupi's
+`findstr` exec call failed after the storage edit, leaving the session in
+`needs_reconciliation`. Turn 4 made no model request.
+
+| Pi turn | Elapsed | Input / output | Work tokens | Tools | Result |
+| --- | ---: | ---: | ---: | --- | --- |
+| 1 | 600,210 ms | 4,559 / 12,238 | 16,797 | 5 succeeded | timeout |
+| 2 | 600,249 ms | 2,101 / 6,099 | 8,200 | 7 succeeded | timeout; resolved |
+
+Pi used 24,997 inference-work tokens over 1,200,459 ms. It passed the
+acceptance oracle and both help commands in turn 2, so the harness marked the
+case resolved despite that turn reaching its outer timeout. Project test
+discovery returned exit code 5 because no tests were found. The generated
+project included `readqueue/__init__.py`, `readqueue/__main__.py`,
+`scripts/smoke.py`, and `tests/__init__.py`, but no README or test module.
+
+Pi won this matched run by using 4,504 fewer work tokens and finishing 265,820
+ms sooner under the oracle/help resolution criteria. The generated Pi project
+still missed the requested README and discoverable tests. Case 02 remains open.
+The next bounded diagnostic should focus on Rupi's failed storage-helper edit
+and safe source inspection, then use a matched run before recording any Rupi
+win.
