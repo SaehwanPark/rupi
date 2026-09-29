@@ -1292,14 +1292,13 @@ TUI rendering passed all budgets (3.31–3.90 µs/unit); checkpointed restore me
   fewer work tokens, a strict oracle win. See the
   [Case 07 ledger](docs/benchmark/2026-09-29-case07-lease-cascade-ledger.md).
 
-  Case 08 used the pinned Pi 0.86.1 run `bench-20260929-case08-pi0861-low-matched4-600s`.
-  Neither agent resolved in four turns. Rupi used 56,418 work tokens over 2,401,054 ms; Pi used
-  61,496 over 2,400,912 ms. Rupi lacked `leasefence.__main__`, and project-test discovery could
-  not import `tests`. Pi passed help throughout and project tests on turns 1 and 4, but the final
-  oracle failed when a stale-worker claim did not appear before timeout. The result is inconclusive:
-  Pi used 5,078 more work tokens and finished 142 ms sooner, but did not resolve the oracle.
-  Case 09 is next. See the
-  [Case 08 ledger](docs/benchmark/2026-09-29-case08-lease-fence-ledger.md).
+  Case 09 used the pinned Pi 0.86.1 run `bench-20260929-case09-pi0861-low-matched4-600s`.
+  Neither agent resolved in four turns. Rupi used 77,774 work tokens over 2,401,257 ms; Pi used
+  53,433 over 2,400,852 ms. Both failed all oracle and project-test checks; final help checks
+  passed. Pi's generated service closed connections; Rupi's failed to start because its SQLite
+  schema referenced a nonexistent `rowid` column. The result is inconclusive: Pi used 24,341 fewer
+  work tokens and finished 405 ms sooner. Case 10 is next. See the
+  [Case 09 ledger](docs/benchmark/2026-09-29-case09-lease-receipt-ledger.md).
 
 ### Performance
 
