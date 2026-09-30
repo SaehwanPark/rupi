@@ -35,3 +35,42 @@ work tokens, but created one file and finished much sooner than Pi's four
 turns. Neither agent resolved, so this is inconclusive rather than a case win.
 Case 03 remains open. The next retry applies the one-request `write` progress
 boundary to Rupi and the matched harness-verification guidance to both agents.
+
+## Shared harness-verification retry
+
+Run: `bench-20260929-case03-progress-guidance-pi0861-low-matched4-600s`.
+
+The retry used byte-matched prompts, Pi 0.86.1, low reasoning, four turns,
+600-second turn deadlines, and an eight-request per-turn cap. The harness ran
+project tests, all three help commands, and the independent oracle after every
+turn.
+
+| Rupi turn | Elapsed | Work tokens | Requests | Tools | Result |
+| --- | ---: | ---: | ---: | --- | --- |
+| 1 | 592,179 ms | 3,845 | 2 | `read`, `exec` | call failed; checks failed |
+| 2 | 595,182 ms | 3,625 | 2 | `exec` | call failed; checks failed |
+| 3 | 594,796 ms | 3,396 | 2 | `exec` | call failed; checks failed |
+| 4 | 600,239 ms | 17,773 | 7 | `write`, `edit` | outer timeout; checks failed |
+
+Rupi used 28,639 inference-work tokens over 2,382,396 ms. It created
+`outbox/__init__.py`, `service.py`, `storage.py`, and `worker.py`, but omitted
+`outbox/__main__.py`, a README, and tests. All help commands failed because the
+package had no executable entry point; the oracle failed for the same reason,
+and test discovery failed because `tests/` was absent.
+
+| Pi turn | Elapsed | Work tokens | Requests | Tools | Result |
+| --- | ---: | ---: | ---: | --- | --- |
+| 1 | 600,307 ms | 4,873 | 2 | `read`, `ls` | outer timeout; checks failed |
+| 2 | 600,307 ms | 0 | 0 | — | outer timeout; checks failed |
+| 3 | 600,282 ms | 1,218 | 1 | `ls` | outer timeout; checks failed |
+| 4 | 600,287 ms | 0 | 0 | — | outer timeout; checks failed |
+
+Pi used 6,091 inference-work tokens over 2,401,183 ms and created no source.
+Neither agent resolved the oracle or help checks. Rupi finished 18,787 ms sooner
+but used 22,548 more work tokens, so this retry is not a win. Both agents failed
+project test discovery, and neither produced the required README and tests.
+
+The next retry will require `outbox/__main__.py` as the first source write and
+keep the CLI, HTTP handler, SQLite storage, and worker there until the complete
+service and `worker --once` flow work. It will retain the one-request write
+progress boundary and shared harness-verification guidance.

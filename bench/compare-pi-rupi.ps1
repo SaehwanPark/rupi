@@ -89,7 +89,11 @@ function Get-CaseGuidance([hashtable]$case) {
     }
     "03-event-outbox" {
       return (@(
-        'Use `outbox/__main__.py` as the CLI entry point and implement both documented commands.'
+        'First source write: create `outbox/__main__.py` with the CLI parser and help.'
+        'Use the workspace write tool for this first source file.'
+        'Keep the CLI, HTTP handler, SQLite storage, and worker in `outbox/__main__.py`'
+        'until the complete service and `worker --once` flow are runnable.'
+        'Do not create `service.py`, `storage.py`, or `worker.py` before `__main__.py` works.'
         'The service command is `python -m outbox serve --db PATH --host HOST --port PORT`.'
         'The worker command starts with `python -m outbox worker --db PATH --sink PROGRAM`.'
         'Pass repeated `--sink-arg ARG` values directly and use `--once` for a bounded run.'
@@ -277,6 +281,11 @@ directories to its extended Windows path with `cd` or `cd /d`.
     }
   } elseif ($case.Id -eq "03-event-outbox") {
     $caseSpecificInstructions = @(
+      'First source write: create `outbox/__main__.py` with the CLI parser and help.'
+      'Use the workspace write tool for this first source file.'
+      'Keep the CLI, HTTP handler, SQLite storage, and worker in `outbox/__main__.py`'
+      'until the complete service and `worker --once` flow are runnable.'
+      'Do not create `service.py`, `storage.py`, or `worker.py` before `__main__.py` works.'
       'python -m outbox serve --db PATH --host HOST --port PORT'
       'python -m outbox worker --db PATH --sink PROGRAM'
       'Pass sink arguments directly, without a shell'
