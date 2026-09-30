@@ -131,22 +131,28 @@ function Get-CaseGuidance([hashtable]$case) {
         'The subprocess test starts the documented serve command on an available port.'
         'It polls /healthz, confirms the server stays alive, and stops it during cleanup.'
         'Do not stop at a help-only __main__.py; require the discovered health test to pass.'
-        'Keep the first slice to CLI help, server startup, and health.'
-        'After health works, prioritize signed POST /batches before worker behavior.'
+        'Preserve a working health endpoint and CLI; do not rewrite a passing slice.'
+        'Complete the HTTP contract before worker behavior.'
+        'Cover health, signed admission, and batch status.'
+        'Validate the complete batch and dependency graph before one atomic database write.'
+        'Malformed bodies, duplicate ids, and unknown fields return JSON 400.'
+        'Missing or repeated dependencies return JSON 400.'
+        'Self-dependencies and cycles also return JSON 400.'
+        'Rejected requests leave no rows; the server stays up for the next request.'
         'New signed batches return 202; exact replays return 200; conflicts return 409.'
         'Missing or invalid signatures return 401 before any database write.'
-        'Verify HMAC-SHA256 over the exact raw request bytes before parsing the body.'
+        'Verify raw-byte HMAC-SHA256 before parsing; compare digests in constant time.'
+        'GET /batches/<batch_id> returns full status or JSON 404 for an unknown batch.'
+        'Add HTTP tests for rejected input followed by another request.'
+        'Cover batch status reads and restart persistence.'
+        'Do not start worker work until all focused HTTP tests pass.'
+        'Then implement worker --once with dependency order and lease reclaim.'
+        'Keep retryable failures pending; permanent failures block dependent jobs.'
+        'Worker --once attempts each runnable job once and never polls.'
+        'Invoke the sink as argv without a shell and send one JSON line for each claimed job.'
+        'Add focused worker tests after the HTTP tests pass.'
         'Use small modules for core behavior when that keeps the implementation clear.'
-        'After signed admission, complete the full batch DAG behavior.'
-        'An exact idempotent replay returns 200.'
-        'Conflicting content for an existing batch_id returns 409.'
-        'Authenticate exact raw request bytes with HMAC-SHA256.'
-        'Use constant-time signature comparison before any database mutation.'
-        'Validate all dependencies before inserting the full batch atomically.'
-        'Commit leases before invoking the sink directly, without a shell.'
-        'Bound worker --once: attempt each runnable job at most once and never poll.'
-        'Retryable failures stay pending; permanent failures block dependent jobs.'
-        'After health, signed admission, and worker flow work, complete focused tests and README.'
+        'After behavior and tests pass, update README only as SPEC.md requires.'
         'The harness runs checks each turn; do not repeat checks or start the service.'
         'Never inspect the external oracle.'
       ) -join [Environment]::NewLine)
@@ -411,18 +417,28 @@ directories to its extended Windows path with `cd` or `cd /d`.
       'The subprocess test starts the documented serve command on an available port.'
       'It polls /healthz, confirms the server stays alive, and stops it during cleanup.'
       'Do not stop at a help-only __main__.py; require the discovered health test to pass.'
-      'Keep the first slice to CLI help, server startup, and health.'
-      'After health works, prioritize signed POST /batches before worker behavior.'
+      'Preserve a working health endpoint and CLI; do not rewrite a passing slice.'
+      'Complete the HTTP contract before worker behavior.'
+      'Cover health, signed admission, and batch status.'
+      'Validate the complete batch and dependency graph before one atomic database write.'
+      'Malformed bodies, duplicate ids, and unknown fields return JSON 400.'
+      'Missing or repeated dependencies return JSON 400.'
+      'Self-dependencies and cycles also return JSON 400.'
+      'Rejected requests leave no rows; the server stays up for the next request.'
       'New signed batches return 202; exact replays return 200; conflicts return 409.'
       'Missing or invalid signatures return 401 before any database write.'
-      'Verify HMAC-SHA256 over the exact raw request bytes before parsing the body.'
+      'Verify raw-byte HMAC-SHA256 before parsing; compare digests in constant time.'
+      'GET /batches/<batch_id> returns full status or JSON 404 for an unknown batch.'
+      'Add HTTP tests for rejected input followed by another request.'
+      'Cover batch status reads and restart persistence.'
+      'Do not start worker work until all focused HTTP tests pass.'
+      'Then implement worker --once with dependency order and lease reclaim.'
+      'Keep retryable failures pending; permanent failures block dependent jobs.'
+      'Worker --once attempts each runnable job once and never polls.'
+      'Invoke the sink as argv without a shell and send one JSON line for each claimed job.'
+      'Add focused worker tests after the HTTP tests pass.'
       'Use small modules for core behavior when that keeps the implementation clear.'
-      'After signed admission, complete the full batch DAG behavior.'
-      'Authenticate exact raw request bytes with HMAC-SHA256.'
-      'Validate all dependencies before inserting the full batch atomically.'
-      'Commit leases before invoking the sink directly, without a shell.'
-      'Bound worker --once: attempt each runnable job at most once and never poll.'
-      'After health, signed admission, and worker flow work, complete focused tests and README.'
+      'After behavior and tests pass, update README only as SPEC.md requires.'
       'The harness runs checks each turn; do not repeat checks or start the service.'
       'Never inspect the external oracle.'
     )
@@ -514,13 +530,9 @@ function Get-RecoveryPrompt([hashtable]$case, [object]$verification) {
       'The subprocess test starts the documented command and checks GET /healthz. ' +
       'It confirms the server stays alive and stops it during cleanup. ' +
       'Make /healthz return HTTP 200 application/json with {"ok": true}. ' +
-      'Do this before batch or worker behavior. ' +
-      'Once health passes, prioritize signed admission. ' +
-      'New signed batches return 202; exact replays return 200; conflicts return 409. ' +
-      'Missing or invalid signatures return 401 before any database write. ' +
-      'Use small modules when they keep the service and worker clear. ' +
-      'A valid new batch returns 202; exact replay returns 200; conflicting content returns 409. ' +
-      'Then add README and focused tests. Work only in this workspace; ' +
+      'Finish the HTTP contract and focused HTTP tests before worker behavior. ' +
+      'After those tests pass, implement bounded worker behavior and focused worker tests. ' +
+      'Defer README edits until behavior and tests pass. Work only in this workspace; ' +
       'do not edit the specification, config, or oracle.'
   } else {
     "Read SPEC.md and inspect the files already present. Work only inside this" +
@@ -614,8 +626,20 @@ If anything remains incomplete, state it instead of claiming success.
          'Make server.run bind the configured host and port, then call serve_forever().') -or
        -not $prompt.Contains(
          'The subprocess test starts the documented command and checks GET /healthz.') -or
-       -not $prompt.Contains('Do this before batch or worker behavior.') -or
-       -not $prompt.Contains('Once health passes, prioritize signed admission.') -or
+       -not $prompt.Contains('Complete the HTTP contract before worker behavior.') -or
+       -not $prompt.Contains('Cover health, signed admission, and batch status.') -or
+       -not $prompt.Contains(
+         'Rejected requests leave no rows; the server stays up for the next request.') -or
+       -not $prompt.Contains(
+         'GET /batches/<batch_id> returns full status or JSON 404 for an unknown batch.') -or
+       -not $prompt.Contains(
+         'Verify raw-byte HMAC-SHA256 before parsing; compare digests in constant time.') -or
+       -not $prompt.Contains(
+         'Do not start worker work until all focused HTTP tests pass.') -or
+       -not $prompt.Contains(
+         'Then implement worker --once with dependency order and lease reclaim.') -or
+       -not $prompt.Contains(
+         'Worker --once attempts each runnable job once and never polls.') -or
        $prompt.Contains('Read SPEC.md and inspect the files already present.'))) {
     throw 'Case 05 recovery prompt must reuse the embedded SPEC and defer' +
       ' verification to the harness.'
