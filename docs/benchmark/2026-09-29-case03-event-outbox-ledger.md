@@ -219,3 +219,35 @@ not implement the service. The updated prompt embeds the complete SPEC and
 requires the first write to implement the HTTP service, SQLite storage, and
 bounded worker together in `outbox/__main__.py`. Dry-runs passed for Case03 and
 Case02; other case prompts remain unchanged.
+
+## Full-spec, complete-first-write retry
+
+Run: `bench-20260930-case03-full-write-grace6-cap8-pi0861-low-matched4-600s`.
+
+This matched run used Pi 0.86.1, low reasoning, four turns, 600-second turn
+deadlines, an eight-request cap, and a six-second Rupi provider timeout grace
+(594,000 ms). The prompt embedded the complete SPEC and required the first
+workspace write to implement the CLI, HTTP service, SQLite storage, and bounded
+worker in `outbox/__main__.py`.
+
+| Rupi turn | Elapsed | Work tokens | Requests | Project tests | Oracle | Help | Result |
+| --- | ---: | ---: | ---: | ---: | ---: | ---: | --- |
+| 1 | 594,145 ms | 0 | 1 | fail | fail | fail | provider timeout; no tool call |
+| 2 | 600,175 ms | 25,140 | 7 | fail | pass | pass | resolved |
+
+Rupi resolved in two turns, passing the oracle and all three help checks. The
+project-test check failed. Rupi used 25,140 inference-work tokens over
+1,194,320 ms.
+
+| Pi turn | Elapsed | Work tokens | Requests | Project tests | Oracle | Help | Result |
+| --- | ---: | ---: | ---: | ---: | ---: | ---: | --- |
+| 1 | 600,348 ms | 17,070 | 1 | fail | fail | pass | unresolved |
+| 2 | 600,233 ms | 14,002 | 9 | fail | fail | pass | unresolved |
+| 3 | 479,565 ms | 13,187 | 9 | pass | fail | pass | unresolved |
+| 4 | 499,461 ms | 14,877 | 6 | pass | fail | pass | unresolved |
+
+Pi did not resolve in four turns. It used 59,136 inference-work tokens over
+2,179,607 ms. Rupi finished 985,287 ms sooner and used 33,996 fewer tokens,
+while passing the oracle and help checks that Pi did not. This is a verified
+Rupi win for the Case 03 benchmark objective. The project-test failure in
+Rupi's generated artifact remains separate. Proceed to the next case.

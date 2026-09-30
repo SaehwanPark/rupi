@@ -1308,6 +1308,15 @@ TUI rendering passed all budgets (3.31–3.90 µs/unit); checkpointed restore me
   full spec and require the first write to implement the service and worker, not
   help alone. Dry-runs passed for Case03 and unchanged Case02. Case 03 remains
   open; see the ledger.
+- Full-spec, complete-first-write retry
+  `bench-20260930-case03-full-write-grace6-cap8-pi0861-low-matched4-600s` was a
+  verified Rupi win. Rupi passed the oracle and all three help checks in turn 2
+  (25,140 work tokens; 1,194,320 ms); Pi failed the oracle in all four turns
+  (59,136; 2,179,607 ms). Rupi was 985,287 ms faster and used 33,996 fewer
+  tokens. Rupi's project tests failed, while Pi passed them in its final two
+  turns. The Case 03 Pi-comparison objective is met; the project-test failure
+  remains separate. See the
+  [Case 03 ledger](docs/benchmark/2026-09-29-case03-event-outbox-ledger.md).
 - Pinned Case 04 run `bench-20260929-case04-pi0861-low-matched4-600s` recorded
   `pi_version: 0.86.1` but was inconclusive: neither agent resolved in four turns.
   Rupi used 62,291 work tokens over 2,401,168 ms; Pi used 6,284 over 2,401,033 ms.
