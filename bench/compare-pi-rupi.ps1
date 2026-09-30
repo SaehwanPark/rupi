@@ -98,9 +98,11 @@ function Get-CaseGuidance([hashtable]$case) {
     }
     "03-event-outbox" {
       return (@(
-        'First tool call: use workspace `write` to create `outbox/__main__.py` CLI help.'
+        'First tool call: workspace write `outbox/__main__.py` with the service and worker.'
+        'Implement CLI help, HTTP routes, SQLite persistence, and `worker --once` in that file.'
+        'Do not use the first source write for CLI/help only; include the complete workflow.'
+        'The full Case 03 specification is embedded in this prompt.'
         'Do not call `read`, `exec`, or another inspection tool before this first write.'
-        'After the first write, read `SPEC.md` completely before implementing the service.'
         'Use the workspace write tool for this first source file.'
         'Keep the CLI, HTTP handler, SQLite storage, and worker in `outbox/__main__.py`'
         'until the complete service and `worker --once` flow are runnable.'
@@ -150,10 +152,17 @@ workspace files, including `dir /s`, `find`, `findstr`, `grep`, or `ls`.
 function Get-InitialPrompt([hashtable]$case) {
   $guidance = Get-CaseGuidance $case
   $toolingGuidance = Get-WindowsToolGuidance
+  $embeddedSpec = ""
+  $caseSpecBlock = ""
   $specAccessOrder = if ($case.Id -eq "03-event-outbox") {
-    'First write `outbox/__main__.py` with the CLI; read SPEC.md immediately afterward.'
+    'Implement the complete service and worker from the embedded Case 03 specification.'
   } else {
     'Read SPEC.md completely before acting.'
+  }
+  if ($case.Id -eq "03-event-outbox") {
+    $specPath = Join-Path (Join-Path $repoRoot $case.Source) "SPEC.md"
+    $embeddedSpec = [IO.File]::ReadAllText($specPath)
+    $caseSpecBlock = "`nThe complete Case 03 specification follows:`n`n$embeddedSpec`n"
   }
   $verificationGuidance = if ($case.Id -eq "02-reading-queue") {
 @'
@@ -184,7 +193,7 @@ You are implementing the `{{PACKAGE}}` Python package in the current workspace.
 {{SPEC_ACCESS_ORDER}} Build a complete dependency-free Python 3
 project for the `{{PACKAGE}}` package described by SPEC.md, including a readable
 README.md and focused unittest tests. The project focus is {{PROJECT_FOCUS}}.
-
+{{CASE_SPEC_BLOCK}}
 {{CASE_GUIDANCE}}
 
 Work only inside this project workspace. Do not edit SPEC.md, any rupi config,
@@ -200,6 +209,7 @@ directories to its extended Windows path with `cd` or `cd /d`.
   $prompt = $prompt.Replace('{{PACKAGE}}', [string]$case.Package)
   $prompt = $prompt.Replace('{{PROJECT_FOCUS}}', [string]$case.Focus)
   $prompt = $prompt.Replace('{{SPEC_ACCESS_ORDER}}', $specAccessOrder)
+  $prompt = $prompt.Replace('{{CASE_SPEC_BLOCK}}', $caseSpecBlock)
   $prompt = $prompt.Replace('{{CASE_GUIDANCE}}', $guidance)
   $prompt = $prompt.Replace('{{WINDOWS_TOOL_GUIDANCE}}', $toolingGuidance)
   $prompt = $prompt.Replace('{{VERIFICATION_GUIDANCE}}', $verificationGuidance)
@@ -224,7 +234,8 @@ directories to its extended Windows path with `cd` or `cd /d`.
   )
   if ($case.Id -eq "03-event-outbox") {
     $requiredInstructions += @(
-      'First write `outbox/__main__.py` with the CLI; read SPEC.md immediately afterward.'
+      'Implement the complete service and worker from the embedded Case 03 specification.'
+      'The full Case 03 specification is embedded in this prompt.'
       'Do not call `read`, `exec`, or another inspection tool before this first write.'
     )
   } else {
@@ -260,8 +271,22 @@ directories to its extended Windows path with `cd` or `cd /d`.
   if (-not $prompt.Contains($guidance)) {
     throw "Initial benchmark prompt is missing case guidance for $($case.Id)."
   }
-  if ($prompt.Contains('{{') -or $prompt.Contains('}}')) {
-    throw "Initial benchmark prompt has an unresolved template for $($case.Id)."
+  if ($case.Id -eq "03-event-outbox" -and -not $prompt.Contains($embeddedSpec)) {
+    throw 'Case 03 initial prompt is missing the complete project specification.'
+  }
+  $templateTokens = @(
+    '{{PACKAGE}}'
+    '{{PROJECT_FOCUS}}'
+    '{{SPEC_ACCESS_ORDER}}'
+    '{{CASE_SPEC_BLOCK}}'
+    '{{CASE_GUIDANCE}}'
+    '{{WINDOWS_TOOL_GUIDANCE}}'
+    '{{VERIFICATION_GUIDANCE}}'
+  )
+  foreach ($templateToken in $templateTokens) {
+    if ($prompt.Contains($templateToken)) {
+      throw "Initial benchmark prompt has an unresolved template for $($case.Id)."
+    }
   }
   $unexpectedControls = @($prompt.ToCharArray() | Where-Object {
       [int]$_ -lt 32 -and [int]$_ -notin @(10, 13)
@@ -307,9 +332,11 @@ directories to its extended Windows path with `cd` or `cd /d`.
     }
   } elseif ($case.Id -eq "03-event-outbox") {
     $caseSpecificInstructions = @(
-      'First tool call: use workspace `write` to create `outbox/__main__.py` CLI help.'
+      'First tool call: workspace write `outbox/__main__.py` with the service and worker.'
+      'Implement CLI help, HTTP routes, SQLite persistence, and `worker --once` in that file.'
+      'Do not use the first source write for CLI/help only; include the complete workflow.'
+      'The full Case 03 specification is embedded in this prompt.'
       'Do not call `read`, `exec`, or another inspection tool before this first write.'
-      'After the first write, read `SPEC.md` completely before implementing the service.'
       'Use the workspace write tool for this first source file.'
       'Keep the CLI, HTTP handler, SQLite storage, and worker in `outbox/__main__.py`'
       'until the complete service and `worker --once` flow are runnable.'

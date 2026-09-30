@@ -180,3 +180,42 @@ required the next model response to call `write`, which did not arrive before
 the 594,000 ms provider timeout. The updated Case03 prompt requires a first
 source write before reading `SPEC.md`. Dry-runs passed for Case03 and Case02;
 other case prompts retain their existing order.
+
+## Write-first, grace-six, cap-eight retry
+
+Run: `bench-20260930-case03-write-first-grace6-cap8-pi0861-low-matched4-600s`.
+
+The retry kept Pi 0.86.1, low reasoning, four turns, 600-second outer deadlines,
+an eight-request cap, and a 594,000 ms Rupi provider timeout. The changed prompt
+made both agents write `outbox/__main__.py` before inspecting the workspace.
+Both passed all three help checks but failed project-test discovery and the
+oracle after every turn. Neither produced a README or tests.
+
+| Rupi turn | Elapsed | Work tokens | Tools | Result |
+| --- | ---: | ---: | --- | --- |
+| 1 | 600,235 ms | 9,182 | `write`, `read`, `exec` x2, `read` x3 | outer timeout |
+| 2 | 600,226 ms | 13,479 | `write`, `read` | outer timeout |
+| 3 | 596,792 ms | 0 | — | provider timeout |
+| 4 | 598,626 ms | 0 | — | provider timeout |
+
+Rupi used 22,661 inference-work tokens over 2,395,879 ms. Its final manifest
+contained ten files: the nine initial project files and `outbox/__main__.py`.
+The help checks passed, but the `serve` command remained unimplemented, so the
+oracle and project-test discovery failed.
+
+| Pi turn | Elapsed | Work tokens | Tools | Result |
+| --- | ---: | ---: | --- | --- |
+| 1 | 600,271 ms | 5,981 | `write`, `read`, `ls`, `ls` | outer timeout |
+| 2 | 600,209 ms | 0 | — | outer timeout |
+| 3 | 600,258 ms | 0 | — | outer timeout |
+| 4 | 600,198 ms | 0 | — | outer timeout |
+
+Pi used 5,981 work tokens over 2,400,936 ms and produced only
+`outbox/__main__.py`. Rupi was 5,057 ms faster but used 16,680 more tokens;
+neither resolved, so this is inconclusive rather than a win.
+
+The first write made help available, but its `serve` and `worker` commands did
+not implement the service. The updated prompt embeds the complete SPEC and
+requires the first write to implement the HTTP service, SQLite storage, and
+bounded worker together in `outbox/__main__.py`. Dry-runs passed for Case03 and
+Case02; other case prompts remain unchanged.

@@ -1299,6 +1299,15 @@ TUI rendering passed all budgets (3.31–3.90 µs/unit); checkpointed restore me
   timed out at 594 seconds. The next retry will require the first tool operation
   to write `outbox/__main__.py`, then read the spec. Case03 and unchanged Case02
   prompt dry-runs passed. Case 03 remains open; see the ledger.
+- Write-first, grace-six, cap-eight retry
+  `bench-20260930-case03-write-first-grace6-cap8-pi0861-low-matched4-600s` was
+  inconclusive. Both agents created only `outbox/__main__.py`; all help checks
+  passed, but project-test discovery and the oracle failed. Rupi used 22,661
+  work tokens over 2,395,879 ms; Pi used 5,981 over 2,400,936 ms. Rupi was
+  5,057 ms faster but used 16,680 more tokens. Neither resolved. Next, embed the
+  full spec and require the first write to implement the service and worker, not
+  help alone. Dry-runs passed for Case03 and unchanged Case02. Case 03 remains
+  open; see the ledger.
 - Pinned Case 04 run `bench-20260929-case04-pi0861-low-matched4-600s` recorded
   `pi_version: 0.86.1` but was inconclusive: neither agent resolved in four turns.
   Rupi used 62,291 work tokens over 2,401,168 ms; Pi used 6,284 over 2,401,033 ms.
