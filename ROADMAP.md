@@ -1367,6 +1367,16 @@ TUI rendering passed all budgets (3.31–3.90 µs/unit); checkpointed restore me
   help checks on every turn. The next prompt returns to the health-first slice before signed
   admission. See the [Case 05 ledger](docs/benchmark/2026-09-29-case05-batch-relay-ledger.md).
 
+  The health-first rerun
+  `bench-20260930-case05-health-first-recover-admission-r8-grace6-cap8-pi0861-low-matched4-600s`
+  was a Pi win. Pi resolved in turn 3 with 19,494 work tokens over 1,800,775 ms; Rupi remained
+  unresolved after four turns with 74,033 work tokens over 2,401,399 ms. Rupi's project tests and
+  help passed on turn 4, but the oracle failed every turn; final diagnostics reported a dropped
+  batch-cycle request and a worker that never reached the sink. Pi's oracle passed on turn 3,
+  while its project tests failed every turn. Case 05 remains open. The next prompt will focus on
+  batch-cycle handling and worker delivery. See the
+  [Case 05 ledger](docs/benchmark/2026-09-29-case05-batch-relay-ledger.md).
+
   Case 06 ran with the pinned Pi 0.86.1 baseline. Pi resolved on turn 4 after its outer timeout,
   passing the oracle, all 61 project tests, and every help check. Rupi did not resolve; its oracle
   runs could not reach a healthy server, test discovery could not import `tests`, and all help

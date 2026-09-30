@@ -322,3 +322,44 @@ PR #137 remains draft.
 
 Case 05 remains open. The seventh prompt regressed server startup for both agents. The next
 iteration will focus on the executable health slice before adding signed admission.
+
+## Eighth prompt iteration: health first, then admission
+
+Run: `bench-20260930-case05-health-first-recover-admission-r8-grace6-cap8-pi0861-low-matched4-600s`.
+Settings matched the prior run: Pi 0.86.1, low reasoning, four turns, 600-second outer timeouts,
+eight requests per turn, and a 594-second Rupi provider timeout. Check values are exit codes
+(0 means pass). Help codes list top-level, serve, and worker in that order.
+
+| Turn | ms | Input / output | Work | Req. | Tools | Oracle / tests | Help exits | Result |
+| ---: | ---: | ---: | ---: | ---: | ---: | --- | --- | --- |
+| 1 | 600,618 ms | 20,273 / 11,008 | 31,281 | 7 | 9 | 1 / 1 | 1 / 1 / 1 | outer timeout |
+| 2 | 600,214 ms | 1,643 / 6,940 | 8,583 | 2 | 2 | 1 / 1 | 1 / 1 / 1 | outer timeout |
+| 3 | 600,233 ms | 7,132 / 11,016 | 18,148 | 4 | 4 | 1 / 1 | 1 / 1 / 1 | outer timeout |
+| 4 | 600,334 ms | 8,674 / 7,347 | 16,021 | 8 | 9 | 1 / 0 | 0 / 0 / 0 | outer timeout |
+
+Rupi remained unresolved after four turns. It used 74,033 work tokens over 2,401,399 ms, with
+37,722 input tokens, 36,311 output tokens, 21 requests, and 24 tool requests. Its oracle failed
+every turn. Project tests and all help checks failed on turns 1–3 and passed on turn 4. Final
+oracle diagnostics included a remote disconnect during a batch-cycle lookup and a crashed-lease
+worker that never reached the sink.
+
+| Turn | ms | Input / output | Work | Req. | Tools | Oracle / tests | Help exits | Result |
+| ---: | ---: | ---: | ---: | ---: | ---: | --- | --- | --- |
+| 1 | 600,222 ms | 5,679 / 221 | 5,900 | 2 | 4 | 1 / 1 | 1 / 1 / 1 | outer timeout |
+| 2 | 600,249 ms | 0 / 0 | 0 | 0 | 0 | 1 / 1 | 1 / 1 / 1 | outer timeout |
+| 3 | 600,304 ms | 1,835 / 11,759 | 13,594 | 7 | 9 | 0 / 1 | 0 / 0 / 0 | resolved |
+
+Pi resolved in turn 3 with 19,494 work tokens over 1,800,775 ms, 7,514 input tokens, 11,980
+output tokens, nine requests, and 13 tool requests. Its oracle passed on turn 3; project tests
+failed every turn, and help passed on turn 3. Pi was 600,624 ms faster and used 54,539 fewer
+work tokens. This run is a Pi win, not a Case 05 win for Rupi.
+
+The health-first prompt improved Rupi's local project checks and help output by turn 4, but its
+server still dropped a batch-cycle request and its worker did not reach the sink. The next prompt
+will target those remaining oracle failures. PR #137 remains draft.
+
+## Current outcome
+
+Case 05 remains open. The eighth health-first rerun was a Pi win: Pi resolved in turn 3, while
+Rupi remained unresolved after four turns. The next iteration will focus on batch-cycle handling
+and worker delivery.
