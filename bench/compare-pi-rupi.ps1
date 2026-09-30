@@ -123,16 +123,17 @@ function Get-CaseGuidance([hashtable]$case) {
     }
     "05-batch-relay" {
       return (@(
-        'Use batchrelay/__main__.py as the first runnable implementation.'
-        'Keep CLI, server, storage, and worker in that file until the full flow works.'
-        'Add split modules, README, and tests after the full flow works.'
+        'Use batchrelay/__main__.py as the CLI entrypoint; put core behavior in small modules.'
+        'Build a valid signed POST /batches path first.'
+        'The first new batch returns 202; an exact idempotent replay returns 200.'
+        'Conflicting content for an existing batch_id returns 409.'
         'Authenticate exact raw request bytes with HMAC-SHA256.'
         'Use constant-time signature comparison before any database mutation.'
         'Validate all dependencies before inserting the full batch atomically.'
         'Commit leases before invoking the sink directly, without a shell.'
         'Bound worker --once: attempt each runnable job at most once and never poll.'
         'Retryable failures stay pending; permanent failures block dependent jobs.'
-        'After core paths work, add a README, tests/__init__.py, and focused tests.'
+        'After the end-to-end path works, add a README, tests/__init__.py, and focused tests.'
         'The harness runs checks each turn; do not repeat checks or start the service.'
         'Never inspect the external oracle.'
       ) -join [Environment]::NewLine)
@@ -200,15 +201,6 @@ verification only when the harness provides its results.
       'The benchmark harness runs project tests, all three help commands, and the independent'
       'oracle after each attempt.'
       'Do not run commands, tests, help checks, or launch the HTTP service or worker.'
-      'Never inspect or run the external oracle.'
-      'Use workspace read/write tools and rely on harness feedback for recovery.'
-      'Report verification only when the harness provides its results.'
-    ) -join [Environment]::NewLine)
-  } elseif ($case.Id -eq "05-batch-relay") {
-    (@(
-      'The harness runs project tests, all three help commands, and the independent oracle after'
-      'each attempt.'
-      'Do not run commands, tests, help checks, smoke sequences, or launch the service or worker.'
       'Never inspect or run the external oracle.'
       'Use workspace read/write tools and rely on harness feedback for recovery.'
       'Report verification only when the harness provides its results.'
@@ -398,13 +390,15 @@ directories to its extended Windows path with `cd` or `cd /d`.
     }
   } elseif ($case.Id -eq "05-batch-relay") {
     $caseSpecificInstructions = @(
-      'Use batchrelay/__main__.py as the first runnable implementation.'
-      'Keep CLI, server, storage, and worker in that file until the full flow works.'
+      'Use batchrelay/__main__.py as the CLI entrypoint; put core behavior in small modules.'
+      'Build a valid signed POST /batches path first.'
+      'The first new batch returns 202; an exact idempotent replay returns 200.'
+      'Conflicting content for an existing batch_id returns 409.'
       'Authenticate exact raw request bytes with HMAC-SHA256.'
       'Validate all dependencies before inserting the full batch atomically.'
       'Commit leases before invoking the sink directly, without a shell.'
       'Bound worker --once: attempt each runnable job at most once and never poll.'
-      'After core paths work, add a README, tests/__init__.py, and focused tests.'
+      'After the end-to-end path works, add a README, tests/__init__.py, and focused tests.'
       'The harness runs checks each turn; do not repeat checks or start the service.'
       'Never inspect the external oracle.'
     )
@@ -468,12 +462,29 @@ function Get-RecoveryFeedback([object]$verification) {
 
 function Get-RecoveryPrompt([hashtable]$case, [object]$verification) {
   $feedback = Get-RecoveryFeedback $verification
+  if ($case.Id -eq "05-batch-relay") {
+    $oracleStatus = if ($verification.oracle.timed_out) {
+      "timed out"
+    } elseif ($verification.oracle.exit_code -eq 0) {
+      "passed"
+    } else {
+      "failed"
+    }
+    $oracleStatusLine = "Independent acceptance oracle: $oracleStatus (diagnostic details hidden)."
+    $feedback = "$oracleStatusLine`n$feedback"
+  }
   $toolingGuidance = Get-WindowsToolGuidance
   $caseGuidance = Get-CaseGuidance $case
+  $verificationResultLabel = if ($case.Id -eq "05-batch-relay") {
+    'Previous harness results (oracle status, project tests, and help commands):'
+  } else {
+    'Previous local verification results (project tests and help commands):'
+  }
   $recoveryHeader = if ($case.Id -eq "05-batch-relay") {
     'Use the spec read in the initial turn and harness results; do not reread SPEC.md. ' +
       'Inspect existing files before editing and preserve working behavior. ' +
-      'Keep service and worker in batchrelay/__main__.py until both workflows work. ' +
+      'Use small modules when they keep the service and worker clear. ' +
+      'A valid new batch returns 202; exact replay returns 200; conflicting content returns 409. ' +
       'Then add README and focused tests. Work only in this workspace; ' +
       'do not edit the specification, config, or oracle.'
   } else {
@@ -499,7 +510,9 @@ harness for verification.
   } elseif ($case.Id -eq "05-batch-relay") {
     (@(
       'The harness reruns project tests, all three help commands, and the independent oracle after'
-      'each attempt. Recovery feedback contains project-test and help results only.'
+      'each attempt. Recovery feedback gives only the oracle pass/fail status.'
+      'Feedback also includes project-test and help results.'
+      'Oracle diagnostics and source stay hidden; use SPEC.md and local test diagnostics.'
       'Do not run commands, tests, help checks, or launch the service or worker.'
       'Never inspect or run the oracle. Use workspace read/write tools and harness results.'
     ) -join [Environment]::NewLine)
@@ -520,7 +533,7 @@ $caseGuidance
 Use only Python standard-library modules.
 $toolingGuidance
 
-Previous local verification results (project tests and help commands):
+$verificationResultLabel
 $feedback
 
 Use any failing local results above to correct the implementation. Continue
@@ -557,7 +570,7 @@ If anything remains incomplete, state it instead of claiming success.
   }
   if ($case.Id -eq "05-batch-relay" -and
       (-not $prompt.Contains('do not reread SPEC.md.') -or
-       -not $prompt.Contains('Recovery feedback contains project-test and help results only.') -or
+       -not $prompt.Contains('Recovery feedback gives only the oracle pass/fail status.') -or
        $prompt.Contains('Read SPEC.md and inspect the files already present.'))) {
     throw 'Case 05 recovery prompt must reuse the embedded SPEC and defer' +
       ' verification to the harness.'
@@ -934,7 +947,7 @@ if ($CaseId.Count -gt 0) {
 }
 if ($DryRun) {
   Write-Host "Thinking level: $ThinkingLevel"
-  Write-Host "Recovery feedback: project tests and help only"
+  Write-Host "Recovery feedback: project tests and help; Case 05 oracle status only"
   $cases | ForEach-Object {
     [void](Get-InitialPrompt $_)
     $dryRunHelp = @($_.Help | ForEach-Object {
@@ -946,6 +959,12 @@ if ($DryRun) {
         }
       })
     $dryRunVerification = [pscustomobject]@{
+      oracle = [pscustomobject]@{
+        timed_out = $false
+        exit_code = 0
+        stderr_path = $null
+        stdout_path = $null
+      }
       project_tests = [pscustomobject]@{
         timed_out = $false
         exit_code = 0
