@@ -1381,8 +1381,10 @@ TUI rendering passed all budgets (3.31–3.90 µs/unit); checkpointed restore me
   `bench-20260930-case05-http-contract-first-r9-grace6-cap8-pi0861-low-matched4-600s` was
   inconclusive: neither agent resolved the oracle. Rupi was 27,277 ms faster than Pi but used
   20,949 more work tokens. Rupi's oracle, project tests, and help checks failed every turn; Pi's
-  oracle and project tests also failed every turn. The next iteration will diagnose why Rupi did
-  not reach a passing CLI or project-test state. Case 05 remains open; see the
+  oracle and project tests also failed every turn. Turn 4 diagnostics show its entrypoint imports
+  a missing worker module before parsing arguments, and the generated project has no `tests`
+  package. The next prompt will establish an importable CLI and test package before adding HTTP
+  behavior. Case 05 remains open; see the
   [Case 05 ledger](docs/benchmark/2026-09-29-case05-batch-relay-ledger.md).
 
   Case 06 ran with the pinned Pi 0.86.1 baseline. Pi resolved on turn 4 after its outer timeout,

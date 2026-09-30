@@ -395,11 +395,13 @@ failed every turn; help passed on turns 3–4. Rupi was 27,277 ms faster but use
 tokens, so this run is inconclusive.
 
 The prompt did not bring Rupi to passing local checks: its CLI help, project tests, and oracle all
-failed on every turn. The next iteration will diagnose its generated project and turn feedback
-before changing the prompt again. PR #137 remains draft.
+failed on every turn. Turn 4 diagnostics show `batchrelay/__main__.py` imports a missing
+`batchrelay.worker` before parsing arguments, so all help commands fail. The generated project has
+no `tests` package, so unittest discovery fails. The next prompt will establish an importable CLI
+and test package before adding HTTP behavior. PR #137 remains draft.
 
 ## Current outcome
 
 Case 05 remains open. The ninth HTTP-contract-first rerun was inconclusive: neither agent resolved
 the oracle. Rupi was faster but used more work tokens, and all Rupi checks failed every turn. The
-next iteration will diagnose why it did not reach a passing CLI or project-test state.
+next iteration will establish an importable CLI and test package before adding HTTP behavior.
