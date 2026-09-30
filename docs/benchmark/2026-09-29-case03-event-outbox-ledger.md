@@ -33,4 +33,221 @@ Pi used 6,303 inference-work tokens over 2,400,993 ms and created no source.
 Neither produced a runnable package, README, or tests. Rupi used 10,877 more
 work tokens, but created one file and finished much sooner than Pi's four
 turns. Neither agent resolved, so this is inconclusive rather than a case win.
-Case 03 remains open; the next slice moves to Case 04.
+Case 03 remains open. The next retry applies the one-request `write` progress
+boundary to Rupi and the matched harness-verification guidance to both agents.
+
+## Shared harness-verification retry
+
+Run: `bench-20260929-case03-progress-guidance-pi0861-low-matched4-600s`.
+
+The retry used byte-matched prompts, Pi 0.86.1, low reasoning, four turns,
+600-second turn deadlines, and an eight-request per-turn cap. The harness ran
+project tests, all three help commands, and the independent oracle after every
+turn.
+
+| Rupi turn | Elapsed | Work tokens | Requests | Tools | Result |
+| --- | ---: | ---: | ---: | --- | --- |
+| 1 | 592,179 ms | 3,845 | 2 | `read`, `exec` | call failed; checks failed |
+| 2 | 595,182 ms | 3,625 | 2 | `exec` | call failed; checks failed |
+| 3 | 594,796 ms | 3,396 | 2 | `exec` | call failed; checks failed |
+| 4 | 600,239 ms | 17,773 | 7 | `write`, `edit` | outer timeout; checks failed |
+
+Rupi used 28,639 inference-work tokens over 2,382,396 ms. It created
+`outbox/__init__.py`, `service.py`, `storage.py`, and `worker.py`, but omitted
+`outbox/__main__.py`, a README, and tests. All help commands failed because the
+package had no executable entry point; the oracle failed for the same reason,
+and test discovery failed because `tests/` was absent.
+
+| Pi turn | Elapsed | Work tokens | Requests | Tools | Result |
+| --- | ---: | ---: | ---: | --- | --- |
+| 1 | 600,307 ms | 4,873 | 2 | `read`, `ls` | outer timeout; checks failed |
+| 2 | 600,307 ms | 0 | 0 | — | outer timeout; checks failed |
+| 3 | 600,282 ms | 1,218 | 1 | `ls` | outer timeout; checks failed |
+| 4 | 600,287 ms | 0 | 0 | — | outer timeout; checks failed |
+
+Pi used 6,091 inference-work tokens over 2,401,183 ms and created no source.
+Neither agent resolved the oracle or help checks. Rupi finished 18,787 ms sooner
+but used 22,548 more work tokens, so this retry is not a win. Both agents failed
+project test discovery, and neither produced the required README and tests.
+
+The next retry will require `outbox/__main__.py` as the first source write and
+keep the CLI, HTTP handler, SQLite storage, and worker there until the complete
+service and `worker --once` flow work. It will retain the one-request write
+progress boundary and shared harness-verification guidance.
+
+## Entrypoint-first retry
+
+Run: `bench-20260929-case03-entrypoint-first-progress-guidance-pi0861-low-matched4-600s`.
+
+This matched run kept byte-identical prompts, Pi 0.86.1, low reasoning, four
+turns, 600-second deadlines, and an eight-request per-turn cap.
+
+| Rupi turn | Elapsed | Work tokens | Requests | Project tests | Oracle | Help | Result |
+| --- | ---: | ---: | ---: | ---: | ---: | ---: | --- |
+| 1 | 600,467 ms | 27,910 | 5 | fail | fail | pass | outer timeout |
+| 2 | 467,054 ms | 46,608 | 9 | pass | fail | pass | unresolved |
+| 3 | 600,252 ms | 13,330 | 4 | fail | fail | pass | outer timeout |
+| 4 | 600,296 ms | 12,858 | 3 | fail | fail | pass | outer timeout |
+
+Rupi used 100,706 inference-work tokens over 2,268,069 ms. It created the CLI,
+HTTP API, worker, README, and focused tests. Help passed in every turn, but the
+oracle failed because SQLite database files remained locked during cleanup.
+The final project test run had one worker-test error: the test class overrode
+`unittest.TestCase.run` and referenced a missing `db` attribute.
+
+| Pi turn | Elapsed | Work tokens | Project tests | Oracle | Help | Result |
+| --- | ---: | ---: | ---: | ---: | ---: | --- |
+| 1 | 600,340 ms | 16,717 | fail | pass | pass | resolved |
+
+Pi's outer call timed out, but its independent oracle and all three help checks
+passed in turn 1. It created only `outbox/__init__.py` and `outbox/__main__.py`;
+project test discovery failed because `tests/` was absent. Pi used 83,989 fewer
+work tokens and was 1,667,729 ms faster than Rupi. This is a Pi win, not a
+Case 03 Rupi win. Project tests and README remain separate tracked requirements.
+
+The next retry retains entrypoint-first guidance and adds explicit SQLite
+shutdown cleanup guidance. It lowers the matched per-turn request cap to six,
+which is enough for Pi's resolving turn in this run, while keeping four turns
+and 600-second deadlines.
+
+## Shutdown-guidance, cap-six retry
+
+Run: `bench-20260930-case03-sqlite-shutdown-cap6-pi0861-low-matched4-600s`.
+
+The run retained byte-matched prompts, Pi 0.86.1, low reasoning, four turns,
+and 600-second outer deadlines. Both agents produced no source files and failed
+project-test, oracle, and help checks.
+
+| Rupi turn | Elapsed | Work tokens | Requests | Result |
+| --- | ---: | ---: | ---: | --- |
+| 1 | 588,969 ms | 3,926 | 2 | provider timeout; read only |
+| 2 | 571,635 ms | 0 | 1 | provider timeout |
+| 3 | 573,220 ms | 0 | 1 | provider timeout |
+| 4 | 590,807 ms | 1,382 | 2 | provider timeout after `grep` |
+
+Rupi used 5,308 work tokens over 2,324,631 ms. Its request timed out at
+570,000 ms on the first turn after the progress boundary required a `write`.
+The later turns also hit provider timeouts before creating source.
+
+| Pi turn | Elapsed | Work tokens | Result |
+| --- | ---: | ---: | --- |
+| 1 | 600,311 ms | 4,938 | outer timeout |
+| 2 | 600,263 ms | 0 | outer timeout |
+| 3 | 600,341 ms | 0 | outer timeout |
+| 4 | 600,231 ms | 0 | outer timeout |
+
+Pi used 4,938 work tokens over 2,401,146 ms and created no source. Neither
+agent resolved. Rupi was 76,515 ms faster but used 370 more tokens, so the run
+is inconclusive rather than a win. See the turn logs in the run artifacts.
+
+The next retry will restore the eight-request cap and reduce the Rupi provider
+timeout grace from 30 seconds to six seconds. This gives each 600-second turn a
+594-second provider request before the outer watchdog, while keeping all other
+benchmark settings and the prompt unchanged.
+
+## Provider-grace-six, cap-eight retry
+
+Run: `bench-20260930-case03-provider-grace6-cap8-pi0861-low-matched4-600s`.
+
+The matched retry used Pi 0.86.1, low reasoning, four turns, 600-second outer
+deadlines, an eight-request per-turn cap, and a six-second Rupi provider timeout
+grace (594,000 ms). Both agents created no source files. Project tests, the
+oracle, and all three help checks failed after every turn.
+
+| Rupi turn | Elapsed | Work tokens | Tools | Result |
+| --- | ---: | ---: | --- | --- |
+| 1 | 600,256 ms | 3,949 | `read`, `exec` | outer timeout |
+| 2 | 595,824 ms | 0 | — | provider timeout |
+| 3 | 597,390 ms | 0 | — | provider timeout |
+| 4 | 599,036 ms | 0 | — | provider timeout |
+
+Rupi used 3,949 inference-work tokens over 2,392,506 ms. Its final artifact
+manifest contained only the nine initial project files.
+
+| Pi turn | Elapsed | Work tokens | Tools | Result |
+| --- | ---: | ---: | --- | --- |
+| 1 | 600,221 ms | 4,964 | `read`, `ls`, `read`, `read` | outer timeout |
+| 2 | 600,213 ms | 0 | — | outer timeout |
+| 3 | 600,158 ms | 0 | — | outer timeout |
+| 4 | 600,206 ms | 0 | — | outer timeout |
+
+Pi used 4,964 work tokens over 2,400,798 ms and created no source. Rupi was
+8,292 ms faster and used 1,015 fewer tokens, but neither agent resolved the
+oracle or help checks, so this is inconclusive rather than a win.
+
+Rupi's first response read `SPEC.md` and listed the workspace. The runtime then
+required the next model response to call `write`, which did not arrive before
+the 594,000 ms provider timeout. The updated Case03 prompt requires a first
+source write before reading `SPEC.md`. Dry-runs passed for Case03 and Case02;
+other case prompts retain their existing order.
+
+## Write-first, grace-six, cap-eight retry
+
+Run: `bench-20260930-case03-write-first-grace6-cap8-pi0861-low-matched4-600s`.
+
+The retry kept Pi 0.86.1, low reasoning, four turns, 600-second outer deadlines,
+an eight-request cap, and a 594,000 ms Rupi provider timeout. The changed prompt
+made both agents write `outbox/__main__.py` before inspecting the workspace.
+Both passed all three help checks but failed project-test discovery and the
+oracle after every turn. Neither produced a README or tests.
+
+| Rupi turn | Elapsed | Work tokens | Tools | Result |
+| --- | ---: | ---: | --- | --- |
+| 1 | 600,235 ms | 9,182 | `write`, `read`, `exec` x2, `read` x3 | outer timeout |
+| 2 | 600,226 ms | 13,479 | `write`, `read` | outer timeout |
+| 3 | 596,792 ms | 0 | — | provider timeout |
+| 4 | 598,626 ms | 0 | — | provider timeout |
+
+Rupi used 22,661 inference-work tokens over 2,395,879 ms. Its final manifest
+contained ten files: the nine initial project files and `outbox/__main__.py`.
+The help checks passed, but the `serve` command remained unimplemented, so the
+oracle and project-test discovery failed.
+
+| Pi turn | Elapsed | Work tokens | Tools | Result |
+| --- | ---: | ---: | --- | --- |
+| 1 | 600,271 ms | 5,981 | `write`, `read`, `ls`, `ls` | outer timeout |
+| 2 | 600,209 ms | 0 | — | outer timeout |
+| 3 | 600,258 ms | 0 | — | outer timeout |
+| 4 | 600,198 ms | 0 | — | outer timeout |
+
+Pi used 5,981 work tokens over 2,400,936 ms and produced only
+`outbox/__main__.py`. Rupi was 5,057 ms faster but used 16,680 more tokens;
+neither resolved, so this is inconclusive rather than a win.
+
+The first write made help available, but its `serve` and `worker` commands did
+not implement the service. The updated prompt embeds the complete SPEC and
+requires the first write to implement the HTTP service, SQLite storage, and
+bounded worker together in `outbox/__main__.py`. Dry-runs passed for Case03 and
+Case02; other case prompts remain unchanged.
+
+## Full-spec, complete-first-write retry
+
+Run: `bench-20260930-case03-full-write-grace6-cap8-pi0861-low-matched4-600s`.
+
+This matched run used Pi 0.86.1, low reasoning, four turns, 600-second turn
+deadlines, an eight-request cap, and a six-second Rupi provider timeout grace
+(594,000 ms). The prompt embedded the complete SPEC and required the first
+workspace write to implement the CLI, HTTP service, SQLite storage, and bounded
+worker in `outbox/__main__.py`.
+
+| Rupi turn | Elapsed | Work tokens | Requests | Project tests | Oracle | Help | Result |
+| --- | ---: | ---: | ---: | ---: | ---: | ---: | --- |
+| 1 | 594,145 ms | 0 | 1 | fail | fail | fail | provider timeout; no tool call |
+| 2 | 600,175 ms | 25,140 | 7 | fail | pass | pass | resolved |
+
+Rupi resolved in two turns, passing the oracle and all three help checks. The
+project-test check failed. Rupi used 25,140 inference-work tokens over
+1,194,320 ms.
+
+| Pi turn | Elapsed | Work tokens | Requests | Project tests | Oracle | Help | Result |
+| --- | ---: | ---: | ---: | ---: | ---: | ---: | --- |
+| 1 | 600,348 ms | 17,070 | 1 | fail | fail | pass | unresolved |
+| 2 | 600,233 ms | 14,002 | 9 | fail | fail | pass | unresolved |
+| 3 | 479,565 ms | 13,187 | 9 | pass | fail | pass | unresolved |
+| 4 | 499,461 ms | 14,877 | 6 | pass | fail | pass | unresolved |
+
+Pi did not resolve in four turns. It used 59,136 inference-work tokens over
+2,179,607 ms. Rupi finished 985,287 ms sooner and used 33,996 fewer tokens,
+while passing the oracle and help checks that Pi did not. This is a verified
+Rupi win for the Case 03 benchmark objective. The project-test failure in
+Rupi's generated artifact remains separate. Proceed to the next case.

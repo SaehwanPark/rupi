@@ -1275,6 +1275,48 @@ TUI rendering passed all budgets (3.31–3.90 µs/unit); checkpointed restore me
   after four outer timeouts (6,303 tokens; 2,400,993 ms). Neither resolved.
   Case 03 remains open. See the
   [Case 03 ledger](docs/benchmark/2026-09-29-case03-event-outbox-ledger.md).
+- Entrypoint-first retry
+  `bench-20260929-case03-entrypoint-first-progress-guidance-pi0861-low-matched4-600s`
+  was a Pi win. Pi passed oracle/help in turn 1 (16,717 work tokens; 600,340 ms),
+  while Rupi used 100,706 tokens over 2,268,069 ms and failed the oracle because
+  SQLite files remained locked during cleanup. Rupi passed help but its final
+  project test run had one worker-test error; Pi lacked project tests. Case 03
+  remains open. See the ledger.
+- Shutdown-guidance, cap-six retry
+  `bench-20260930-case03-sqlite-shutdown-cap6-pi0861-low-matched4-600s` was
+  inconclusive. Both agents created no source and failed oracle/help/test checks.
+  Rupi used 5,308 work tokens over 2,324,631 ms; Pi used 4,938 over 2,401,146 ms.
+  Rupi was 76,515 ms faster but used 370 more tokens. Its provider request timed
+  out at 570 seconds after the progress boundary required a first `write`. Case
+  03 remains open; see the ledger.
+- Provider-grace-six, cap-eight retry
+  `bench-20260930-case03-provider-grace6-cap8-pi0861-low-matched4-600s` was
+  inconclusive. Both agents created no source and failed project tests, oracle,
+  and all help checks. Rupi used 3,949 work tokens over 2,392,506 ms; Pi used
+  4,964 over 2,400,798 ms. Rupi was 8,292 ms faster and used 1,015 fewer
+  tokens, but neither resolved. Rupi read the spec and listed files before the
+  progress boundary required its first write; that following provider request
+  timed out at 594 seconds. The next retry will require the first tool operation
+  to write `outbox/__main__.py`, then read the spec. Case03 and unchanged Case02
+  prompt dry-runs passed. Case 03 remains open; see the ledger.
+- Write-first, grace-six, cap-eight retry
+  `bench-20260930-case03-write-first-grace6-cap8-pi0861-low-matched4-600s` was
+  inconclusive. Both agents created only `outbox/__main__.py`; all help checks
+  passed, but project-test discovery and the oracle failed. Rupi used 22,661
+  work tokens over 2,395,879 ms; Pi used 5,981 over 2,400,936 ms. Rupi was
+  5,057 ms faster but used 16,680 more tokens. Neither resolved. Next, embed the
+  full spec and require the first write to implement the service and worker, not
+  help alone. Dry-runs passed for Case03 and unchanged Case02. Case 03 remains
+  open; see the ledger.
+- Full-spec, complete-first-write retry
+  `bench-20260930-case03-full-write-grace6-cap8-pi0861-low-matched4-600s` was a
+  verified Rupi win. Rupi passed the oracle and all three help checks in turn 2
+  (25,140 work tokens; 1,194,320 ms); Pi failed the oracle in all four turns
+  (59,136; 2,179,607 ms). Rupi was 985,287 ms faster and used 33,996 fewer
+  tokens. Rupi's project tests failed, while Pi passed them in its final two
+  turns. The Case 03 Pi-comparison objective is met; the project-test failure
+  remains separate. See the
+  [Case 03 ledger](docs/benchmark/2026-09-29-case03-event-outbox-ledger.md).
 - Pinned Case 04 run `bench-20260929-case04-pi0861-low-matched4-600s` recorded
   `pi_version: 0.86.1` but was inconclusive: neither agent resolved in four turns.
   Rupi used 62,291 work tokens over 2,401,168 ms; Pi used 6,284 over 2,401,033 ms.

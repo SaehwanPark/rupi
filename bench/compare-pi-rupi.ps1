@@ -10,6 +10,8 @@ param(
   [int]$MaxTurns = 4,
   [ValidateRange(30, 3600)]
   [int]$TurnTimeoutSeconds = 900,
+  [ValidateRange(1, 300)]
+  [int]$ProviderTimeoutGraceSeconds = 30,
   [ValidateRange(1, 100)]
   [int]$MaxModelRequestsPerTurn = 24,
   [ValidateSet("off", "low")]
@@ -18,6 +20,13 @@ param(
 )
 
 $ErrorActionPreference = "Stop"
+$script:providerTimeoutGraceSeconds = [int][math]::Min(
+  $ProviderTimeoutGraceSeconds,
+  [math]::Max(1, [math]::Floor($TurnTimeoutSeconds / 10))
+)
+$script:providerRequestTimeoutMs = [int](
+  ($TurnTimeoutSeconds - $script:providerTimeoutGraceSeconds) * 1000
+)
 $repoRoot = (Resolve-Path (Join-Path $PSScriptRoot "..")).Path
 $artifactRoot = Join-Path $repoRoot ".benchmark\runs"
 if ([string]::IsNullOrWhiteSpace($RunId)) {
@@ -87,6 +96,31 @@ function Get-CaseGuidance([hashtable]$case) {
         'restart persistence.'
       ) -join "`n")
     }
+    "03-event-outbox" {
+      return (@(
+        'First tool call: workspace write `outbox/__main__.py` with the service and worker.'
+        'Implement CLI help, HTTP routes, SQLite persistence, and `worker --once` in that file.'
+        'Do not use the first source write for CLI/help only; include the complete workflow.'
+        'The full Case 03 specification is embedded in this prompt.'
+        'Do not call `read`, `exec`, or another inspection tool before this first write.'
+        'Use the workspace write tool for this first source file.'
+        'Keep the CLI, HTTP handler, SQLite storage, and worker in `outbox/__main__.py`'
+        'until the complete service and `worker --once` flow are runnable.'
+        'Do not create `service.py`, `storage.py`, or `worker.py` before `__main__.py` works.'
+        'On shutdown, close every SQLite connection so the database is released.'
+        'The same database must reopen immediately after the server process exits on Windows.'
+        'The service command is `python -m outbox serve --db PATH --host HOST --port PORT`.'
+        'The worker command starts with `python -m outbox worker --db PATH --sink PROGRAM`.'
+        'Pass repeated `--sink-arg ARG` values directly and use `--once` for a bounded run.'
+        'Prioritize idempotent event admission, durable retry state, and restart persistence.'
+        'Pass sink arguments directly, without a shell; exchange one JSON line per event.'
+        'Keep `worker --once` bounded and process its pending snapshot in insertion order.'
+        'Failed deliveries stay pending, increment attempts, and record a non-empty error.'
+        'The benchmark harness runs project tests and help commands after each attempt.'
+        'Do not run commands, tests, or help checks, or launch the HTTP service or worker.'
+        'After the service and worker flow work, add a readable README and focused tests.'
+      ) -join "`n")
+    }
     default {
       return (@(
         "Prioritize the complete $($case.Focus) workflow described in SPEC.md."
@@ -118,6 +152,18 @@ workspace files, including `dir /s`, `find`, `findstr`, `grep`, or `ls`.
 function Get-InitialPrompt([hashtable]$case) {
   $guidance = Get-CaseGuidance $case
   $toolingGuidance = Get-WindowsToolGuidance
+  $embeddedSpec = ""
+  $caseSpecBlock = ""
+  $specAccessOrder = if ($case.Id -eq "03-event-outbox") {
+    'Implement the complete service and worker from the embedded Case 03 specification.'
+  } else {
+    'Read SPEC.md completely before acting.'
+  }
+  if ($case.Id -eq "03-event-outbox") {
+    $specPath = Join-Path (Join-Path $repoRoot $case.Source) "SPEC.md"
+    $embeddedSpec = [IO.File]::ReadAllText($specPath)
+    $caseSpecBlock = "`nThe complete Case 03 specification follows:`n`n$embeddedSpec`n"
+  }
   $verificationGuidance = if ($case.Id -eq "02-reading-queue") {
 @'
 The benchmark harness runs project tests and help commands after each attempt. It also
@@ -125,6 +171,13 @@ runs the independent smoke sequence.
 Do not run commands, tests, or help checks, or start the service. Use workspace
 read/write tools and rely on harness feedback for recovery. Report verification only
 when the harness provides its results.
+'@
+  } elseif ($case.Id -eq "03-event-outbox") {
+@'
+The benchmark harness runs project tests and help commands after each attempt.
+Do not run commands, tests, or help checks, or launch the HTTP service or worker.
+Use workspace read/write tools and rely on harness feedback for recovery. Report
+verification only when the harness provides its results.
 '@
   } else {
 @'
@@ -137,10 +190,10 @@ state any incomplete requirement explicitly.
   }
   $prompt = @'
 You are implementing the `{{PACKAGE}}` Python package in the current workspace.
-Read SPEC.md completely before acting. Build a complete dependency-free Python 3
+{{SPEC_ACCESS_ORDER}} Build a complete dependency-free Python 3
 project for the `{{PACKAGE}}` package described by SPEC.md, including a readable
 README.md and focused unittest tests. The project focus is {{PROJECT_FOCUS}}.
-
+{{CASE_SPEC_BLOCK}}
 {{CASE_GUIDANCE}}
 
 Work only inside this project workspace. Do not edit SPEC.md, any rupi config,
@@ -155,12 +208,13 @@ directories to its extended Windows path with `cd` or `cd /d`.
 '@
   $prompt = $prompt.Replace('{{PACKAGE}}', [string]$case.Package)
   $prompt = $prompt.Replace('{{PROJECT_FOCUS}}', [string]$case.Focus)
+  $prompt = $prompt.Replace('{{SPEC_ACCESS_ORDER}}', $specAccessOrder)
+  $prompt = $prompt.Replace('{{CASE_SPEC_BLOCK}}', $caseSpecBlock)
   $prompt = $prompt.Replace('{{CASE_GUIDANCE}}', $guidance)
   $prompt = $prompt.Replace('{{WINDOWS_TOOL_GUIDANCE}}', $toolingGuidance)
   $prompt = $prompt.Replace('{{VERIFICATION_GUIDANCE}}', $verificationGuidance)
 
   $requiredInstructions = @(
-    'Read SPEC.md completely before acting'
     'complete dependency-free Python 3'
     'README.md and focused unittest tests'
     'The project focus is '
@@ -178,10 +232,24 @@ directories to its extended Windows path with `cd` or `cd /d`.
     'Do not use shell commands to list or search'
     'including `dir /s`, `find`, `findstr`, `grep`, or `ls`.'
   )
+  if ($case.Id -eq "03-event-outbox") {
+    $requiredInstructions += @(
+      'Implement the complete service and worker from the embedded Case 03 specification.'
+      'The full Case 03 specification is embedded in this prompt.'
+      'Do not call `read`, `exec`, or another inspection tool before this first write.'
+    )
+  } else {
+    $requiredInstructions += 'Read SPEC.md completely before acting'
+  }
   if ($case.Id -eq "02-reading-queue") {
     $requiredInstructions += @(
       'The benchmark harness runs project tests and help commands after each attempt.'
       'Do not run commands, tests, or help checks, or start the service.'
+    )
+  } elseif ($case.Id -eq "03-event-outbox") {
+    $requiredInstructions += @(
+      'The benchmark harness runs project tests and help commands after each attempt.'
+      'Do not run commands, tests, or help checks, or launch the HTTP service or worker.'
     )
   } else {
     $requiredInstructions += @(
@@ -203,8 +271,22 @@ directories to its extended Windows path with `cd` or `cd /d`.
   if (-not $prompt.Contains($guidance)) {
     throw "Initial benchmark prompt is missing case guidance for $($case.Id)."
   }
-  if ($prompt.Contains('{{') -or $prompt.Contains('}}')) {
-    throw "Initial benchmark prompt has an unresolved template for $($case.Id)."
+  if ($case.Id -eq "03-event-outbox" -and -not $prompt.Contains($embeddedSpec)) {
+    throw 'Case 03 initial prompt is missing the complete project specification.'
+  }
+  $templateTokens = @(
+    '{{PACKAGE}}'
+    '{{PROJECT_FOCUS}}'
+    '{{SPEC_ACCESS_ORDER}}'
+    '{{CASE_SPEC_BLOCK}}'
+    '{{CASE_GUIDANCE}}'
+    '{{WINDOWS_TOOL_GUIDANCE}}'
+    '{{VERIFICATION_GUIDANCE}}'
+  )
+  foreach ($templateToken in $templateTokens) {
+    if ($prompt.Contains($templateToken)) {
+      throw "Initial benchmark prompt has an unresolved template for $($case.Id)."
+    }
   }
   $unexpectedControls = @($prompt.ToCharArray() | Where-Object {
       [int]$_ -lt 32 -and [int]$_ -notin @(10, 13)
@@ -248,11 +330,42 @@ directories to its extended Windows path with `cd` or `cd /d`.
     if ($prompt.Contains('tasklog/__main__.py') -or $prompt.Contains('`--state PATH`')) {
       throw 'Case 02 initial prompt contains Case 01 instructions.'
     }
+  } elseif ($case.Id -eq "03-event-outbox") {
+    $caseSpecificInstructions = @(
+      'First tool call: workspace write `outbox/__main__.py` with the service and worker.'
+      'Implement CLI help, HTTP routes, SQLite persistence, and `worker --once` in that file.'
+      'Do not use the first source write for CLI/help only; include the complete workflow.'
+      'The full Case 03 specification is embedded in this prompt.'
+      'Do not call `read`, `exec`, or another inspection tool before this first write.'
+      'Use the workspace write tool for this first source file.'
+      'Keep the CLI, HTTP handler, SQLite storage, and worker in `outbox/__main__.py`'
+      'until the complete service and `worker --once` flow are runnable.'
+      'Do not create `service.py`, `storage.py`, or `worker.py` before `__main__.py` works.'
+      'On shutdown, close every SQLite connection so the database is released.'
+      'The same database must reopen immediately after the server process exits on Windows.'
+      'python -m outbox serve --db PATH --host HOST --port PORT'
+      'python -m outbox worker --db PATH --sink PROGRAM'
+      'Pass sink arguments directly, without a shell'
+      'Keep `worker --once` bounded and process its pending snapshot in insertion order.'
+      'Failed deliveries stay pending, increment attempts, and record a non-empty error.'
+      'The benchmark harness runs project tests and help commands after each attempt.'
+      'Do not run commands, tests, or help checks, or launch the HTTP service or worker.'
+      'readable README and focused tests'
+    )
+    if ($prompt.Contains('readqueue') -or $prompt.Contains('tasklog')) {
+      throw 'Case 03 initial prompt contains another case instructions.'
+    }
   }
   foreach ($instruction in $caseSpecificInstructions) {
     if (-not $prompt.Contains($instruction)) {
       throw "Initial benchmark prompt for $($case.Id) is missing: $instruction"
     }
+  }
+  if (
+    $case.Id -eq "03-event-outbox" -and
+    $prompt.Contains('Read SPEC.md completely before acting')
+  ) {
+    throw 'Case 03 prompt asks the agent to inspect SPEC.md before its first write.'
   }
   return $prompt
 }
@@ -311,6 +424,13 @@ after this attempt. Do not run commands, tests, or help checks, or start the ser
 Use the diagnostic excerpts above to inspect and edit source files, then rely on the
 harness for verification.
 '@
+  } elseif ($case.Id -eq "03-event-outbox") {
+@'
+The benchmark harness reruns project tests and help commands after this attempt.
+Do not run commands, tests, or help checks, or launch the HTTP service or worker.
+Use the diagnostic excerpts above to inspect and edit source files, then rely on the
+harness for verification.
+'@
   } else {
 @'
 Continue working through the missing items in SPEC.md, then run the complete project
@@ -359,6 +479,11 @@ If anything remains incomplete, state it instead of claiming success.
   if ($case.Id -eq "02-reading-queue" -and
       -not $prompt.Contains('Do not run commands, tests, or help checks, or start the service.')) {
     throw 'Case 02 recovery prompt must defer execution and verification to the harness.'
+  }
+  if ($case.Id -eq "03-event-outbox" -and
+      -not $prompt.Contains(
+        'Do not run commands, tests, or help checks, or launch the HTTP service or worker.')) {
+    throw 'Case 03 recovery prompt must defer execution and verification to the harness.'
   }
   return $prompt
 }
@@ -460,11 +585,7 @@ function New-BenchmarkWorkspace([hashtable]$case, [string]$agentRoot, [string]$t
         $config.endpoints[0].capabilities.max_output_tokens = 16384
       }
       # Let the runtime handle its provider timeout before the outer turn watchdog stops it.
-      $timeoutGraceSeconds = [int][math]::Min(
-        30,
-        [math]::Max(1, [math]::Floor($TurnTimeoutSeconds / 10))
-      )
-      $reqTimeout = ($TurnTimeoutSeconds - $timeoutGraceSeconds) * 1000
+      $reqTimeout = $script:providerRequestTimeoutMs
       if ($null -eq $config.endpoints[0].PSObject.Properties["request_timeout_ms"]) {
         $config.endpoints[0] | Add-Member -MemberType NoteProperty -Name request_timeout_ms -Value $reqTimeout
       } else {
@@ -810,6 +931,8 @@ $summary = [ordered]@{
   endpoint = "http://127.0.0.1:8000/v1"
   max_turns = $MaxTurns
   turn_timeout_seconds = $TurnTimeoutSeconds
+  provider_timeout_grace_seconds = $script:providerTimeoutGraceSeconds
+  provider_request_timeout_ms = $script:providerRequestTimeoutMs
   results = @($results)
 }
 Write-Json (Join-Path $runRoot "results.json") $summary
