@@ -121,6 +121,24 @@ function Get-CaseGuidance([hashtable]$case) {
         'After the service and worker flow work, add a readable README and focused tests.'
       ) -join "`n")
     }
+    "04-webhook-inbox" {
+      return (@(
+      'First tool call: write `webhookinbox/__main__.py` with the full service and worker.'
+      'Implement CLI help, HMAC routes, SQLite state, leases, and sink delivery.'
+      'Verify HMAC-SHA256 on raw bytes with constant-time comparison before any database write.'
+      'Commit leases before sinks; pass argv directly and send one JSON line.'
+      'Keep `worker --once` bounded and reclaim expired leases in insertion order.'
+      'The complete Case 04 specification is in the initial prompt.'
+      'Do not call `read`, `exec`, or another inspection tool before this first write.'
+      'Use the workspace write tool for this first source file.'
+      'Keep the whole implementation in `webhookinbox/__main__.py` until the flow works.'
+      'Do not create split modules or tests before the complete entrypoint works.'
+      'Write the README and focused tests after the core flow is runnable.'
+      'The harness runs project tests, three help checks, and the oracle after every turn.'
+      'Do not run commands, tests, help checks, or the service or worker.'
+      'Rely on harness results; never inspect the external oracle.'
+      ) -join "`n")
+    }
     default {
       return (@(
         "Prioritize the complete $($case.Focus) workflow described in SPEC.md."
@@ -156,6 +174,8 @@ function Get-InitialPrompt([hashtable]$case) {
   $caseSpecBlock = ""
   $specAccessOrder = if ($case.Id -eq "03-event-outbox") {
     'Implement the complete service and worker from the embedded Case 03 specification.'
+  } elseif ($case.Id -eq "04-webhook-inbox") {
+    'Implement the complete service and worker from the embedded Case 04 specification.'
   } else {
     'Read SPEC.md completely before acting.'
   }
@@ -163,6 +183,10 @@ function Get-InitialPrompt([hashtable]$case) {
     $specPath = Join-Path (Join-Path $repoRoot $case.Source) "SPEC.md"
     $embeddedSpec = [IO.File]::ReadAllText($specPath)
     $caseSpecBlock = "`nThe complete Case 03 specification follows:`n`n$embeddedSpec`n"
+  } elseif ($case.Id -eq "04-webhook-inbox") {
+    $specPath = Join-Path (Join-Path $repoRoot $case.Source) "SPEC.md"
+    $embeddedSpec = [IO.File]::ReadAllText($specPath)
+    $caseSpecBlock = "`nThe complete Case 04 specification follows:`n`n$embeddedSpec`n"
   }
   $verificationGuidance = if ($case.Id -eq "02-reading-queue") {
 @'
@@ -178,6 +202,14 @@ The benchmark harness runs project tests and help commands after each attempt.
 Do not run commands, tests, or help checks, or launch the HTTP service or worker.
 Use workspace read/write tools and rely on harness feedback for recovery. Report
 verification only when the harness provides its results.
+'@
+  } elseif ($case.Id -eq "04-webhook-inbox") {
+@'
+The benchmark harness runs project tests, all three help commands, and the independent
+oracle after each attempt. Do not run commands, tests, or help checks, or launch the HTTP
+service or worker. Do not inspect or run the external oracle. Use workspace read/write
+tools and rely on harness feedback for recovery. Report verification only when the
+harness provides its results.
 '@
   } else {
 @'
@@ -238,6 +270,12 @@ directories to its extended Windows path with `cd` or `cd /d`.
       'The full Case 03 specification is embedded in this prompt.'
       'Do not call `read`, `exec`, or another inspection tool before this first write.'
     )
+  } elseif ($case.Id -eq "04-webhook-inbox") {
+    $requiredInstructions += @(
+      'Implement the complete service and worker from the embedded Case 04 specification.'
+      'The complete Case 04 specification is in the initial prompt.'
+      'Do not call `read`, `exec`, or another inspection tool before this first write.'
+    )
   } else {
     $requiredInstructions += 'Read SPEC.md completely before acting'
   }
@@ -250,6 +288,13 @@ directories to its extended Windows path with `cd` or `cd /d`.
     $requiredInstructions += @(
       'The benchmark harness runs project tests and help commands after each attempt.'
       'Do not run commands, tests, or help checks, or launch the HTTP service or worker.'
+    )
+  } elseif ($case.Id -eq "04-webhook-inbox") {
+    $requiredInstructions += @(
+      'The benchmark harness runs project tests, all three help commands, and the independent'
+      'oracle after each attempt.'
+      'Do not run commands, tests, help checks, or the service or worker.'
+      'Do not inspect or run the external oracle.'
     )
   } else {
     $requiredInstructions += @(
@@ -273,6 +318,9 @@ directories to its extended Windows path with `cd` or `cd /d`.
   }
   if ($case.Id -eq "03-event-outbox" -and -not $prompt.Contains($embeddedSpec)) {
     throw 'Case 03 initial prompt is missing the complete project specification.'
+  }
+  if ($case.Id -eq "04-webhook-inbox" -and -not $prompt.Contains($embeddedSpec)) {
+    throw 'Case 04 initial prompt is missing the complete project specification.'
   }
   $templateTokens = @(
     '{{PACKAGE}}'
@@ -355,6 +403,26 @@ directories to its extended Windows path with `cd` or `cd /d`.
     if ($prompt.Contains('readqueue') -or $prompt.Contains('tasklog')) {
       throw 'Case 03 initial prompt contains another case instructions.'
     }
+  } elseif ($case.Id -eq "04-webhook-inbox") {
+    $caseSpecificInstructions = @(
+        'First tool call: write `webhookinbox/__main__.py` with the full service and worker.'
+        'Implement CLI help, HMAC routes, SQLite state, leases, and sink delivery.'
+        'Verify HMAC-SHA256 on raw bytes with constant-time comparison before any database write.'
+        'Commit leases before sinks; pass argv directly and send one JSON line.'
+        'Keep `worker --once` bounded and reclaim expired leases in insertion order.'
+        'The complete Case 04 specification is in the initial prompt.'
+        'Do not call `read`, `exec`, or another inspection tool before this first write.'
+        'Use the workspace write tool for this first source file.'
+        'Keep the whole implementation in `webhookinbox/__main__.py` until the flow works.'
+        'Do not create split modules or tests before the complete entrypoint works.'
+        'Write the README and focused tests after the core flow is runnable.'
+        'The harness runs project tests, three help checks, and the oracle after every turn.'
+        'Do not run commands, tests, help checks, or the service or worker.'
+        'Rely on harness results; never inspect the external oracle.'
+    )
+    if ($prompt.Contains('outbox/__main__.py') -or $prompt.Contains('batchrelay')) {
+      throw 'Case 04 initial prompt contains another case instructions.'
+    }
   }
   foreach ($instruction in $caseSpecificInstructions) {
     if (-not $prompt.Contains($instruction)) {
@@ -366,6 +434,12 @@ directories to its extended Windows path with `cd` or `cd /d`.
     $prompt.Contains('Read SPEC.md completely before acting')
   ) {
     throw 'Case 03 prompt asks the agent to inspect SPEC.md before its first write.'
+  }
+  if (
+    $case.Id -eq "04-webhook-inbox" -and
+    $prompt.Contains('Read SPEC.md completely before acting')
+  ) {
+    throw 'Case 04 prompt asks the agent to inspect SPEC.md before its first write.'
   }
   return $prompt
 }
@@ -417,6 +491,22 @@ function Get-RecoveryPrompt([hashtable]$case, [object]$verification) {
   $feedback = Get-RecoveryFeedback $verification
   $toolingGuidance = Get-WindowsToolGuidance
   $caseGuidance = Get-CaseGuidance $case
+  $recoveryHeader = if ($case.Id -eq "04-webhook-inbox") {
+    @(
+      'Use the full Case 04 spec and harness results from the preceding turn.'
+      'If no source exists, first write the full service and worker to `webhookinbox/__main__.py`.'
+      'Make that your first tool call, before any read or command.'
+      'If the entrypoint exists, inspect and edit it using the harness feedback.'
+      'Work only inside this workspace. Do not edit SPEC.md, any rupi config, or the external'
+      'acceptance oracle.'
+    ) -join "`n"
+  } else {
+    @(
+      'Read SPEC.md and inspect the files already present. Work only inside this'
+      'workspace and do not edit the specification, rupi configs, or the external'
+      'acceptance oracle.'
+    ) -join "`n"
+  }
   $verificationGuidance = if ($case.Id -eq "02-reading-queue") {
 @'
 The benchmark harness reruns tests, help commands, and the independent smoke sequence
@@ -431,6 +521,13 @@ Do not run commands, tests, or help checks, or launch the HTTP service or worker
 Use the diagnostic excerpts above to inspect and edit source files, then rely on the
 harness for verification.
 '@
+  } elseif ($case.Id -eq "04-webhook-inbox") {
+@'
+The harness checks project tests, three help commands, and the independent oracle after
+each attempt. Recovery feedback contains project-test and help results. Do not run
+commands, tests, help checks, or the service or worker. Do not inspect or run the oracle.
+Use workspace read/write tools and rely on harness results.
+'@
   } else {
 @'
 Continue working through the missing items in SPEC.md, then run the complete project
@@ -439,9 +536,7 @@ unittest suite, the project-specific help commands, and a smoke sequence.
   }
   $prompt = @"
 Continue the incomplete $($case.Package) implementation in this workspace.
-Read SPEC.md and inspect the files already present. Work only inside this
-workspace and do not edit the specification, rupi configs, or the external
-acceptance oracle. Finish every missing implementation, README section, and
+$recoveryHeader Finish every missing implementation, README section, and
 focused test required by the spec. Prioritize the full reliability contract:
 $($case.Focus).
 
@@ -484,6 +579,10 @@ If anything remains incomplete, state it instead of claiming success.
       -not $prompt.Contains(
         'Do not run commands, tests, or help checks, or launch the HTTP service or worker.')) {
     throw 'Case 03 recovery prompt must defer execution and verification to the harness.'
+  }
+  if ($case.Id -eq "04-webhook-inbox" -and
+      -not $prompt.Contains('Do not run commands, tests, help checks')) {
+    throw 'Case 04 recovery prompt must defer execution and verification to the harness.'
   }
   return $prompt
 }
