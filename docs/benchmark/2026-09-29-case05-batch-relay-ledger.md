@@ -274,8 +274,51 @@ in the first slice. It will require new batches to return 202, exact replays 200
 replays 409, and invalid signatures 401, before implementing worker behavior. PR #137 remains
 draft.
 
-## Current outcome
+## Outcome after sixth prompt
 
 Case 05 remains open. Rupi's server and focused tests now work, but its batch admission route
 still falls through to `404 unknown path`. Pi resolved the oracle in turn 2. The next prompt will
 prioritize signed batch admission in the first slice and defer worker behavior.
+
+## Seventh prompt iteration: signed admission first
+
+Run:
+`bench-20260930-case05-signed-admission-first-r7-grace6-cap8-pi0861-low-matched4-600s`.
+This used Pi 0.86.1, low reasoning, four turns, 600-second outer timeouts, eight requests per
+turn, and a 594-second Rupi provider timeout. Check values are exit codes (0 means pass). Help
+codes list top-level, serve, and worker in that order.
+
+| Turn | ms | Input / output | Work | Req. | Tools | Oracle / tests | Help exits | Result |
+| ---: | ---: | ---: | ---: | ---: | ---: | --- | --- | --- |
+| 1 | 600,332 ms | 4,012 / 45 | 4,057 | 2 | 1 | 1 / 1 | 1 / 1 / 1 | outer timeout |
+| 2 | 600,223 ms | 4,477 / 48 | 4,525 | 2 | 1 | 1 / 1 | 1 / 1 / 1 | outer timeout |
+| 3 | 600,367 ms | 3,027 / 9,882 | 12,909 | 3 | 3 | 1 / 1 | 1 / 1 / 1 | outer timeout |
+| 4 | 17,271 ms | 1,693 / 90 | 1,783 | 1 | 1 | 1 / 1 | 1 / 1 / 1 | unresolved |
+
+Rupi remained unresolved after four turns. It used 23,274 work tokens over 1,818,193 ms, with
+13,209 input tokens, 10,065 output tokens, eight requests, and six tool requests. Its oracle,
+project tests, and help checks failed on every turn.
+
+| Turn | ms | Input / output | Work | Req. | Tools | Oracle / tests | Help exits | Result |
+| ---: | ---: | ---: | ---: | ---: | ---: | --- | --- | --- |
+| 1 | 600,504 ms | 6,274 / 291 | 6,565 | 4 | 4 | 1 / 1 | 1 / 1 / 1 | outer timeout |
+| 2 | 600,227 ms | 0 / 0 | 0 | 0 | 0 | 1 / 1 | 1 / 1 / 1 | outer timeout |
+| 3 | 600,221 ms | 1,673 / 178 | 1,851 | 2 | 2 | 1 / 1 | 1 / 1 / 1 | outer timeout |
+| 4 | 600,183 ms | 0 / 0 | 0 | 0 | 0 | 1 / 1 | 1 / 1 / 1 | outer timeout |
+
+Pi also remained unresolved. It used 8,416 work tokens over 2,401,135 ms, with 7,947 input
+tokens, 469 output tokens, six requests, and six tool requests. Both agents' oracle diagnostics
+reported that their servers did not become healthy. Project tests and help checks failed every
+turn for both agents. Rupi's generated package contained only `__init__.py` and `validation.py`;
+neither agent produced a CLI entrypoint, server module, or tests. Rupi was 582,942 ms faster and
+used 14,858 more work tokens. This run is inconclusive.
+
+The first-slice admission prompt did not produce a runnable server for either agent. The next
+prompt returns to the health-first slice that previously produced a Rupi server and two passing
+project tests; signed admission will be the next recovery priority after the health slice passes.
+PR #137 remains draft.
+
+## Current outcome
+
+Case 05 remains open. The seventh prompt regressed server startup for both agents. The next
+iteration will focus on the executable health slice before adding signed admission.

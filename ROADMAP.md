@@ -1360,6 +1360,13 @@ TUI rendering passed all budgets (3.31–3.90 µs/unit); checkpointed restore me
   admission in the same first slice as server health. See the
   [Case 05 ledger](docs/benchmark/2026-09-29-case05-batch-relay-ledger.md).
 
+  The signed-admission-first rerun
+  `bench-20260930-case05-signed-admission-first-r7-grace6-cap8-pi0861-low-matched4-600s`
+  was inconclusive: neither agent resolved or created a reachable server. Rupi was 582,942 ms
+  faster than Pi and used 14,858 more work tokens; both agents failed oracle, project-test, and
+  help checks on every turn. The next prompt returns to the health-first slice before signed
+  admission. See the [Case 05 ledger](docs/benchmark/2026-09-29-case05-batch-relay-ledger.md).
+
   Case 06 ran with the pinned Pi 0.86.1 baseline. Pi resolved on turn 4 after its outer timeout,
   passing the oracle, all 61 project tests, and every help check. Rupi did not resolve; its oracle
   runs could not reach a healthy server, test discovery could not import `tests`, and all help
