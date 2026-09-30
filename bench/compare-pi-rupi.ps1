@@ -129,12 +129,17 @@ function Get-CaseGuidance([hashtable]$case) {
         'Then wire python -m batchrelay serve to batchrelay.server.run.'
         'Create tests/__init__.py and tests/test_server.py in the first turn.'
         'The subprocess test starts the documented serve command on an available port.'
-        'It polls /healthz, confirms the process stays alive, and stops it during cleanup.'
-        'Do not stop at a help-only __main__.py; require the discovered health test to pass.'
-        'Defer batch admission and worker behavior until server startup and health work.'
+        'The subprocess test checks health/admission and confirms the server stays alive.'
+        'It stops the server process during cleanup.'
+        'In the first slice, add signed POST /batches; do not defer admission to a later turn.'
+        'New signed batches return 202; exact replays return 200; conflicts return 409.'
+        'Missing or invalid signatures return 401 before any database write.'
+        'Verify HMAC-SHA256 over the exact raw request bytes before parsing the body.'
+        'Do not stop at a help-only __main__.py; require the health and admission tests to pass.'
+        'Defer worker behavior until the health and signed admission paths work.'
         'Use small modules for core behavior when that keeps the implementation clear.'
-        'Then build a valid signed POST /batches path.'
-        'The first new batch returns 202; an exact idempotent replay returns 200.'
+        'After signed admission, complete the full batch DAG behavior.'
+        'An exact idempotent replay returns 200.'
         'Conflicting content for an existing batch_id returns 409.'
         'Authenticate exact raw request bytes with HMAC-SHA256.'
         'Use constant-time signature comparison before any database mutation.'
@@ -405,13 +410,16 @@ directories to its extended Windows path with `cd` or `cd /d`.
       'Then wire python -m batchrelay serve to batchrelay.server.run.'
       'Create tests/__init__.py and tests/test_server.py in the first turn.'
       'The subprocess test starts the documented serve command on an available port.'
-      'It polls /healthz, confirms the process stays alive, and stops it during cleanup.'
-      'Do not stop at a help-only __main__.py; require the discovered health test to pass.'
-      'Defer batch admission and worker behavior until server startup and health work.'
+      'The subprocess test checks health/admission and confirms the server stays alive.'
+      'It stops the server process during cleanup.'
+      'In the first slice, add signed POST /batches; do not defer admission to a later turn.'
+      'New signed batches return 202; exact replays return 200; conflicts return 409.'
+      'Missing or invalid signatures return 401 before any database write.'
+      'Verify HMAC-SHA256 over the exact raw request bytes before parsing the body.'
+      'Do not stop at a help-only __main__.py; require the health and admission tests to pass.'
+      'Defer worker behavior until the health and signed admission paths work.'
       'Use small modules for core behavior when that keeps the implementation clear.'
-      'Then build a valid signed POST /batches path.'
-      'The first new batch returns 202; an exact idempotent replay returns 200.'
-      'Conflicting content for an existing batch_id returns 409.'
+      'After signed admission, complete the full batch DAG behavior.'
       'Authenticate exact raw request bytes with HMAC-SHA256.'
       'Validate all dependencies before inserting the full batch atomically.'
       'Commit leases before invoking the sink directly, without a shell.'
@@ -505,10 +513,12 @@ function Get-RecoveryPrompt([hashtable]$case, [object]$verification) {
       'Do not treat a help-only __main__.py as a working server. ' +
       'Add tests/__init__.py and tests/test_server.py if missing. ' +
       'Make server.run bind the configured host and port, then call serve_forever(). ' +
-      'The subprocess test must start the documented command and poll GET /healthz. ' +
+      'The subprocess test checks health and admission while the documented command runs. ' +
       'It confirms the server stays alive and stops it during cleanup. ' +
       'Make /healthz return HTTP 200 application/json with {"ok": true}. ' +
-      'Do this before batch or worker behavior. ' +
+      'New signed batches return 202; exact replays return 200; conflicts return 409. ' +
+      'Missing or invalid signatures return 401 before any database write. ' +
+      'Prioritize this admission path before worker behavior. ' +
       'Use small modules when they keep the service and worker clear. ' +
       'A valid new batch returns 202; exact replay returns 200; conflicting content returns 409. ' +
       'Then add README and focused tests. Work only in this workspace; ' +
@@ -603,6 +613,9 @@ If anything remains incomplete, state it instead of claiming success.
        -not $prompt.Contains('Add tests/__init__.py and tests/test_server.py if missing.') -or
        -not $prompt.Contains(
          'Make server.run bind the configured host and port, then call serve_forever().') -or
+       -not $prompt.Contains(
+         'New signed batches return 202; exact replays return 200; conflicts return 409.') -or
+       -not $prompt.Contains('Prioritize this admission path before worker behavior.') -or
        $prompt.Contains('Read SPEC.md and inspect the files already present.'))) {
     throw 'Case 05 recovery prompt must reuse the embedded SPEC and defer' +
       ' verification to the harness.'
