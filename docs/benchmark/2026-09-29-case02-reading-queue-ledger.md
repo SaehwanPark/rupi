@@ -405,3 +405,28 @@ did not resolve. The boundary made Rupi write sooner but did not win Case 02.
 The next matched retry keeps the boundary and directs both agents to leave tests,
 help, and smoke execution to the harness; recovery feedback includes the failing
 test/help diagnostic excerpts. Case 02 remains open.
+
+## Shared harness-verification retry
+
+Run: `bench-20260929-case02-progress-guidance-pi0861-low-matched4-600s`.
+
+The Rupi and Pi initial prompts were byte-identical. Both were instructed to
+leave command execution, tests, help, and the smoke sequence to the harness;
+the harness returned test/help diagnostics for recovery. Rupi kept the
+one-request `write` progress boundary. The run used Pi 0.86.1, low reasoning,
+four turns, and 600-second turn deadlines.
+
+| Agent | Turn | Elapsed | Input / output | Work tokens | Requests | Tools | Result |
+| --- | ---: | ---: | ---: | ---: | ---: | --- | --- |
+| Rupi | 1 | 600,291 ms | 12,027 / 9,993 | 22,020 | 4 | 4 | outer timeout; resolved |
+| Pi | 1 | 600,345 ms | 4,772 / 9,216 | 13,988 | 4 | 5 | outer timeout; unresolved |
+| Pi | 2 | 600,386 ms | 5,918 / 11,068 | 16,986 | 4 | 4 | outer timeout; resolved |
+
+Rupi passed the oracle and both help commands in one turn. Pi passed the same
+checks in turn 2. Rupi used 8,954 fewer work tokens and 600,440 ms less elapsed
+time, so it won this Case 02 benchmark. Both project-test checks failed: Rupi
+returned exit code 1 and Pi returned exit code 5. Rupi created only
+`readqueue/__main__.py`; Pi created `readqueue/__init__.py`,
+`readqueue/__main__.py`, and `tests/__init__.py`. Neither created a README or a
+test module. Case 02 is an oracle/help benchmark win; the project-test and
+README requirements remain incomplete.
