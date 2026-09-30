@@ -1317,11 +1317,13 @@ TUI rendering passed all budgets (3.31–3.90 µs/unit); checkpointed restore me
   turns. The Case 03 Pi-comparison objective is met; the project-test failure
   remains separate. See the
   [Case 03 ledger](docs/benchmark/2026-09-29-case03-event-outbox-ledger.md).
-- Pinned Case 04 run `bench-20260929-case04-pi0861-low-matched4-600s` recorded
-  `pi_version: 0.86.1` but was inconclusive: neither agent resolved in four turns.
-  Rupi used 62,291 work tokens over 2,401,168 ms; Pi used 6,284 over 2,401,033 ms.
-  Rupi passed help only on turn 4; Pi did not pass help. Both failed oracle and project
-  test discovery. The earlier unversioned result is provisional. Case 04 remains open; see its
+- Pinned Case 04 baseline `bench-20260929-case04-pi0861-low-matched4-600s` was inconclusive:
+  neither agent resolved in four turns. The full-spec first-write prompt rerun
+  `bench-20260930-case04-full-write-grace6-cap8-pi0861-low-matched4-600s` was a Pi win: Pi
+  resolved the oracle in turn 1, while Rupi did not resolve after four turns. Rupi used 11,494
+  work tokens over 2,388,175 ms; Pi used 17,631 over 600,159 ms. Rupi passed only top-level help
+  in turn 4; Pi passed all help checks. Both project-test checks exited 1, separately from oracle
+  status. Case 04 remains open; see its
   [Case 04 ledger](docs/benchmark/2026-09-29-case04-webhook-inbox-ledger.md).
 
   Case 05 used the pinned Pi 0.86.1 run `bench-20260929-case05-pi0861-low-matched4-600s`.

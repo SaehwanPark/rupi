@@ -63,9 +63,44 @@ project-test, and help checks failed in every turn. Turns 3 and 4 made no model 
 calls. Test discovery exited 1 in both projects because Python could not import the
 `tests` start directory.
 
-## Outcome
+## Outcome of the initial pinned comparison
 
 The pinned comparison is inconclusive: neither agent resolved the case. Rupi used 56,007 more
 work tokens, while elapsed time was nearly even (Rupi took 135 ms longer). Rupi passed help only
-on turn 4; Pi did not pass help. Case 04 remains open as an optimization target, and Case 05 is
-next.
+on turn 4; Pi did not pass help. Case 04 remained open after this initial pinned run.
+
+## Full-spec first-write prompt rerun
+
+Run: `bench-20260930-case04-full-write-grace6-cap8-pi0861-low-matched4-600s`. This used
+Pi 0.86.1, low reasoning, four turns, 600-second outer turn timeouts, eight model requests per
+turn, and a 594-second Rupi provider timeout. The revised Case 04 guidance embedded the full
+SPEC and asked for a complete `webhookinbox/__main__.py` write before inspecting the workspace.
+Request columns show started / completed counts. Work tokens are inference input plus output; check columns show exit codes (0 means pass).
+
+| Rupi turn | Elapsed | Input / output | Work tokens | Requests started / completed | Tools | Oracle / tests | Help (top / serve / worker) | Result |
+| --- | ---: | ---: | ---: | ---: | ---: | --- | --- | --- |
+| 1 | 594,454 ms | 0 / 0 | 0 | 1 / 1 | 0 | 1 / 1 | 1 / 1 / 1 | no inference usage |
+| 2 | 595,815 ms | 0 / 0 | 0 | 1 / 1 | 0 | 1 / 1 | 1 / 1 / 1 | no inference usage |
+| 3 | 597,536 ms | 0 / 0 | 0 | 1 / 1 | 0 | 1 / 1 | 1 / 1 / 1 | no inference usage |
+| 4 | 600,370 ms | 1,268 / 10,226 | 11,494 | 2 / 1 | 1 | 1 / 1 | 0 / 2 / 2 | outer timeout after one write |
+
+Rupi did not resolve after four turns. It used 11,494 work tokens over 2,388,175 ms. The
+acceptance oracle and project tests exited 1 on every turn. Top-level help passed only on turn 4;
+`serve --help` and `worker --help` exited 2 then.
+
+| Pi turn | Elapsed | Input / output | Work tokens | Requests started / completed | Tools | Oracle / tests | Help (top / serve / worker) | Result |
+| --- | ---: | ---: | ---: | ---: | ---: | --- | --- | --- |
+| 1 | 600,159 ms | 5,224 / 12,407 | 17,631 | 4 / 4 | 6 | 0 / 1 | 0 / 0 / 0 | outer timeout; oracle resolved |
+
+Pi resolved in turn 1 and passed the acceptance oracle and all help checks. Its project tests
+exited 1. It used 17,631 work tokens over 600,159 ms. The benchmark win criterion is oracle
+resolution, so Pi won this comparison despite using 6,137 more work tokens. Rupi took
+1,788,016 ms longer and did not resolve. Project-test status remains separate from the oracle
+result for both agents.
+
+## Current outcome
+
+The full-spec first-write prompt experiment did not produce a Case 04 win. Case 04 remains open;
+PR #136 stays draft while the next optimization is prepared. The next prompt iteration should
+encourage early incremental implementation and tool use, since this run produced no Rupi
+inference usage for its first three turns and only one source write in turn 4.
