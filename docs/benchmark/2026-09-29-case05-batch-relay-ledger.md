@@ -70,8 +70,47 @@ Pi resolved in turn 3, using 42,689 work tokens over 1,604,956 ms. The resolving
 oracle, project tests, and all help checks. Rupi took 786,766 ms longer and did not resolve.
 It used 36,548 fewer work tokens, but the completion and elapsed-time comparison favors Pi.
 
+## Outcome of the embedded-spec iteration
+
+This prompt did not win Case 05. Rupi's first turn used far fewer tokens than its baseline, but
+turns 2–4 made no inference progress and the oracle never passed. The next experiment read the
+SPEC once and directed the first runnable implementation into the entrypoint.
+
+## Read-once, entrypoint-first prompt rerun
+
+Run: `bench-20260930-case05-entrypoint-harness-grace6-cap8-pi0861-low-matched4-600s`. This used
+Pi 0.86.1, low reasoning, four turns, 600-second outer timeouts, eight requests per turn, and a
+594-second Rupi provider timeout. The prompt used the normal initial SPEC read, directed the
+agent to keep the runnable service and worker in `batchrelay/__main__.py` until the full flow
+worked, and deferred local checks to the harness. Requests count model requests started; work
+tokens are inference input plus output. Check values are exit codes (0 means pass).
+
+| Rupi turn | Elapsed | Input / output | Work tokens | Requests | Tools | Oracle / tests | Help (top / serve / worker) | Result |
+| --- | ---: | ---: | ---: | ---: | ---: | --- | --- | --- |
+| 1 | 600,239 ms | 19,023 / 10,665 | 29,688 | 4 | 3 | 1 / 1 | 0 / 0 / 0 | outer timeout |
+| 2 | 600,276 ms | 10,594 / 6,406 | 17,000 | 3 | 2 | 1 / 5 | 0 / 0 / 0 | outer timeout |
+| 3 | 596,236 ms | 0 / 0 | 0 | 1 | 0 | 1 / 5 | 0 / 0 / 0 | no inference usage |
+| 4 | 578,186 ms | 0 / 0 | 0 | 1 | 0 | 1 / 5 | 0 / 0 / 0 | no inference usage |
+
+Rupi did not resolve after four turns. It used 46,688 work tokens over 2,374,937 ms. Its oracle
+failed every turn; project tests exited 1 on turn 1 and 5 on turns 2–4. All three help checks
+passed in every turn. The entrypoint was created in turn 1, but turns 3–4 made no inference
+progress.
+
+| Pi turn | Elapsed | Input / output | Work tokens | Requests | Tools | Oracle / tests | Help (top / serve / worker) | Result |
+| --- | ---: | ---: | ---: | ---: | ---: | --- | --- | --- |
+| 1 | 600,225 ms | 5,749 / 372 | 6,121 | 4 | 4 | 1 / 1 | 1 / 1 / 1 | outer timeout |
+| 2 | 600,196 ms | 0 / 0 | 0 | 0 | 0 | 1 / 1 | 1 / 1 / 1 | outer timeout |
+| 3 | 600,228 ms | 0 / 0 | 0 | 0 | 0 | 1 / 1 | 1 / 1 / 1 | outer timeout |
+| 4 | 600,289 ms | 0 / 0 | 0 | 0 | 0 | 1 / 1 | 1 / 1 / 1 | outer timeout |
+
+Pi did not resolve in four turns. It used 6,121 work tokens over 2,400,938 ms. Its oracle, project
+tests, and all help checks failed in every turn. Neither agent resolved, so the result is
+inconclusive: Rupi was 26,001 ms faster but used 40,567 more work tokens. This run did not
+reproduce the prior Pi turn-3 oracle pass.
+
 ## Current outcome
 
-This embedded-spec prompt iteration did not win Case 05. Rupi's first turn used far fewer tokens
-than its baseline, but turns 2–4 made no inference progress and the oracle never passed. Case 05
-remains open; PR #137 stays draft while a narrower prompt iteration is prepared.
+Case 05 remains open. The read-once, entrypoint-first prompt improved first-turn help behavior,
+but neither agent resolved and Rupi still used more work tokens than Pi. PR #137 remains draft
+while the local provider behavior is checked before another matched run.
