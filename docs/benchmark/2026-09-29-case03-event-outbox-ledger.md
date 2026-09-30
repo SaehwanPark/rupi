@@ -33,4 +33,5 @@ Pi used 6,303 inference-work tokens over 2,400,993 ms and created no source.
 Neither produced a runnable package, README, or tests. Rupi used 10,877 more
 work tokens, but created one file and finished much sooner than Pi's four
 turns. Neither agent resolved, so this is inconclusive rather than a case win.
-Case 03 remains open; the next slice moves to Case 04.
+Case 03 remains open. The next retry applies the one-request `write` progress
+boundary to Rupi and the matched harness-verification guidance to both agents.

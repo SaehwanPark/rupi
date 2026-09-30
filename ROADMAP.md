@@ -1275,6 +1275,10 @@ TUI rendering passed all budgets (3.31–3.90 µs/unit); checkpointed restore me
   after four outer timeouts (6,303 tokens; 2,400,993 ms). Neither resolved.
   Case 03 remains open. See the
   [Case 03 ledger](docs/benchmark/2026-09-29-case03-event-outbox-ledger.md).
+- Active Case 03 retry applies the validated one-request `write` boundary and
+  shared harness-verification guidance. Keep Pi 0.86.1, low reasoning, four
+  turns, and 600-second deadlines matched; require oracle/help and lower work
+  tokens and elapsed time for a win. Project tests and README remain tracked.
 - Pinned Case 04 run `bench-20260929-case04-pi0861-low-matched4-600s` recorded
   `pi_version: 0.86.1` but was inconclusive: neither agent resolved in four turns.
   Rupi used 62,291 work tokens over 2,401,168 ms; Pi used 6,284 over 2,401,033 ms.
