@@ -87,6 +87,21 @@ function Get-CaseGuidance([hashtable]$case) {
         'restart persistence.'
       ) -join "`n")
     }
+    "03-event-outbox" {
+      return (@(
+        'Use `outbox/__main__.py` as the CLI entry point and implement both documented commands.'
+        'The service command is `python -m outbox serve --db PATH --host HOST --port PORT`.'
+        'The worker command starts with `python -m outbox worker --db PATH --sink PROGRAM`.'
+        'Pass repeated `--sink-arg ARG` values directly and use `--once` for a bounded run.'
+        'Prioritize idempotent event admission, durable retry state, and restart persistence.'
+        'Pass sink arguments directly, without a shell; exchange one JSON line per event.'
+        'Keep `worker --once` bounded and process its pending snapshot in insertion order.'
+        'Failed deliveries stay pending, increment attempts, and record a non-empty error.'
+        'The benchmark harness runs project tests and help commands after each attempt.'
+        'Do not run commands, tests, or help checks, or launch the HTTP service or worker.'
+        'After the service and worker flow work, add a readable README and focused tests.'
+      ) -join "`n")
+    }
     default {
       return (@(
         "Prioritize the complete $($case.Focus) workflow described in SPEC.md."
@@ -125,6 +140,13 @@ runs the independent smoke sequence.
 Do not run commands, tests, or help checks, or start the service. Use workspace
 read/write tools and rely on harness feedback for recovery. Report verification only
 when the harness provides its results.
+'@
+  } elseif ($case.Id -eq "03-event-outbox") {
+@'
+The benchmark harness runs project tests and help commands after each attempt.
+Do not run commands, tests, or help checks, or launch the HTTP service or worker.
+Use workspace read/write tools and rely on harness feedback for recovery. Report
+verification only when the harness provides its results.
 '@
   } else {
 @'
@@ -182,6 +204,11 @@ directories to its extended Windows path with `cd` or `cd /d`.
     $requiredInstructions += @(
       'The benchmark harness runs project tests and help commands after each attempt.'
       'Do not run commands, tests, or help checks, or start the service.'
+    )
+  } elseif ($case.Id -eq "03-event-outbox") {
+    $requiredInstructions += @(
+      'The benchmark harness runs project tests and help commands after each attempt.'
+      'Do not run commands, tests, or help checks, or launch the HTTP service or worker.'
     )
   } else {
     $requiredInstructions += @(
@@ -248,6 +275,20 @@ directories to its extended Windows path with `cd` or `cd /d`.
     if ($prompt.Contains('tasklog/__main__.py') -or $prompt.Contains('`--state PATH`')) {
       throw 'Case 02 initial prompt contains Case 01 instructions.'
     }
+  } elseif ($case.Id -eq "03-event-outbox") {
+    $caseSpecificInstructions = @(
+      'python -m outbox serve --db PATH --host HOST --port PORT'
+      'python -m outbox worker --db PATH --sink PROGRAM'
+      'Pass sink arguments directly, without a shell'
+      'Keep `worker --once` bounded and process its pending snapshot in insertion order.'
+      'Failed deliveries stay pending, increment attempts, and record a non-empty error.'
+      'The benchmark harness runs project tests and help commands after each attempt.'
+      'Do not run commands, tests, or help checks, or launch the HTTP service or worker.'
+      'readable README and focused tests'
+    )
+    if ($prompt.Contains('readqueue') -or $prompt.Contains('tasklog')) {
+      throw 'Case 03 initial prompt contains another case instructions.'
+    }
   }
   foreach ($instruction in $caseSpecificInstructions) {
     if (-not $prompt.Contains($instruction)) {
@@ -311,6 +352,13 @@ after this attempt. Do not run commands, tests, or help checks, or start the ser
 Use the diagnostic excerpts above to inspect and edit source files, then rely on the
 harness for verification.
 '@
+  } elseif ($case.Id -eq "03-event-outbox") {
+@'
+The benchmark harness reruns project tests and help commands after this attempt.
+Do not run commands, tests, or help checks, or launch the HTTP service or worker.
+Use the diagnostic excerpts above to inspect and edit source files, then rely on the
+harness for verification.
+'@
   } else {
 @'
 Continue working through the missing items in SPEC.md, then run the complete project
@@ -359,6 +407,11 @@ If anything remains incomplete, state it instead of claiming success.
   if ($case.Id -eq "02-reading-queue" -and
       -not $prompt.Contains('Do not run commands, tests, or help checks, or start the service.')) {
     throw 'Case 02 recovery prompt must defer execution and verification to the harness.'
+  }
+  if ($case.Id -eq "03-event-outbox" -and
+      -not $prompt.Contains(
+        'Do not run commands, tests, or help checks, or launch the HTTP service or worker.')) {
+    throw 'Case 03 recovery prompt must defer execution and verification to the harness.'
   }
   return $prompt
 }
