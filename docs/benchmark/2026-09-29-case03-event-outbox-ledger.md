@@ -144,3 +144,39 @@ The next retry will restore the eight-request cap and reduce the Rupi provider
 timeout grace from 30 seconds to six seconds. This gives each 600-second turn a
 594-second provider request before the outer watchdog, while keeping all other
 benchmark settings and the prompt unchanged.
+
+## Provider-grace-six, cap-eight retry
+
+Run: `bench-20260930-case03-provider-grace6-cap8-pi0861-low-matched4-600s`.
+
+The matched retry used Pi 0.86.1, low reasoning, four turns, 600-second outer
+deadlines, an eight-request per-turn cap, and a six-second Rupi provider timeout
+grace (594,000 ms). Both agents created no source files. Project tests, the
+oracle, and all three help checks failed after every turn.
+
+| Rupi turn | Elapsed | Work tokens | Tools | Result |
+| --- | ---: | ---: | --- | --- |
+| 1 | 600,256 ms | 3,949 | `read`, `exec` | outer timeout |
+| 2 | 595,824 ms | 0 | — | provider timeout |
+| 3 | 597,390 ms | 0 | — | provider timeout |
+| 4 | 599,036 ms | 0 | — | provider timeout |
+
+Rupi used 3,949 inference-work tokens over 2,392,506 ms. Its final artifact
+manifest contained only the nine initial project files.
+
+| Pi turn | Elapsed | Work tokens | Tools | Result |
+| --- | ---: | ---: | --- | --- |
+| 1 | 600,221 ms | 4,964 | `read`, `ls`, `read`, `read` | outer timeout |
+| 2 | 600,213 ms | 0 | — | outer timeout |
+| 3 | 600,158 ms | 0 | — | outer timeout |
+| 4 | 600,206 ms | 0 | — | outer timeout |
+
+Pi used 4,964 work tokens over 2,400,798 ms and created no source. Rupi was
+8,292 ms faster and used 1,015 fewer tokens, but neither agent resolved the
+oracle or help checks, so this is inconclusive rather than a win.
+
+Rupi's first response read `SPEC.md` and listed the workspace. The runtime then
+required the next model response to call `write`, which did not arrive before
+the 594,000 ms provider timeout. The updated Case03 prompt requires a first
+source write before reading `SPEC.md`. Dry-runs passed for Case03 and Case02;
+other case prompts retain their existing order.

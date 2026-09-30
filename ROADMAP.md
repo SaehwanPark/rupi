@@ -1289,10 +1289,16 @@ TUI rendering passed all budgets (3.31–3.90 µs/unit); checkpointed restore me
   Rupi was 76,515 ms faster but used 370 more tokens. Its provider request timed
   out at 570 seconds after the progress boundary required a first `write`. Case
   03 remains open; see the ledger.
-- The next retry restores the eight-request cap and reduces the Rupi provider
-  timeout grace to six seconds (594-second request timeout under the matched
-  600-second outer deadline). Keep the same prompt, Pi 0.86.1, low reasoning,
-  four turns, and the one-request `write` boundary.
+- Provider-grace-six, cap-eight retry
+  `bench-20260930-case03-provider-grace6-cap8-pi0861-low-matched4-600s` was
+  inconclusive. Both agents created no source and failed project tests, oracle,
+  and all help checks. Rupi used 3,949 work tokens over 2,392,506 ms; Pi used
+  4,964 over 2,400,798 ms. Rupi was 8,292 ms faster and used 1,015 fewer
+  tokens, but neither resolved. Rupi read the spec and listed files before the
+  progress boundary required its first write; that following provider request
+  timed out at 594 seconds. The next retry will require the first tool operation
+  to write `outbox/__main__.py`, then read the spec. Case03 and unchanged Case02
+  prompt dry-runs passed. Case 03 remains open; see the ledger.
 - Pinned Case 04 run `bench-20260929-case04-pi0861-low-matched4-600s` recorded
   `pi_version: 0.86.1` but was inconclusive: neither agent resolved in four turns.
   Rupi used 62,291 work tokens over 2,401,168 ms; Pi used 6,284 over 2,401,033 ms.

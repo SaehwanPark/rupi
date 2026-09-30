@@ -98,7 +98,9 @@ function Get-CaseGuidance([hashtable]$case) {
     }
     "03-event-outbox" {
       return (@(
-        'First source write: create `outbox/__main__.py` with the CLI parser and help.'
+        'First tool call: use workspace `write` to create `outbox/__main__.py` CLI help.'
+        'Do not call `read`, `exec`, or another inspection tool before this first write.'
+        'After the first write, read `SPEC.md` completely before implementing the service.'
         'Use the workspace write tool for this first source file.'
         'Keep the CLI, HTTP handler, SQLite storage, and worker in `outbox/__main__.py`'
         'until the complete service and `worker --once` flow are runnable.'
@@ -148,6 +150,11 @@ workspace files, including `dir /s`, `find`, `findstr`, `grep`, or `ls`.
 function Get-InitialPrompt([hashtable]$case) {
   $guidance = Get-CaseGuidance $case
   $toolingGuidance = Get-WindowsToolGuidance
+  $specAccessOrder = if ($case.Id -eq "03-event-outbox") {
+    'First write `outbox/__main__.py` with the CLI; read SPEC.md immediately afterward.'
+  } else {
+    'Read SPEC.md completely before acting.'
+  }
   $verificationGuidance = if ($case.Id -eq "02-reading-queue") {
 @'
 The benchmark harness runs project tests and help commands after each attempt. It also
@@ -174,7 +181,7 @@ state any incomplete requirement explicitly.
   }
   $prompt = @'
 You are implementing the `{{PACKAGE}}` Python package in the current workspace.
-Read SPEC.md completely before acting. Build a complete dependency-free Python 3
+{{SPEC_ACCESS_ORDER}} Build a complete dependency-free Python 3
 project for the `{{PACKAGE}}` package described by SPEC.md, including a readable
 README.md and focused unittest tests. The project focus is {{PROJECT_FOCUS}}.
 
@@ -192,12 +199,12 @@ directories to its extended Windows path with `cd` or `cd /d`.
 '@
   $prompt = $prompt.Replace('{{PACKAGE}}', [string]$case.Package)
   $prompt = $prompt.Replace('{{PROJECT_FOCUS}}', [string]$case.Focus)
+  $prompt = $prompt.Replace('{{SPEC_ACCESS_ORDER}}', $specAccessOrder)
   $prompt = $prompt.Replace('{{CASE_GUIDANCE}}', $guidance)
   $prompt = $prompt.Replace('{{WINDOWS_TOOL_GUIDANCE}}', $toolingGuidance)
   $prompt = $prompt.Replace('{{VERIFICATION_GUIDANCE}}', $verificationGuidance)
 
   $requiredInstructions = @(
-    'Read SPEC.md completely before acting'
     'complete dependency-free Python 3'
     'README.md and focused unittest tests'
     'The project focus is '
@@ -215,6 +222,14 @@ directories to its extended Windows path with `cd` or `cd /d`.
     'Do not use shell commands to list or search'
     'including `dir /s`, `find`, `findstr`, `grep`, or `ls`.'
   )
+  if ($case.Id -eq "03-event-outbox") {
+    $requiredInstructions += @(
+      'First write `outbox/__main__.py` with the CLI; read SPEC.md immediately afterward.'
+      'Do not call `read`, `exec`, or another inspection tool before this first write.'
+    )
+  } else {
+    $requiredInstructions += 'Read SPEC.md completely before acting'
+  }
   if ($case.Id -eq "02-reading-queue") {
     $requiredInstructions += @(
       'The benchmark harness runs project tests and help commands after each attempt.'
@@ -292,7 +307,9 @@ directories to its extended Windows path with `cd` or `cd /d`.
     }
   } elseif ($case.Id -eq "03-event-outbox") {
     $caseSpecificInstructions = @(
-      'First source write: create `outbox/__main__.py` with the CLI parser and help.'
+      'First tool call: use workspace `write` to create `outbox/__main__.py` CLI help.'
+      'Do not call `read`, `exec`, or another inspection tool before this first write.'
+      'After the first write, read `SPEC.md` completely before implementing the service.'
       'Use the workspace write tool for this first source file.'
       'Keep the CLI, HTTP handler, SQLite storage, and worker in `outbox/__main__.py`'
       'until the complete service and `worker --once` flow are runnable.'
@@ -316,6 +333,12 @@ directories to its extended Windows path with `cd` or `cd /d`.
     if (-not $prompt.Contains($instruction)) {
       throw "Initial benchmark prompt for $($case.Id) is missing: $instruction"
     }
+  }
+  if (
+    $case.Id -eq "03-event-outbox" -and
+    $prompt.Contains('Read SPEC.md completely before acting')
+  ) {
+    throw 'Case 03 prompt asks the agent to inspect SPEC.md before its first write.'
   }
   return $prompt
 }
