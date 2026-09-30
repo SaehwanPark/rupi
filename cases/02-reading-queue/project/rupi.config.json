@@ -4,7 +4,9 @@
   "thinking": "low",
   "state_dir": ".rupi-state",
   "limits": {
-    "max_model_requests_per_turn": 24
+    "max_model_requests_per_turn": 24,
+    "max_model_requests_without_progress": 1,
+    "progress_tool_names": ["write"]
   },
   "endpoints": [
     {

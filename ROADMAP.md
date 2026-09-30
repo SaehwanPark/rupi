@@ -1253,9 +1253,22 @@ TUI rendering passed all budgets (3.31–3.90 µs/unit); checkpointed restore me
   Case 02 remains open. See the ledger.
 - Module-startup retry `bench-20260929-case02-entrypoint-check-low-matched4-600s`
   favored Pi: it passed oracle/help in one turn (17,102 work tokens; 600,302 ms).
-  Rupi used 10,705 work tokens over 1,190,317 ms but created no package; two
-  provider timeouts and a failed `dir /s /b` exec left it unresolved. Case 02
-  remains open. See the ledger.
+  Rupi used 10,705 work tokens over 1,190,317 ms but created no package; an
+  outer timeout, provider timeout, and failed `dir /s /b` exec left it unresolved.
+  Case 02 remains open. See the ledger.
+- One-request `write` progress-boundary trial
+  `bench-20260929-case02-progress-write-pi0861-low-matched4-600s` did not resolve
+  Case 02. Rupi wrote `__main__.py` before a syntax error and
+  an unresolved `exec` left `needs_reconciliation` (20,241 work tokens; 350,746 ms).
+  Pi 0.86.1 passed oracle/help (17,044; 600,323 ms) but failed project tests and
+  lacked a README/test module. See the ledger.
+- Shared harness-verification retry
+  `bench-20260929-case02-progress-guidance-pi0861-low-matched4-600s` won Case 02:
+  Rupi passed oracle/help in one turn (22,020 work tokens;
+  600,291 ms); Pi passed in two (30,974; 1,200,731 ms). Rupi used 8,954 fewer
+  work tokens and 600,440 ms less time. Both project-test checks failed, and
+  neither generated a README or test module. The benchmark win is verified;
+  project-test and README requirements remain incomplete. See the ledger.
 - Case 03 baseline `bench-20260929-case03-baseline-low-matched4-600s` was
   inconclusive. Rupi wrote only `outbox/__init__.py` before a failed recursive
   `dir` exec; it used 17,180 work tokens over 614,821 ms. Pi created no source
