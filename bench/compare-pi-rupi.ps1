@@ -62,26 +62,23 @@ function Get-CaseGuidance([hashtable]$case) {
     }
     "02-reading-queue" {
       return (@(
-        'Run the service with `python -m readqueue serve --db PATH --host HOST --port PORT`.'
+        'The documented service command is'
+        '`python -m readqueue serve --db PATH --host HOST --port PORT`.'
         'Start with `readqueue/__main__.py` and keep the CLI, HTTP handler, and'
         'SQLite operations in that file until the complete service and help commands work.'
         'Do not split into `cli.py`, `server.py`, `store.py`, or `validation.py`,'
         'or write the README and tests, before the service is runnable.'
         'Call `main()` under the `__name__ == "__main__"` guard in `readqueue/__main__.py`.'
-        'Before route checks, confirm the `serve` command prints its address and stays running.'
-        'A zero exit with no startup output means the module entry point is incomplete.'
+        'The documented `serve` command prints its address and keeps the service running.'
         'Prioritize the documented HTTP routes, deterministic JSON, and'
         'SQLite persistence across a server restart.'
         'Keep the SQLite connection helper and all CRUD call sites consistent after a rename.'
-        'After service and help work, write a readable `README.md`.'
+        'After implementing the service and help behavior, write a readable `README.md`.'
         'Include the run command and examples for documented routes.'
         'Use `self.rfile` to read HTTP request bodies.'
         'It is the input stream provided by `BaseHTTPRequestHandler`.'
-        'Smoke-test `GET /healthz`, then `POST /items` and `GET /items`.'
-        'PATCH the created `/items/{id}` to status `reading`, then GET it again.'
-        'Send an invalid PATCH, verify JSON 4xx, and confirm the item is unchanged.'
-        'If a smoke request disconnects, inspect service stderr, fix the error, and rerun.'
-        'Use a temporary SQLite database for that smoke check before finishing.'
+        'The harness independently verifies the documented routes after each attempt.'
+        'Do not run commands, tests, or help checks, or start the service.'
         'Successful responses use `application/json`; error responses include'
         'an `error` string and a suitable 4xx status.'
         'Duplicate URLs return 409; unknown IDs return 404; invalid requests'
@@ -121,6 +118,23 @@ workspace files, including `dir /s`, `find`, `findstr`, `grep`, or `ls`.
 function Get-InitialPrompt([hashtable]$case) {
   $guidance = Get-CaseGuidance $case
   $toolingGuidance = Get-WindowsToolGuidance
+  $verificationGuidance = if ($case.Id -eq "02-reading-queue") {
+@'
+The benchmark harness runs project tests and help commands after each attempt. It also
+runs the independent smoke sequence.
+Do not run commands, tests, or help checks, or start the service. Use workspace
+read/write tools and rely on harness feedback for recovery. Report verification only
+when the harness provides its results.
+'@
+  } else {
+@'
+Complete the smallest runnable workflow described in SPEC.md first, then add the
+README and focused tests. Run the project unittest suite and project-specific help
+commands described by SPEC.md, plus a small smoke check. Do not treat your final
+summary as proof: report exact commands and statuses only after running them, and
+state any incomplete requirement explicitly.
+'@
+  }
   $prompt = @'
 You are implementing the `{{PACKAGE}}` Python package in the current workspace.
 Read SPEC.md completely before acting. Build a complete dependency-free Python 3
@@ -137,16 +151,13 @@ oracle. Use only Python standard-library modules.
 The project directory is already the working directory; do not change
 directories to its extended Windows path with `cd` or `cd /d`.
 
-Complete the smallest runnable workflow described in SPEC.md first, then add
-the README and focused tests. Run the project unittest suite and project-specific
-help commands described by SPEC.md, plus a small smoke check. Do not treat your
-final summary as proof: report exact commands and statuses only after running
-them, and state any incomplete requirement explicitly.
+{{VERIFICATION_GUIDANCE}}
 '@
   $prompt = $prompt.Replace('{{PACKAGE}}', [string]$case.Package)
   $prompt = $prompt.Replace('{{PROJECT_FOCUS}}', [string]$case.Focus)
   $prompt = $prompt.Replace('{{CASE_GUIDANCE}}', $guidance)
   $prompt = $prompt.Replace('{{WINDOWS_TOOL_GUIDANCE}}', $toolingGuidance)
+  $prompt = $prompt.Replace('{{VERIFICATION_GUIDANCE}}', $verificationGuidance)
 
   $requiredInstructions = @(
     'Read SPEC.md completely before acting'
@@ -156,7 +167,6 @@ them, and state any incomplete requirement explicitly.
     'Do not inspect or run the external acceptance'
     'Use only Python standard-library modules'
     'The project directory is already the working directory'
-    'Run the project unittest suite'
     'use a dedicated process tool only if it is listed in your available'
     '`process` as command prefixes in a shell'
     'one executable directly through the available shell or exec tool per call'
@@ -168,6 +178,17 @@ them, and state any incomplete requirement explicitly.
     'Do not use shell commands to list or search'
     'including `dir /s`, `find`, `findstr`, `grep`, or `ls`.'
   )
+  if ($case.Id -eq "02-reading-queue") {
+    $requiredInstructions += @(
+      'The benchmark harness runs project tests and help commands after each attempt.'
+      'Do not run commands, tests, or help checks, or start the service.'
+    )
+  } else {
+    $requiredInstructions += @(
+      'Run the project unittest suite'
+      'plus a small smoke check.'
+    )
+  }
   foreach ($instruction in $requiredInstructions) {
     if (-not $prompt.Contains($instruction)) {
       throw "Initial benchmark prompt is missing an instruction: $instruction"
@@ -209,18 +230,14 @@ them, and state any incomplete requirement explicitly.
       'python -m readqueue serve --db PATH --host HOST --port PORT'
       'SQLite persistence across a server restart.'
       'Call `main()` under the `__name__ == "__main__"` guard in `readqueue/__main__.py`.'
-      'Before route checks, confirm the `serve` command prints its address and stays running.'
-      'A zero exit with no startup output means the module entry point is incomplete.'
+      'The documented `serve` command prints its address and keeps the service running.'
       'Keep the SQLite connection helper and all CRUD call sites consistent after a rename.'
-      'After service and help work, write a readable `README.md`.'
+      'After implementing the service and help behavior, write a readable `README.md`.'
       'Include the run command and examples for documented routes.'
       'Use `self.rfile` to read HTTP request bodies.'
       'It is the input stream provided by `BaseHTTPRequestHandler`.'
-      'Smoke-test `GET /healthz`, then `POST /items` and `GET /items`.'
-      'PATCH the created `/items/{id}` to status `reading`, then GET it again.'
-      'Send an invalid PATCH, verify JSON 4xx, and confirm the item is unchanged.'
-      'If a smoke request disconnects, inspect service stderr, fix the error, and rerun.'
-      'Use a temporary SQLite database for that smoke check before finishing.'
+      'The harness independently verifies the documented routes after each attempt.'
+      'Do not run commands, tests, or help checks, or start the service.'
       'Successful responses use `application/json`'
       'error responses include'
       'an `error` string and a suitable 4xx status.'
@@ -287,6 +304,19 @@ function Get-RecoveryPrompt([hashtable]$case, [object]$verification) {
   $feedback = Get-RecoveryFeedback $verification
   $toolingGuidance = Get-WindowsToolGuidance
   $caseGuidance = Get-CaseGuidance $case
+  $verificationGuidance = if ($case.Id -eq "02-reading-queue") {
+@'
+The benchmark harness reruns tests, help commands, and the independent smoke sequence
+after this attempt. Do not run commands, tests, or help checks, or start the service.
+Use the diagnostic excerpts above to inspect and edit source files, then rely on the
+harness for verification.
+'@
+  } else {
+@'
+Continue working through the missing items in SPEC.md, then run the complete project
+unittest suite, the project-specific help commands, and a smoke sequence.
+'@
+  }
   $prompt = @"
 Continue the incomplete $($case.Package) implementation in this workspace.
 Read SPEC.md and inspect the files already present. Work only inside this
@@ -304,9 +334,9 @@ Previous local verification results (project tests and help commands):
 $feedback
 
 Use any failing local results above to correct the implementation. Continue
-working through the missing items in SPEC.md, then run the complete project
-unittest suite, the project-specific help commands, and a smoke sequence. If
-anything remains incomplete, state it instead of claiming success.
+working through the missing items in SPEC.md.
+$verificationGuidance
+If anything remains incomplete, state it instead of claiming success.
 "@
   $requiredInstructions = @(
     'use a dedicated process tool only if it is listed in your available'
@@ -325,6 +355,10 @@ anything remains incomplete, state it instead of claiming success.
   }
   if (-not $prompt.Contains($caseGuidance)) {
     throw "Recovery benchmark prompt is missing case guidance for $($case.Id)."
+  }
+  if ($case.Id -eq "02-reading-queue" -and
+      -not $prompt.Contains('Do not run commands, tests, or help checks, or start the service.')) {
+    throw 'Case 02 recovery prompt must defer execution and verification to the harness.'
   }
   return $prompt
 }

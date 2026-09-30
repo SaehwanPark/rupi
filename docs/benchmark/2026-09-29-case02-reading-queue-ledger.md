@@ -349,5 +349,59 @@ failed in every verified turn.
 Pi passed oracle and help in turn 1, though project test discovery failed.
 It created `readqueue/__init__.py` and `readqueue/__main__.py`, but no README
 or tests. Rupi used 6,397 fewer work tokens, but remained unresolved and took
-590,015 ms longer. Pi won this comparison. Case 02 remains open; proceed to
-Case 03 and retain the Case 02 findings for later prompt work.
+590,015 ms longer. Pi won this comparison. Case 02 remains open; see the
+subsequent retries below for the follow-up findings.
+
+## Current-prompt partial baseline
++
+
+Run: `bench-20260929-case02-progress-baseline-pi0861-low-matched4-600s`.
+
+This run used the current shared prompt, Pi 0.86.1, low reasoning, four turns,
+and 600-second turn deadlines. It was stopped after two recorded Rupi turns
+when a prompt-hash check showed that the earlier completed baseline differed
+in its Windows shell guidance. This partial run has no Pi leg and is not a
+complete comparison.
+
+| Rupi turn | Elapsed | Work tokens | Requests | Tools | Result |
+| --- | ---: | ---: | ---: | --- | --- |
+| 1 | 600,590 ms | 12,173 | 3 | 3 | outer timeout; unresolved |
+| 2 | 583,004 ms | 1,355 | 3 | 1 | completed; unresolved |
+
+Rupi used 13,528 inference-work tokens over 1,183,594 ms without resolving.
+It created only `readqueue/__init__.py`. The earlier full run remains useful
+historical evidence, but not a byte-identical prompt baseline.
+
+## One-request write progress-boundary trial
++
+
+Run: `bench-20260929-case02-progress-write-pi0861-low-matched4-600s`.
+
+This paired run used the current shared prompt, Pi 0.86.1, low reasoning, four
+turns, 600-second turn deadlines, and an eight-request per-turn cap. Rupi's
+config added `max_model_requests_without_progress: 1` and
+`progress_tool_names: ["write"]`.
+
+| Rupi turn | Elapsed | Input / output | Work tokens | Requests | Tools | Result |
+| --- | ---: | ---: | ---: | ---: | --- | --- |
+| 1 | 350,746 ms | 14,200 / 6,041 | 20,241 | 3 | 4 | failed exec; needs reconciliation |
+| 2 | 312 ms | 0 / 0 | 0 | 0 | 0 | needs reconciliation |
+| 3 | 310 ms | 0 / 0 | 0 | 0 | 0 | needs reconciliation |
+| 4 | 299 ms | 0 / 0 | 0 | 0 | 0 | needs reconciliation |
+
+The boundary activated after one request without a write and Rupi wrote only
+`readqueue/__main__.py`. Its next request ran `python -m readqueue --help`, which
+found an unmatched `]` at line 347; the second help command was blocked because
+the failed `exec` left an unresolved side effect. Oracle, tests, and help failed.
+No README or test module was created.
+
+| Pi turn | Elapsed | Input / output | Work tokens | Requests | Tools | Result |
+| --- | ---: | ---: | ---: | ---: | --- | --- |
+| 1 | 600,323 ms | 4,606 / 12,438 | 17,044 | 4 | 6 | outer timeout; oracle/help resolved |
+
+Pi passed the oracle and both help commands, but project test discovery failed;
+it created only `readqueue/__main__.py`. Rupi used 3,197 more work tokens and
+did not resolve. The boundary made Rupi write sooner but did not win Case 02.
+The next matched retry keeps the boundary and directs both agents to leave tests,
+help, and smoke execution to the harness; recovery feedback includes the failing
+test/help diagnostic excerpts. Case 02 remains open.

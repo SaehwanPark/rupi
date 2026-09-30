@@ -1253,13 +1253,19 @@ TUI rendering passed all budgets (3.31–3.90 µs/unit); checkpointed restore me
   Case 02 remains open. See the ledger.
 - Module-startup retry `bench-20260929-case02-entrypoint-check-low-matched4-600s`
   favored Pi: it passed oracle/help in one turn (17,102 work tokens; 600,302 ms).
-  Rupi used 10,705 work tokens over 1,190,317 ms but created no package; two
-  provider timeouts and a failed `dir /s /b` exec left it unresolved. Case 02
-  remains open. See the ledger.
-- Active Case 02 slice: compare the current `readqueue` config with the opt-in
-  `write` progress boundary. Keep Pi 0.86.1, prompts, request limits, and turn
-  deadlines matched; require oracle and help checks. The pre-change baseline is
-  pending. The project suite and README remain additional requirements.
+  Rupi used 10,705 work tokens over 1,190,317 ms but created no package; an
+  outer timeout, provider timeout, and failed `dir /s /b` exec left it unresolved.
+  Case 02 remains open. See the ledger.
+- One-request `write` progress-boundary trial
+  `bench-20260929-case02-progress-write-pi0861-low-matched4-600s` did not resolve
+  Case 02. Rupi wrote `__main__.py` before a syntax error and
+  an unresolved `exec` left `needs_reconciliation` (20,241 work tokens; 350,746 ms).
+  Pi 0.86.1 passed oracle/help (17,044; 600,323 ms) but failed project tests and
+  lacked a README/test module. See the ledger.
+- Active Case 02 retry keeps the progress boundary and directs both agents to
+  leave command execution to the harness, which supplies project-test and help
+  diagnostics for recovery. The retry must still pass the oracle and help checks;
+  README and project tests remain additional requirements.
 - Case 03 baseline `bench-20260929-case03-baseline-low-matched4-600s` was
   inconclusive. Rupi wrote only `outbox/__init__.py` before a failed recursive
   `dir` exec; it used 17,180 work tokens over 614,821 ms. Pi created no source
