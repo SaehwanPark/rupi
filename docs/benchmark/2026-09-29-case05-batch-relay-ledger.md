@@ -153,5 +153,8 @@ the oracle. This run is not a Case 05 win.
 ## Current outcome
 
 Case 05 remains open. The valid-path, oracle-status prompt did not resolve the case. Rupi used
-less time and fewer work tokens than Pi, but both failed the oracle on every turn. PR #137
-remains draft while the next prompt iteration is planned.
+less time and fewer work tokens than Pi, but both failed the oracle on every turn. The oracle
+diagnostics report connection refused for both generated servers on all turns. On Rupi's final
+turn, help failed because `batchrelay.__main__` was missing, and test discovery could not import
+`tests`. The next prompt will prioritize a runnable entrypoint, an importable test package, and a
+persistent `/healthz` route. PR #137 remains draft.

@@ -123,8 +123,12 @@ function Get-CaseGuidance([hashtable]$case) {
     }
     "05-batch-relay" {
       return (@(
-        'Use batchrelay/__main__.py as the CLI entrypoint; put core behavior in small modules.'
-        'Build a valid signed POST /batches path first.'
+        'First write batchrelay/__main__.py with the top-level parser and both subcommands.'
+        'Create tests/__init__.py in the first turn so the harness can discover tests.'
+        'Use small modules for core behavior when that keeps the implementation clear.'
+        'First make serve start a persistent HTTP server on the requested host and port.'
+        'GET /healthz returns 200 with JSON {"ok": true}; make this work before batch routes.'
+        'Then build a valid signed POST /batches path.'
         'The first new batch returns 202; an exact idempotent replay returns 200.'
         'Conflicting content for an existing batch_id returns 409.'
         'Authenticate exact raw request bytes with HMAC-SHA256.'
@@ -133,7 +137,7 @@ function Get-CaseGuidance([hashtable]$case) {
         'Commit leases before invoking the sink directly, without a shell.'
         'Bound worker --once: attempt each runnable job at most once and never poll.'
         'Retryable failures stay pending; permanent failures block dependent jobs.'
-        'After the end-to-end path works, add a README, tests/__init__.py, and focused tests.'
+        'After health, signed admission, and worker flow work, add a README and focused tests.'
         'The harness runs checks each turn; do not repeat checks or start the service.'
         'Never inspect the external oracle.'
       ) -join [Environment]::NewLine)
@@ -390,15 +394,19 @@ directories to its extended Windows path with `cd` or `cd /d`.
     }
   } elseif ($case.Id -eq "05-batch-relay") {
     $caseSpecificInstructions = @(
-      'Use batchrelay/__main__.py as the CLI entrypoint; put core behavior in small modules.'
-      'Build a valid signed POST /batches path first.'
+      'First write batchrelay/__main__.py with the top-level parser and both subcommands.'
+      'Create tests/__init__.py in the first turn so the harness can discover tests.'
+      'Use small modules for core behavior when that keeps the implementation clear.'
+      'First make serve start a persistent HTTP server on the requested host and port.'
+      'GET /healthz returns 200 with JSON {"ok": true}; make this work before batch routes.'
+      'Then build a valid signed POST /batches path.'
       'The first new batch returns 202; an exact idempotent replay returns 200.'
       'Conflicting content for an existing batch_id returns 409.'
       'Authenticate exact raw request bytes with HMAC-SHA256.'
       'Validate all dependencies before inserting the full batch atomically.'
       'Commit leases before invoking the sink directly, without a shell.'
       'Bound worker --once: attempt each runnable job at most once and never poll.'
-      'After the end-to-end path works, add a README, tests/__init__.py, and focused tests.'
+      'After health, signed admission, and worker flow work, add a README and focused tests.'
       'The harness runs checks each turn; do not repeat checks or start the service.'
       'Never inspect the external oracle.'
     )
@@ -483,6 +491,9 @@ function Get-RecoveryPrompt([hashtable]$case, [object]$verification) {
   $recoveryHeader = if ($case.Id -eq "05-batch-relay") {
     'Use the spec read in the initial turn and harness results; do not reread SPEC.md. ' +
       'Inspect existing files before editing and preserve working behavior. ' +
+      'If batchrelay/__main__.py is missing, create it first. ' +
+      'Add tests/__init__.py if it is missing. ' +
+      'First make serve keep a persistent server running with GET /healthz returning 200. ' +
       'Use small modules when they keep the service and worker clear. ' +
       'A valid new batch returns 202; exact replay returns 200; conflicting content returns 409. ' +
       'Then add README and focused tests. Work only in this workspace; ' +
@@ -571,6 +582,8 @@ If anything remains incomplete, state it instead of claiming success.
   if ($case.Id -eq "05-batch-relay" -and
       (-not $prompt.Contains('do not reread SPEC.md.') -or
        -not $prompt.Contains('Recovery feedback gives only the oracle pass/fail status.') -or
+       -not $prompt.Contains('If batchrelay/__main__.py is missing, create it first.') -or
+       -not $prompt.Contains('Add tests/__init__.py if it is missing.') -or
        $prompt.Contains('Read SPEC.md and inspect the files already present.'))) {
     throw 'Case 05 recovery prompt must reuse the embedded SPEC and defer' +
       ' verification to the harness.'

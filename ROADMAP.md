@@ -1330,7 +1330,11 @@ TUI rendering passed all budgets (3.31–3.90 µs/unit); checkpointed restore me
   also inconclusive: neither agent resolved in four turns. Rupi used 25,136 work tokens over
   621,025 ms; Pi used 51,970 over 2,401,259 ms. Rupi was 1,780,234 ms faster and used 26,834
   fewer work tokens, but both failed the oracle every turn. Rupi's tests and help checks failed on
-  every turn; Pi passed project tests and help on its final turn. Case 05 remains open; see the
+  every turn; Pi passed project tests and help on its final turn. Oracle diagnostics reported
+  connection refused for both servers on every turn. Rupi's final help diagnostics reported a
+  missing `batchrelay.__main__`, and test discovery could not import `tests`. The next prompt will
+  prioritize an executable entrypoint, an importable test package, and persistent `/healthz`.
+  Case 05 remains open; see the
   [Case 05 ledger](docs/benchmark/2026-09-29-case05-batch-relay-ledger.md).
 
   Case 06 ran with the pinned Pi 0.86.1 baseline. Pi resolved on turn 4 after its outer timeout,
