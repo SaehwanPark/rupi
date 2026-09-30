@@ -109,8 +109,49 @@ tests, and all help checks failed in every turn. Neither agent resolved, so the 
 inconclusive: Rupi was 26,001 ms faster but used 40,567 more work tokens. This run did not
 reproduce the prior Pi turn-3 oracle pass.
 
+## Outcome of the read-once, entrypoint-first iteration
+
+Case 05 remained open after this iteration. The entrypoint-first prompt improved Rupi's help
+checks, but neither agent resolved and Rupi used more work tokens than Pi. The next experiment
+returned to modular behavior code, prioritized a valid signed batch, and provided only the
+oracle pass/fail result during recovery.
+
+## Valid-path, oracle-status recovery prompt rerun
+
+Run: `bench-20260930-case05-valid-path-oracle-status-r2-grace6-cap8-pi0861-low-matched4-600s`.
+This used the published Pi 0.86.1 package, low reasoning, four turns, 600-second outer timeouts,
+eight requests per turn, and a 594-second Rupi provider timeout. Pi ran from an isolated npm
+prefix with package install scripts disabled. The prompt used modular behavior code and called
+out the SPEC's valid batch status codes: 202 for first acceptance, 200 for exact idempotent
+replay, and 409 for conflicting content. Recovery included the oracle pass/fail result, while
+leaving oracle diagnostics and source hidden. Requests count model requests started; work tokens
+are inference input plus output. Check values are exit codes (0 means pass).
+
+| Rupi turn | Elapsed | Input / output | Work tokens | Requests | Tools | Oracle / tests | Help (top / serve / worker) | Result |
+| --- | ---: | ---: | ---: | ---: | ---: | --- | --- | --- |
+| 1 | 600,351 ms | 13,968 / 9,681 | 23,649 | 5 | 4 | 1 / 1 | 1 / 1 / 1 | outer timeout |
+| 2 | 17,626 ms | 1,319 / 168 | 1,487 | 1 | 1 | 1 / 1 | 1 / 1 / 1 | completed |
+| 3 | 1,569 ms | 0 / 0 | 0 | 0 | 0 | 1 / 1 | 1 / 1 / 1 | no inference usage |
+| 4 | 1,479 ms | 0 / 0 | 0 | 0 | 0 | 1 / 1 | 1 / 1 / 1 | no inference usage |
+
+Rupi did not resolve after four turns. It used 25,136 work tokens over 621,025 ms. Its oracle,
+project tests, and all three help checks exited 1 on every turn. It used inference in turns 1–2;
+turns 3–4 had no inference requests.
+
+| Pi turn | Elapsed | Input / output | Work tokens | Requests | Tools | Oracle / tests | Help (top / serve / worker) | Result |
+| --- | ---: | ---: | ---: | ---: | ---: | --- | --- | --- |
+| 1 | 600,403 ms | 5,633 / 10,766 | 16,399 | 9 | 9 | 1 / 1 | 1 / 1 / 1 | outer timeout |
+| 2 | 600,234 ms | 3,018 / 9,156 | 12,174 | 6 | 6 | 1 / 1 | 1 / 1 / 1 | outer timeout |
+| 3 | 600,320 ms | 3,517 / 9,857 | 13,374 | 6 | 6 | 1 / 5 | 0 / 0 / 0 | outer timeout |
+| 4 | 600,302 ms | 977 / 9,046 | 10,023 | 8 | 8 | 1 / 0 | 0 / 0 / 0 | outer timeout |
+
+Pi did not resolve after four turns. It used 51,970 work tokens over 2,401,259 ms. Its oracle
+exited 1 every turn; project tests exited 1, 1, 5, and 0, while all help checks passed on turns
+3–4. Rupi was 1,780,234 ms faster and used 26,834 fewer work tokens, but neither agent passed
+the oracle. This run is not a Case 05 win.
+
 ## Current outcome
 
-Case 05 remains open. The read-once, entrypoint-first prompt improved first-turn help behavior,
-but neither agent resolved and Rupi still used more work tokens than Pi. PR #137 remains draft
-while the local provider behavior is checked before another matched run.
+Case 05 remains open. The valid-path, oracle-status prompt did not resolve the case. Rupi used
+less time and fewer work tokens than Pi, but both failed the oracle on every turn. PR #137
+remains draft while the next prompt iteration is planned.

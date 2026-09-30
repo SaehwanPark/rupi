@@ -1324,13 +1324,13 @@ TUI rendering passed all budgets (3.31–3.90 µs/unit); checkpointed restore me
   test discovery. The earlier unversioned result is provisional. Case 04 remains open; see its
   [Case 04 ledger](docs/benchmark/2026-09-29-case04-webhook-inbox-ledger.md).
 
-  Case 05's pinned baseline was mixed; both agents resolved in turn 3, with Rupi faster but using
-  more work tokens. The embedded-spec prompt rerun was a Pi win, but the read-once entrypoint
-  rerun `bench-20260930-case05-entrypoint-harness-grace6-cap8-pi0861-low-matched4-600s` was
-  inconclusive: neither agent resolved in four turns. Rupi used 46,688 work tokens over
-  2,374,937 ms; Pi used 6,121 over 2,400,938 ms. Rupi was 26,001 ms faster but used 40,567 more
-  work tokens. Both failed the oracle every turn; Rupi passed help, while Pi did not. Case 05
-  remains open; see the
+  Case 05's pinned baseline was mixed. The embedded-spec prompt rerun was a Pi win, and the
+  read-once entrypoint rerun was inconclusive. The valid-path, oracle-status rerun
+  `bench-20260930-case05-valid-path-oracle-status-r2-grace6-cap8-pi0861-low-matched4-600s` was
+  also inconclusive: neither agent resolved in four turns. Rupi used 25,136 work tokens over
+  621,025 ms; Pi used 51,970 over 2,401,259 ms. Rupi was 1,780,234 ms faster and used 26,834
+  fewer work tokens, but both failed the oracle every turn. Rupi's tests and help checks failed on
+  every turn; Pi passed project tests and help on its final turn. Case 05 remains open; see the
   [Case 05 ledger](docs/benchmark/2026-09-29-case05-batch-relay-ledger.md).
 
   Case 06 ran with the pinned Pi 0.86.1 baseline. Pi resolved on turn 4 after its outer timeout,
