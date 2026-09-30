@@ -363,3 +363,43 @@ will target those remaining oracle failures. PR #137 remains draft.
 Case 05 remains open. The eighth health-first rerun was a Pi win: Pi resolved in turn 3, while
 Rupi remained unresolved after four turns. The next iteration will focus on batch-cycle handling
 and worker delivery.
+
+## Ninth prompt iteration: HTTP contract before worker
+
+Run: `bench-20260930-case05-http-contract-first-r9-grace6-cap8-pi0861-low-matched4-600s`.
+Settings matched the eighth run: Pi 0.86.1, low reasoning, four turns, 600-second outer timeouts,
+eight requests per turn, and a 594-second Rupi provider timeout. Check values are exit codes
+(0 means pass). Help codes list top-level, serve, and worker in that order.
+
+| Turn | ms | Input / output | Work | Req. | Tools | Oracle / tests | Help exits | Result |
+| ---: | ---: | ---: | ---: | ---: | ---: | --- | --- | --- |
+| 1 | 573,198 ms | 28,426 / 9,543 | 37,969 | 8 | 10 | 1 / 1 | 1 / 1 / 1 | budget exhausted |
+| 2 | 600,320 ms | 13,060 / 1,528 | 14,588 | 3 | 2 | 1 / 1 | 1 / 1 / 1 | outer timeout |
+| 3 | 600,271 ms | 9,291 / 5,026 | 14,317 | 5 | 7 | 1 / 1 | 1 / 1 / 1 | outer timeout |
+| 4 | 600,259 ms | 9,297 / 4,095 | 13,392 | 3 | 3 | 1 / 1 | 1 / 1 / 1 | outer timeout |
+
+Rupi remained unresolved and no oracle, project-test, or help check passed. It used 80,266 work
+tokens over 2,374,048 ms, 60,074 input tokens, 20,192 output tokens, 19 requests, and 22 tool
+requests.
+
+| Turn | ms | Input / output | Work | Req. | Tools | Oracle / tests | Help exits | Result |
+| ---: | ---: | ---: | ---: | ---: | ---: | --- | --- | --- |
+| 1 | 600,372 ms | 7,039 / 11,949 | 18,988 | 5 | 11 | 1 / 1 | 1 / 1 / 1 | outer timeout |
+| 2 | 600,321 ms | 3,334 / 10,211 | 13,545 | 6 | 7 | 1 / 1 | 1 / 1 / 1 | outer timeout |
+| 3 | 600,298 ms | 8,644 / 8,431 | 17,075 | 4 | 5 | 1 / 5 | 0 / 0 / 0 | outer timeout |
+| 4 | 600,334 ms | 1,216 / 8,493 | 9,709 | 2 | 2 | 1 / 1 | 0 / 0 / 0 | outer timeout |
+
+Pi also remained unresolved. It used 59,317 work tokens over 2,401,325 ms, with 20,233 input
+tokens, 39,084 output tokens, 17 requests, and 25 tool requests. The oracle and project tests
+failed every turn; help passed on turns 3–4. Rupi was 27,277 ms faster but used 20,949 more work
+tokens, so this run is inconclusive.
+
+The prompt did not bring Rupi to passing local checks: its CLI help, project tests, and oracle all
+failed on every turn. The next iteration will diagnose its generated project and turn feedback
+before changing the prompt again. PR #137 remains draft.
+
+## Current outcome
+
+Case 05 remains open. The ninth HTTP-contract-first rerun was inconclusive: neither agent resolved
+the oracle. Rupi was faster but used more work tokens, and all Rupi checks failed every turn. The
+next iteration will diagnose why it did not reach a passing CLI or project-test state.
