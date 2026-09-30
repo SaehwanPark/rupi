@@ -109,3 +109,38 @@ The next retry retains entrypoint-first guidance and adds explicit SQLite
 shutdown cleanup guidance. It lowers the matched per-turn request cap to six,
 which is enough for Pi's resolving turn in this run, while keeping four turns
 and 600-second deadlines.
+
+## Shutdown-guidance, cap-six retry
+
+Run: `bench-20260930-case03-sqlite-shutdown-cap6-pi0861-low-matched4-600s`.
+
+The run retained byte-matched prompts, Pi 0.86.1, low reasoning, four turns,
+and 600-second outer deadlines. Both agents produced no source files and failed
+project-test, oracle, and help checks.
+
+| Rupi turn | Elapsed | Work tokens | Requests | Result |
+| --- | ---: | ---: | ---: | --- |
+| 1 | 588,969 ms | 3,926 | 2 | provider timeout; read only |
+| 2 | 571,635 ms | 0 | 1 | provider timeout |
+| 3 | 573,220 ms | 0 | 1 | provider timeout |
+| 4 | 590,807 ms | 1,382 | 2 | provider timeout after `grep` |
+
+Rupi used 5,308 work tokens over 2,324,631 ms. Its request timed out at
+570,000 ms on the first turn after the progress boundary required a `write`.
+The later turns also hit provider timeouts before creating source.
+
+| Pi turn | Elapsed | Work tokens | Result |
+| --- | ---: | ---: | --- |
+| 1 | 600,311 ms | 4,938 | outer timeout |
+| 2 | 600,263 ms | 0 | outer timeout |
+| 3 | 600,341 ms | 0 | outer timeout |
+| 4 | 600,231 ms | 0 | outer timeout |
+
+Pi used 4,938 work tokens over 2,401,146 ms and created no source. Neither
+agent resolved. Rupi was 76,515 ms faster but used 370 more tokens, so the run
+is inconclusive rather than a win. See the turn logs in the run artifacts.
+
+The next retry will restore the eight-request cap and reduce the Rupi provider
+timeout grace from 30 seconds to six seconds. This gives each 600-second turn a
+594-second provider request before the outer watchdog, while keeping all other
+benchmark settings and the prompt unchanged.

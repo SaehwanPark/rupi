@@ -10,6 +10,8 @@ param(
   [int]$MaxTurns = 4,
   [ValidateRange(30, 3600)]
   [int]$TurnTimeoutSeconds = 900,
+  [ValidateRange(1, 300)]
+  [int]$ProviderTimeoutGraceSeconds = 30,
   [ValidateRange(1, 100)]
   [int]$MaxModelRequestsPerTurn = 24,
   [ValidateSet("off", "low")]
@@ -18,6 +20,13 @@ param(
 )
 
 $ErrorActionPreference = "Stop"
+$script:providerTimeoutGraceSeconds = [int][math]::Min(
+  $ProviderTimeoutGraceSeconds,
+  [math]::Max(1, [math]::Floor($TurnTimeoutSeconds / 10))
+)
+$script:providerRequestTimeoutMs = [int](
+  ($TurnTimeoutSeconds - $script:providerTimeoutGraceSeconds) * 1000
+)
 $repoRoot = (Resolve-Path (Join-Path $PSScriptRoot "..")).Path
 $artifactRoot = Join-Path $repoRoot ".benchmark\runs"
 if ([string]::IsNullOrWhiteSpace($RunId)) {
@@ -526,11 +535,7 @@ function New-BenchmarkWorkspace([hashtable]$case, [string]$agentRoot, [string]$t
         $config.endpoints[0].capabilities.max_output_tokens = 16384
       }
       # Let the runtime handle its provider timeout before the outer turn watchdog stops it.
-      $timeoutGraceSeconds = [int][math]::Min(
-        30,
-        [math]::Max(1, [math]::Floor($TurnTimeoutSeconds / 10))
-      )
-      $reqTimeout = ($TurnTimeoutSeconds - $timeoutGraceSeconds) * 1000
+      $reqTimeout = $script:providerRequestTimeoutMs
       if ($null -eq $config.endpoints[0].PSObject.Properties["request_timeout_ms"]) {
         $config.endpoints[0] | Add-Member -MemberType NoteProperty -Name request_timeout_ms -Value $reqTimeout
       } else {
@@ -876,6 +881,8 @@ $summary = [ordered]@{
   endpoint = "http://127.0.0.1:8000/v1"
   max_turns = $MaxTurns
   turn_timeout_seconds = $TurnTimeoutSeconds
+  provider_timeout_grace_seconds = $script:providerTimeoutGraceSeconds
+  provider_request_timeout_ms = $script:providerRequestTimeoutMs
   results = @($results)
 }
 Write-Json (Join-Path $runRoot "results.json") $summary

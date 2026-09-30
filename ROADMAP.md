@@ -1282,9 +1282,17 @@ TUI rendering passed all budgets (3.31–3.90 µs/unit); checkpointed restore me
   SQLite files remained locked during cleanup. Rupi passed help but its final
   project test run had one worker-test error; Pi lacked project tests. Case 03
   remains open. See the ledger.
-- The next Case 03 retry keeps entrypoint-first guidance, adds SQLite shutdown
-  cleanup guidance, and lowers the matched request cap to six. Keep Pi 0.86.1,
-  four turns, 600-second deadlines, and the one-request `write` boundary.
+- Shutdown-guidance, cap-six retry
+  `bench-20260930-case03-sqlite-shutdown-cap6-pi0861-low-matched4-600s` was
+  inconclusive. Both agents created no source and failed oracle/help/test checks.
+  Rupi used 5,308 work tokens over 2,324,631 ms; Pi used 4,938 over 2,401,146 ms.
+  Rupi was 76,515 ms faster but used 370 more tokens. Its provider request timed
+  out at 570 seconds after the progress boundary required a first `write`. Case
+  03 remains open; see the ledger.
+- The next retry restores the eight-request cap and reduces the Rupi provider
+  timeout grace to six seconds (594-second request timeout under the matched
+  600-second outer deadline). Keep the same prompt, Pi 0.86.1, low reasoning,
+  four turns, and the one-request `write` boundary.
 - Pinned Case 04 run `bench-20260929-case04-pi0861-low-matched4-600s` recorded
   `pi_version: 0.86.1` but was inconclusive: neither agent resolved in four turns.
   Rupi used 62,291 work tokens over 2,401,168 ms; Pi used 6,284 over 2,401,033 ms.
