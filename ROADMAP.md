@@ -1351,6 +1351,15 @@ TUI rendering passed all budgets (3.31–3.90 µs/unit); checkpointed restore me
   will make the server module itself the first deliverable. Case 05 remains open; see the
   [Case 05 ledger](docs/benchmark/2026-09-29-case05-batch-relay-ledger.md).
 
+  The server-module-first rerun
+  `bench-20260930-case05-server-module-first-smoke-r6-grace6-cap8-pi0861-low-matched4-600s`
+  was also a Pi win. Pi resolved in turn 2 with 31,543 work tokens over 1,200,648 ms; Rupi did
+  not resolve after four turns, using 26,694 work tokens over 2,390,898 ms. Rupi's two project
+  tests and all help checks passed, but oracle diagnostics reported `404 unknown path` for batch
+  admission and invalid-signature requests. The next prompt will prioritize signed batch
+  admission in the same first slice as server health. See the
+  [Case 05 ledger](docs/benchmark/2026-09-29-case05-batch-relay-ledger.md).
+
   Case 06 ran with the pinned Pi 0.86.1 baseline. Pi resolved on turn 4 after its outer timeout,
   passing the oracle, all 61 project tests, and every help check. Rupi did not resolve; its oracle
   runs could not reach a healthy server, test discovery could not import `tests`, and all help
