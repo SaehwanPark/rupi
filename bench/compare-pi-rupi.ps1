@@ -123,14 +123,15 @@ function Get-CaseGuidance([hashtable]$case) {
     }
     "05-batch-relay" {
       return (@(
-        'First write batchrelay/__main__.py with the parser and dispatch for serve and worker.'
-        'Create tests/__init__.py in the first turn so the harness can discover tests.'
-        'Route serve to batchrelay.server.run and keep that process alive.'
-        'Make batchrelay.server.run bind the configured host and port, then call serve_forever().'
-        'GET /healthz returns 200 JSON with Content-Type application/json and {"ok": true}.'
-        'Add tests/test_server.py with a subprocess test of documented serve and health.'
-        'Choose an available port in the test and stop the server process during cleanup.'
-        'Keep the first slice to CLI help, server startup, and health; defer batch and worker code.'
+        'First implement batchrelay/server.py with run(db, secret, host, port).'
+        'Bind the configured host and port, then keep the server alive with serve_forever().'
+        'Implement GET /healthz as HTTP 200 application/json with {"ok": true}.'
+        'Then wire python -m batchrelay serve to batchrelay.server.run.'
+        'Create tests/__init__.py and tests/test_server.py in the first turn.'
+        'The subprocess test starts the documented serve command on an available port.'
+        'It polls /healthz, confirms the process stays alive, and stops it during cleanup.'
+        'Do not stop at a help-only __main__.py; require the discovered health test to pass.'
+        'Defer batch admission and worker behavior until server startup and health work.'
         'Use small modules for core behavior when that keeps the implementation clear.'
         'Then build a valid signed POST /batches path.'
         'The first new batch returns 202; an exact idempotent replay returns 200.'
@@ -398,14 +399,15 @@ directories to its extended Windows path with `cd` or `cd /d`.
     }
   } elseif ($case.Id -eq "05-batch-relay") {
     $caseSpecificInstructions = @(
-      'First write batchrelay/__main__.py with the parser and dispatch for serve and worker.'
-      'Create tests/__init__.py in the first turn so the harness can discover tests.'
-      'Route serve to batchrelay.server.run and keep that process alive.'
-      'Make batchrelay.server.run bind the configured host and port, then call serve_forever().'
-      'GET /healthz returns 200 JSON with Content-Type application/json and {"ok": true}.'
-      'Add tests/test_server.py with a subprocess test of documented serve and health.'
-      'Choose an available port in the test and stop the server process during cleanup.'
-      'Keep the first slice to CLI help, server startup, and health; defer batch and worker code.'
+      'First implement batchrelay/server.py with run(db, secret, host, port).'
+      'Bind the configured host and port, then keep the server alive with serve_forever().'
+      'Implement GET /healthz as HTTP 200 application/json with {"ok": true}.'
+      'Then wire python -m batchrelay serve to batchrelay.server.run.'
+      'Create tests/__init__.py and tests/test_server.py in the first turn.'
+      'The subprocess test starts the documented serve command on an available port.'
+      'It polls /healthz, confirms the process stays alive, and stops it during cleanup.'
+      'Do not stop at a help-only __main__.py; require the discovered health test to pass.'
+      'Defer batch admission and worker behavior until server startup and health work.'
       'Use small modules for core behavior when that keeps the implementation clear.'
       'Then build a valid signed POST /batches path.'
       'The first new batch returns 202; an exact idempotent replay returns 200.'
@@ -499,12 +501,14 @@ function Get-RecoveryPrompt([hashtable]$case, [object]$verification) {
   $recoveryHeader = if ($case.Id -eq "05-batch-relay") {
     'Use the spec read in the initial turn and harness results; do not reread SPEC.md. ' +
       'Inspect existing files before editing and preserve working behavior. ' +
-      'If batchrelay/__main__.py is missing, create it first. ' +
-      'Add tests/__init__.py if it is missing. ' +
-      'Route serve to batchrelay.server.run; do not return after parsing its arguments. ' +
-      'Make server.run bind the configured host and port and call serve_forever(). ' +
-      'Add tests/test_server.py to start the documented command and check GET /healthz. ' +
-      'Make /healthz return 200 JSON before implementing batch or worker behavior. ' +
+      'If batchrelay/server.py is missing, create it before wiring serve to that module. ' +
+      'Do not treat a help-only __main__.py as a working server. ' +
+      'Add tests/__init__.py and tests/test_server.py if missing. ' +
+      'Make server.run bind the configured host and port, then call serve_forever(). ' +
+      'The subprocess test must start the documented command and poll GET /healthz. ' +
+      'It confirms the server stays alive and stops it during cleanup. ' +
+      'Make /healthz return HTTP 200 application/json with {"ok": true}. ' +
+      'Do this before batch or worker behavior. ' +
       'Use small modules when they keep the service and worker clear. ' +
       'A valid new batch returns 202; exact replay returns 200; conflicting content returns 409. ' +
       'Then add README and focused tests. Work only in this workspace; ' +
@@ -593,12 +597,12 @@ If anything remains incomplete, state it instead of claiming success.
   if ($case.Id -eq "05-batch-relay" -and
       (-not $prompt.Contains('do not reread SPEC.md.') -or
        -not $prompt.Contains('Recovery feedback gives only the oracle pass/fail status.') -or
-       -not $prompt.Contains('If batchrelay/__main__.py is missing, create it first.') -or
-       -not $prompt.Contains('Add tests/__init__.py if it is missing.') -or
        -not $prompt.Contains(
-         'Route serve to batchrelay.server.run; do not return after parsing its arguments.') -or
+         'If batchrelay/server.py is missing, create it before wiring serve to that module.') -or
+       -not $prompt.Contains('Do not treat a help-only __main__.py as a working server.') -or
+       -not $prompt.Contains('Add tests/__init__.py and tests/test_server.py if missing.') -or
        -not $prompt.Contains(
-         'Add tests/test_server.py to start the documented command and check GET /healthz.') -or
+         'Make server.run bind the configured host and port, then call serve_forever().') -or
        $prompt.Contains('Read SPEC.md and inspect the files already present.'))) {
     throw 'Case 05 recovery prompt must reuse the embedded SPEC and defer' +
       ' verification to the harness.'
