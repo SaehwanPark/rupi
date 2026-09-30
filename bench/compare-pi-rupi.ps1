@@ -1002,6 +1002,11 @@ if ($Agent -ne "rupi") {
 if (-not (Test-Path $rupiBinary)) { throw "Missing $rupiBinary; run cargo build --bin rupi first." }
 New-Item -ItemType Directory -Force -Path $runRoot | Out-Null
 $selectedAgents = if ($Agent -eq "all") { @("rupi", "pi") } else { @($Agent) }
+$recoveryFeedbackScope = if (@($cases | Where-Object { $_.Id -eq "05-batch-relay" }).Count -gt 0) {
+  "project_tests_and_help;case05_oracle_status_only"
+} else {
+  "project_tests_and_help"
+}
 $results = [Collections.Generic.List[object]]::new()
 foreach ($case in $cases) {
   foreach ($selectedAgent in $selectedAgents) {
@@ -1011,7 +1016,7 @@ foreach ($case in $cases) {
       run_id = $RunId
       pi_version = $piVersion
       thinking_level = $ThinkingLevel
-      recovery_feedback_scope = "project_tests_and_help"
+      recovery_feedback_scope = $recoveryFeedbackScope
       results = @($results)
     }
     Write-Json (Join-Path $runRoot "partial.json") $partial
@@ -1023,7 +1028,7 @@ $summary = [ordered]@{
   pi_version = $piVersion
   model = "qwen3.8-flash-next"
   thinking_level = $ThinkingLevel
-  recovery_feedback_scope = "project_tests_and_help"
+  recovery_feedback_scope = $recoveryFeedbackScope
   endpoint = "http://127.0.0.1:8000/v1"
   max_turns = $MaxTurns
   turn_timeout_seconds = $TurnTimeoutSeconds
