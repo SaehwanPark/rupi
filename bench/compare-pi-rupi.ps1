@@ -123,19 +123,18 @@ function Get-CaseGuidance([hashtable]$case) {
     }
     "05-batch-relay" {
       return (@(
-        'Use the complete Case 05 SPEC embedded in this prompt; inspect source files as needed.'
-        'Do not reread SPEC.md; use the embedded requirements.'
-        'Build the HTTP service and worker incrementally; preserve existing working behavior.'
+        'Use batchrelay/__main__.py as the first runnable implementation.'
+        'Keep CLI, server, storage, and worker in that file until the full flow works.'
+        'Add split modules, README, and tests after the full flow works.'
         'Authenticate exact raw request bytes with HMAC-SHA256.'
         'Use constant-time signature comparison before any database mutation.'
-        'Validate the full dependency graph, then insert each batch atomically.'
-        'Commit each job lease before invoking the sink directly, without a shell.'
-        'A --once worker attempts each runnable job at most once and never polls for new jobs.'
+        'Validate all dependencies before inserting the full batch atomically.'
+        'Commit leases before invoking the sink directly, without a shell.'
+        'Bound worker --once: attempt each runnable job at most once and never poll.'
         'Retryable failures stay pending; permanent failures block dependent jobs.'
-        'After core paths work, add tests/__init__.py, focused tests, and a README.'
-        'The harness runs checks after every attempt.'
-        'Do not run them or start the service yourself.'
-        'Never inspect or run the external oracle.'
+        'After core paths work, add a README, tests/__init__.py, and focused tests.'
+        'The harness runs checks each turn; do not repeat checks or start the service.'
+        'Never inspect the external oracle.'
       ) -join [Environment]::NewLine)
     }
     default {
@@ -173,8 +172,6 @@ function Get-InitialPrompt([hashtable]$case) {
   $caseSpecBlock = ""
   $specAccessOrder = if ($case.Id -eq "03-event-outbox") {
     'Implement the complete service and worker from the embedded Case 03 specification.'
-  } elseif ($case.Id -eq "05-batch-relay") {
-    'Implement the complete service and worker from the embedded Case 05 specification.'
   } else {
     'Read SPEC.md completely before acting.'
   }
@@ -182,12 +179,6 @@ function Get-InitialPrompt([hashtable]$case) {
     $specPath = Join-Path (Join-Path $repoRoot $case.Source) "SPEC.md"
     $embeddedSpec = [IO.File]::ReadAllText($specPath)
     $caseSpecBlock = "`nThe complete Case 03 specification follows:`n`n$embeddedSpec`n"
-  }
-  if ($case.Id -eq "05-batch-relay") {
-    $specPath = Join-Path (Join-Path $repoRoot $case.Source) "SPEC.md"
-    $embeddedSpec = [IO.File]::ReadAllText($specPath)
-    $caseSpecBlock = [Environment]::NewLine + "The complete Case 05 specification follows:" +
-      [Environment]::NewLine + [Environment]::NewLine + $embeddedSpec + [Environment]::NewLine
   }
   $verificationGuidance = if ($case.Id -eq "02-reading-queue") {
 @'
@@ -209,6 +200,15 @@ verification only when the harness provides its results.
       'The benchmark harness runs project tests, all three help commands, and the independent'
       'oracle after each attempt.'
       'Do not run commands, tests, help checks, or launch the HTTP service or worker.'
+      'Never inspect or run the external oracle.'
+      'Use workspace read/write tools and rely on harness feedback for recovery.'
+      'Report verification only when the harness provides its results.'
+    ) -join [Environment]::NewLine)
+  } elseif ($case.Id -eq "05-batch-relay") {
+    (@(
+      'The harness runs project tests, all three help commands, and the independent oracle after'
+      'each attempt.'
+      'Do not run commands, tests, help checks, smoke sequences, or launch the service or worker.'
       'Never inspect or run the external oracle.'
       'Use workspace read/write tools and rely on harness feedback for recovery.'
       'Report verification only when the harness provides its results.'
@@ -272,16 +272,6 @@ directories to its extended Windows path with `cd` or `cd /d`.
       'The full Case 03 specification is embedded in this prompt.'
       'Do not call `read`, `exec`, or another inspection tool before this first write.'
     )
-  } elseif ($case.Id -eq "05-batch-relay") {
-    $requiredInstructions += @(
-      'Implement the complete service and worker from the embedded Case 05 specification.'
-      'The complete Case 05 specification follows:'
-      'Do not reread SPEC.md; use the embedded requirements.'
-      'Authenticate exact raw request bytes with HMAC-SHA256.'
-      'Validate the full dependency graph, then insert each batch atomically.'
-      'A --once worker attempts each runnable job at most once and never polls for new jobs.'
-      'After core paths work, add tests/__init__.py, focused tests, and a README.'
-    )
   } else {
     $requiredInstructions += 'Read SPEC.md completely before acting'
   }
@@ -324,9 +314,6 @@ directories to its extended Windows path with `cd` or `cd /d`.
   }
   if ($case.Id -eq "03-event-outbox" -and -not $prompt.Contains($embeddedSpec)) {
     throw 'Case 03 initial prompt is missing the complete project specification.'
-  }
-  if ($case.Id -eq "05-batch-relay" -and -not $prompt.Contains($embeddedSpec)) {
-    throw 'Case 05 initial prompt is missing the complete project specification.'
   }
   $templateTokens = @(
     '{{PACKAGE}}'
@@ -411,18 +398,15 @@ directories to its extended Windows path with `cd` or `cd /d`.
     }
   } elseif ($case.Id -eq "05-batch-relay") {
     $caseSpecificInstructions = @(
-      'Build the HTTP service and worker incrementally'
-      'Do not reread SPEC.md; use the embedded requirements.'
+      'Use batchrelay/__main__.py as the first runnable implementation.'
+      'Keep CLI, server, storage, and worker in that file until the full flow works.'
       'Authenticate exact raw request bytes with HMAC-SHA256.'
-      'Use constant-time signature comparison before any database mutation.'
-      'Validate the full dependency graph, then insert each batch atomically.'
-      'Commit each job lease before invoking the sink directly, without a shell.'
-      'A --once worker attempts each runnable job at most once and never polls for new jobs.'
-      'Retryable failures stay pending; permanent failures block dependent jobs.'
-      'After core paths work, add tests/__init__.py, focused tests, and a README.'
-      'The harness runs checks after every attempt.'
-      'Do not run them or start the service yourself.'
-      'Never inspect or run the external oracle.'
+      'Validate all dependencies before inserting the full batch atomically.'
+      'Commit leases before invoking the sink directly, without a shell.'
+      'Bound worker --once: attempt each runnable job at most once and never poll.'
+      'After core paths work, add a README, tests/__init__.py, and focused tests.'
+      'The harness runs checks each turn; do not repeat checks or start the service.'
+      'Never inspect the external oracle.'
     )
   }
   foreach ($instruction in $caseSpecificInstructions) {
@@ -435,10 +419,6 @@ directories to its extended Windows path with `cd` or `cd /d`.
     $prompt.Contains('Read SPEC.md completely before acting')
   ) {
     throw 'Case 03 prompt asks the agent to inspect SPEC.md before its first write.'
-  }
-  if ($case.Id -eq "05-batch-relay" -and
-      $prompt.Contains('Read SPEC.md completely before acting')) {
-    throw 'Case 05 prompt asks the agent to reread the embedded specification.'
   }
   return $prompt
 }
@@ -491,11 +471,11 @@ function Get-RecoveryPrompt([hashtable]$case, [object]$verification) {
   $toolingGuidance = Get-WindowsToolGuidance
   $caseGuidance = Get-CaseGuidance $case
   $recoveryHeader = if ($case.Id -eq "05-batch-relay") {
-    'Use the embedded full Case 05 SPEC and harness results; do not reread SPEC.md. ' +
-      'Inspect existing source before editing and preserve working behavior. ' +
-      'Make targeted incremental changes to complete the service and worker, then the ' +
-        'README and focused tests. ' +
-      'Work only inside this workspace. Do not edit the specification, rupi config, or oracle.'
+    'Use the spec read in the initial turn and harness results; do not reread SPEC.md. ' +
+      'Inspect existing files before editing and preserve working behavior. ' +
+      'Keep service and worker in batchrelay/__main__.py until both workflows work. ' +
+      'Then add README and focused tests. Work only in this workspace; ' +
+      'do not edit the specification, config, or oracle.'
   } else {
     "Read SPEC.md and inspect the files already present. Work only inside this" +
       [Environment]::NewLine +
