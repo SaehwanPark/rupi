@@ -150,11 +150,51 @@ exited 1 every turn; project tests exited 1, 1, 5, and 0, while all help checks 
 3–4. Rupi was 1,780,234 ms faster and used 26,834 fewer work tokens, but neither agent passed
 the oracle. This run is not a Case 05 win.
 
+## Outcome of the entrypoint, tests, and health prompt
+
+The prompt made Rupi's help checks pass on turns 2–4, but its server remained unreachable and
+project test discovery found no tests. Pi's help checks failed on every turn, and its server also
+remained unreachable.
+
+## Explicit server-wiring prompt rerun
+
+Run: `bench-20260930-case05-entrypoint-health-tests-first-grace6-cap8-pi0861-low-matched4-600s`.
+This used Pi 0.86.1, low reasoning, four turns, 600-second outer timeouts, eight requests per
+turn, and a 594-second Rupi provider timeout. The prompt required an entrypoint and test package
+in the first turn, followed by a persistent `serve` process and a successful `GET /healthz`
+before batch and worker behavior. Recovery included oracle pass/fail status with local test and
+help diagnostics. Requests count model requests started; work tokens are inference input plus
+output. Check values are exit codes (0 means pass).
+
+| Rupi turn | Elapsed | Input / output | Work tokens | Requests | Tools | Oracle / tests | Help (top / serve / worker) | Result |
+| --- | ---: | ---: | ---: | ---: | ---: | --- | --- | --- |
+| 1 | 600,248 ms | 15,343 / 1,531 | 16,874 | 6 | 5 | 1 / 1 | 1 / 1 / 1 | outer timeout |
+| 2 | 600,309 ms | 1,804 / 11,388 | 13,192 | 2 | 2 | 1 / 5 | 0 / 0 / 0 | outer timeout |
+| 3 | 597,099 ms | 0 / 0 | 0 | 1 | 0 | 1 / 5 | 0 / 0 / 0 | no inference usage |
+| 4 | 600,274 ms | 906 / 51 | 957 | 2 | 1 | 1 / 5 | 0 / 0 / 0 | outer timeout |
+
+Rupi did not resolve after four turns. It used 31,023 work tokens over 2,397,930 ms. Its oracle
+failed every turn; project tests exited 1, 5, 5, and 5, with no tests discovered. Help checks
+failed on turn 1 and passed on turns 2–4.
+
+| Pi turn | Elapsed | Input / output | Work tokens | Requests | Tools | Oracle / tests | Help (top / serve / worker) | Result |
+| --- | ---: | ---: | ---: | ---: | ---: | --- | --- | --- |
+| 1 | 600,373 ms | 5,498 / 124 | 5,622 | 2 | 2 | 1 / 1 | 1 / 1 / 1 | outer timeout |
+| 2 | 600,421 ms | 1,688 / 12,570 | 14,258 | 2 | 2 | 1 / 1 | 1 / 1 / 1 | outer timeout |
+| 3 | 600,445 ms | 0 / 0 | 0 | 0 | 0 | 1 / 1 | 1 / 1 / 1 | no inference usage |
+| 4 | 600,188 ms | 1,626 / 10,954 | 12,580 | 9 | 9 | 1 / 1 | 1 / 1 / 1 | outer timeout |
+
+Pi did not resolve after four turns. It used 32,460 work tokens over 2,401,427 ms. Its oracle,
+project tests, and help checks exited 1 every turn. Both generated servers refused connections
+on every oracle run. Rupi was 3,497 ms faster and used 1,437 fewer work tokens, but neither agent
+passed the oracle, so this run is inconclusive and is not a Case 05 win.
+
 ## Current outcome
 
-Case 05 remains open. The valid-path, oracle-status prompt did not resolve the case. Rupi used
-less time and fewer work tokens than Pi, but both failed the oracle on every turn. The oracle
-diagnostics report connection refused for both generated servers on all turns. On Rupi's final
-turn, help failed because `batchrelay.__main__` was missing, and test discovery could not import
-`tests`. The next prompt will prioritize a runnable entrypoint, an importable test package, and a
-persistent `/healthz` route. PR #137 remains draft.
+Case 05 remains open. The explicit entrypoint, tests, and health prompt improved Rupi's help
+checks but did not produce a reachable server or focused tests. The fifth prompt iteration now
+requires `serve` to route through `batchrelay.server.run`, bind the configured address, and call
+`serve_forever()`. It also requires a subprocess test to launch the documented command and check
+`/healthz` before implementing batch or worker behavior. Run
+`bench-20260930-case05-server-run-health-test-grace6-cap8-pi0861-low-matched4-600s` is pending.
+PR #137 remains draft.

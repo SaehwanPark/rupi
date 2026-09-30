@@ -1334,7 +1334,13 @@ TUI rendering passed all budgets (3.31–3.90 µs/unit); checkpointed restore me
   connection refused for both servers on every turn. Rupi's final help diagnostics reported a
   missing `batchrelay.__main__`, and test discovery could not import `tests`. The next prompt will
   prioritize an executable entrypoint, an importable test package, and persistent `/healthz`.
-  Case 05 remains open; see the
+  The follow-up `bench-20260930-case05-entrypoint-health-tests-first-grace6-cap8-pi0861-low-matched4-600s`
+  also did not resolve the case. Rupi used 31,023 work tokens over 2,397,930 ms; Pi used 32,460
+  over 2,401,427 ms. Rupi was 3,497 ms faster and used 1,437 fewer work tokens, but both oracles
+  failed every turn because neither server became reachable. Rupi passed help on turns 2–4 but
+  its project test discovery ran zero tests; Pi's tests and help failed every turn. Case 05
+  remains open. The next prompt now pins `serve` to a persistent `batchrelay.server.run` and
+  requires a subprocess health check before implementing batch and worker behavior. See the
   [Case 05 ledger](docs/benchmark/2026-09-29-case05-batch-relay-ledger.md).
 
   Case 06 ran with the pinned Pi 0.86.1 baseline. Pi resolved on turn 4 after its outer timeout,
