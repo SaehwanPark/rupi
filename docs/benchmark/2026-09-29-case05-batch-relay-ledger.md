@@ -191,10 +191,45 @@ passed the oracle, so this run is inconclusive and is not a Case 05 win.
 
 ## Current outcome
 
-Case 05 remains open. The explicit entrypoint, tests, and health prompt improved Rupi's help
-checks but did not produce a reachable server or focused tests. The fifth prompt iteration now
-requires `serve` to route through `batchrelay.server.run`, bind the configured address, and call
-`serve_forever()`. It also requires a subprocess test to launch the documented command and check
-`/healthz` before implementing batch or worker behavior. Run
-`bench-20260930-case05-server-run-health-test-grace6-cap8-pi0861-low-matched4-600s` is pending.
+## Fifth prompt iteration: explicit server module and health test
+
+Run: `bench-20260930-case05-server-run-health-test-grace6-cap8-pi0861-low-matched4-600s`.
+This used Pi 0.86.1, low reasoning, four turns, 600-second outer timeouts, eight requests per
+turn, and a 594-second Rupi provider timeout. Requests count model requests started; work tokens
+are inference input plus output. Check values are exit codes (0 means pass).
+
+| Rupi turn | Elapsed | Input / output | Work tokens | Requests | Tools | Oracle / tests | Help (top / serve / worker) | Result |
+| --- | ---: | ---: | ---: | ---: | ---: | --- | --- | --- |
+| 1 | 592,511 ms | 25,653 / 9,442 | 35,095 | 8 | 7 | 1 / 1 | 0 / 0 / 0 | budget exhausted |
+| 2 | 499,006 ms | 0 / 0 | 0 | 1 | 0 | 1 / 1 | 0 / 0 / 0 | no inference usage |
+| 3 | 600,334 ms | 1,380 / 7,906 | 9,286 | 2 | 1 | 1 / 5 | 0 / 0 / 0 | outer timeout |
+| 4 | 600,262 ms | 4,110 / 9,609 | 13,719 | 4 | 3 | 1 / 5 | 0 / 0 / 0 | outer timeout |
+
+Rupi remained unresolved after four turns. It used 58,100 work tokens over 2,292,113 ms, with
+31,143 input tokens, 26,957 output tokens, 15 requests, and 11 tool requests. Oracle checks
+failed every turn, project tests failed every turn, and all help checks passed every turn.
+
+| Pi turn | Elapsed | Input / output | Work tokens | Requests | Tools | Oracle / tests | Help (top / serve / worker) | Result |
+| --- | ---: | ---: | ---: | ---: | ---: | --- | --- | --- |
+| 1 | 600,560 ms | 6,462 / 347 | 6,809 | 3 | 6 | 1 / 1 | 1 / 1 / 1 | outer timeout |
+| 2 | 600,224 ms | 1,497 / 10,711 | 12,208 | 1 | 2 | 1 / 1 | 0 / 0 / 0 | outer timeout |
+| 3 | 600,235 ms | 2,124 / 10,445 | 12,569 | 7 | 8 | 0 / 1 | 0 / 0 / 0 | resolved |
+
+Pi resolved the oracle on turn 3. It used 31,586 work tokens over 1,801,019 ms, with 10,083
+input tokens, 21,503 output tokens, 11 requests, and 16 tool requests. Its project tests failed
+on every turn; help checks failed on turn 1 and passed on turns 2–3. Pi was 491,094 ms faster and
+used 26,514 fewer work tokens. This run is a Pi win, not a Case 05 win for Rupi.
+
+The Rupi oracle diagnostics reported a refused connection on all four turns. Its generated
+`batchrelay/__main__.py` dispatched `serve` to `batchrelay.server.run`, but the generated project
+contained no `batchrelay/server.py` and no `tests/test_server.py`. This source inspection is
+consistent with, but does not independently reproduce, the oracle's connection-refused result.
+The next prompt will make `batchrelay/server.py` the first deliverable, then wire it to the
+existing CLI design and add a focused subprocess health test before batch and worker behavior.
 PR #137 remains draft.
+
+## Current outcome
+
+Case 05 remains open. The explicit server-wiring prompt did not produce a runnable Rupi server;
+Pi resolved the oracle in turn 3. The next iteration will prioritize a concrete server module
+and a discovered health test, based on the missing files found in Rupi's generated project.

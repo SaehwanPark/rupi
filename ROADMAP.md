@@ -1343,6 +1343,14 @@ TUI rendering passed all budgets (3.31–3.90 µs/unit); checkpointed restore me
   requires a subprocess health check before implementing batch and worker behavior. See the
   [Case 05 ledger](docs/benchmark/2026-09-29-case05-batch-relay-ledger.md).
 
+  The explicit server-wiring rerun `bench-20260930-case05-server-run-health-test-grace6-cap8-pi0861-low-matched4-600s`
+  was a Pi win: Pi resolved in turn 3 with 31,586 work tokens over 1,801,019 ms; Rupi remained
+  unresolved after four turns with 58,100 work tokens over 2,292,113 ms. Rupi passed help on all
+  turns but failed project tests and never exposed a healthy server. Its generated entrypoint
+  imported a missing `batchrelay.server`, and `tests/test_server.py` was absent. The next prompt
+  will make the server module itself the first deliverable. Case 05 remains open; see the
+  [Case 05 ledger](docs/benchmark/2026-09-29-case05-batch-relay-ledger.md).
+
   Case 06 ran with the pinned Pi 0.86.1 baseline. Pi resolved on turn 4 after its outer timeout,
   passing the oracle, all 61 project tests, and every help check. Rupi did not resolve; its oracle
   runs could not reach a healthy server, test discovery could not import `tests`, and all help
