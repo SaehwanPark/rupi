@@ -74,3 +74,38 @@ The next retry will require `outbox/__main__.py` as the first source write and
 keep the CLI, HTTP handler, SQLite storage, and worker there until the complete
 service and `worker --once` flow work. It will retain the one-request write
 progress boundary and shared harness-verification guidance.
+
+## Entrypoint-first retry
+
+Run: `bench-20260929-case03-entrypoint-first-progress-guidance-pi0861-low-matched4-600s`.
+
+This matched run kept byte-identical prompts, Pi 0.86.1, low reasoning, four
+turns, 600-second deadlines, and an eight-request per-turn cap.
+
+| Rupi turn | Elapsed | Work tokens | Requests | Project tests | Oracle | Help | Result |
+| --- | ---: | ---: | ---: | ---: | ---: | ---: | --- |
+| 1 | 600,467 ms | 27,910 | 5 | fail | fail | pass | outer timeout |
+| 2 | 467,054 ms | 46,608 | 9 | pass | fail | pass | unresolved |
+| 3 | 600,252 ms | 13,330 | 4 | fail | fail | pass | outer timeout |
+| 4 | 600,296 ms | 12,858 | 3 | fail | fail | pass | outer timeout |
+
+Rupi used 100,706 inference-work tokens over 2,268,069 ms. It created the CLI,
+HTTP API, worker, README, and focused tests. Help passed in every turn, but the
+oracle failed because SQLite database files remained locked during cleanup.
+The final project test run had one worker-test error: the test class overrode
+`unittest.TestCase.run` and referenced a missing `db` attribute.
+
+| Pi turn | Elapsed | Work tokens | Project tests | Oracle | Help | Result |
+| --- | ---: | ---: | ---: | ---: | ---: | --- |
+| 1 | 600,340 ms | 16,717 | fail | pass | pass | resolved |
+
+Pi's outer call timed out, but its independent oracle and all three help checks
+passed in turn 1. It created only `outbox/__init__.py` and `outbox/__main__.py`;
+project test discovery failed because `tests/` was absent. Pi used 83,989 fewer
+work tokens and was 1,667,729 ms faster than Rupi. This is a Pi win, not a
+Case 03 Rupi win. Project tests and README remain separate tracked requirements.
+
+The next retry retains entrypoint-first guidance and adds explicit SQLite
+shutdown cleanup guidance. It lowers the matched per-turn request cap to six,
+which is enough for Pi's resolving turn in this run, while keeping four turns
+and 600-second deadlines.

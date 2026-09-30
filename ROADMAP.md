@@ -1275,16 +1275,16 @@ TUI rendering passed all budgets (3.31–3.90 µs/unit); checkpointed restore me
   after four outer timeouts (6,303 tokens; 2,400,993 ms). Neither resolved.
   Case 03 remains open. See the
   [Case 03 ledger](docs/benchmark/2026-09-29-case03-event-outbox-ledger.md).
-- Shared-verification retry `bench-20260929-case03-progress-guidance-pi0861-low-matched4-600s`
-  did not resolve for either agent. Rupi used 28,639 work tokens over 2,382,396
-  ms and wrote service/storage/worker modules but omitted `outbox/__main__.py`,
-  README, and tests. Pi used 6,091 tokens over 2,401,183 ms and wrote no source.
-  Both failed oracle, help, and test discovery; Rupi was 18,787 ms faster but
-  used 22,548 more tokens, so Case 03 remains open. See the ledger.
-- The next Case 03 retry will require `outbox/__main__.py` as the first source
-  write and keep CLI, HTTP, SQLite, and worker logic there until the service and
-  `worker --once` flow work. Keep the one-request `write` progress boundary,
-  harness-managed verification, Pi 0.86.1, and matched 600-second turns.
+- Entrypoint-first retry
+  `bench-20260929-case03-entrypoint-first-progress-guidance-pi0861-low-matched4-600s`
+  was a Pi win. Pi passed oracle/help in turn 1 (16,717 work tokens; 600,340 ms),
+  while Rupi used 100,706 tokens over 2,268,069 ms and failed the oracle because
+  SQLite files remained locked during cleanup. Rupi passed help but its final
+  project test run had one worker-test error; Pi lacked project tests. Case 03
+  remains open. See the ledger.
+- The next Case 03 retry keeps entrypoint-first guidance, adds SQLite shutdown
+  cleanup guidance, and lowers the matched request cap to six. Keep Pi 0.86.1,
+  four turns, 600-second deadlines, and the one-request `write` boundary.
 - Pinned Case 04 run `bench-20260929-case04-pi0861-low-matched4-600s` recorded
   `pi_version: 0.86.1` but was inconclusive: neither agent resolved in four turns.
   Rupi used 62,291 work tokens over 2,401,168 ms; Pi used 6,284 over 2,401,033 ms.
