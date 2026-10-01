@@ -324,33 +324,36 @@ function Get-CaseGuidance([hashtable]$case, [string]$phase = "initial") {
       if ($phase -eq "initial") {
         return (@(
           'The complete Case 06 specification is embedded; do not reread SPEC.md.'
-          ('First write: create artifactpipe/__main__.py with a CLI and ' +
-            'serve/worker parsers.')
-          'Parse CLI before importing service or worker; keep all three help paths working.'
-          ('Use service.py for routes, storage.py for SQLite, ids.py for ID checks, ' +
-            'and worker.py for sink leases.')
-          'Do not use BaseHTTPRequestHandler.connection for DB state; it is the client socket.'
-          'Start with GET /healthz and signed POST /pipelines before expanding the server.'
-          ('Verify HMAC-SHA256 on exact request bytes with ' +
-            'hmac.compare_digest before JSON parsing.')
-          'Insert pipeline/jobs atomically; then add validation, idempotency, and status routes.'
-          ('Implement worker --once with ordered claims, outputs, retries, blocking, ' +
-            'reclaim, and direct argv.')
-          'Resolve declared top-level input_refs only from successful dependency outputs.'
-          'Add tests after server and worker run; finish README last.'
-          'Use only Python standard-library modules.'
-          'The harness runs tests, three help commands, and the oracle after every attempt.'
-          'Do not run commands, tests, help checks, the service, worker, or oracle.'
+          ('First tool call: write the complete artifactpipe/__main__.py application ' +
+            'in standard-library Python.')
+          'Do not inspect files or run commands before this first source write.'
+          ('Keep CLI, HTTP, SQLite, validation, and worker logic in __main__.py until ' +
+            'the full flow runs.')
+          'Provide top-level, serve, and worker help from a guarded CLI.'
+          'First implement signed POST /pipelines and GET /healthz.'
+          'Verify HMAC-SHA256 over exact raw request bytes before JSON parsing.'
+          'Persist accepted pipelines and jobs atomically.'
+          'Then add validation, idempotency, and pipeline status.'
+          'Implement worker --once with ordered DAG claims and bounded leases.'
+          'Persist outputs; support retry, blocking, and expired-lease reclaim.'
+          'Invoke sinks by direct argv and no shell.'
+          'Resolve only declared top-level input_refs from successful dependency outputs.'
+          'After the app runs, create tests/__init__.py and tests/test_artifactpipe.py.'
+          'Include an importable unittest.TestCase with at least one test_ method.'
+          'Finish README last; use only Python standard-library modules.'
+          'The harness runs tests, three help commands, and oracle after every attempt.'
+          'Do not run commands, tests, help checks, service, worker, or oracle.'
         ) -join [Environment]::NewLine)
       }
       return (@(
         'The full spec is embedded initially; do not reread it or inspect the oracle.'
-        'Use prior test/help diagnostics and oracle status; do not run checks yourself.'
-        'If help fails, repair __main__.py and lazy imports while preserving HTTP behavior.'
-        'If tests fail, fix the first diagnostic and keep a healthy server and CLI intact.'
-        ('If tests/help pass but oracle fails, finish validation, ordering, output refs, leases, ' +
-          'retries, and restart behavior.')
-        'Do not use BaseHTTPRequestHandler.connection for DB state; it is the client socket.'
+        'Use prior project-test and help diagnostics plus oracle pass/fail only.'
+        'If help fails, repair __main__.py while preserving working HTTP behavior.'
+        ('If project-test discovery exits 5, add tests/test_artifactpipe.py with a ' +
+          'TestCase and test_ method.')
+        'If tests and help pass but oracle fails, complete the reliability contract and data flow.'
+        ('Preserve working CLI and server behavior while adding missing routes and worker ' +
+          'transitions.')
         'Invoke sinks by direct argv without a shell; keep worker --once bounded and do not poll.'
         'Use standard-library modules; finish README after executable behavior.'
       ) -join [Environment]::NewLine)
@@ -723,22 +726,25 @@ directories to its extended Windows path with `cd` or `cd /d`.
   } elseif ($case.Id -eq "06-artifact-pipeline") {
     $caseSpecificInstructions = @(
       'The complete Case 06 specification is embedded; do not reread SPEC.md.'
-      ('First write: create artifactpipe/__main__.py with a CLI and ' +
-        'serve/worker parsers.')
-      'Parse CLI before importing service or worker; keep all three help paths working.'
-      ('Use service.py for routes, storage.py for SQLite, ids.py for ID checks, ' +
-        'and worker.py for sink leases.')
-      'Do not use BaseHTTPRequestHandler.connection for DB state; it is the client socket.'
-      'Start with GET /healthz and signed POST /pipelines before expanding the server.'
-      ('Verify HMAC-SHA256 on exact request bytes with ' +
-        'hmac.compare_digest before JSON parsing.')
-      'Insert pipeline/jobs atomically; then add validation, idempotency, and status routes.'
-      ('Implement worker --once with ordered claims, outputs, retries, blocking, ' +
-        'reclaim, and direct argv.')
-      'Resolve declared top-level input_refs only from successful dependency outputs.'
-      'Add tests after server and worker run; finish README last.'
-      'The harness runs tests, three help commands, and the oracle after every attempt.'
-      'Do not run commands, tests, help checks, the service, worker, or oracle.'
+      ('First tool call: write the complete artifactpipe/__main__.py application ' +
+        'in standard-library Python.')
+      'Do not inspect files or run commands before this first source write.'
+      ('Keep CLI, HTTP, SQLite, validation, and worker logic in __main__.py until ' +
+        'the full flow runs.')
+      'Provide top-level, serve, and worker help from a guarded CLI.'
+      'First implement signed POST /pipelines and GET /healthz.'
+      'Verify HMAC-SHA256 over exact raw request bytes before JSON parsing.'
+      'Persist accepted pipelines and jobs atomically.'
+      'Then add validation, idempotency, and pipeline status.'
+      'Implement worker --once with ordered DAG claims and bounded leases.'
+      'Persist outputs; support retry, blocking, and expired-lease reclaim.'
+      'Invoke sinks by direct argv and no shell.'
+      'Resolve only declared top-level input_refs from successful dependency outputs.'
+      'After the app runs, create tests/__init__.py and tests/test_artifactpipe.py.'
+      'Include an importable unittest.TestCase with at least one test_ method.'
+      'Finish README last; use only Python standard-library modules.'
+      'The harness runs tests, three help commands, and oracle after every attempt.'
+      'Do not run commands, tests, help checks, service, worker, or oracle.'
     )
   }
   foreach ($instruction in $caseSpecificInstructions) {
@@ -1041,21 +1047,24 @@ unittest suite, the project-specific help commands, and a smoke sequence.
       'Previous harness results (oracle, project tests, and three help commands):'
     $recoveryHeader =
       'The full Case 06 spec was embedded initially; do not reread it. ' +
-      'Preserve CLI/server behavior. Use local test/help feedback and ' +
-      'oracle pass/fail only; hide diagnostics. Work only in this workspace.'
+      'Preserve working CLI/server behavior. Use local test/help feedback and ' +
+      'oracle pass/fail only.'
     $verificationGuidance = @(
-      'The harness reruns tests, three help commands, and the oracle after each attempt.'
-      'Recovery exposes oracle pass/fail only and hides diagnostic output.'
-      'Do not run commands, tests, help checks, the service, worker, or oracle.'
+      'The harness reruns tests, three help commands, and oracle after every attempt.'
+      'Recovery shows oracle pass/fail only and hides diagnostic output.'
+      'Do not run commands, tests, help checks, service, worker, or oracle.'
       'Use local test/help feedback to make changes, then rely on the harness.'
     ) -join [Environment]::NewLine
-    $completionDirective =
-      'Complete the service/worker slice while preserving CLI and ' +
-      'server behavior.'
+    $completionDirective = if ($verification.project_tests.exit_code -eq 5) {
+      ('Project-test discovery exited 5; add tests/test_artifactpipe.py with a ' +
+        'TestCase and test_ method.')
+    } else {
+      'Continue the complete app from the latest project-test and help feedback.'
+    }
     $continuationDirective =
-      'Continue from local test/help feedback; use oracle status only, never its diagnostics.'
+      'Preserve the passing CLI and server; use oracle pass/fail only, never its diagnostics.'
     $priorityDirective =
-      'Prioritize healthy server and signed admission, then output refs and worker transitions.'
+      'Keep signed admission, output references, and worker state transitions correct.'
   }
   $prompt = @"
 Continue the incomplete $($case.Package) implementation in this workspace.
@@ -1196,8 +1205,10 @@ If anything remains incomplete, state it instead of claiming success.
       'Independent acceptance oracle: '
       '(diagnostic details hidden).'
       'The full Case 06 spec was embedded initially; do not reread it.'
-      'Recovery exposes oracle pass/fail only and hides diagnostic output.'
-      'Do not run commands, tests, help checks, the service, worker, or oracle.'
+      'Recovery shows oracle pass/fail only and hides diagnostic output.'
+      ('If project-test discovery exits 5, add tests/test_artifactpipe.py with a ' +
+        'TestCase and test_ method.')
+      'Do not run commands, tests, help checks, service, worker, or oracle.'
     )
     foreach ($requirement in $recoveryRequirements) {
       if (-not $prompt.Contains($requirement)) {
