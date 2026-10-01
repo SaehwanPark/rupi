@@ -247,8 +247,7 @@ no generated application files. Pi had used two turns without resolving, so its 
 resolution was turn 3. Rupi therefore won by resolving in fewer turns. Further Pi turns were
 stopped after the fewer-turn result was decisive.
 
-Case 04's comparison objective is met. R1 through R6 remain historical Pi wins. PR #136 is
-awaiting post-documentation CI before the authorized merge.
+Case 04's comparison objective is met. R1 through R6 remain historical Pi wins.
 
 ## Verification
 
