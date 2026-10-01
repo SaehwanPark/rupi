@@ -714,7 +714,7 @@ Case 05 remains open after R15's inconclusive comparison. Rupi passes CLI and he
 no HTTP test module; Pi reached an HTTP test module with passing local checks. Both oracles failed.
 R16 should focus on getting Rupi through one tested signed POST within the four-turn cap.
 
-## Sixteenth prompt iteration — pending
+## Sixteenth prompt iteration — complete; inconclusive
 
 Run: `bench-20261001-case05-frontload-tests-r16-grace6-cap8-pi0861-low-matched4-600s`.
 
@@ -722,10 +722,46 @@ R16 keeps the runnable CLI, health, and one signed-POST scope. It explicitly req
 turn to create `tests/__init__.py`, `tests/test_cli.py`, `tests/test_server.py`, and
 `tests/test_http.py`; recovery continues to focus on the signed-admission path while preserving
 health. Full validation, status, and worker behavior remain deferred. The all-case dry run,
-`git diff --check`, and changed-line length check passed. Prompt commit `14094bd` is pushed; the
-matched run and CI are pending. PR #137 remains draft.
+`git diff --check`, and changed-line length check passed. Prompt commit `14094bd` is pushed, and CI
+for documentation head `283086a` passed on Ubuntu, macOS, and Windows. PR #137 remains draft.
+
+### Rupi result
+
+Rupi remained unresolved after four turns, using 55,423 work tokens over 2,395,977 ms (26,111
+input, 29,312 output), 17 started/16 completed model requests, and 13 tool requests with no tool
+failures. Project tests passed on turns 3–4, all three help checks passed every turn, and the oracle
+failed every turn. The final snapshot contains `batchrelay/__main__.py` and CLI, server, and HTTP
+tests; it has no `batchrelay/server.py` or worker.
+
+| Turn | ms | In/out | Work | Req start/done | Tools | Tests | Oracle | Help | Call |
+| ---: | ---: | ---: | ---: | ---: | ---: | ---: | --- | --- | --- |
+| 1 | 600,178 | 10,199/11,682 | 21,881 | 3/2 | 2 | 1 | fail | 0/0/0 | timeout |
+| 2 | 595,218 | 0/0 | 0 | 1/2 | 0 | 1 | fail | 0/0/0 | complete |
+| 3 | 600,220 | 9,472/9,021 | 18,493 | 5/4 | 4 | 0 | fail | 0/0/0 | timeout |
+| 4 | 600,361 | 6,440/8,609 | 15,049 | 8/8 | 7 | 0 | fail | 0/0/0 | timeout |
+
+### Pi result
+
+Pi remained unresolved after four outer timeouts, using 19,394 work tokens over 2,401,188 ms
+(8,172 input, 11,222 output), seven model requests, and 11 tool requests. Project tests, all help
+checks, and the oracle failed every turn. Its final snapshot contains `batchrelay/__init__.py`,
+`ids.py`, `signing.py`, `store.py`, and `validation.py`, with no tests or runnable entrypoint.
+
+| Turn | ms | In/out | Work | Req start/done | Tools | Tests | Oracle | Help | Call |
+| ---: | ---: | ---: | ---: | ---: | ---: | ---: | --- | --- | --- |
+| 1 | 600,479 | 5,762/232 | 5,994 | 3/3 | 4 | 1 | fail | 1/1/1 | timeout |
+| 2 | 600,265 | 0/0 | 0 | 0/0 | 0 | 1 | fail | 1/1/1 | timeout |
+| 3 | 600,223 | 1,168/146 | 1,314 | 1/1 | 1 | 1 | fail | 1/1/1 | timeout |
+| 4 | 600,221 | 1,242/10,844 | 12,086 | 3/3 | 6 | 1 | fail | 1/1/1 | timeout |
+
+Rupi was 5,211 ms faster, while Pi used 36,029 fewer work tokens. Neither resolved the oracle,
+so R16 is inconclusive. Rupi's four required test files arrived by turn 4, but its server remained
+in `__main__.py` and the oracle still failed. R17 should reduce first-turn scope to a runnable
+health and signed-admission server path with focused checks, then preserve it during recovery.
 
 ## Current outcome
 
-R16's prompt is committed and pushed. The matched run is pending; Case 05 remains open based on
-R15's inconclusive result.
+Case 05 remains open after R16's inconclusive comparison. Rupi passed tests on turns 3–4 and help
+every turn, but the oracle failed every turn. Pi failed tests, help, and oracle every turn. Rupi
+was 5,211 ms faster; Pi used 36,029 fewer work tokens. R17 should focus on a runnable signed-
+admission server path before broad test scaffolding. PR #137 remains draft.
