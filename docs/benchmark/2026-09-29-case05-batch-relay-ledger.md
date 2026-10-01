@@ -810,24 +810,55 @@ inconclusive, with a measured effort advantage for Pi. Rupi reached a separate s
 turn 3 but did not add an HTTP test by turn 4; Pi did. R18 should combine persistent health and
 one signed POST in a single recovery slice after CLI discovery passes, then preserve that path.
 
-## Current outcome
-
-Case 05 remains open after R17's inconclusive matched retry. Neither agent resolved the oracle;
-Pi was 750 ms faster and used 28,483 fewer work tokens. Both passed tests on turns 2–4 and help on
-every turn, while Pi's final snapshot also includes `tests/test_http.py`. R18 should combine health
-and signed admission in one recovery slice. PR #137 remains draft.
-
-## Eighteenth prompt iteration — pending
+## Eighteenth prompt iteration — complete; verified Rupi win
 
 Run: `bench-20261001-case05-health-admission-r18-grace6-cap8-pi0861-low-matched4-600s`.
 
 Prompt commit `c0c8b01` removes the requirement to pass CLI help before creating HTTP routes. It
 combines persistent health and one signed POST in the first server slice and retains focused CLI,
 server, and HTTP tests. Full validation, status, and worker behavior remain deferred. The all-case
-dry run, `git diff --check`, and changed-line length check passed. The matched run is pending. PR
-#137 remains draft.
+dry run, `git diff --check`, and changed-line length check passed. The matched run is complete. PR
+CI for documentation head `fbef625` passed on Ubuntu, macOS, and Windows. PR #137 remains draft.
+
+### Rupi result
+
+Rupi resolved the oracle in turn 4, using 87,534 work tokens over 2,401,286 ms (52,467 input,
+35,067 output), 18 started/17 completed model requests, and 21 tool requests with one tool failure.
+Project tests passed on turns 2–4, all help checks passed every turn, and the oracle passed on turn
+4. The final snapshot contains `batchrelay/db.py`, `server.py`, and `worker.py` with CLI, server,
+and HTTP tests.
+
+| Turn | ms | In/out | Work | Req start/done | Tools | Tests | Oracle | Help | Call |
+| ---: | ---: | ---: | ---: | ---: | ---: | ---: | --- | --- | --- |
+| 1 | 600,193 | 17,177/10,686 | 27,863 | 5/4 | 7 | 1 | fail | 0/0/0 | timeout |
+| 2 | 600,266 | 2,496/8,316 | 10,812 | 3/3 | 3 | 0 | fail | 0/0/0 | timeout |
+| 3 | 600,310 | 5,170/9,375 | 14,545 | 5/5 | 4 | 0 | fail | 0/0/0 | timeout |
+| 4 | 600,517 | 27,624/6,690 | 34,314 | 5/5 | 7 | 0 | pass | 0/0/0 | timeout |
+
+The turn-4 call reached its outer timeout after the oracle passed; the root summary marks Rupi
+resolved in turn 4.
+
+### Pi result
+
+Pi remained unresolved after four outer timeouts, using 48,570 work tokens over 2,400,887 ms
+(19,544 input, 29,026 output), 12 model requests, and 16 tool requests with no tool failures.
+Project tests passed on turns 3–4, help passed on turns 2–4, and the oracle failed every turn. The
+final snapshot contains `batchrelay/server.py`, `store.py`, and CLI, server, and HTTP tests.
+
+| Turn | ms | In/out | Work | Req start/done | Tools | Tests | Oracle | Help | Call |
+| ---: | ---: | ---: | ---: | ---: | ---: | ---: | --- | --- | --- |
+| 1 | 600,281 | 3,438/92 | 3,530 | 1/1 | 2 | 1 | fail | 1/1/1 | timeout |
+| 2 | 600,153 | 1,168/12,877 | 14,045 | 1/1 | 2 | 1 | fail | 0/0/0 | timeout |
+| 3 | 600,276 | 14,133/7,005 | 21,138 | 6/6 | 7 | 0 | fail | 0/0/0 | timeout |
+| 4 | 600,177 | 805/9,052 | 9,857 | 4/4 | 5 | 0 | fail | 0/0/0 | timeout |
+
+Rupi resolved the oracle in turn 4; Pi did not resolve in four turns. Rupi was 399 ms slower and
+used 38,964 more work tokens. This is a verified Rupi win on the pinned Pi comparison by oracle
+resolution, with a clear work-token and elapsed-time tradeoff. The Case 05 comparison objective is
+met. PR #137 remains draft.
 
 ## Current outcome
 
-R18's prompt is committed and pushed; the matched run is pending. Case 05 remains open after R17's
-inconclusive matched retry. PR #137 remains draft.
+Rupi resolved the Case 05 oracle in turn 4 of R18; pinned Pi 0.86.1 did not resolve in four turns.
+The comparison objective is met, with Rupi using 38,964 more work tokens and taking 399 ms longer.
+PR #137 remains draft.
