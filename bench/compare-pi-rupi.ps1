@@ -128,9 +128,8 @@ function Get-CaseGuidance([hashtable]$case, [string]$phase = "initial") {
             'Build an import-safe CLI, health server, and one signed batch admission path.'
             'After reading SPEC.md, make the first source write to batchrelay/__main__.py.'
             'The first module must run as python -m batchrelay and show top-level argparse help.'
-            'Keep CLI, health, and POST /batches in __main__.py until the service is runnable.'
-            'Do not end this turn after __main__.py; finish test scaffolding too.'
-            'Do not create __init__.py, tests, or support modules before __main__.py runs.'
+            'After __main__.py help works, create batchrelay/server.py and put HTTP handlers there.'
+            'Keep only argparse and lazy command dispatch in __main__.py; do not put routes there.'
             'Never store database state as handler attribute `connection`.'
             '`BaseHTTPRequestHandler` reserves `connection` for the client socket.'
             'Use lazy argparse imports; server.run(db, secret, host, port) starts serve_forever().'
@@ -141,8 +140,7 @@ function Get-CaseGuidance([hashtable]$case, [string]$phase = "initial") {
             'Use hmac.compare_digest; missing, malformed, or wrong signatures return JSON 401.'
             'Invalid signatures must not mutate SQLite; insert the valid batch and job atomically.'
             'The valid one-job POST returns 202 with a pending job and attempts=0.'
-            'Create tests/__init__.py, tests/test_cli.py, tests/test_server.py, tests/test_http.py.'
-            'Create all four test files in this initial turn.'
+            'Add tests/__init__.py and focused CLI, server, and HTTP tests after server.py exists.'
             'Use subprocess tests with sys.executable for top-level, serve, and worker help.'
             'Subprocess-test serve: poll /healthz, confirm it stays alive, and clean up.'
             'Test valid signed admission; assert bad signatures do not mutate the database.'
@@ -198,7 +196,7 @@ function Get-CaseGuidance([hashtable]$case, [string]$phase = "initial") {
         }
         "contract" {
           return (@(
-            'The signed POST test exists; finish one-job admission and authentication boundaries.'
+            'HTTP tests exist; keep routes in batchrelay/server.py and refine signed admission.'
             'Never store database state as handler attribute `connection`.'
             '`BaseHTTPRequestHandler` reserves `connection` for the client socket.'
             'Keep tests/test_http.py focused on one valid signed POST and signature failures.'
@@ -492,8 +490,8 @@ directories to its extended Windows path with `cd` or `cd /d`.
       'Build an import-safe CLI, health server, and one signed batch admission path.'
       'After reading SPEC.md, make the first source write to batchrelay/__main__.py.'
       'The first module must run as python -m batchrelay and show top-level argparse help.'
-      'Keep CLI, health, and POST /batches in __main__.py until the service is runnable.'
-      'Do not create __init__.py, tests, or support modules before __main__.py runs.'
+      'After __main__.py help works, create batchrelay/server.py and put HTTP handlers there.'
+      'Keep only argparse and lazy command dispatch in __main__.py; do not put routes there.'
       'Never store database state as handler attribute `connection`.'
       '`BaseHTTPRequestHandler` reserves `connection` for the client socket.'
       'Use lazy argparse imports; server.run(db, secret, host, port) starts serve_forever().'
@@ -504,9 +502,7 @@ directories to its extended Windows path with `cd` or `cd /d`.
       'Use hmac.compare_digest; missing, malformed, or wrong signatures return JSON 401.'
       'Invalid signatures must not mutate SQLite; insert the valid batch and job atomically.'
       'The valid one-job POST returns 202 with a pending job and attempts=0.'
-      'Do not end this turn after __main__.py; finish test scaffolding too.'
-      'Create tests/__init__.py, tests/test_cli.py, tests/test_server.py, tests/test_http.py.'
-      'Create all four test files in this initial turn.'
+      'Add tests/__init__.py and focused CLI, server, and HTTP tests after server.py exists.'
       'Use subprocess tests with sys.executable for top-level, serve, and worker help.'
       'Subprocess-test serve: poll /healthz, confirm it stays alive, and clean up.'
       'Test valid signed admission; assert bad signatures do not mutate the database.'
@@ -669,7 +665,7 @@ function Get-RecoveryPrompt(
         'CLI and server health passed. Complete and verify signed batch admission.'
       }
       "contract" {
-        'A signed POST test exists. Refine only admission and authentication boundaries.'
+        'HTTP tests exist; keep server routes in batchrelay/server.py and refine signed admission.'
       }
       "worker" {
         'The HTTP contract passed. Complete worker behavior while preserving prior slices.'
@@ -783,7 +779,7 @@ If anything remains incomplete, state it instead of claiming success.
       "foundation" { 'CLI and test-discovery did not pass.' }
       "health" { 'CLI and test discovery passed.' }
       "admission" { 'CLI and server health passed.' }
-      "contract" { 'A signed POST test exists.' }
+      "contract" { 'HTTP tests exist; keep routes in batchrelay/server.py.' }
       "worker" { 'The HTTP contract passed.' }
       default { 'CLI, health, HTTP, and worker tests exist' }
     }
