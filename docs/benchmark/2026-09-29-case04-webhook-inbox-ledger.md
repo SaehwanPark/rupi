@@ -98,21 +98,43 @@ resolution, so Pi won this comparison despite using 6,137 more work tokens. Rupi
 1,788,016 ms longer and did not resolve. Project-test status remains separate from the oracle
 result for both agents.
 
+## Incremental admission-first prompt rerun (R2)
+
+Run: `bench-20261001-case04-incremental-admission-grace6-cap8-pi0861-low-matched4-600s`.
+This used Pi 0.86.1, low reasoning, four turns, 600-second outer timeouts, eight model requests
+per turn, and a 594-second Rupi provider timeout. The prompt retained the complete SPEC and asked
+for signed HTTP admission in the first entrypoint write, followed by worker, README, and tests.
+
+| Agent | T | Elapsed ms | Work tokens | Req | Tools | Oracle/tests | Help T/S/W | Result |
+| --- | ---: | ---: | ---: | ---: | ---: | --- | --- | --- |
+| Rupi | 1 | 600,746 | 19,548 | 3 | 4 | 1 / 1 | 0 / 0 / 2 | outer timeout |
+| Rupi | 2 | 600,227 | 12,118 | 2 | 1 | 1 / 1 | 0 / 0 / 2 | outer timeout |
+| Rupi | 3 | 596,816 | 0 | 2 | 0 | 1 / 1 | 0 / 0 / 2 | no inference/tools |
+| Rupi | 4 | 598,556 | 0 | 1 | 0 | 1 / 1 | 0 / 0 / 2 | no inference/tools |
+| Pi | 1 | 600,420 | 15,824 | 4 | 6 | 0 / 0 | 0 / 0 / 0 | outer timeout; resolved |
+
+Rupi did not resolve after four turns. It used 31,666 work tokens over 2,396,345 ms; Pi resolved
+the oracle in turn 1 with 15,824 work tokens over 600,420 ms. Pi passed project tests and all help
+checks. Rupi's oracle and project tests failed in every turn; top-level and serve help passed, but
+worker help failed. Rupi took 1,795,925 ms longer and used 15,842 more work tokens, so Pi won this
+comparison by the oracle criterion.
+
+The local checks showed test discovery failed because `tests` was not importable. Worker help
+failed because the parser exposed only `serve`. The next prompt iteration will use those check
+results to prioritize the complete CLI surface and an importable tests package before worker
+implementation. The oracle remains hidden from recovery feedback.
+
 ## Current outcome
 
-The full-spec first-write prompt experiment did not produce a Case 04 win. Case 04 remains open;
-PR #136 stays draft while an incremental first-write prompt is prepared. The next iteration uses
-the embedded specification to ask for a runnable admission slice in the first source write, then
-continues with the worker, lease reclaim, sink protocol, README, and tests in additional writes
-during the same turn. It aims to prompt useful implementation activity earlier: Rupi made no
-inference requests in its first three turns and made one source write in turn 4 of the prior run.
+Case 04 remains open after two Pi wins: the full-spec first-write rerun and the R2
+admission-first rerun. PR #136 stays draft while the next recovery-guidance iteration is prepared.
 
-## Incremental first-write prompt iteration (pending)
+## Recovery-gated prompt iteration (R3, pending)
 
 Proposed run:
-`bench-20261001-case04-incremental-admission-grace6-cap8-pi0861-low-matched4-600s`.
-The initial prompt retains the full Case 04 SPEC, directs the first write to implement CLI help,
-SQLite, health, and signed delivery admission, and asks for the rest of the workflow through
-additional writes in the same turn. Recovery prompts preserve working admission and use local
-project-test and help feedback; oracle results and diagnostics remain hidden. The prompt is
-validated by the all-case dry run; the matched comparison is pending.
+`bench-20261001-case04-recovery-gated-grace6-cap8-pi0861-low-matched4-600s`.
+The initial prompt states the exact `serve` and `worker` command forms, requires all three help
+paths, and creates an importable tests package with subprocess help checks before worker logic.
+Recovery selects an interface phase when help or test discovery is missing, then advances to the
+worker workflow after those local checks pass. Oracle status and diagnostics remain hidden. The
+all-case dry run passed; the matched comparison is pending.

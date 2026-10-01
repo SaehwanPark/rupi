@@ -1325,9 +1325,16 @@ TUI rendering passed all budgets (3.31–3.90 µs/unit); checkpointed restore me
   in turn 4; Pi passed all help checks. Both project-test checks exited 1, separately from oracle
   status. Case 04 remains open. The next iteration embeds the full spec, asks for runnable signed
   admission in the first source write, then continues with the worker and remaining requirements
-  through additional writes in the same turn. Its proposed run is
-  `bench-20261001-case04-incremental-admission-grace6-cap8-pi0861-low-matched4-600s`; see the
-  [Case 04 ledger](docs/benchmark/2026-09-29-case04-webhook-inbox-ledger.md).
+  through additional writes in the same turn. That R2 rerun,
+  `bench-20261001-case04-incremental-admission-grace6-cap8-pi0861-low-matched4-600s`, was also a
+  Pi win: Pi resolved in turn 1 with 15,824 work tokens over 600,420 ms; Rupi did not resolve in
+  four turns and used 31,666 work tokens over 2,396,345 ms. Rupi's tests failed because the test
+  start directory was not importable, and worker help failed because the CLI exposed only serve.
+  Case 04 remains open; the next prompt iteration will prioritize those local test/help failures.
+  The recovery-gated prompt run
+  `bench-20261001-case04-recovery-gated-grace6-cap8-pi0861-low-matched4-600s` is pending; it
+  requires the full CLI and test discovery before advancing to worker behavior.
+  See the [Case 04 ledger](docs/benchmark/2026-09-29-case04-webhook-inbox-ledger.md).
 
   Case 05's pinned baseline was mixed. The embedded-spec prompt rerun was a Pi win, and the
   read-once entrypoint rerun was inconclusive. The valid-path, oracle-status rerun
