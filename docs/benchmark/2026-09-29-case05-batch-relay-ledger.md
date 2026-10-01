@@ -763,7 +763,7 @@ health and signed-admission server path with focused checks, then preserve it du
 
 ## Seventeenth prompt iteration — pending
 
-Run: `bench-20261001-case05-server-signed-post-r17-grace6-cap8-pi0861-low-matched4-600s`.
+Run: `bench-20261001-case05-server-signed-post-r17-retry-grace6-cap8-pi0861-low-matched4-600s`.
 
 R17 keeps the CLI, health, and one signed-POST scope. Prompt commit `2b253b9` requires HTTP
 handlers in `batchrelay/server.py` and delays tests until the server starts, responding to Rupi's
@@ -772,7 +772,14 @@ authentication checks; full validation, status, and worker behavior remain defer
 dry run, `git diff --check`, and changed-line length check passed. PR CI for R16 documentation head
 `e19b1ef` passed on Ubuntu, macOS, and Windows. The matched run is pending. PR #137 remains draft.
 
+The initial R17 attempt used this run ID:
+`bench-20261001-case05-server-signed-post-r17-grace6-cap8-pi0861-low-matched4-600s`
+It completed all four Rupi turns and Pi turn 1, then stopped when a recovery-prompt guard still
+required the previous contract-phase wording. That partial attempt is not a matched comparison.
+Guard fix `cc0c3a2` is pushed; its all-case dry run passed. The fresh retry above is pending.
+
 ## Current outcome
 
-R17's prompt is committed locally; the matched run is pending. Case 05 remains open after R16's
-inconclusive comparison. PR #137 remains draft.
+R17's first attempt stopped after Pi turn 1 because of a stale recovery-prompt guard; it is not a
+matched comparison. Guard fix `cc0c3a2` is pushed, and a fresh matched retry is pending. Case 05
+remains open after R16's inconclusive comparison. PR #137 remains draft.

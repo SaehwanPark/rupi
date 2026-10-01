@@ -1411,7 +1411,8 @@ TUI rendering passed all budgets (3.31–3.90 µs/unit); checkpointed restore me
   `e19b1ef` passed on Ubuntu, macOS, and Windows. R17 now requires HTTP routes in
   `batchrelay/server.py` and delays test scaffolding until the service starts; the all-case dry run
   and changed-line checks passed. Prompt commit `2b253b9` is pushed, and the matched run is pending.
-  See the
+  Its first attempt stopped after Pi turn 1 because an internal recovery guard still expected the
+  old wording. Guard fix `cc0c3a2` is pushed; a fresh matched retry is pending. See the
   [Case 05 ledger](docs/benchmark/2026-09-29-case05-batch-relay-ledger.md).
 
   Case 06 ran with the pinned Pi 0.86.1 baseline. Pi resolved on turn 4 after its outer timeout,
