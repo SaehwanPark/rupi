@@ -320,6 +320,41 @@ function Get-CaseGuidance([hashtable]$case, [string]$phase = "initial") {
         }
       }
     }
+    "06-artifact-pipeline" {
+      if ($phase -eq "initial") {
+        return (@(
+          'The complete Case 06 specification is embedded; do not reread SPEC.md.'
+          ('First write: create artifactpipe/__main__.py with a CLI and ' +
+            'serve/worker parsers.')
+          'Parse CLI before importing service or worker; keep all three help paths working.'
+          ('Use service.py for routes, storage.py for SQLite, ids.py for ID checks, ' +
+            'and worker.py for sink leases.')
+          'Do not use BaseHTTPRequestHandler.connection for DB state; it is the client socket.'
+          'Start with GET /healthz and signed POST /pipelines before expanding the server.'
+          ('Verify HMAC-SHA256 on exact request bytes with ' +
+            'hmac.compare_digest before JSON parsing.')
+          'Insert pipeline/jobs atomically; then add validation, idempotency, and status routes.'
+          ('Implement worker --once with ordered claims, outputs, retries, blocking, ' +
+            'reclaim, and direct argv.')
+          'Resolve declared top-level input_refs only from successful dependency outputs.'
+          'Add tests after server and worker run; finish README last.'
+          'Use only Python standard-library modules.'
+          'The harness runs tests, three help commands, and the oracle after every attempt.'
+          'Do not run commands, tests, help checks, the service, worker, or oracle.'
+        ) -join [Environment]::NewLine)
+      }
+      return (@(
+        'The full spec is embedded initially; do not reread it or inspect the oracle.'
+        'Use prior test/help diagnostics and oracle status; do not run checks yourself.'
+        'If help fails, repair __main__.py and lazy imports while preserving HTTP behavior.'
+        'If tests fail, fix the first diagnostic and keep a healthy server and CLI intact.'
+        ('If tests/help pass but oracle fails, finish validation, ordering, output refs, leases, ' +
+          'retries, and restart behavior.')
+        'Do not use BaseHTTPRequestHandler.connection for DB state; it is the client socket.'
+        'Invoke sinks by direct argv without a shell; keep worker --once bounded and do not poll.'
+        'Use standard-library modules; finish README after executable behavior.'
+      ) -join [Environment]::NewLine)
+    }
     default {
       return (@(
         "Prioritize the complete $($case.Focus) workflow described in SPEC.md."
@@ -357,13 +392,21 @@ function Get-InitialPrompt([hashtable]$case) {
     'Implement the Case 04 project from the complete embedded specification.'
   } elseif ($case.Id -eq "03-event-outbox") {
     'Implement the complete service and worker from the embedded Case 03 specification.'
+  } elseif ($case.Id -eq "06-artifact-pipeline") {
+    'Implement Case 06 from the complete embedded specification.'
   } else {
     'Read SPEC.md completely before acting.'
   }
-  if ($case.Id -in @("03-event-outbox", "04-webhook-inbox")) {
+  if ($case.Id -in @("03-event-outbox", "04-webhook-inbox", "06-artifact-pipeline")) {
     $specPath = Join-Path (Join-Path $repoRoot $case.Source) "SPEC.md"
     $embeddedSpec = [IO.File]::ReadAllText($specPath)
-    $caseName = if ($case.Id -eq "04-webhook-inbox") { "Case 04" } else { "Case 03" }
+    $caseName = if ($case.Id -eq "04-webhook-inbox") {
+      "Case 04"
+    } elseif ($case.Id -eq "06-artifact-pipeline") {
+      "Case 06"
+    } else {
+      "Case 03"
+    }
     $caseSpecBlock = "`nThe complete $caseName specification follows:`n`n$embeddedSpec`n"
   }
   $verificationGuidance = if ($case.Id -eq "04-webhook-inbox") {
@@ -406,6 +449,14 @@ commands described by SPEC.md, plus a small smoke check. Do not treat your final
 summary as proof: report exact commands and statuses only after running them, and
 state any incomplete requirement explicitly.
 '@
+  }
+  if ($case.Id -eq "06-artifact-pipeline") {
+    $verificationGuidance = @(
+      'The harness runs tests, three help commands, and the oracle after every attempt.'
+      'Oracle diagnostics stay hidden; recovery receives only pass or fail.'
+      'Do not run commands, tests, help checks, the service, worker, or oracle.'
+      'Use workspace read/write tools and the harness results.'
+    ) -join [Environment]::NewLine
   }
   $prompt = @'
 You are implementing the `{{PACKAGE}}` Python package in the current workspace.
@@ -466,6 +517,12 @@ directories to its extended Windows path with `cd` or `cd /d`.
       'The full Case 03 specification is embedded in this prompt.'
       'Do not call `read`, `exec`, or another inspection tool before this first write.'
     )
+  } elseif ($case.Id -eq "06-artifact-pipeline") {
+    $requiredInstructions += @(
+      'Implement Case 06 from the complete embedded specification.'
+      'The complete Case 06 specification follows:'
+      'The complete Case 06 specification is embedded; do not reread SPEC.md.'
+    )
   } else {
     $requiredInstructions += 'Read SPEC.md completely before acting'
   }
@@ -502,6 +559,12 @@ directories to its extended Windows path with `cd` or `cd /d`.
       'Do not run commands, tests, help checks, or launch the HTTP service or worker.'
       'Never inspect or run the external oracle.'
     )
+  } elseif ($case.Id -eq "06-artifact-pipeline") {
+    $requiredInstructions += @(
+      'The harness runs tests, three help commands, and the oracle after every attempt.'
+      'Oracle diagnostics stay hidden; recovery receives only pass or fail.'
+      'Do not run commands, tests, help checks, the service, worker, or oracle.'
+    )
   } else {
     $requiredInstructions += @(
       'Run the project unittest suite'
@@ -522,7 +585,7 @@ directories to its extended Windows path with `cd` or `cd /d`.
   if (-not $prompt.Contains($guidance)) {
     throw "Initial benchmark prompt is missing case guidance for $($case.Id)."
   }
-  if ($case.Id -in @("03-event-outbox", "04-webhook-inbox") -and
+  if ($case.Id -in @("03-event-outbox", "04-webhook-inbox", "06-artifact-pipeline") -and
       -not $prompt.Contains($embeddedSpec)) {
     throw "$caseName initial prompt is missing the complete project specification."
   }
@@ -657,6 +720,26 @@ directories to its extended Windows path with `cd` or `cd /d`.
       'Do not call `exec` or run shell commands; rely on the harness for verification.'
       'Never inspect or run the external oracle.'
     )
+  } elseif ($case.Id -eq "06-artifact-pipeline") {
+    $caseSpecificInstructions = @(
+      'The complete Case 06 specification is embedded; do not reread SPEC.md.'
+      ('First write: create artifactpipe/__main__.py with a CLI and ' +
+        'serve/worker parsers.')
+      'Parse CLI before importing service or worker; keep all three help paths working.'
+      ('Use service.py for routes, storage.py for SQLite, ids.py for ID checks, ' +
+        'and worker.py for sink leases.')
+      'Do not use BaseHTTPRequestHandler.connection for DB state; it is the client socket.'
+      'Start with GET /healthz and signed POST /pipelines before expanding the server.'
+      ('Verify HMAC-SHA256 on exact request bytes with ' +
+        'hmac.compare_digest before JSON parsing.')
+      'Insert pipeline/jobs atomically; then add validation, idempotency, and status routes.'
+      ('Implement worker --once with ordered claims, outputs, retries, blocking, ' +
+        'reclaim, and direct argv.')
+      'Resolve declared top-level input_refs only from successful dependency outputs.'
+      'Add tests after server and worker run; finish README last.'
+      'The harness runs tests, three help commands, and the oracle after every attempt.'
+      'Do not run commands, tests, help checks, the service, worker, or oracle.'
+    )
   }
   foreach ($instruction in $caseSpecificInstructions) {
     if (-not $prompt.Contains($instruction)) {
@@ -664,10 +747,10 @@ directories to its extended Windows path with `cd` or `cd /d`.
     }
   }
   if (
-    $case.Id -in @("03-event-outbox", "04-webhook-inbox") -and
+    $case.Id -in @("03-event-outbox", "04-webhook-inbox", "06-artifact-pipeline") -and
     $prompt.Contains('Read SPEC.md completely before acting')
   ) {
-    throw 'Case 03 prompt asks the agent to inspect SPEC.md before its first write.'
+    throw 'Embedded-spec prompts must not request a SPEC.md reread before the first write.'
   }
   return $prompt
 }
@@ -943,6 +1026,37 @@ unittest suite, the project-specific help commands, and a smoke sequence.
   } else {
     "Prioritize the full reliability contract: $($case.Focus)."
   }
+  if ($case.Id -eq "06-artifact-pipeline") {
+    $oracleStatus = if ($verification.oracle.timed_out) {
+      "timed out"
+    } elseif ($verification.oracle.exit_code -eq 0) {
+      "passed"
+    } else {
+      "failed"
+    }
+    $feedback = "Independent acceptance oracle: $oracleStatus (diagnostic details hidden)." +
+      [Environment]::NewLine + $feedback
+    $caseGuidance = Get-CaseGuidance $case "recovery"
+    $verificationResultLabel =
+      'Previous harness results (oracle, project tests, and three help commands):'
+    $recoveryHeader =
+      'The full Case 06 spec was embedded initially; do not reread it. ' +
+      'Preserve CLI/server behavior. Use local test/help feedback and ' +
+      'oracle pass/fail only; hide diagnostics. Work only in this workspace.'
+    $verificationGuidance = @(
+      'The harness reruns tests, three help commands, and the oracle after each attempt.'
+      'Recovery exposes oracle pass/fail only and hides diagnostic output.'
+      'Do not run commands, tests, help checks, the service, worker, or oracle.'
+      'Use local test/help feedback to make changes, then rely on the harness.'
+    ) -join [Environment]::NewLine
+    $completionDirective =
+      'Complete the service/worker slice while preserving CLI and ' +
+      'server behavior.'
+    $continuationDirective =
+      'Continue from local test/help feedback; use oracle status only, never its diagnostics.'
+    $priorityDirective =
+      'Prioritize healthy server and signed admission, then output refs and worker transitions.'
+  }
   $prompt = @"
 Continue the incomplete $($case.Package) implementation in this workspace.
 $recoveryHeader
@@ -1075,6 +1189,20 @@ If anything remains incomplete, state it instead of claiming success.
           'Do not call `exec` or run shell commands; rely on the harness for verification.') -or
         $prompt.Contains('Read SPEC.md and inspect the files already present.')) {
       throw 'Case 05 recovery prompt must select a gated slice and defer verification.'
+    }
+  }
+  if ($case.Id -eq "06-artifact-pipeline") {
+    $recoveryRequirements = @(
+      'Independent acceptance oracle: '
+      '(diagnostic details hidden).'
+      'The full Case 06 spec was embedded initially; do not reread it.'
+      'Recovery exposes oracle pass/fail only and hides diagnostic output.'
+      'Do not run commands, tests, help checks, the service, worker, or oracle.'
+    )
+    foreach ($requirement in $recoveryRequirements) {
+      if (-not $prompt.Contains($requirement)) {
+        throw "Case 06 recovery prompt is missing: $requirement"
+      }
     }
   }
   return $prompt
