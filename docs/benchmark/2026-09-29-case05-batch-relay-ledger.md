@@ -501,19 +501,61 @@ Rupi reached admission code but broke its server health tests. The next prompt s
 handler initialization issue, keep health checks passing, then implement one signed POST path before
 expanding to status, replay, validation, or worker behavior. PR #137 remains draft.
 
-## Current outcome
+## Eleventh-run outcome
 
-Case 05 remains open after R11's inconclusive comparison. Pi finished with passing local checks,
+Case 05 remained open after R11's inconclusive comparison. Pi finished with passing local checks,
 but neither agent resolved the oracle. R12 isolates the server handler's reserved socket attribute
 and limits admission to one valid signed POST plus signature-failure behavior.
 
-## Twelfth prompt iteration — pending
+## Twelfth prompt iteration — complete; inconclusive
 
 Run: `bench-20260930-case05-one-signed-post-handler-guard-r12-grace6-cap8-pi0861-low-matched4-600s`.
 
 R11's turn-4 diagnostics showed that `RelayHandler.connection` conflicts with the socket property
-managed by `BaseHTTPRequestHandler`. R12 carries that invariant into every Case 05 phase and narrows
-signed admission to one valid batch POST plus missing, malformed, and incorrect signature behavior.
-Replay/conflict semantics, full validation, GET status, and worker behavior remain gated. The
-all-case benchmark dry run and `git diff --check` passed; the matched run is pending. PR #137
-remains draft.
+managed by `BaseHTTPRequestHandler`. R12 carried that invariant into every Case 05 phase and
+narrowed signed admission to one valid batch POST plus missing, malformed, and incorrect signature
+behavior. Replay/conflict semantics, full validation, GET status, and worker behavior remained
+gated. The all-case benchmark dry run and `git diff --check` passed. CI for prompt commit `3eb791a`
+passed on Ubuntu, macOS, and Windows. PR #137 remains draft.
+
+### Rupi result
+
+Rupi remained unresolved after four harness turns, using 19,163 work tokens over 332,916 ms. It
+used 13,900 input tokens, 5,263 output tokens, four model requests, and four tool requests. Turn 1
+ended in `needs_reconciliation` after one tool failure; turns 2–4 had no model or tool activity.
+Project tests and every help command exited 1 on all four turns, and the oracle failed every turn.
+
+| Turn | ms | In / out | Work | Req/tools | Oracle/tests | Help | Result |
+| ---: | ---: | ---: | ---: | ---: | --- | --- | --- |
+| 1 | 330,610 | 13,900/5,263 | 19,163 | 4/4 | fail/1 | 1/1/1 | needs reconciliation |
+| 2 | 784 | 0/0 | 0 | 0/0 | fail/1 | 1/1/1 | no activity |
+| 3 | 771 | 0/0 | 0 | 0/0 | fail/1 | 1/1/1 | no activity |
+| 4 | 751 | 0/0 | 0 | 0/0 | fail/1 | 1/1/1 | no activity |
+
+The final snapshot contains only `batchrelay/__init__.py`; it has no CLI or server module, so the
+handler invariant was not exercised.
+
+### Pi result
+
+Pi remained unresolved after four turns, using 42,893 work tokens over 1,639,588 ms. It used 17,026
+input tokens, 25,867 output tokens, 24 model requests, and 24 tool requests. Its oracle failed every
+turn; project tests passed on turns 1, 2, and 4, and all help commands passed on every turn.
+
+| Turn | Elapsed | In / out | Work | Req / tools | Oracle / tests | Help | Call |
+| --- | ---: | ---: | ---: | ---: | --- | --- | --- |
+| 1 | 600,389 ms | 6,775 / 9,185 | 15,960 | 10 / 12 | failed / 0 | 0 / 0 / 0 | outer timeout |
+| 2 | 600,271 ms | 6,444 / 9,734 | 16,178 | 6 / 6 | failed / 0 | 0 / 0 / 0 | outer timeout |
+| 3 | 307,068 ms | 2,579 / 5,082 | 7,661 | 5 / 4 | failed / exit 1 | 0 / 0 / 0 | complete |
+| 4 | 131,860 ms | 1,228 / 1,866 | 3,094 | 3 / 2 | failed / 0 | 0 / 0 / 0 | complete |
+
+Pi added `tests/test_http.py` on turn 3 and passed project tests and help on turn 4. Neither agent
+resolved the oracle. Rupi was 1,306,672 ms faster and used 23,730 fewer work tokens, but its tool
+failure left all local checks failing and no runnable application. This run is inconclusive, with
+Pi making substantially more functional progress. The next prompt should require a first workspace
+write to a runnable source file and explicitly prohibit agent `exec` calls to avoid another
+zero-activity recovery sequence. PR #137 remains draft.
+
+## Current outcome
+
+Case 05 remains open after R12's inconclusive comparison. Pi reached passing local checks and an
+HTTP test module but failed the oracle; Rupi did not recover from its first-turn tool failure.
