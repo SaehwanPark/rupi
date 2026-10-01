@@ -1342,9 +1342,13 @@ TUI rendering passed all budgets (3.31–3.90 µs/unit); checkpointed restore me
   `bench-20261001-case04-one-turn-completion-grace6-cap8-pi0861-low-matched4-600s` was a fifth Pi
   win. Rupi resolved in turn 3 with 25,525 work tokens over 1,790,693 ms; Pi resolved in turn 1
   with 15,513 tokens over 600,213 ms. Both project-test commands exited 1, while both passed
-  help. Rupi's first two turns timed out without work or files. Case 04 remains open. The next run,
-  `bench-20261001-case04-one-write-first-grace6-cap8-pi0861-low-matched4-600s`, asks for one
-  complete `__main__.py` workspace write before README or test files. See the
+  help. Rupi's first two turns timed out without work or files. The one-write rerun
+  `bench-20261001-case04-one-write-first-grace6-cap8-pi0861-low-matched4-600s` was a sixth Pi win:
+  Rupi did not resolve in four turns (7,068 work tokens over 2,090,969 ms), while Pi resolved in
+  turn 1 with 16,081 work tokens over 600,501 ms. Rupi made no project files; its help and tests
+  failed, while Pi passed help and its project tests exited 1. Case 04 remains open. The next run,
+  `bench-20261001-case04-one-write-off-grace6-cap8-pi0861-matched4-600s`, keeps the one-write
+  prompt and uses thinking off for both agents. See the
   [Case 04 ledger](docs/benchmark/2026-09-29-case04-webhook-inbox-ledger.md).
 
   Case 05's pinned baseline was mixed. The embedded-spec prompt rerun was a Pi win, and the

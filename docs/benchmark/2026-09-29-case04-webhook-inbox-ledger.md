@@ -178,9 +178,9 @@ above.
 
 ## Current outcome
 
-Case 04 remains open after five Pi wins. R5 resolved the oracle with Rupi in turn 3, but Pi
-resolved in turn 1 and used fewer work tokens and less wall time. PR #136 stays draft while the
-next prompt iteration targets one complete source write with fewer model/tool round-trips.
+Case 04 remains open after six Pi wins. R6 did not resolve the oracle with Rupi; Pi resolved in
+turn 1. PR #136 stays draft while the next matched run tests whether disabling model reasoning
+reduces time to first progress with the one-write prompt.
 
 ## One-turn completion prompt rerun (R5)
 
@@ -203,11 +203,30 @@ turn 1, passed every help command, and also had project tests exit 1. Rupi used 
 over 1,790,693 ms; Pi used 15,513 over 600,213 ms. Pi resolved two turns earlier and used 10,012
 fewer work tokens over 1,190,480 fewer milliseconds, so Pi won.
 
-## One-write prompt iteration (R6, pending)
+## One-write prompt rerun (R6)
+
+Run: `bench-20261001-case04-one-write-first-grace6-cap8-pi0861-low-matched4-600s`.
+This used Pi 0.86.1, low reasoning, four turns, 600-second outer timeouts, eight requests per
+turn, and a 594-second Rupi provider timeout. R6 required one workspace write containing the
+complete application in `webhookinbox/__main__.py`.
+
+| Agent | T | Elapsed ms | Work | Req | Tools | Oracle/tests | Help T/S/W | Result |
+| --- | ---: | ---: | ---: | ---: | ---: | --- | --- | --- |
+| Rupi | 1 | 396,082 | 0 | 1 / 1 | 0 | 1 / 1 | 1 / 1 / 1 | provider timeout |
+| Rupi | 2 | 600,250 | 7,068 | 2 / 1 | 1 | 1 / 1 | 1 / 1 / 1 | outer timeout |
+| Rupi | 3 | 548,974 | 0 | 1 / 2 | 0 | 1 / 1 | 1 / 1 / 1 | provider timeout |
+| Rupi | 4 | 545,663 | 0 | 1 / 1 | 0 | 1 / 1 | 1 / 1 / 1 | provider timeout |
+| Pi | 1 | 600,501 | 16,081 | 5 / 5 | 5 | 0 / 1 | 0 / 0 / 0 | timeout; resolved |
+
+Rupi produced no project files and did not resolve after four turns. Turn 2 made one `exec` call;
+the other turns had no tool calls or work tokens. Pi resolved the oracle in turn 1 and passed all
+help commands; its project tests exited 1. Rupi used 7,068 work tokens over 2,090,969 ms, while
+Pi used 16,081 over 600,501 ms. Pi won because Rupi did not resolve.
+
+## Matched reasoning-off prompt rerun (R7, pending)
 
 Proposed run:
-`bench-20261001-case04-one-write-first-grace6-cap8-pi0861-low-matched4-600s`.
-R5 needed five completed tools across six requests in its resolving turn. The next prompt will
-require one workspace write containing all application code in `webhookinbox/__main__.py` and
-defer README or test files until the runnable service is complete. The all-case dry run and
-matched comparison are pending.
+`bench-20261001-case04-one-write-off-grace6-cap8-pi0861-matched4-600s`.
+This will keep the R6 one-write prompt and turn limits, set thinking to `off` for both agents,
+and measure whether the lower provider effort returns a first write sooner. The all-case dry run
+and matched comparison are pending.
