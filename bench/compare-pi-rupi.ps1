@@ -196,15 +196,18 @@ function Get-CaseGuidance([hashtable]$case, [string]$phase = "initial") {
         }
         "contract" {
           return (@(
-            'A signed POST test exists; strengthen only one-job admission and its auth boundaries.'
+            'Signed admission passed; complete validation and GET /batches/<batch_id> status.'
             'Never store database state as handler attribute `connection`.'
             '`BaseHTTPRequestHandler` reserves `connection` for the client socket.'
-            'Keep tests/test_http.py focused on one valid signed POST and signature failures.'
-            'Use raw body bytes, verify HMAC before parsing, and compare digests in constant time.'
-            'The accepted one-job batch returns 202, is atomic, and starts pending with attempts=0.'
-            'Missing, malformed, or wrong signatures return 401 without changing the database.'
-            'Preserve GET /healthz and every passing CLI/server test.'
-            'Defer full validation, idempotency, batch status, and worker behavior.'
+            'Add tests/test_contract.py for malformed JSON, fields, bad IDs, and duplicates.'
+            'Test missing, repeated, self, and cyclic dependencies.'
+            'Validate fields, types, IDs, payloads, and dependencies before one atomic write.'
+            'Invalid requests return JSON 400 and leave the database unchanged.'
+            'Identical replays return existing data (200); changed content returns 409.'
+            'GET /batches/<batch_id> returns ordered jobs and status; unknown IDs return JSON 404.'
+            'Test status and payload persistence across a server restart.'
+            'Preserve signature checks, valid 202 admission, /healthz, and CLI behavior.'
+            'Defer worker behavior until these focused HTTP contract tests pass.'
             'Never inspect or run the external oracle.'
           ) -join [Environment]::NewLine)
         }
@@ -665,7 +668,7 @@ function Get-RecoveryPrompt(
         'CLI and server health passed. Complete and verify signed batch admission.'
       }
       "contract" {
-        'A signed POST test exists. Refine only admission and authentication boundaries.'
+        'Signed admission passed. Complete validation and GET status while preserving prior slices.'
       }
       "worker" {
         'The HTTP contract passed. Complete worker behavior while preserving prior slices.'
@@ -779,7 +782,7 @@ If anything remains incomplete, state it instead of claiming success.
       "foundation" { 'CLI and test-discovery did not pass.' }
       "health" { 'CLI and test discovery passed.' }
       "admission" { 'CLI and server health passed.' }
-      "contract" { 'A signed POST test exists.' }
+      "contract" { 'Signed admission passed.' }
       "worker" { 'The HTTP contract passed.' }
       default { 'CLI, health, HTTP, and worker tests exist' }
     }
