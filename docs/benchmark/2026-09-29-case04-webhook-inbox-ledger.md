@@ -176,11 +176,10 @@ helper, not a `test_*.py` module. Pi resolved in turn 1 and passed project tests
 checks. Rupi used 1,512 more work tokens and took 422,413 ms longer, so Pi won under the criterion
 above.
 
-## Current outcome
+## Status after R4
 
-Case 04 remains open after six Pi wins. R6 did not resolve the oracle with Rupi; Pi resolved in
-turn 1. PR #136 stays draft while the next matched run tests whether disabling model reasoning
-reduces time to first progress with the one-write prompt.
+After R4, Case 04 remained open: Rupi resolved in turn 2 but used more work tokens and wall
+time than Pi's turn 1 resolution. R5 through R7 are recorded below.
 
 ## One-turn completion prompt rerun (R5)
 
@@ -223,10 +222,38 @@ the other turns had no tool calls or work tokens. Pi resolved the oracle in turn
 help commands; its project tests exited 1. Rupi used 7,068 work tokens over 2,090,969 ms, while
 Pi used 16,081 over 600,501 ms. Pi won because Rupi did not resolve.
 
-## Matched reasoning-off prompt rerun (R7, pending)
+## Matched reasoning-off prompt rerun (R7)
 
-Proposed run:
-`bench-20261001-case04-one-write-off-grace6-cap8-pi0861-matched4-600s`.
-This will keep the R6 one-write prompt and turn limits, set thinking to `off` for both agents,
-and measure whether the lower provider effort returns a first write sooner. The all-case dry run
-and matched comparison are pending.
+Run: bench-20261001-case04-one-write-off-grace6-cap8-pi0861-matched4-600s.
+
+This used Pi 0.86.1, thinking off for both agents, a four-turn maximum, eight model requests per
+turn, a 600-second turn timeout, and six seconds of provider timeout grace.
+Oracle, test, and help cells show command exit codes; zero means pass.
+
+| Agent | T | Elapsed ms | Work | Req start/done | Tools | Oracle | Tests | Help T/S/W |
+| --- | ---: | ---: | ---: | ---: | ---: | ---: | ---: | --- |
+| Rupi | 1 | 594,141 | 0 | 1 / 1 | 0 | 1 | 1 | 1 / 1 / 1 |
+| Rupi | 2 | 600,270 | 24,126 | 5 / 4 | 5 | 0 | 0 | 0 / 0 / 0 |
+| Pi | 1 | 600,429 | 0 | 0 / 0 | 0 | 1 | 1 | 1 / 1 / 1 |
+| Pi | 2 | 600,536 | 5,366 | 4 / 4 | 7 | 1 | 1 | 1 / 1 / 1 |
+
+Rupi's first turn timed out without inference work or tool calls. It resolved the oracle in turn 2,
+passed project tests, and passed all three help checks. Across both turns it used 24,126 work
+tokens over 1,194,411 ms.
+
+Pi timed out without inference work in turn 1. Its turn 2 used 5,366 work tokens, but it still did
+not resolve the oracle. Project tests and all help checks failed in both turns; the snapshots had
+no generated application files. Pi had used two turns without resolving, so its earliest possible
+resolution was turn 3. Rupi therefore won by resolving in fewer turns. Further Pi turns were
+stopped after the fewer-turn result was decisive.
+
+Case 04's comparison objective is met. R1 through R6 remain historical Pi wins. PR #136 is
+awaiting post-documentation CI before the authorized merge.
+
+## Verification
+
+- All ten cases passed the all-case dry run with thinking off:
+  pwsh.exe -NoProfile -ExecutionPolicy Bypass -File bench\compare-pi-rupi.ps1 -DryRun
+  -ThinkingLevel off.
+- R7 per-turn summaries record Rupi's oracle, project-test, and help checks passing in turn 2.
+- R7 per-turn summaries record Pi unresolved after turn 2, with its checks failing.

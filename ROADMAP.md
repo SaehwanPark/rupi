@@ -1346,9 +1346,12 @@ TUI rendering passed all budgets (3.31–3.90 µs/unit); checkpointed restore me
   `bench-20261001-case04-one-write-first-grace6-cap8-pi0861-low-matched4-600s` was a sixth Pi win:
   Rupi did not resolve in four turns (7,068 work tokens over 2,090,969 ms), while Pi resolved in
   turn 1 with 16,081 work tokens over 600,501 ms. Rupi made no project files; its help and tests
-  failed, while Pi passed help and its project tests exited 1. Case 04 remains open. The next run,
-  `bench-20261001-case04-one-write-off-grace6-cap8-pi0861-matched4-600s`, keeps the one-write
-  prompt and uses thinking off for both agents. See the
+  failed, while Pi passed help and its project tests exited 1. The matched reasoning-off rerun is a
+  verified Rupi win: it passed the oracle in turn 2 and passed project tests and all help checks.
+  Pi remained unresolved after turn 2, so its earliest possible resolution was turn 3. This meets
+  the recorded fewer-turn criterion. Pi's oracle, tests, and help checks failed; its snapshots had
+  no generated application files. Further Pi turns were stopped after the result was decisive.
+  Case 04's comparison objective is met. See the
   [Case 04 ledger](docs/benchmark/2026-09-29-case04-webhook-inbox-ledger.md).
 
   Case 05's pinned baseline was mixed. The embedded-spec prompt rerun was a Pi win, and the
