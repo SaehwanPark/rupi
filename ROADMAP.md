@@ -1383,8 +1383,8 @@ TUI rendering passed all budgets (3.31–3.90 µs/unit); checkpointed restore me
   20,949 more work tokens. Rupi's oracle, project tests, and help checks failed every turn; Pi's
   oracle and project tests also failed every turn. Turn 4 diagnostics show its entrypoint imports
   a missing worker module before parsing arguments, and the generated project has no `tests`
-  package. The next prompt will establish an importable CLI and test package before adding HTTP
-  behavior. Case 05 remains open; see the
+  package. The R10 prompt establishes an importable CLI and test package before adding HTTP
+  behavior; its matched run is pending. Case 05 remains open; see the
   [Case 05 ledger](docs/benchmark/2026-09-29-case05-batch-relay-ledger.md).
 
   Case 06 ran with the pinned Pi 0.86.1 baseline. Pi resolved on turn 4 after its outer timeout,

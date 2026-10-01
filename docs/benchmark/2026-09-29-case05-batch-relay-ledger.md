@@ -400,8 +400,21 @@ failed on every turn. Turn 4 diagnostics show `batchrelay/__main__.py` imports a
 no `tests` package, so unittest discovery fails. The next prompt will establish an importable CLI
 and test package before adding HTTP behavior. PR #137 remains draft.
 
+## Tenth prompt iteration — pending
+
+Run: `bench-20260930-case05-cli-importable-first-r10-grace6-cap8-pi0861-low-matched4-600s`.
+
+This prompt responds to the R9 help-import and test-discovery failures. Its first phase creates an
+import-safe argparse CLI with lazy command imports, `tests/__init__.py`, and subprocess help checks
+for the package, `serve`, and `worker`. Recovery advances through health, HTTP, and worker only
+after local project tests and all help commands pass. Oracle diagnostics remain hidden.
+
+The all-case benchmark dry run and `git diff --check` passed. The matched R10 benchmark is pending;
+PR #137 remains draft.
+
 ## Current outcome
 
 Case 05 remains open. The ninth HTTP-contract-first rerun was inconclusive: neither agent resolved
 the oracle. Rupi was faster but used more work tokens, and all Rupi checks failed every turn. The
-next iteration will establish an importable CLI and test package before adding HTTP behavior.
+R10 prompt now establishes an importable CLI and test package before adding HTTP behavior; its
+matched run is pending.

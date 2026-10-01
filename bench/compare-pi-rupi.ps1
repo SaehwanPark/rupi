@@ -51,7 +51,7 @@ function Get-CaseDefinitions {
   )
 }
 
-function Get-CaseGuidance([hashtable]$case) {
+function Get-CaseGuidance([hashtable]$case, [string]$phase = "initial") {
   switch ($case.Id) {
     "01-task-ledger" {
       return (@(
@@ -122,40 +122,70 @@ function Get-CaseGuidance([hashtable]$case) {
       ) -join "`n")
     }
     "05-batch-relay" {
-      return (@(
-        'First implement batchrelay/server.py with run(db, secret, host, port).'
-        'Bind the configured host and port, then keep the server alive with serve_forever().'
-        'Implement GET /healthz as HTTP 200 application/json with {"ok": true}.'
-        'Then wire python -m batchrelay serve to batchrelay.server.run.'
-        'Create tests/__init__.py and tests/test_server.py in the first turn.'
-        'The subprocess test starts the documented serve command on an available port.'
-        'It polls /healthz, confirms the server stays alive, and stops it during cleanup.'
-        'Do not stop at a help-only __main__.py; require the discovered health test to pass.'
-        'Preserve a working health endpoint and CLI; do not rewrite a passing slice.'
-        'Complete the HTTP contract before worker behavior.'
-        'Cover health, signed admission, and batch status.'
-        'Validate the complete batch and dependency graph before one atomic database write.'
-        'Malformed bodies, duplicate ids, and unknown fields return JSON 400.'
-        'Missing or repeated dependencies return JSON 400.'
-        'Self-dependencies and cycles also return JSON 400.'
-        'Rejected requests leave no rows; the server stays up for the next request.'
-        'New signed batches return 202; exact replays return 200; conflicts return 409.'
-        'Missing or invalid signatures return 401 before any database write.'
-        'Verify raw-byte HMAC-SHA256 before parsing; compare digests in constant time.'
-        'GET /batches/<batch_id> returns full status or JSON 404 for an unknown batch.'
-        'Add HTTP tests for rejected input followed by another request.'
-        'Cover batch status reads and restart persistence.'
-        'Do not start worker work until all focused HTTP tests pass.'
-        'Then implement worker --once with dependency order and lease reclaim.'
-        'Keep retryable failures pending; permanent failures block dependent jobs.'
-        'Worker --once attempts each runnable job once and never polls.'
-        'Invoke the sink as argv without a shell and send one JSON line for each claimed job.'
-        'Add focused worker tests after the HTTP tests pass.'
-        'Use small modules for core behavior when that keeps the implementation clear.'
-        'After behavior and tests pass, update README only as SPEC.md requires.'
-        'The harness runs checks each turn; do not repeat checks or start the service.'
-        'Never inspect the external oracle.'
-      ) -join [Environment]::NewLine)
+      if ($phase -eq "initial") { $phase = "foundation" }
+      switch ($phase) {
+        "foundation" {
+          return (@(
+            'Create batchrelay/__main__.py with argparse and lazy command imports.'
+            'Create tests/__init__.py and tests/test_cli.py.'
+            'Subprocess-test top-level, serve, and worker help with sys.executable.'
+            'Each help command must exit zero while server.py and worker.py remain absent.'
+            'For this phase, do not implement the server, HTTP routes, or worker.'
+            'Advance to /healthz only after project tests and all three help commands pass.'
+            'Then gate health, HTTP, and worker behavior in separate phases.'
+            'Never inspect or run the external oracle.'
+          ) -join [Environment]::NewLine)
+        }
+        "health" {
+          return (@(
+            'The CLI and test-discovery foundation passed; implement only server health now.'
+            'Create server.py with run(db, secret, host, port); bind and call serve_forever().'
+            'Implement GET /healthz as HTTP 200 application/json with {"ok": true}.'
+            'Wire the serve command to server.run with a lazy import after argument parsing.'
+            'Add tests/test_server.py with a subprocess health check and cleanup.'
+            'Check that the service stays alive while /healthz is polled.'
+            'Do not add batch routes or worker until this health test and all help checks pass.'
+            'Never inspect or run the external oracle.'
+          ) -join [Environment]::NewLine)
+        }
+        "http" {
+          return (@(
+            'Server health passed; complete the HTTP contract in tests/test_http.py.'
+            'Cover signed admission and status; preserve health and CLI.'
+            'Validate the complete batch and dependency graph before one atomic database write.'
+            'Malformed bodies, duplicate ids, and unknown fields return JSON 400.'
+            'Missing or repeated dependencies, self-dependencies, and cycles return JSON 400.'
+            'Rejected requests leave no rows, and the server stays up for the next request.'
+            'New signed batches return 202; exact replays return 200; conflicts return 409.'
+            'Missing or invalid signatures return 401 before any database write.'
+            'Verify raw-byte HMAC-SHA256 before parsing and compare digests in constant time.'
+            'GET /batches/<batch_id> returns full status or JSON 404 for an unknown batch.'
+            'Test rejected requests, status reads, and restart persistence.'
+            'Do not start worker work until the focused HTTP tests pass in the harness.'
+            'Never inspect or run the external oracle.'
+          ) -join [Environment]::NewLine)
+        }
+        "worker" {
+          return (@(
+            'HTTP passed; implement worker --once with tests/test_worker.py.'
+            'Process runnable jobs in dependency order and reclaim expired leases.'
+            'Keep retryable failures pending; permanent failures block dependent jobs.'
+            'Worker --once attempts each runnable job once and never polls.'
+            'Invoke the sink as argv without a shell and send one JSON line for each claimed job.'
+            'Preserve every passing CLI and HTTP behavior; do not rewrite a passing slice.'
+            'After behavior and tests pass, update README only as SPEC.md requires.'
+            'Never inspect or run the external oracle.'
+          ) -join [Environment]::NewLine)
+        }
+        default {
+          return (@(
+            'All CLI, health, HTTP, and worker test files exist; project tests and help pass.'
+            'Use initial SPEC.md notes to fill missing behavior and add regressions.'
+            'Preserve passing slices, and update README only as SPEC.md requires.'
+            'The harness gives only oracle pass/fail status; never inspect or run the oracle.'
+          ) -join [Environment]::NewLine)
+        }
+      }
     }
     default {
       return (@(
@@ -409,38 +439,14 @@ directories to its extended Windows path with `cd` or `cd /d`.
     }
   } elseif ($case.Id -eq "05-batch-relay") {
     $caseSpecificInstructions = @(
-      'First implement batchrelay/server.py with run(db, secret, host, port).'
-      'Bind the configured host and port, then keep the server alive with serve_forever().'
-      'Implement GET /healthz as HTTP 200 application/json with {"ok": true}.'
-      'Then wire python -m batchrelay serve to batchrelay.server.run.'
-      'Create tests/__init__.py and tests/test_server.py in the first turn.'
-      'The subprocess test starts the documented serve command on an available port.'
-      'It polls /healthz, confirms the server stays alive, and stops it during cleanup.'
-      'Do not stop at a help-only __main__.py; require the discovered health test to pass.'
-      'Preserve a working health endpoint and CLI; do not rewrite a passing slice.'
-      'Complete the HTTP contract before worker behavior.'
-      'Cover health, signed admission, and batch status.'
-      'Validate the complete batch and dependency graph before one atomic database write.'
-      'Malformed bodies, duplicate ids, and unknown fields return JSON 400.'
-      'Missing or repeated dependencies return JSON 400.'
-      'Self-dependencies and cycles also return JSON 400.'
-      'Rejected requests leave no rows; the server stays up for the next request.'
-      'New signed batches return 202; exact replays return 200; conflicts return 409.'
-      'Missing or invalid signatures return 401 before any database write.'
-      'Verify raw-byte HMAC-SHA256 before parsing; compare digests in constant time.'
-      'GET /batches/<batch_id> returns full status or JSON 404 for an unknown batch.'
-      'Add HTTP tests for rejected input followed by another request.'
-      'Cover batch status reads and restart persistence.'
-      'Do not start worker work until all focused HTTP tests pass.'
-      'Then implement worker --once with dependency order and lease reclaim.'
-      'Keep retryable failures pending; permanent failures block dependent jobs.'
-      'Worker --once attempts each runnable job once and never polls.'
-      'Invoke the sink as argv without a shell and send one JSON line for each claimed job.'
-      'Add focused worker tests after the HTTP tests pass.'
-      'Use small modules for core behavior when that keeps the implementation clear.'
-      'After behavior and tests pass, update README only as SPEC.md requires.'
-      'The harness runs checks each turn; do not repeat checks or start the service.'
-      'Never inspect the external oracle.'
+      'Create batchrelay/__main__.py with argparse and lazy command imports.'
+      'Create tests/__init__.py and tests/test_cli.py.'
+      'Subprocess-test top-level, serve, and worker help with sys.executable.'
+      'Each help command must exit zero while server.py and worker.py remain absent.'
+      'For this phase, do not implement the server, HTTP routes, or worker.'
+      'Advance to /healthz only after project tests and all three help commands pass.'
+      'Then gate health, HTTP, and worker behavior in separate phases.'
+      'Never inspect or run the external oracle.'
     )
   }
   foreach ($instruction in $caseSpecificInstructions) {
@@ -500,8 +506,13 @@ function Get-RecoveryFeedback([object]$verification) {
   $lines -join "`n"
 }
 
-function Get-RecoveryPrompt([hashtable]$case, [object]$verification) {
+function Get-RecoveryPrompt(
+  [hashtable]$case,
+  [object]$verification,
+  [string]$ProjectPath = ""
+) {
   $feedback = Get-RecoveryFeedback $verification
+  $case05Phase = $null
   if ($case.Id -eq "05-batch-relay") {
     $oracleStatus = if ($verification.oracle.timed_out) {
       "timed out"
@@ -512,28 +523,87 @@ function Get-RecoveryPrompt([hashtable]$case, [object]$verification) {
     }
     $oracleStatusLine = "Independent acceptance oracle: $oracleStatus (diagnostic details hidden)."
     $feedback = "$oracleStatusLine`n$feedback"
+
+    $projectTestsPassed = $false
+    if ($verification.project_tests) {
+      $projectTestsPassed = -not $verification.project_tests.timed_out -and
+        $verification.project_tests.exit_code -eq 0
+    }
+    $helpChecksPassed = @($verification.help).Count -eq 3
+    foreach ($helpCheck in @($verification.help)) {
+      if ($helpCheck.timed_out -or $helpCheck.exit_code -ne 0) {
+        $helpChecksPassed = $false
+      }
+    }
+
+    $cliTestFilesPresent = $false
+    $serverTestPresent = $false
+    $httpTestPresent = $false
+    $workerTestPresent = $false
+    if (-not [string]::IsNullOrWhiteSpace($ProjectPath)) {
+      $testsPath = Join-Path $ProjectPath "tests"
+      $cliTestFilesPresent = (Test-Path -LiteralPath (Join-Path $testsPath "__init__.py")) -and
+        (Test-Path -LiteralPath (Join-Path $testsPath "test_cli.py"))
+      $serverTestPresent = Test-Path -LiteralPath (Join-Path $ProjectPath "tests\test_server.py")
+      $httpTestPresent = Test-Path -LiteralPath (Join-Path $ProjectPath "tests\test_http.py")
+      $workerTestPresent = Test-Path -LiteralPath (Join-Path $ProjectPath "tests\test_worker.py")
+    }
+
+    if (-not $cliTestFilesPresent -or -not $helpChecksPassed) {
+      $case05Phase = "foundation"
+    } elseif (-not $projectTestsPassed) {
+      $case05Phase = if ($workerTestPresent) {
+        "worker"
+      } elseif ($httpTestPresent) {
+        "http"
+      } elseif ($serverTestPresent) {
+        "health"
+      } else {
+        "foundation"
+      }
+    } elseif (-not $serverTestPresent) {
+      $case05Phase = "health"
+    } elseif (-not $httpTestPresent) {
+      $case05Phase = "http"
+    } elseif (-not $workerTestPresent) {
+      $case05Phase = "worker"
+    } else {
+      $case05Phase = "finish"
+    }
   }
   $toolingGuidance = Get-WindowsToolGuidance
-  $caseGuidance = Get-CaseGuidance $case
+  $caseGuidance = if ($case.Id -eq "05-batch-relay") {
+    Get-CaseGuidance $case $case05Phase
+  } else {
+    Get-CaseGuidance $case
+  }
   $verificationResultLabel = if ($case.Id -eq "05-batch-relay") {
     'Previous harness results (oracle status, project tests, and help commands):'
   } else {
     'Previous local verification results (project tests and help commands):'
   }
   $recoveryHeader = if ($case.Id -eq "05-batch-relay") {
-    'Use the spec read in the initial turn and harness results; do not reread SPEC.md. ' +
-      'Inspect existing files before editing and preserve working behavior. ' +
-      'If batchrelay/server.py is missing, create it before wiring serve to that module. ' +
-      'Do not treat a help-only __main__.py as a working server. ' +
-      'Add tests/__init__.py and tests/test_server.py if missing. ' +
-      'Make server.run bind the configured host and port, then call serve_forever(). ' +
-      'The subprocess test starts the documented command and checks GET /healthz. ' +
-      'It confirms the server stays alive and stops it during cleanup. ' +
-      'Make /healthz return HTTP 200 application/json with {"ok": true}. ' +
-      'Finish the HTTP contract and focused HTTP tests before worker behavior. ' +
-      'After those tests pass, implement bounded worker behavior and focused worker tests. ' +
-      'Defer README edits until behavior and tests pass. Work only in this workspace; ' +
-      'do not edit the specification, config, or oracle.'
+    $phaseHeader = switch ($case05Phase) {
+      "foundation" {
+        'CLI and test-discovery did not pass. Fix them before server, HTTP, or worker code.'
+      }
+      "health" {
+        'CLI and test discovery passed. Implement and verify only persistent server health.'
+      }
+      "http" {
+        'CLI and server health passed. Complete and verify HTTP before worker behavior.'
+      }
+      "worker" {
+        'CLI, health, and HTTP passed. Complete worker behavior while preserving those slices.'
+      }
+      default {
+        'CLI, health, HTTP, and worker tests exist; local tests and help all pass.'
+      }
+    }
+    'Use SPEC.md read in the initial turn; do not reread it. ' +
+      'Inspect existing files and preserve passing behavior. ' +
+      $phaseHeader + ' ' +
+      'Work only in this workspace; do not edit the specification, config, or oracle.'
   } else {
     "Read SPEC.md and inspect the files already present. Work only inside this" +
       [Environment]::NewLine +
@@ -559,8 +629,8 @@ harness for verification.
       'The harness reruns project tests, all three help commands, and the independent oracle after'
       'each attempt. Recovery feedback gives only the oracle pass/fail status.'
       'Feedback also includes project-test and help results.'
-      'Oracle diagnostics and source stay hidden; use SPEC.md and local test diagnostics.'
-      'Do not run commands, tests, help checks, or launch the service or worker.'
+      'Oracle diagnostics stay hidden; use local diagnostics and the initial SPEC.md read.'
+      'Do not run tests or help commands; do not launch service, worker, or oracle.'
       'Never inspect or run the oracle. Use workspace read/write tools and harness results.'
     ) -join [Environment]::NewLine)
   } else {
@@ -569,11 +639,25 @@ Continue working through the missing items in SPEC.md, then run the complete pro
 unittest suite, the project-specific help commands, and a smoke sequence.
 '@
   }
+  $completionDirective = if ($case.Id -eq "05-batch-relay") {
+    'Complete this slice; advance after project tests and help pass.'
+  } else {
+    'Finish every missing implementation, README section, and focused test required by the spec.'
+  }
+  $continuationDirective = if ($case.Id -eq "05-batch-relay") {
+    'Use failing local checks to repair this slice. Oracle status only; do not inspect or run it.'
+  } else {
+    'Continue working through the missing items in SPEC.md.'
+  }
+  $priorityDirective = if ($case.Id -eq "05-batch-relay") {
+    'Prioritize the current gated phase.'
+  } else {
+    "Prioritize the full reliability contract: $($case.Focus)."
+  }
   $prompt = @"
 Continue the incomplete $($case.Package) implementation in this workspace.
-$recoveryHeader Finish every missing implementation, README section, and
-focused test required by the spec. Prioritize the full reliability contract:
-$($case.Focus).
+$recoveryHeader
+$completionDirective $priorityDirective
 
 $caseGuidance
 
@@ -583,8 +667,8 @@ $toolingGuidance
 $verificationResultLabel
 $feedback
 
-Use any failing local results above to correct the implementation. Continue
-working through the missing items in SPEC.md.
+Use any failing local results above to correct the implementation.
+$continuationDirective
 $verificationGuidance
 If anything remains incomplete, state it instead of claiming success.
 "@
@@ -615,34 +699,24 @@ If anything remains incomplete, state it instead of claiming success.
         'Do not run commands, tests, or help checks, or launch the HTTP service or worker.')) {
     throw 'Case 03 recovery prompt must defer execution and verification to the harness.'
   }
-  if ($case.Id -eq "05-batch-relay" -and
-      (-not $prompt.Contains('do not reread SPEC.md.') -or
-       -not $prompt.Contains('Recovery feedback gives only the oracle pass/fail status.') -or
-       -not $prompt.Contains(
-         'If batchrelay/server.py is missing, create it before wiring serve to that module.') -or
-       -not $prompt.Contains('Do not treat a help-only __main__.py as a working server.') -or
-       -not $prompt.Contains('Add tests/__init__.py and tests/test_server.py if missing.') -or
-       -not $prompt.Contains(
-         'Make server.run bind the configured host and port, then call serve_forever().') -or
-       -not $prompt.Contains(
-         'The subprocess test starts the documented command and checks GET /healthz.') -or
-       -not $prompt.Contains('Complete the HTTP contract before worker behavior.') -or
-       -not $prompt.Contains('Cover health, signed admission, and batch status.') -or
-       -not $prompt.Contains(
-         'Rejected requests leave no rows; the server stays up for the next request.') -or
-       -not $prompt.Contains(
-         'GET /batches/<batch_id> returns full status or JSON 404 for an unknown batch.') -or
-       -not $prompt.Contains(
-         'Verify raw-byte HMAC-SHA256 before parsing; compare digests in constant time.') -or
-       -not $prompt.Contains(
-         'Do not start worker work until all focused HTTP tests pass.') -or
-       -not $prompt.Contains(
-         'Then implement worker --once with dependency order and lease reclaim.') -or
-       -not $prompt.Contains(
-         'Worker --once attempts each runnable job once and never polls.') -or
-       $prompt.Contains('Read SPEC.md and inspect the files already present.'))) {
-    throw 'Case 05 recovery prompt must reuse the embedded SPEC and defer' +
-      ' verification to the harness.'
+  if ($case.Id -eq "05-batch-relay") {
+    $phaseInstruction = switch ($case05Phase) {
+      "foundation" { 'CLI and test-discovery did not pass.' }
+      "health" { 'CLI and test discovery passed.' }
+      "http" { 'CLI and server health passed.' }
+      "worker" { 'CLI, health, and HTTP passed.' }
+      default { 'CLI, health, HTTP, and worker tests exist' }
+    }
+    if (-not $prompt.Contains('do not reread it.') -or
+        -not $prompt.Contains('Recovery feedback gives only the oracle pass/fail status.') -or
+        -not $prompt.Contains($phaseInstruction) -or
+        -not $prompt.Contains(
+          'Complete this slice; advance after project tests and help pass.') -or
+        -not $prompt.Contains(
+          'Do not run tests or help commands; do not launch service, worker, or oracle.') -or
+        $prompt.Contains('Read SPEC.md and inspect the files already present.')) {
+      throw 'Case 05 recovery prompt must select a gated slice and defer verification.'
+    }
   }
   return $prompt
 }
@@ -950,7 +1024,7 @@ function Invoke-AgentCase([hashtable]$case, [string]$agent, [string]$root, [stri
     $prompt = if ($turn -eq 1) {
       Get-InitialPrompt $case
     } else {
-      Get-RecoveryPrompt $case $lastVerification
+      Get-RecoveryPrompt $case $lastVerification $workspace.project
     }
     $turnRoot = Join-Path $agentRoot ("turn-{0:D2}" -f $turn)
     New-Item -ItemType Directory -Force -Path $turnRoot | Out-Null
