@@ -122,17 +122,28 @@ function Get-CaseGuidance([hashtable]$case, [string]$phase = "initial") {
       ) -join "`n")
     }
     "05-batch-relay" {
-      if ($phase -eq "initial") { $phase = "foundation" }
       switch ($phase) {
+        "initial" {
+          return (@(
+            'Build an import-safe CLI and persistent health server before batch behavior.'
+            'Create batchrelay/__main__.py with argparse and lazy command imports.'
+            'Create tests/__init__.py, tests/test_cli.py, and tests/test_server.py.'
+            'Use subprocess tests with sys.executable for top-level, serve, and worker help.'
+            'Implement server.run(db, secret, host, port).'
+            'Make GET /healthz return HTTP 200 JSON {"ok": true}.'
+            'Subprocess-test serve: poll /healthz, confirm it stays alive, and clean up.'
+            'Keep command modules lazy so every help command succeeds before worker.py exists.'
+            'Do not implement signed batch routes or worker behavior in this first phase.'
+            'Advance only after harness project tests and all three help commands pass.'
+            'Never inspect or run the external oracle.'
+          ) -join [Environment]::NewLine)
+        }
         "foundation" {
           return (@(
-            'Create batchrelay/__main__.py with argparse and lazy command imports.'
-            'Create tests/__init__.py and tests/test_cli.py.'
-            'Subprocess-test top-level, serve, and worker help with sys.executable.'
-            'Each help command must exit zero while server.py and worker.py remain absent.'
-            'For this phase, do not implement the server, HTTP routes, or worker.'
-            'Advance to /healthz only after project tests and all three help commands pass.'
-            'Then gate health, HTTP, and worker behavior in separate phases.'
+            'Repair the argparse CLI and importable tests package first.'
+            'Lazy-import server and worker after command parsing so all help commands work.'
+            'Ensure tests/__init__.py and subprocess checks in tests/test_cli.py exist.'
+            'Do not work on health, HTTP, or worker until project tests and help pass.'
             'Never inspect or run the external oracle.'
           ) -join [Environment]::NewLine)
         }
@@ -148,20 +159,27 @@ function Get-CaseGuidance([hashtable]$case, [string]$phase = "initial") {
             'Never inspect or run the external oracle.'
           ) -join [Environment]::NewLine)
         }
-        "http" {
+        "admission" {
           return (@(
-            'Server health passed; complete the HTTP contract in tests/test_http.py.'
-            'Cover signed admission and status; preserve health and CLI.'
-            'Validate the complete batch and dependency graph before one atomic database write.'
-            'Malformed bodies, duplicate ids, and unknown fields return JSON 400.'
-            'Missing or repeated dependencies, self-dependencies, and cycles return JSON 400.'
-            'Rejected requests leave no rows, and the server stays up for the next request.'
+            'CLI and server health passed; implement signed POST /batches in tests/test_http.py.'
+            'Accept a valid signed batch and persist its jobs in one atomic database write.'
             'New signed batches return 202; exact replays return 200; conflicts return 409.'
             'Missing or invalid signatures return 401 before any database write.'
             'Verify raw-byte HMAC-SHA256 before parsing and compare digests in constant time.'
+            'Preserve the passing CLI and health endpoint; do not implement worker behavior.'
+            'Never inspect or run the external oracle.'
+          ) -join [Environment]::NewLine)
+        }
+        "contract" {
+          return (@(
+            'Signed admission passed; add validation and status tests in test_contract.py.'
+            'Validate the full batch and dependency graph before one atomic database write.'
+            'Malformed bodies, duplicate ids, and unknown fields return JSON 400.'
+            'Missing or repeated dependencies, self-dependencies, and cycles return JSON 400.'
+            'Rejected requests leave no rows, and the server stays up for the next request.'
             'GET /batches/<batch_id> returns full status or JSON 404 for an unknown batch.'
-            'Test rejected requests, status reads, and restart persistence.'
-            'Do not start worker work until the focused HTTP tests pass in the harness.'
+            'Test status reads and persistence across a server restart.'
+            'Do not start worker work until these focused contract tests pass.'
             'Never inspect or run the external oracle.'
           ) -join [Environment]::NewLine)
         }
@@ -439,13 +457,16 @@ directories to its extended Windows path with `cd` or `cd /d`.
     }
   } elseif ($case.Id -eq "05-batch-relay") {
     $caseSpecificInstructions = @(
+      'Build an import-safe CLI and persistent health server before batch behavior.'
       'Create batchrelay/__main__.py with argparse and lazy command imports.'
-      'Create tests/__init__.py and tests/test_cli.py.'
-      'Subprocess-test top-level, serve, and worker help with sys.executable.'
-      'Each help command must exit zero while server.py and worker.py remain absent.'
-      'For this phase, do not implement the server, HTTP routes, or worker.'
-      'Advance to /healthz only after project tests and all three help commands pass.'
-      'Then gate health, HTTP, and worker behavior in separate phases.'
+      'Create tests/__init__.py, tests/test_cli.py, and tests/test_server.py.'
+      'Use subprocess tests with sys.executable for top-level, serve, and worker help.'
+      'Implement server.run(db, secret, host, port).'
+      'Make GET /healthz return HTTP 200 JSON {"ok": true}.'
+      'Subprocess-test serve: poll /healthz, confirm it stays alive, and clean up.'
+      'Keep command modules lazy so every help command succeeds before worker.py exists.'
+      'Do not implement signed batch routes or worker behavior in this first phase.'
+      'Advance only after harness project tests and all three help commands pass.'
       'Never inspect or run the external oracle.'
     )
   }
@@ -539,6 +560,7 @@ function Get-RecoveryPrompt(
     $cliTestFilesPresent = $false
     $serverTestPresent = $false
     $httpTestPresent = $false
+    $contractTestPresent = $false
     $workerTestPresent = $false
     if (-not [string]::IsNullOrWhiteSpace($ProjectPath)) {
       $testsPath = Join-Path $ProjectPath "tests"
@@ -546,6 +568,7 @@ function Get-RecoveryPrompt(
         (Test-Path -LiteralPath (Join-Path $testsPath "test_cli.py"))
       $serverTestPresent = Test-Path -LiteralPath (Join-Path $ProjectPath "tests\test_server.py")
       $httpTestPresent = Test-Path -LiteralPath (Join-Path $ProjectPath "tests\test_http.py")
+      $contractTestPresent = Test-Path -LiteralPath (Join-Path $testsPath "test_contract.py")
       $workerTestPresent = Test-Path -LiteralPath (Join-Path $ProjectPath "tests\test_worker.py")
     }
 
@@ -554,8 +577,10 @@ function Get-RecoveryPrompt(
     } elseif (-not $projectTestsPassed) {
       $case05Phase = if ($workerTestPresent) {
         "worker"
+      } elseif ($contractTestPresent) {
+        "contract"
       } elseif ($httpTestPresent) {
-        "http"
+        "admission"
       } elseif ($serverTestPresent) {
         "health"
       } else {
@@ -564,7 +589,9 @@ function Get-RecoveryPrompt(
     } elseif (-not $serverTestPresent) {
       $case05Phase = "health"
     } elseif (-not $httpTestPresent) {
-      $case05Phase = "http"
+      $case05Phase = "admission"
+    } elseif (-not $contractTestPresent) {
+      $case05Phase = "contract"
     } elseif (-not $workerTestPresent) {
       $case05Phase = "worker"
     } else {
@@ -590,11 +617,14 @@ function Get-RecoveryPrompt(
       "health" {
         'CLI and test discovery passed. Implement and verify only persistent server health.'
       }
-      "http" {
-        'CLI and server health passed. Complete and verify HTTP before worker behavior.'
+      "admission" {
+        'CLI and server health passed. Complete and verify signed batch admission.'
+      }
+      "contract" {
+        'Signed admission passed. Complete and verify HTTP validation and status.'
       }
       "worker" {
-        'CLI, health, and HTTP passed. Complete worker behavior while preserving those slices.'
+        'The HTTP contract passed. Complete worker behavior while preserving prior slices.'
       }
       default {
         'CLI, health, HTTP, and worker tests exist; local tests and help all pass.'
@@ -703,8 +733,9 @@ If anything remains incomplete, state it instead of claiming success.
     $phaseInstruction = switch ($case05Phase) {
       "foundation" { 'CLI and test-discovery did not pass.' }
       "health" { 'CLI and test discovery passed.' }
-      "http" { 'CLI and server health passed.' }
-      "worker" { 'CLI, health, and HTTP passed.' }
+      "admission" { 'CLI and server health passed.' }
+      "contract" { 'Signed admission passed.' }
+      "worker" { 'The HTTP contract passed.' }
       default { 'CLI, health, HTTP, and worker tests exist' }
     }
     if (-not $prompt.Contains('do not reread it.') -or

@@ -449,9 +449,16 @@ Neither agent resolved the oracle. Rupi finished 410,837 ms sooner, while Pi use
 work tokens, so this run is inconclusive. The next prompt should target one signed batch HTTP path
 after the health gate passes. PR #137 remains draft.
 
+## Eleventh prompt iteration — pending
+
+Run: `bench-20260930-case05-cli-health-admission-r11-grace6-cap8-pi0861-low-matched4-600s`.
+
+R10 showed Rupi needed separate turns for CLI/test discovery and server health, leaving no turn to
+complete HTTP behavior. R11 asks for an import-safe CLI, discoverable tests, and persistent
+`/healthz` in the first focused slice. Recovery gates signed admission, validation/status, and
+worker behavior on passing project tests and help checks. The all-case benchmark dry run and
+`git diff --check` passed. The matched run is pending; PR #137 remains draft.
+
 ## Current outcome
 
-Case 05 remains open. R10 fixed Rupi's CLI import and test-discovery failures and produced a passing
-health slice, but it did not reach HTTP behavior. Pi passed CLI checks but did not create a server.
-Neither resolved the oracle; Rupi was faster and Pi used fewer work tokens. The next prompt should
-target one signed batch HTTP path after the health gate passes.
+Case 05 remains open after R10's inconclusive comparison. R11's matched run is pending.
