@@ -1397,8 +1397,10 @@ TUI rendering passed all budgets (3.31–3.90 µs/unit); checkpointed restore me
   an HTTP test module. R13 was inconclusive: neither agent resolved the oracle. Rupi was
   350,998 ms faster but used 15,715 more work tokens. The first-write/no-`exec` prompt avoided
   stalled recovery and passed Rupi's CLI/server checks, but Rupi added no HTTP test module. Pi's
-  tests and help passed on turns 3–4, with `tests/test_http.py` present. R14 will target one tested
-  signed POST path while preserving health. See the
+  tests and help passed on turns 3–4, with `tests/test_http.py` present. R14 now asks the first
+  runnable module to include CLI, health, and one signed POST, with success and signature-rejection
+  tests. It defers validation, status, and worker behavior. The all-case dry run and changed-line
+  checks passed; prompt commit `eb4fa27` is pushed, and the matched run is pending. See the
   [Case 05 ledger](docs/benchmark/2026-09-29-case05-batch-relay-ledger.md).
 
   Case 06 ran with the pinned Pi 0.86.1 baseline. Pi resolved on turn 4 after its outer timeout,

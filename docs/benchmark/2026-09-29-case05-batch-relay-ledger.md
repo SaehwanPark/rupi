@@ -607,7 +607,23 @@ tokens and finished with an HTTP test module. This run is inconclusive: Rupi sta
 health, but did not complete HTTP admission. The next prompt should focus on one tested signed POST
 path while preserving the passing health slice. PR #137 remains draft.
 
-## Current outcome
+## Thirteenth-run outcome
 
 Case 05 remains open after R13's inconclusive comparison. Both agents passed local checks on some
 turns, but neither resolved the oracle. Rupi still lacks an HTTP test module.
+
+## Fourteenth prompt iteration — pending
+
+Run: `bench-20261001-case05-signed-post-r14-grace6-cap8-pi0861-low-matched4-600s`.
+
+R14 puts one signed `POST /batches` path in the initial runnable `batchrelay/__main__.py` alongside
+CLI and health. It requires a valid one-job batch test and missing, malformed, and incorrect
+signature tests that confirm no database mutation. Recovery keeps the same admission slice and
+defers broad validation, idempotency, status, and worker behavior. The all-case dry run,
+`git diff --check`, and changed-line length check passed. Prompt commit `eb4fa27` is pushed; the
+matched run and CI are pending. PR #137 remains draft.
+
+## Current outcome
+
+R14's prompt is committed and pushed. The matched run is pending; Case 05 remains open based on
+R13's inconclusive result.
