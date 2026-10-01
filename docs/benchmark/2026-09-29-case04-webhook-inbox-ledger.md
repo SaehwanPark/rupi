@@ -178,15 +178,36 @@ above.
 
 ## Current outcome
 
-Case 04 remains open after four Pi wins. R4 was the first Rupi oracle resolution, but it required
-one more turn and used more work tokens and wall time than Pi. PR #136 stays draft while the next
-prompt iteration targets a one-turn, lower-token resolution and an actual discovered test.
+Case 04 remains open after five Pi wins. R5 resolved the oracle with Rupi in turn 3, but Pi
+resolved in turn 1 and used fewer work tokens and less wall time. PR #136 stays draft while the
+next prompt iteration targets one complete source write with fewer model/tool round-trips.
 
-## One-turn completion prompt iteration (R5, pending)
+## One-turn completion prompt rerun (R5)
+
+Run: `bench-20261001-case04-one-turn-completion-grace6-cap8-pi0861-low-matched4-600s`.
+This used Pi 0.86.1, low reasoning, four turns, 600-second outer timeouts, eight requests per
+turn, and a 594-second Rupi provider timeout. R5 asked for a complete one-file service and worker,
+plus a discovered unittest and README.
+
+| Agent | T | Elapsed ms | Work | Req | Tools | Oracle/tests | Help T/S/W | Result |
+| --- | ---: | ---: | ---: | ---: | ---: | --- | --- | --- |
+| Rupi | 1 | 594,501 | 0 | 1 / 1 | 0 | 1 / 1 | 1 / 1 / 1 | provider timeout |
+| Rupi | 2 | 595,825 | 0 | 1 / 1 | 0 | 1 / 1 | 1 / 1 / 1 | provider timeout |
+| Rupi | 3 | 600,367 | 25,525 | 6 / 5 | 5 | 0 / 1 | 0 / 0 / 0 | timeout; resolved |
+| Pi | 1 | 600,213 | 15,513 | 1 / 1 | 1 | 0 / 1 | 0 / 0 / 0 | timeout; resolved |
+
+Rupi's first two turns had no work tokens, tools, or implementation files. It resolved the oracle
+in turn 3; help passed, but project tests exited 1. Its final snapshot contained only
+`webhookinbox/__init__.py` and `webhookinbox/__main__.py`, with no tests or README. Pi resolved in
+turn 1, passed every help command, and also had project tests exit 1. Rupi used 25,525 work tokens
+over 1,790,693 ms; Pi used 15,513 over 600,213 ms. Pi resolved two turns earlier and used 10,012
+fewer work tokens over 1,190,480 fewer milliseconds, so Pi won.
+
+## One-write prompt iteration (R6, pending)
 
 Proposed run:
-`bench-20261001-case04-one-turn-completion-grace6-cap8-pi0861-low-matched4-600s`.
-The initial prompt will keep the app in one `__main__.py` vertical slice and request a real
-`tests/test_cli.py` containing at least one unittest, not only test helpers. Recovery will repair
-test discovery explicitly when unittest exits 5, then complete remaining worker requirements.
-The all-case dry run and matched comparison are pending.
+`bench-20261001-case04-one-write-first-grace6-cap8-pi0861-low-matched4-600s`.
+R5 needed five completed tools across six requests in its resolving turn. The next prompt will
+require one workspace write containing all application code in `webhookinbox/__main__.py` and
+defer README or test files until the runnable service is complete. The all-case dry run and
+matched comparison are pending.

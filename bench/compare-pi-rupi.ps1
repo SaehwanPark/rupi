@@ -124,44 +124,39 @@ function Get-CaseGuidance([hashtable]$case, [string]$phase = "initial") {
     "04-webhook-inbox" {
       if ($phase -eq "initial") {
         return (@(
-          'First tool call: workspace write a complete webhookinbox/__main__.py service.'
+          'First tool call: workspace write the complete webhookinbox/__main__.py implementation.'
           'The full Case 04 specification is embedded in this prompt.'
           'Do not call read, exec, or another inspection tool before this first write.'
           'Use the workspace write tool for the first source file.'
-          'Keep the complete standard-library implementation in __main__.py for this run.'
-          'Implement the HTTP service, durable SQLite contract, and complete worker flow.'
-          'Register top-level, serve, and worker parsers in this file.'
+          'Use one workspace write for all CLI, HTTP, SQLite, and worker application code.'
+          'Keep the complete standard-library application in __main__.py; do not split modules.'
           'The serve command is python -m webhookinbox serve --db PATH --secret SECRET'
           '--host HOST --port PORT.'
           'The worker command is python -m webhookinbox worker --db PATH --sink PROGRAM'
           '[--sink-arg ARG]... --lease-seconds SECONDS --once.'
-          'Include useful top-level, serve, and worker help with the implementation.'
+          'Include useful top-level, serve, and worker help in the implementation.'
           'Support GET /healthz, GET /deliveries/<id>, and signed POST /deliveries.'
           'Verify HMAC-SHA256 over the exact raw body bytes before any database mutation.'
           'Use constant-time signature comparison; invalid signatures return 401 without writes.'
           'Valid new deliveries return 202; identical repeats return 200; conflicts return 409.'
           'The worker commits each lease before starting its sink and reclaims expired leases.'
           'Pass sink arguments directly without a shell and exchange one JSON line per delivery.'
-          'After the service works, create tests/__init__.py and tests/test_cli.py.'
-          'Include at least one unittest.TestCase method named test_* so unittest discovers a test.'
-          'A helper package or sink script is not enough; unittest discovery must find a test.'
-          'Add a concise README covering commands, signatures, routes, leases, sink, persistence,'
-          'and the exact test command.'
-          'Do not create support modules or call exec for shell commands.'
+          'Complete the runnable service before spending additional writes on README or tests.'
+          'Do not run commands, tests, help checks, the service, worker, or oracle.'
           'The harness independently runs project tests, three help commands, and the oracle.'
           'Oracle results and diagnostics are not shown in recovery feedback.'
-          'Do not run commands, tests, help checks, the service, worker, or oracle.'
+          'Do not call exec for shell commands.'
         ) -join "`n")
       }
       switch ($phase) {
         "entrypoint" {
           return (@(
             'The current file snapshot has no webhookinbox/__main__.py; create that file first.'
-            'Put the complete standard-library service and worker implementation in that file.'
+            'Use one workspace write for the complete standard-library application in that file.'
             'Implement the HTTP contract, durable SQLite behavior, and worker lease flow.'
             'Implement argparse subcommands for serve and worker so all three help commands work.'
             'Use the exact serve and worker command forms from the embedded specification.'
-            'Add the main guard; defer support modules, README, and tests until this file works.'
+            'Add the main guard; do not split application behavior into support modules.'
             'Do not call exec or run commands, tests, help checks, the service, worker, or oracle.'
           ) -join "`n")
         }
@@ -478,16 +473,15 @@ directories to its extended Windows path with `cd` or `cd /d`.
     $requiredInstructions += @(
       'The benchmark harness independently runs project tests, all three help commands, and the'
       'acceptance oracle after each attempt.'
-      'First tool call: workspace write a complete webhookinbox/__main__.py service.'
-      'Keep the complete standard-library implementation in __main__.py for this run.'
-      'Implement the HTTP service, durable SQLite contract, and complete worker flow.'
-      'Register top-level, serve, and worker parsers in this file.'
+      'First tool call: workspace write the complete webhookinbox/__main__.py implementation.'
+      'Use one workspace write for all CLI, HTTP, SQLite, and worker application code.'
+      'Keep the complete standard-library application in __main__.py; do not split modules.'
       'The serve command is python -m webhookinbox serve --db PATH --secret SECRET'
       'The worker command is python -m webhookinbox worker --db PATH --sink PROGRAM'
-      'After the service works, create tests/__init__.py and tests/test_cli.py.'
-      'Include at least one unittest.TestCase method named test_* so unittest discovers a test.'
-      'A helper package or sink script is not enough; unittest discovery must find a test.'
-      'Do not create support modules or call exec for shell commands.'
+      'Include useful top-level, serve, and worker help in the implementation.'
+      'Support GET /healthz, GET /deliveries/<id>, and signed POST /deliveries.'
+      'Complete the runnable service before spending additional writes on README or tests.'
+      'Do not call exec for shell commands.'
       'The harness independently runs project tests, three help commands, and the oracle.'
       'Do not run commands, tests, help checks, the service, worker, or oracle.'
     )
@@ -615,25 +609,20 @@ directories to its extended Windows path with `cd` or `cd /d`.
     }
   } elseif ($case.Id -eq "04-webhook-inbox") {
     $caseSpecificInstructions = @(
-      'First tool call: workspace write a complete webhookinbox/__main__.py service.'
-      'Keep the complete standard-library implementation in __main__.py for this run.'
-      'Implement the HTTP service, durable SQLite contract, and complete worker flow.'
-      'Register top-level, serve, and worker parsers in this file.'
+      'First tool call: workspace write the complete webhookinbox/__main__.py implementation.'
+      'Use one workspace write for all CLI, HTTP, SQLite, and worker application code.'
+      'Keep the complete standard-library application in __main__.py; do not split modules.'
       'The serve command is python -m webhookinbox serve --db PATH --secret SECRET'
       'The worker command is python -m webhookinbox worker --db PATH --sink PROGRAM'
-      'Include useful top-level, serve, and worker help with the implementation.'
+      'Include useful top-level, serve, and worker help in the implementation.'
       'Support GET /healthz, GET /deliveries/<id>, and signed POST /deliveries.'
       'Verify HMAC-SHA256 over the exact raw body bytes before any database mutation.'
       'Use constant-time signature comparison; invalid signatures return 401 without writes.'
       'Valid new deliveries return 202; identical repeats return 200; conflicts return 409.'
       'The worker commits each lease before starting its sink and reclaims expired leases.'
       'Pass sink arguments directly without a shell and exchange one JSON line per delivery.'
-      'After the service works, create tests/__init__.py and tests/test_cli.py.'
-      'Include at least one unittest.TestCase method named test_* so unittest discovers a test.'
-      'A helper package or sink script is not enough; unittest discovery must find a test.'
-      'Add a concise README covering commands, signatures, routes, leases, sink, persistence,'
-      'and the exact test command.'
-      'Do not create support modules or call exec for shell commands.'
+      'Complete the runnable service before spending additional writes on README or tests.'
+      'Do not call exec for shell commands.'
       'The harness independently runs project tests, three help commands, and the oracle.'
       'Do not run commands, tests, help checks, the service, worker, or oracle.'
     )
@@ -939,7 +928,7 @@ unittest suite, the project-specific help commands, and a smoke sequence.
   }
   $priorityDirective = if ($case.Id -eq "04-webhook-inbox") {
     if ($case04Phase -eq "entrypoint") {
-      'Prioritize the single runnable __main__.py before support modules.'
+      'Prioritize one complete __main__.py workspace write.'
     } elseif ($case04Phase -eq "interface") {
       'Prioritize all three help commands and importable test discovery.'
     } elseif ($case04Phase -eq "tests") {
@@ -1004,11 +993,11 @@ If anything remains incomplete, state it instead of claiming success.
       "entrypoint" {
         @(
           'The current file snapshot has no webhookinbox/__main__.py; create that file first.'
-          'Put the complete standard-library service and worker implementation in that file.'
+          'Use one workspace write for the complete standard-library application in that file.'
           'Implement the HTTP contract, durable SQLite behavior, and worker lease flow.'
           'Implement argparse subcommands for serve and worker so all three help commands work.'
           'Use the exact serve and worker command forms from the embedded specification.'
-          'Add the main guard; defer support modules, README, and tests until this file works.'
+          'Add the main guard; do not split application behavior into support modules.'
         )
       }
       "interface" {
