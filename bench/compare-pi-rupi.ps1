@@ -324,37 +324,34 @@ function Get-CaseGuidance([hashtable]$case, [string]$phase = "initial") {
       if ($phase -eq "initial") {
         return (@(
           'The complete Case 06 specification is embedded; do not reread SPEC.md.'
-          ('First tool call: write the complete artifactpipe/__main__.py application ' +
-            'in standard-library Python.')
+          'First tool call: write a runnable vertical slice in artifactpipe/__main__.py.'
           'Do not inspect files or run commands before this first source write.'
-          ('Keep CLI, HTTP, SQLite, validation, and worker logic in __main__.py until ' +
-            'the full flow runs.')
-          'Provide top-level, serve, and worker help from a guarded CLI.'
-          'First implement signed POST /pipelines and GET /healthz.'
-          'Verify HMAC-SHA256 over exact raw request bytes before JSON parsing.'
+          ('Keep CLI, HTTP handler, and SQLite operations in __main__.py until ' +
+            'the vertical slice runs.')
+          'Use a guarded CLI with top-level, serve, and worker help.'
+          'Implement GET /healthz and signed POST /pipelines in this first slice.'
+          'Verify HMAC-SHA256 on exact raw bytes before JSON parsing.'
           'Persist accepted pipelines and jobs atomically.'
-          'Then add validation, idempotency, and pipeline status.'
-          'Implement worker --once with ordered DAG claims and bounded leases.'
-          'Persist outputs; support retry, blocking, and expired-lease reclaim.'
-          'Invoke sinks by direct argv and no shell.'
-          'Resolve only declared top-level input_refs from successful dependency outputs.'
-          'After the app runs, create tests/__init__.py and tests/test_artifactpipe.py.'
+          'After the slice runs, create tests/__init__.py and tests/test_artifactpipe.py.'
           'Include an importable unittest.TestCase with at least one test_ method.'
+          'Then complete validation, idempotency, status, and worker --once.'
+          'Use ordered DAG claims, bounded leases, outputs, retries, and blocking.'
+          'Invoke sinks by direct argv; resolve declared input_refs from dependencies.'
           'Finish README last; use only Python standard-library modules.'
-          'The harness runs tests, three help commands, and oracle after every attempt.'
+          'The harness runs project tests, three help commands, and oracle after every attempt.'
           'Do not run commands, tests, help checks, service, worker, or oracle.'
         ) -join [Environment]::NewLine)
       }
       return (@(
-        'The full spec is embedded initially; do not reread it or inspect the oracle.'
-        'Use prior project-test and help diagnostics plus oracle pass/fail only.'
-        'If help fails, repair __main__.py while preserving working HTTP behavior.'
+        'Use local project-test and help diagnostics plus oracle pass/fail only.'
+        'If no app source exists, write the CLI/health/signed-admission slice first.'
         ('If project-test discovery exits 5, add tests/test_artifactpipe.py with a ' +
           'TestCase and test_ method.')
-        'If tests and help pass but oracle fails, complete the reliability contract and data flow.'
-        ('Preserve working CLI and server behavior while adding missing routes and worker ' +
-          'transitions.')
-        'Invoke sinks by direct argv without a shell; keep worker --once bounded and do not poll.'
+        'Fix the first project-test or help failure before adding more behavior.'
+        ('If tests/help pass but oracle fails, complete validation, data flow, and ' +
+          'worker transitions.')
+        'Preserve passing CLI/server behavior while filling the smallest remaining gap.'
+        'Keep worker --once bounded; use direct argv and do not poll.'
         'Use standard-library modules; finish README after executable behavior.'
       ) -join [Environment]::NewLine)
     }
@@ -524,7 +521,7 @@ directories to its extended Windows path with `cd` or `cd /d`.
     $requiredInstructions += @(
       'Implement Case 06 from the complete embedded specification.'
       'The complete Case 06 specification follows:'
-      'The complete Case 06 specification is embedded; do not reread SPEC.md.'
+      'First tool call: write a runnable vertical slice in artifactpipe/__main__.py.'
     )
   } else {
     $requiredInstructions += 'Read SPEC.md completely before acting'
@@ -726,24 +723,21 @@ directories to its extended Windows path with `cd` or `cd /d`.
   } elseif ($case.Id -eq "06-artifact-pipeline") {
     $caseSpecificInstructions = @(
       'The complete Case 06 specification is embedded; do not reread SPEC.md.'
-      ('First tool call: write the complete artifactpipe/__main__.py application ' +
-        'in standard-library Python.')
+      'First tool call: write a runnable vertical slice in artifactpipe/__main__.py.'
       'Do not inspect files or run commands before this first source write.'
-      ('Keep CLI, HTTP, SQLite, validation, and worker logic in __main__.py until ' +
-        'the full flow runs.')
-      'Provide top-level, serve, and worker help from a guarded CLI.'
-      'First implement signed POST /pipelines and GET /healthz.'
-      'Verify HMAC-SHA256 over exact raw request bytes before JSON parsing.'
+      ('Keep CLI, HTTP handler, and SQLite operations in __main__.py until ' +
+        'the vertical slice runs.')
+      'Use a guarded CLI with top-level, serve, and worker help.'
+      'Implement GET /healthz and signed POST /pipelines in this first slice.'
+      'Verify HMAC-SHA256 on exact raw bytes before JSON parsing.'
       'Persist accepted pipelines and jobs atomically.'
-      'Then add validation, idempotency, and pipeline status.'
-      'Implement worker --once with ordered DAG claims and bounded leases.'
-      'Persist outputs; support retry, blocking, and expired-lease reclaim.'
-      'Invoke sinks by direct argv and no shell.'
-      'Resolve only declared top-level input_refs from successful dependency outputs.'
-      'After the app runs, create tests/__init__.py and tests/test_artifactpipe.py.'
+      'After the slice runs, create tests/__init__.py and tests/test_artifactpipe.py.'
       'Include an importable unittest.TestCase with at least one test_ method.'
+      'Then complete validation, idempotency, status, and worker --once.'
+      'Use ordered DAG claims, bounded leases, outputs, retries, and blocking.'
+      'Invoke sinks by direct argv; resolve declared input_refs from dependencies.'
       'Finish README last; use only Python standard-library modules.'
-      'The harness runs tests, three help commands, and oracle after every attempt.'
+      'The harness runs project tests, three help commands, and oracle after every attempt.'
       'Do not run commands, tests, help checks, service, worker, or oracle.'
     )
   }
@@ -1059,12 +1053,12 @@ unittest suite, the project-specific help commands, and a smoke sequence.
       ('Project-test discovery exited 5; add tests/test_artifactpipe.py with a ' +
         'TestCase and test_ method.')
     } else {
-      'Continue the complete app from the latest project-test and help feedback.'
+      'Continue from project-test/help feedback; implement the smallest missing slice.'
     }
     $continuationDirective =
       'Preserve the passing CLI and server; use oracle pass/fail only, never its diagnostics.'
     $priorityDirective =
-      'Keep signed admission, output references, and worker state transitions correct.'
+      'Prioritize signed admission, declared output references, and worker transitions.'
   }
   $prompt = @"
 Continue the incomplete $($case.Package) implementation in this workspace.
