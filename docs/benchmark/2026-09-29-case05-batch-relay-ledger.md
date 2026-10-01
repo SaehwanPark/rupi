@@ -555,16 +555,59 @@ Pi making substantially more functional progress. The next prompt should require
 write to a runnable source file and explicitly prohibit agent `exec` calls to avoid another
 zero-activity recovery sequence. PR #137 remains draft.
 
-## Current outcome
+## Twelfth-run outcome
 
-Case 05 remains open after R12's inconclusive comparison. Pi reached passing local checks and an
+Case 05 remained open after R12's inconclusive comparison. Pi reached passing local checks and an
 HTTP test module but failed the oracle; Rupi did not recover from its first-turn tool failure.
 
-## Thirteenth prompt iteration — pending
+## Thirteenth prompt iteration — complete; inconclusive
 
 Run: `bench-20261001-case05-first-source-write-no-exec-r13-grace6-cap8-pi0861-low-matched4-600s`.
 
-R13 requires the first source write to create a runnable `batchrelay/__main__.py` before tests or
-support modules, and explicitly prohibits `exec` and shell commands so the harness owns all
-verification. The all-case benchmark dry run and `git diff --check` passed; the matched run is
-pending. PR #137 remains draft.
+R13 required the first source write to create a runnable `batchrelay/__main__.py` before tests or
+support modules, and explicitly prohibited `exec` and shell commands so the harness owned
+verification. The all-case benchmark dry run and `git diff --check` passed. CI for prompt commit
+`b3f5d1f` passed on Ubuntu, macOS, and Windows. PR #137 remains draft.
+
+### Rupi result
+
+Rupi remained unresolved after four turns, using 60,727 work tokens over 1,764,076 ms. It used
+31,341 input tokens, 29,386 output tokens, 13 started (12 completed) model requests, and 13 tool
+requests. Its oracle failed every turn; all help commands passed on every turn, and project tests
+passed on turns 2–4. Turn 2 had one tool failure but completed normally, without calling `exec`.
+
+| Turn | ms | In/out | Work | Req/tools | Oracle/tests | Help | Result |
+| ---: | ---: | ---: | ---: | ---: | --- | --- | --- |
+| 1 | 406,785 | 13,949/7,121 | 21,070 | 3/2 | fail/1 | 0/0/0 | complete |
+| 2 | 192,583 | 6,706/2,813 | 9,519 | 3/4 | fail/0 | 0/0/0 | complete |
+| 3 | 564,472 | 6,789/10,455 | 17,244 | 4/4 | fail/0 | 0/0/0 | complete |
+| 4 | 600,236 | 3,897/8,997 | 12,894 | 3/3 | fail/0 | 0/0/0 | outer timeout |
+
+The final project includes the CLI, server, store, and signing modules with CLI and server tests.
+It has no `tests/test_http.py` or worker.
+
+### Pi result
+
+Pi remained unresolved after four turns, using 45,012 work tokens over 2,115,074 ms. It used 11,863
+input tokens, 33,149 output tokens, 27 model requests, and 26 tool requests. Its oracle failed every
+turn; help passed every turn, and project tests passed on turns 1, 3, and 4.
+
+| Turn | ms | In/out | Work | Req/tools | Oracle/tests | Help | Result |
+| ---: | ---: | ---: | ---: | ---: | --- | --- | --- |
+| 1 | 600,223 | 5,720/8,609 | 14,329 | 10/10 | fail/0 | 0/0/0 | outer timeout |
+| 2 | 600,223 | 1,924/10,512 | 12,436 | 6/6 | fail/1 | 0/0/0 | outer timeout |
+| 3 | 314,344 | 2,287/5,155 | 7,442 | 6/5 | fail/0 | 0/0/0 | complete |
+| 4 | 600,284 | 1,932/8,873 | 10,805 | 5/5 | fail/0 | 0/0/0 | outer timeout |
+
+Pi's final snapshot includes `tests/test_http.py` but no worker. It passed project tests and help on
+turn 4, but the oracle still failed.
+
+Neither agent resolved the oracle. Rupi was 350,998 ms faster, while Pi used 15,715 fewer work
+tokens and finished with an HTTP test module. This run is inconclusive: Rupi stabilized CLI and
+health, but did not complete HTTP admission. The next prompt should focus on one tested signed POST
+path while preserving the passing health slice. PR #137 remains draft.
+
+## Current outcome
+
+Case 05 remains open after R13's inconclusive comparison. Both agents passed local checks on some
+turns, but neither resolved the oracle. Rupi still lacks an HTTP test module.

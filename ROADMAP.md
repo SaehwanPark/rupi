@@ -1394,8 +1394,11 @@ TUI rendering passed all budgets (3.31–3.90 µs/unit); checkpointed restore me
   did not reach HTTP admission. R12 was inconclusive: neither agent resolved the oracle. Rupi was
   1,306,672 ms faster and used 23,730 fewer work tokens, but a tool failure left its recovery turns
   inactive and all local checks failed. Pi passed project checks on turns 1, 2, and 4 and produced
-  an HTTP test module. R13 will prohibit agent `exec` calls and require a runnable source write
-  before further recovery work. See the
+  an HTTP test module. R13 was inconclusive: neither agent resolved the oracle. Rupi was
+  350,998 ms faster but used 15,715 more work tokens. The first-write/no-`exec` prompt avoided
+  stalled recovery and passed Rupi's CLI/server checks, but Rupi added no HTTP test module. Pi's
+  tests and help passed on turns 3–4, with `tests/test_http.py` present. R14 will target one tested
+  signed POST path while preserving health. See the
   [Case 05 ledger](docs/benchmark/2026-09-29-case05-batch-relay-ledger.md).
 
   Case 06 ran with the pinned Pi 0.86.1 baseline. Pi resolved on turn 4 after its outer timeout,
