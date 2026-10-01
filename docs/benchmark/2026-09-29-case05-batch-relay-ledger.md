@@ -449,7 +449,7 @@ Neither agent resolved the oracle. Rupi finished 410,837 ms sooner, while Pi use
 work tokens, so this run is inconclusive. The next prompt should target one signed batch HTTP path
 after the health gate passes. PR #137 remains draft.
 
-## Eleventh prompt iteration — pending
+## Eleventh prompt iteration — complete; inconclusive
 
 Run: `bench-20260930-case05-cli-health-admission-r11-grace6-cap8-pi0861-low-matched4-600s`.
 
@@ -457,8 +457,52 @@ R10 showed Rupi needed separate turns for CLI/test discovery and server health, 
 complete HTTP behavior. R11 asks for an import-safe CLI, discoverable tests, and persistent
 `/healthz` in the first focused slice. Recovery gates signed admission, validation/status, and
 worker behavior on passing project tests and help checks. The all-case benchmark dry run and
-`git diff --check` passed. The matched run is pending; PR #137 remains draft.
+`git diff --check` passed. CI for prompt commit `3ab603c` passed on Ubuntu, macOS, and Windows.
+The matched run finished; PR #137 remains draft.
+
+### Rupi result
+
+Rupi remained unresolved after four timed-out turns, using 84,259 work tokens over 2,401,520 ms.
+It used 47,899 input tokens, 36,360 output tokens, 22 started (21 completed) model requests, and
+18 tool requests. Its oracle failed every turn. All help commands passed every turn; project test
+discovery ran zero tests on turn 1, tests passed on turns 2–3, then failed on turn 4.
+
+| Turn | Elapsed | In / out | Work | Req / tools | Oracle / tests | Help | Call |
+| --- | ---: | ---: | ---: | ---: | --- | --- | --- |
+| 1 | 600,412 ms | 17,039 / 9,156 | 26,195 | 7 / 6 | failed / exit 5 | 0 / 0 / 0 | outer timeout |
+| 2 | 600,412 ms | 4,464 / 10,503 | 14,967 | 5 / 4 | failed / 0 | 0 / 0 / 0 | outer timeout |
+| 3 | 600,317 ms | 19,511 / 8,345 | 27,856 | 4 / 3 | failed / 0 | 0 / 0 / 0 | outer timeout |
+| 4 | 600,379 ms | 6,885 / 8,356 | 15,241 | 6 / 5 | failed / exit 1 | 0 / 0 / 0 | outer timeout |
+
+The final snapshot includes CLI, server, storage, admission, and signing modules, plus CLI and
+server tests. It has no HTTP test module or worker. The turn-4 suite ran 17 tests with two failures
+and three errors in the server health path; local diagnostics identify `RelayHandler.connection` as
+a read-only property that conflicts with `BaseHTTPRequestHandler` setup.
+
+### Pi result
+
+Pi remained unresolved after four turns, using 41,193 work tokens over 2,149,483 ms. It used 8,761
+input tokens, 32,432 output tokens, 12 model requests, and 18 tool requests. Its oracle failed every
+turn. Project tests passed only on turn 4; all help commands passed on turns 2–4.
+
+| Turn | Elapsed | In / out | Work | Req / tools | Oracle / tests | Help | Call |
+| --- | ---: | ---: | ---: | ---: | --- | --- | --- |
+| 1 | 600,427 ms | 5,440 / 9,582 | 15,022 | 2 / 4 | failed / exit 1 | 1 / 1 / 1 | outer timeout |
+| 2 | 600,231 ms | 1,154 / 11,416 | 12,570 | 2 / 5 | failed / exit 5 | 0 / 0 / 0 | outer timeout |
+| 3 | 600,287 ms | 739 / 5,782 | 6,521 | 4 / 5 | failed / exit 1 | 0 / 0 / 0 | outer timeout |
+| 4 | 348,538 ms | 1,428 / 5,652 | 7,080 | 4 / 4 | failed / 0 | 0 / 0 / 0 | complete |
+
+Pi's final snapshot includes CLI, database, and server modules with CLI and server tests. It passed
+the local suite and help checks on turn 4 but did not implement HTTP admission.
+
+Neither agent resolved the oracle. Pi was 252,037 ms faster and used 43,066 fewer work tokens; both
+made 18 tool requests. The run is inconclusive, with local health checks favoring Pi at the end.
+Rupi reached admission code but broke its server health tests. The next prompt should fix the
+handler initialization issue, keep health checks passing, then implement one signed POST path before
+expanding to status, replay, validation, or worker behavior. PR #137 remains draft.
 
 ## Current outcome
 
-Case 05 remains open after R10's inconclusive comparison. R11's matched run is pending.
+Case 05 remains open after R11's inconclusive comparison. Pi finished with passing local checks,
+but neither agent resolved the oracle. The next prompt will isolate the server handler fix and one
+signed HTTP admission path.
