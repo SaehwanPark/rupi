@@ -1408,8 +1408,10 @@ TUI rendering passed all budgets (3.31–3.90 µs/unit); checkpointed restore me
   faster but used 36,029 more work tokens. Rupi's required CLI, health, and HTTP test files arrived
   by turn 4, but its server stayed in `batchrelay/__main__.py`; Pi produced support modules without
   a runnable entrypoint. The all-case dry run and changed-line checks passed, and CI for docs head
-  `283086a` passed on Ubuntu, macOS, and Windows. R17 should focus on a runnable signed-admission
-  server path with focused checks. See the
+  `e19b1ef` passed on Ubuntu, macOS, and Windows. R17 now requires HTTP routes in
+  `batchrelay/server.py` and delays test scaffolding until the service starts; the all-case dry run
+  and changed-line checks passed. Prompt commit `2b253b9` is pushed, and the matched run is pending.
+  See the
   [Case 05 ledger](docs/benchmark/2026-09-29-case05-batch-relay-ledger.md).
 
   Case 06 ran with the pinned Pi 0.86.1 baseline. Pi resolved on turn 4 after its outer timeout,

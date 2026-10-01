@@ -761,7 +761,18 @@ health and signed-admission server path with focused checks, then preserve it du
 
 ## Current outcome
 
-Case 05 remains open after R16's inconclusive comparison. Rupi passed tests on turns 3–4 and help
-every turn, but the oracle failed every turn. Pi failed tests, help, and oracle every turn. Rupi
-was 5,211 ms faster; Pi used 36,029 fewer work tokens. R17 should focus on a runnable signed-
-admission server path before broad test scaffolding. PR #137 remains draft.
+## Seventeenth prompt iteration — pending
+
+Run: `bench-20261001-case05-server-signed-post-r17-grace6-cap8-pi0861-low-matched4-600s`.
+
+R17 keeps the CLI, health, and one signed-POST scope. Prompt commit `2b253b9` requires HTTP
+handlers in `batchrelay/server.py` and delays tests until the server starts, responding to Rupi's
+R16 final snapshot, which kept its server in `__main__.py`. Recovery retains focused admission and
+authentication checks; full validation, status, and worker behavior remain deferred. The all-case
+dry run, `git diff --check`, and changed-line length check passed. PR CI for R16 documentation head
+`e19b1ef` passed on Ubuntu, macOS, and Windows. The matched run is pending. PR #137 remains draft.
+
+## Current outcome
+
+R17's prompt is committed locally; the matched run is pending. Case 05 remains open after R16's
+inconclusive comparison. PR #137 remains draft.
