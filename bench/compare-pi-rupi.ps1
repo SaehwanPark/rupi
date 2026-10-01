@@ -121,6 +121,90 @@ function Get-CaseGuidance([hashtable]$case, [string]$phase = "initial") {
         'After the service and worker flow work, add a readable README and focused tests.'
       ) -join "`n")
     }
+    "04-webhook-inbox" {
+      if ($phase -eq "initial") {
+        return (@(
+          'First tool call: workspace write the complete webhookinbox/__main__.py implementation.'
+          'The full Case 04 specification is embedded in this prompt.'
+          'Do not call read, exec, or another inspection tool before this first write.'
+          'Use the workspace write tool for the first source file.'
+          'Use one workspace write for all CLI, HTTP, SQLite, and worker application code.'
+          'Keep the complete standard-library application in __main__.py; do not split modules.'
+          'The serve command is python -m webhookinbox serve --db PATH --secret SECRET'
+          '--host HOST --port PORT.'
+          'The worker command is python -m webhookinbox worker --db PATH --sink PROGRAM'
+          '[--sink-arg ARG]... --lease-seconds SECONDS --once.'
+          'Include useful top-level, serve, and worker help in the implementation.'
+          'Support GET /healthz, GET /deliveries/<id>, and signed POST /deliveries.'
+          'Verify HMAC-SHA256 over the exact raw body bytes before any database mutation.'
+          'Use constant-time signature comparison; invalid signatures return 401 without writes.'
+          'Valid new deliveries return 202; identical repeats return 200; conflicts return 409.'
+          'The worker commits each lease before starting its sink and reclaims expired leases.'
+          'Pass sink arguments directly without a shell and exchange one JSON line per delivery.'
+          'Complete the runnable service before spending additional writes on README or tests.'
+          'Do not run commands, tests, help checks, the service, worker, or oracle.'
+          'The harness independently runs project tests, three help commands, and the oracle.'
+          'Oracle results and diagnostics are not shown in recovery feedback.'
+          'Do not call exec for shell commands.'
+        ) -join "`n")
+      }
+      switch ($phase) {
+        "entrypoint" {
+          return (@(
+            'The current file snapshot has no webhookinbox/__main__.py; create that file first.'
+            'Use one workspace write for the complete standard-library application in that file.'
+            'Implement the HTTP contract, durable SQLite behavior, and worker lease flow.'
+            'Implement argparse subcommands for serve and worker so all three help commands work.'
+            'Use the exact serve and worker command forms from the embedded specification.'
+            'Add the main guard; do not split application behavior into support modules.'
+            'Do not call exec or run commands, tests, help checks, the service, worker, or oracle.'
+          ) -join "`n")
+        }
+        "interface" {
+          return (@(
+            'The entrypoint exists, but CLI help or test discovery is not ready; fix those first.'
+            'Preserve any working health route and signed admission behavior.'
+            'Make python -m webhookinbox --help succeed, along with serve --help and worker --help.'
+            'The worker invocation is python -m webhookinbox worker --db PATH --sink PROGRAM'
+            '[--sink-arg ARG]... --lease-seconds SECONDS --once.'
+            'Create tests/__init__.py and tests/test_cli.py with subprocess checks for all three'
+            'help paths using sys.executable, including at least one unittest method named test_*.'
+            'Do not split modules; first make discovery and all help commands succeed.'
+            'Use local harness diagnostics, but do not call exec or run commands or tests.'
+          ) -join "`n")
+        }
+        "tests" {
+          return (@(
+            'All help commands and the test package are present, but unittest discovered no tests.'
+            'Create tests/test_cli.py with a unittest.TestCase and at least one test_* method.'
+            'Add a useful subprocess check for the top-level, serve, or worker help command.'
+            'Keep the existing application behavior intact; do not add only a helper module.'
+            'After adding a discovered test, continue any unfinished worker or README requirements.'
+            'Do not call exec or run commands, tests, help checks, the service, worker, or oracle.'
+          ) -join "`n")
+        }
+        "workflow" {
+          return (@(
+            'CLI help and test discovery are ready. Use local project-test diagnostics to repair'
+            'failures while implementing the complete worker and remaining Case 04 requirements.'
+            'Commit each delivery lease before starting its sink; reclaim expired leases in order.'
+            'Handle sink success, failure, malformed response, and crash recovery as specified.'
+            'Pass sink arguments directly and preserve the signed admission behavior.'
+            'Add focused worker and HTTP tests, then complete the required README.'
+            'Do not call exec or run commands, tests, help checks, the service, worker, or oracle.'
+          ) -join "`n")
+        }
+        default {
+          return (@(
+            'Local project tests, test discovery, and all three help commands pass.'
+            'Inspect the existing implementation against the embedded specification.'
+            'Finish any missing worker lease, expiry reclaim, crash recovery, sink, README, or test'
+            'requirements while preserving passing behavior.'
+            'Do not call exec or run commands, tests, help checks, the service, worker, or oracle.'
+          ) -join "`n")
+        }
+      }
+    }
     "05-batch-relay" {
       switch ($phase) {
         "initial" {
@@ -269,17 +353,27 @@ function Get-InitialPrompt([hashtable]$case) {
   $toolingGuidance = Get-WindowsToolGuidance
   $embeddedSpec = ""
   $caseSpecBlock = ""
-  $specAccessOrder = if ($case.Id -eq "03-event-outbox") {
+  $specAccessOrder = if ($case.Id -eq "04-webhook-inbox") {
+    'Implement the Case 04 project from the complete embedded specification.'
+  } elseif ($case.Id -eq "03-event-outbox") {
     'Implement the complete service and worker from the embedded Case 03 specification.'
   } else {
     'Read SPEC.md completely before acting.'
   }
-  if ($case.Id -eq "03-event-outbox") {
+  if ($case.Id -in @("03-event-outbox", "04-webhook-inbox")) {
     $specPath = Join-Path (Join-Path $repoRoot $case.Source) "SPEC.md"
     $embeddedSpec = [IO.File]::ReadAllText($specPath)
-    $caseSpecBlock = "`nThe complete Case 03 specification follows:`n`n$embeddedSpec`n"
+    $caseName = if ($case.Id -eq "04-webhook-inbox") { "Case 04" } else { "Case 03" }
+    $caseSpecBlock = "`nThe complete $caseName specification follows:`n`n$embeddedSpec`n"
   }
-  $verificationGuidance = if ($case.Id -eq "02-reading-queue") {
+  $verificationGuidance = if ($case.Id -eq "04-webhook-inbox") {
+@'
+The benchmark harness independently runs project tests, all three help commands, and the
+acceptance oracle after each attempt. Oracle results and diagnostics are not shown in recovery
+feedback. Do not run commands, tests, help checks, the service, worker, or oracle. Use workspace
+read/write tools and rely on local harness feedback for recovery.
+'@
+  } elseif ($case.Id -eq "02-reading-queue") {
 @'
 The benchmark harness runs project tests and help commands after each attempt. It also
 runs the independent smoke sequence.
@@ -357,7 +451,16 @@ directories to its extended Windows path with `cd` or `cd /d`.
     'Do not use shell commands to list or search'
     'including `dir /s`, `find`, `findstr`, `grep`, or `ls`.'
   )
-  if ($case.Id -eq "03-event-outbox") {
+  if ($case.Id -eq "04-webhook-inbox") {
+    $requiredInstructions += @(
+      'Implement the Case 04 project from the complete embedded specification.'
+      'The complete Case 04 specification follows:'
+      'Do not call read, exec, or another inspection tool before this first write.'
+      'The benchmark harness independently runs project tests, all three help commands, and the'
+      'acceptance oracle after each attempt.'
+      'Do not run commands, tests, help checks, the service, worker, or oracle.'
+    )
+  } elseif ($case.Id -eq "03-event-outbox") {
     $requiredInstructions += @(
       'Implement the complete service and worker from the embedded Case 03 specification.'
       'The full Case 03 specification is embedded in this prompt.'
@@ -366,7 +469,23 @@ directories to its extended Windows path with `cd` or `cd /d`.
   } else {
     $requiredInstructions += 'Read SPEC.md completely before acting'
   }
-  if ($case.Id -eq "02-reading-queue") {
+  if ($case.Id -eq "04-webhook-inbox") {
+    $requiredInstructions += @(
+      'The benchmark harness independently runs project tests, all three help commands, and the'
+      'acceptance oracle after each attempt.'
+      'First tool call: workspace write the complete webhookinbox/__main__.py implementation.'
+      'Use one workspace write for all CLI, HTTP, SQLite, and worker application code.'
+      'Keep the complete standard-library application in __main__.py; do not split modules.'
+      'The serve command is python -m webhookinbox serve --db PATH --secret SECRET'
+      'The worker command is python -m webhookinbox worker --db PATH --sink PROGRAM'
+      'Include useful top-level, serve, and worker help in the implementation.'
+      'Support GET /healthz, GET /deliveries/<id>, and signed POST /deliveries.'
+      'Complete the runnable service before spending additional writes on README or tests.'
+      'Do not call exec for shell commands.'
+      'The harness independently runs project tests, three help commands, and the oracle.'
+      'Do not run commands, tests, help checks, the service, worker, or oracle.'
+    )
+  } elseif ($case.Id -eq "02-reading-queue") {
     $requiredInstructions += @(
       'The benchmark harness runs project tests and help commands after each attempt.'
       'Do not run commands, tests, or help checks, or start the service.'
@@ -403,8 +522,9 @@ directories to its extended Windows path with `cd` or `cd /d`.
   if (-not $prompt.Contains($guidance)) {
     throw "Initial benchmark prompt is missing case guidance for $($case.Id)."
   }
-  if ($case.Id -eq "03-event-outbox" -and -not $prompt.Contains($embeddedSpec)) {
-    throw 'Case 03 initial prompt is missing the complete project specification.'
+  if ($case.Id -in @("03-event-outbox", "04-webhook-inbox") -and
+      -not $prompt.Contains($embeddedSpec)) {
+    throw "$caseName initial prompt is missing the complete project specification."
   }
   $templateTokens = @(
     '{{PACKAGE}}'
@@ -487,6 +607,28 @@ directories to its extended Windows path with `cd` or `cd /d`.
     if ($prompt.Contains('readqueue') -or $prompt.Contains('tasklog')) {
       throw 'Case 03 initial prompt contains another case instructions.'
     }
+  } elseif ($case.Id -eq "04-webhook-inbox") {
+    $caseSpecificInstructions = @(
+      'First tool call: workspace write the complete webhookinbox/__main__.py implementation.'
+      'Use one workspace write for all CLI, HTTP, SQLite, and worker application code.'
+      'Keep the complete standard-library application in __main__.py; do not split modules.'
+      'The serve command is python -m webhookinbox serve --db PATH --secret SECRET'
+      'The worker command is python -m webhookinbox worker --db PATH --sink PROGRAM'
+      'Include useful top-level, serve, and worker help in the implementation.'
+      'Support GET /healthz, GET /deliveries/<id>, and signed POST /deliveries.'
+      'Verify HMAC-SHA256 over the exact raw body bytes before any database mutation.'
+      'Use constant-time signature comparison; invalid signatures return 401 without writes.'
+      'Valid new deliveries return 202; identical repeats return 200; conflicts return 409.'
+      'The worker commits each lease before starting its sink and reclaims expired leases.'
+      'Pass sink arguments directly without a shell and exchange one JSON line per delivery.'
+      'Complete the runnable service before spending additional writes on README or tests.'
+      'Do not call exec for shell commands.'
+      'The harness independently runs project tests, three help commands, and the oracle.'
+      'Do not run commands, tests, help checks, the service, worker, or oracle.'
+    )
+    if ($prompt.Contains('The complete Case 03 specification follows:')) {
+      throw 'Case 04 initial prompt contains the Case 03 specification label.'
+    }
   } elseif ($case.Id -eq "05-batch-relay") {
     $caseSpecificInstructions = @(
       'Build an import-safe CLI, health server, and one signed batch admission path.'
@@ -522,7 +664,7 @@ directories to its extended Windows path with `cd` or `cd /d`.
     }
   }
   if (
-    $case.Id -eq "03-event-outbox" -and
+    $case.Id -in @("03-event-outbox", "04-webhook-inbox") -and
     $prompt.Contains('Read SPEC.md completely before acting')
   ) {
     throw 'Case 03 prompt asks the agent to inspect SPEC.md before its first write.'
@@ -579,8 +721,49 @@ function Get-RecoveryPrompt(
   [string]$ProjectPath = ""
 ) {
   $feedback = Get-RecoveryFeedback $verification
+  $case04Phase = $null
   $case05Phase = $null
-  if ($case.Id -eq "05-batch-relay") {
+  if ($case.Id -eq "04-webhook-inbox") {
+    $projectTestsPassed = $false
+    if ($verification.project_tests) {
+      $projectTestsPassed = -not $verification.project_tests.timed_out -and
+        $verification.project_tests.exit_code -eq 0
+    }
+    $helpChecksPassed = @($verification.help).Count -eq 3
+    foreach ($helpCheck in @($verification.help)) {
+      if ($helpCheck.timed_out -or $helpCheck.exit_code -ne 0) {
+        $helpChecksPassed = $false
+      }
+    }
+    $testsPackagePresent = $false
+    $testFilesPresent = $false
+    $noTestsDiscovered = $false
+    $entrypointPresent = $false
+    if (-not [string]::IsNullOrWhiteSpace($ProjectPath)) {
+      $entrypointPresent = Test-Path -LiteralPath (
+        Join-Path (Join-Path $ProjectPath "webhookinbox") "__main__.py"
+      )
+      $testsPath = Join-Path $ProjectPath "tests"
+      $testsPackagePresent = Test-Path -LiteralPath (Join-Path $testsPath "__init__.py")
+      $testFilesPresent = @(
+        Get-ChildItem -LiteralPath $testsPath -Filter "test_*.py" -File -EA SilentlyContinue
+      ).Count -gt 0
+    }
+    if ($verification.project_tests -and -not $verification.project_tests.timed_out) {
+      $noTestsDiscovered = $verification.project_tests.exit_code -eq 5
+    }
+    if (-not $entrypointPresent) {
+      $case04Phase = "entrypoint"
+    } elseif (-not $testsPackagePresent -or -not $helpChecksPassed) {
+      $case04Phase = "interface"
+    } elseif (-not $testFilesPresent -or $noTestsDiscovered) {
+      $case04Phase = "tests"
+    } elseif (-not $projectTestsPassed) {
+      $case04Phase = "workflow"
+    } else {
+      $case04Phase = "finish"
+    }
+  } elseif ($case.Id -eq "05-batch-relay") {
     $oracleStatus = if ($verification.oracle.timed_out) {
       "timed out"
     } elseif ($verification.oracle.exit_code -eq 0) {
@@ -645,7 +828,9 @@ function Get-RecoveryPrompt(
     }
   }
   $toolingGuidance = Get-WindowsToolGuidance
-  $caseGuidance = if ($case.Id -eq "05-batch-relay") {
+  $caseGuidance = if ($case.Id -eq "04-webhook-inbox") {
+    Get-CaseGuidance $case $case04Phase
+  } elseif ($case.Id -eq "05-batch-relay") {
     Get-CaseGuidance $case $case05Phase
   } else {
     Get-CaseGuidance $case
@@ -655,7 +840,11 @@ function Get-RecoveryPrompt(
   } else {
     'Previous local verification results (project tests and help commands):'
   }
-  $recoveryHeader = if ($case.Id -eq "05-batch-relay") {
+  $recoveryHeader = if ($case.Id -eq "04-webhook-inbox") {
+    'The complete Case 04 specification was embedded in the initial prompt; do not reread it. ' +
+      'Inspect existing files and preserve working behavior. Use only local tests and help ' +
+      'feedback; do not inspect oracle results. Work only in this workspace.'
+  } elseif ($case.Id -eq "05-batch-relay") {
     $phaseHeader = switch ($case05Phase) {
       "foundation" {
         'CLI and test-discovery did not pass. Fix them before server, HTTP, or worker code.'
@@ -686,7 +875,14 @@ function Get-RecoveryPrompt(
       "workspace and do not edit the specification, rupi configs, or the external" +
       [Environment]::NewLine + "acceptance oracle."
   }
-  $verificationGuidance = if ($case.Id -eq "02-reading-queue") {
+  $verificationGuidance = if ($case.Id -eq "04-webhook-inbox") {
+@'
+The benchmark harness reruns project tests and all three help commands after this attempt.
+It runs the acceptance oracle independently; its result and diagnostics are not shown here.
+Do not run commands, tests, help checks, the service, worker, or oracle. Use local test and help
+feedback to edit source files, then rely on the harness for verification.
+'@
+  } elseif ($case.Id -eq "02-reading-queue") {
 @'
 The benchmark harness reruns tests, help commands, and the independent smoke sequence
 after this attempt. Do not run commands, tests, or help checks, or start the service.
@@ -716,17 +912,33 @@ Continue working through the missing items in SPEC.md, then run the complete pro
 unittest suite, the project-specific help commands, and a smoke sequence.
 '@
   }
-  $completionDirective = if ($case.Id -eq "05-batch-relay") {
+  $completionDirective = if ($case.Id -eq "04-webhook-inbox") {
+    'Complete this phase while preserving working admission and CLI behavior.'
+  } elseif ($case.Id -eq "05-batch-relay") {
     'Complete this slice; advance after project tests and help pass.'
   } else {
     'Finish every missing implementation, README section, and focused test required by the spec.'
   }
-  $continuationDirective = if ($case.Id -eq "05-batch-relay") {
+  $continuationDirective = if ($case.Id -eq "04-webhook-inbox") {
+    'Continue from local test and help feedback; oracle results remain hidden.'
+  } elseif ($case.Id -eq "05-batch-relay") {
     'Use failing local checks to repair this slice. Oracle status only; do not inspect or run it.'
   } else {
     'Continue working through the missing items in SPEC.md.'
   }
-  $priorityDirective = if ($case.Id -eq "05-batch-relay") {
+  $priorityDirective = if ($case.Id -eq "04-webhook-inbox") {
+    if ($case04Phase -eq "entrypoint") {
+      'Prioritize one complete __main__.py workspace write.'
+    } elseif ($case04Phase -eq "interface") {
+      'Prioritize all three help commands and importable test discovery.'
+    } elseif ($case04Phase -eq "tests") {
+      'Prioritize one real discovered unittest, then continue remaining requirements.'
+    } elseif ($case04Phase -eq "workflow") {
+      'Prioritize the failing local tests and the complete worker delivery flow.'
+    } else {
+      'Prioritize any remaining requirements in the embedded specification.'
+    }
+  } elseif ($case.Id -eq "05-batch-relay") {
     'Prioritize the current gated phase.'
   } else {
     "Prioritize the full reliability contract: $($case.Focus)."
@@ -775,6 +987,70 @@ If anything remains incomplete, state it instead of claiming success.
       -not $prompt.Contains(
         'Do not run commands, tests, or help checks, or launch the HTTP service or worker.')) {
     throw 'Case 03 recovery prompt must defer execution and verification to the harness.'
+  }
+  if ($case.Id -eq "04-webhook-inbox") {
+    $phaseInstructions = switch ($case04Phase) {
+      "entrypoint" {
+        @(
+          'The current file snapshot has no webhookinbox/__main__.py; create that file first.'
+          'Use one workspace write for the complete standard-library application in that file.'
+          'Implement the HTTP contract, durable SQLite behavior, and worker lease flow.'
+          'Implement argparse subcommands for serve and worker so all three help commands work.'
+          'Use the exact serve and worker command forms from the embedded specification.'
+          'Add the main guard; do not split application behavior into support modules.'
+        )
+      }
+      "interface" {
+        @(
+          'The entrypoint exists, but CLI help or test discovery is not ready; fix those first.'
+          'Make python -m webhookinbox --help succeed, along with serve --help and worker --help.'
+          'Create tests/__init__.py and tests/test_cli.py with subprocess checks for all three'
+          'help paths using sys.executable, including at least one unittest method named test_*.'
+          'Do not split modules; first make discovery and all help commands succeed.'
+        )
+      }
+      "tests" {
+        @(
+          'All help commands and the test package are present, but unittest discovered no tests.'
+          'Create tests/test_cli.py with a unittest.TestCase and at least one test_* method.'
+          'Add a useful subprocess check for the top-level, serve, or worker help command.'
+          'Keep the existing application behavior intact; do not add only a helper module.'
+          'After adding a discovered test, continue any unfinished worker or README requirements.'
+        )
+      }
+      "workflow" {
+        @(
+          'CLI help and test discovery are ready.'
+          'Use local project-test diagnostics to repair'
+          'failures while implementing the complete worker and remaining Case 04 requirements.'
+          'Commit each delivery lease before starting its sink; reclaim expired leases in order.'
+          'Add focused worker and HTTP tests, then complete the required README.'
+        )
+      }
+      default {
+        @(
+          'Local project tests, test discovery, and all three help commands pass.'
+          'Inspect the existing implementation against the embedded specification.'
+          'Finish any missing worker lease'
+          'requirements while preserving passing behavior.'
+        )
+      }
+    }
+    $commonInstructions = @(
+      'The complete Case 04 specification was embedded in the initial prompt; do not reread it.'
+      'The benchmark harness reruns project tests and all three help commands after this attempt.'
+      'It runs the acceptance oracle independently; its result and diagnostics are not shown here.'
+      'Do not run commands, tests, help checks, the service, worker, or oracle.'
+      'Continue from local test and help feedback; oracle results remain hidden.'
+    )
+    foreach ($instruction in @($commonInstructions) + @($phaseInstructions)) {
+      if (-not $prompt.Contains($instruction)) {
+        throw "Case 04 recovery prompt is missing: $instruction"
+      }
+    }
+    if ($prompt.Contains('Read SPEC.md and inspect the files already present.')) {
+      throw 'Case 04 recovery prompt must rely on the embedded specification.'
+    }
   }
   if ($case.Id -eq "05-batch-relay") {
     $phaseInstruction = switch ($case05Phase) {
