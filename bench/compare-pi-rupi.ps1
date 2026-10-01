@@ -779,7 +779,7 @@ If anything remains incomplete, state it instead of claiming success.
       "foundation" { 'CLI and test-discovery did not pass.' }
       "health" { 'CLI and test discovery passed.' }
       "admission" { 'CLI and server health passed.' }
-      "contract" { 'HTTP tests exist; keep routes in batchrelay/server.py.' }
+      "contract" { 'HTTP tests exist;' }
       "worker" { 'The HTTP contract passed.' }
       default { 'CLI, health, HTTP, and worker tests exist' }
     }
