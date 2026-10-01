@@ -663,17 +663,53 @@ Case 05 remains open after R14's inconclusive comparison. Rupi now passes local 
 tested signed admission path, but the oracle still fails; Pi did not produce a project. R15 should
 continue into validation and status without reopening health or admission.
 
-## Fifteenth prompt iteration — pending
+## Fifteenth prompt iteration — complete; inconclusive
 
 Run: `bench-20261001-case05-validation-status-r15-grace6-cap8-pi0861-low-matched4-600s`.
 
 R15 keeps the initial R14 CLI, health, and signed-admission slice. Recovery advances to full batch
 validation, idempotency/conflict behavior, and ordered `GET /batches` status while preserving the
 passing health and admission behavior; worker work remains deferred. The all-case dry run,
-`git diff --check`, and changed-line length check passed. Prompt commit `8c107d5` is pushed; the
-matched run and CI are pending. PR #137 remains draft.
+`git diff --check`, and changed-line length check passed. Prompt commit `8c107d5` is pushed. PR CI
+for head `75885e7` passed on Ubuntu, macOS, and Windows. PR #137 remains draft.
+
+### Rupi result
+
+Rupi remained unresolved after four turns, using 75,386 work tokens over 1,863,595 ms (53,518
+input, 21,868 output), 20 model requests, and 19 tool requests with no tool failures. Help passed
+every turn; project tests passed on turns 2 and 4. The oracle failed every turn.
+
+| Turn | ms | In/out | Work | Req start/done | Tools | Tests | Oracle | Help | Call |
+| ---: | ---: | ---: | ---: | ---: | ---: | ---: | --- | --- | --- |
+| 1 | 600,254 | 14,246/2,853 | 17,099 | 4/3 | 3 | 1 | fail | 0/0/0 | timeout |
+| 2 | 341,807 | 6,582/5,696 | 12,278 | 4/5 | 4 | 0 | fail | 0/0/0 | complete |
+| 3 | 553,183 | 25,032/8,040 | 33,072 | 8/8 | 8 | 1 | fail | 0/0/0 | complete |
+| 4 | 368,351 | 7,658/5,279 | 12,937 | 4/4 | 4 | 0 | fail | 0/0/0 | complete |
+
+Rupi's final snapshot contains the CLI, server, and CLI/server tests, but no `tests/test_http.py`
+or worker.
+
+### Pi result
+
+Pi remained unresolved after four turns, using 34,216 work tokens over 1,840,505 ms (10,270 input,
+23,946 output), 13 model requests, and 13 tool requests with no tool failures. Project tests and
+help failed on turn 1 and passed on turns 2–4; the oracle failed every turn.
+
+| Turn | ms | In/out | Work | Req start/done | Tools | Tests | Oracle | Help | Call |
+| ---: | ---: | ---: | ---: | ---: | ---: | ---: | --- | --- | --- |
+| 1 | 600,214 | 6,039/948 | 6,987 | 4/4 | 4 | 1 | fail | 1/1/1 | timeout |
+| 2 | 311,556 | 2,725/6,112 | 8,837 | 4/4 | 5 | 0 | fail | 0/0/0 | complete |
+| 3 | 328,496 | 739/6,443 | 7,182 | 3/3 | 2 | 0 | fail | 0/0/0 | complete |
+| 4 | 600,239 | 767/10,443 | 11,210 | 2/2 | 2 | 0 | fail | 0/0/0 | timeout |
+
+Pi was 23,090 ms faster and used 41,170 fewer work tokens. It finished with passing local checks
+and `tests/test_http.py`; Rupi passed health checks but has no HTTP test module. Neither agent
+resolved the oracle, so R15 is inconclusive. R16 should keep the runnable CLI/health/one-signed-POST
+scope and require test scaffolding in the initial turn so admission can be verified within four
+turns. PR #137 remains draft.
 
 ## Current outcome
 
-R15's recovery prompt is committed and pushed. The matched run is pending; Case 05 remains open
-based on R14's inconclusive result.
+Case 05 remains open after R15's inconclusive comparison. Rupi passes CLI and health checks but has
+no HTTP test module; Pi reached an HTTP test module with passing local checks. Both oracles failed.
+R16 should focus on getting Rupi through one tested signed POST within the four-turn cap.

@@ -1400,10 +1400,11 @@ TUI rendering passed all budgets (3.31–3.90 µs/unit); checkpointed restore me
   tests and help passed on turns 3–4, with `tests/test_http.py` present. R14 was inconclusive:
   neither agent resolved the oracle. Rupi was 889,681 ms faster and finished with passing tests,
   help, and `tests/test_http.py`; Pi created no application files. Rupi used 49,278 more work
-  tokens. Its prompt combined CLI, health, and one signed POST. The R15 recovery prompt now
-  advances to full batch validation and GET status while preserving health and admission. The
-  all-case dry run and changed-line checks passed; prompt commit `8c107d5` is pushed, and the
-  matched run is pending. See the
+  tokens. Its prompt combined CLI, health, and one signed POST. R15 was inconclusive: neither agent
+  resolved the oracle. Pi was 23,090 ms faster and used 41,170 fewer work tokens. Rupi passed
+  health checks but has no `tests/test_http.py`; Pi passed local checks and finished with that test
+  module. R16 should keep the same runnable slice and require test scaffolding in the initial turn
+  so admission can be verified within four turns. See the
   [Case 05 ledger](docs/benchmark/2026-09-29-case05-batch-relay-ledger.md).
 
   Case 06 ran with the pinned Pi 0.86.1 baseline. Pi resolved on turn 4 after its outer timeout,
