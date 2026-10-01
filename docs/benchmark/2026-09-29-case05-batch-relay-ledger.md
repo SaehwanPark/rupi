@@ -708,8 +708,24 @@ resolved the oracle, so R15 is inconclusive. R16 should keep the runnable CLI/he
 scope and require test scaffolding in the initial turn so admission can be verified within four
 turns. PR #137 remains draft.
 
-## Current outcome
+## Fifteenth-run outcome
 
 Case 05 remains open after R15's inconclusive comparison. Rupi passes CLI and health checks but has
 no HTTP test module; Pi reached an HTTP test module with passing local checks. Both oracles failed.
 R16 should focus on getting Rupi through one tested signed POST within the four-turn cap.
+
+## Sixteenth prompt iteration — pending
+
+Run: `bench-20261001-case05-frontload-tests-r16-grace6-cap8-pi0861-low-matched4-600s`.
+
+R16 keeps the runnable CLI, health, and one signed-POST scope. It explicitly requires the initial
+turn to create `tests/__init__.py`, `tests/test_cli.py`, `tests/test_server.py`, and
+`tests/test_http.py`; recovery continues to focus on the signed-admission path while preserving
+health. Full validation, status, and worker behavior remain deferred. The all-case dry run,
+`git diff --check`, and changed-line length check passed. Prompt commit `14094bd` is pushed; the
+matched run and CI are pending. PR #137 remains draft.
+
+## Current outcome
+
+R16's prompt is committed and pushed. The matched run is pending; Case 05 remains open based on
+R15's inconclusive result.
