@@ -124,7 +124,7 @@ function Get-CaseGuidance([hashtable]$case, [string]$phase = "initial") {
     "04-webhook-inbox" {
       if ($phase -eq "initial") {
         return (@(
-          'First tool call: workspace write webhookinbox/__main__.py as a runnable vertical slice.'
+          'First tool call: workspace write webhookinbox/__main__.py.'
           'The full Case 04 specification is embedded in this prompt.'
           'Do not call read, exec, or another inspection tool before this first write.'
           'Use the workspace write tool for the first source file.'
@@ -133,16 +133,17 @@ function Get-CaseGuidance([hashtable]$case, [string]$phase = "initial") {
           '--host HOST --port PORT.'
           'The worker command is python -m webhookinbox worker --db PATH --sink PROGRAM'
           '[--sink-arg ARG]... --lease-seconds SECONDS --once.'
-          'In the first write, implement those three help paths, SQLite setup, GET /healthz,'
-          'and signed POST /deliveries admission.'
+          'The first entrypoint file must provide top-level and both subcommand help.'
+          'In that file, implement SQLite setup, GET /healthz, and signed POST /deliveries.'
           'Verify HMAC-SHA256 over the exact raw body bytes before any database mutation.'
           'Use constant-time signature comparison; invalid signatures return 401 without writes.'
           'Valid new deliveries return 202; identical repeats return 200; conflicts return 409.'
-          'Keep the CLI, HTTP handler, and SQLite operations in __main__.py until admission works.'
-          'After the first entrypoint write, create tests/__init__.py and tests/test_cli.py.'
-          'Cover top-level, serve, and worker help through subprocesses using sys.executable.'
-          'Then continue in this same turn with worker leases, expiry reclaim, crash recovery,'
-          'the direct argv sink, README, and focused tests in additional workspace writes.'
+          'Keep CLI, HTTP, SQLite, and worker code in __main__.py until the runnable flow works.'
+          'Do not create __init__.py, db.py, server.py, or worker.py before __main__.py works.'
+          'After all help paths work, create tests/__init__.py and tests/test_cli.py with'
+          'subprocess checks using sys.executable.'
+          'Then continue with worker leases, expiry reclaim, crash recovery, direct argv sink,'
+          'README, and focused tests in additional workspace writes.'
           'Do not put the whole project into one giant write or call exec for shell commands.'
           'Pass sink arguments directly without a shell and exchange one JSON line per delivery.'
           'The harness independently runs project tests, three help commands, and the oracle.'
@@ -151,16 +152,27 @@ function Get-CaseGuidance([hashtable]$case, [string]$phase = "initial") {
         ) -join "`n")
       }
       switch ($phase) {
+        "entrypoint" {
+          return (@(
+            'The current file snapshot has no webhookinbox/__main__.py; create that file first.'
+            'Do not create __init__.py, db.py, server.py, worker.py, README, or tests before it.'
+            'Implement argparse subcommands for serve and worker so all three help commands work.'
+            'Use the exact serve and worker command forms from the embedded specification.'
+            'Keep the CLI in __main__.py and add the main guard.'
+            'Do not call exec or run commands, tests, help checks, the service, worker, or oracle.'
+          ) -join "`n")
+        }
         "interface" {
           return (@(
-            'Harness feedback shows CLI help or test discovery is not ready; fix those first.'
-            'Preserve the existing health route and signed admission behavior.'
-            'Register the worker subcommand so python -m webhookinbox worker --help succeeds.'
+            'The entrypoint exists, but CLI help or test discovery is not ready; fix those first.'
+            'Preserve any working health route and signed admission behavior.'
+            'Make python -m webhookinbox --help succeed, along with serve --help and worker --help.'
             'The worker invocation is python -m webhookinbox worker --db PATH --sink PROGRAM'
             '[--sink-arg ARG]... --lease-seconds SECONDS --once.'
             'Create tests/__init__.py and tests/test_cli.py with subprocess checks for all three'
             'help paths, using sys.executable.'
-            'Do not implement worker delivery yet; first make test discovery and help succeed.'
+            'Do not split modules or implement worker delivery yet; first make discovery and help'
+            'succeed.'
             'Use local harness diagnostics, but do not call exec or run commands or tests.'
           ) -join "`n")
         }
@@ -454,10 +466,13 @@ directories to its extended Windows path with `cd` or `cd /d`.
     $requiredInstructions += @(
       'The benchmark harness independently runs project tests, all three help commands, and the'
       'acceptance oracle after each attempt.'
+      'First tool call: workspace write webhookinbox/__main__.py.'
+      'The first entrypoint file must provide top-level and both subcommand help.'
+      'Do not create __init__.py, db.py, server.py, or worker.py before __main__.py works.'
+      'After all help paths work, create tests/__init__.py and tests/test_cli.py with'
       'Register top-level, serve, and worker parsers before implementing worker execution.'
       'The serve command is python -m webhookinbox serve --db PATH --secret SECRET'
       'The worker command is python -m webhookinbox worker --db PATH --sink PROGRAM'
-      'After the first entrypoint write, create tests/__init__.py and tests/test_cli.py.'
       'Do not put the whole project into one giant write or call exec for shell commands.'
       'The harness independently runs project tests, three help commands, and the oracle.'
       'Do not run commands, tests, help checks, the service, worker, or oracle.'
@@ -586,18 +601,20 @@ directories to its extended Windows path with `cd` or `cd /d`.
     }
   } elseif ($case.Id -eq "04-webhook-inbox") {
     $caseSpecificInstructions = @(
-      'First tool call: workspace write webhookinbox/__main__.py as a runnable vertical slice.'
+      'First tool call: workspace write webhookinbox/__main__.py.'
       'Register top-level, serve, and worker parsers before implementing worker execution.'
       'The serve command is python -m webhookinbox serve --db PATH --secret SECRET'
       'The worker command is python -m webhookinbox worker --db PATH --sink PROGRAM'
-      'In the first write, implement those three help paths, SQLite setup, GET /healthz,'
-      'After the first entrypoint write, create tests/__init__.py and tests/test_cli.py.'
-      'Cover top-level, serve, and worker help through subprocesses using sys.executable.'
+      'The first entrypoint file must provide top-level and both subcommand help.'
+      'In that file, implement SQLite setup, GET /healthz, and signed POST /deliveries.'
       'Verify HMAC-SHA256 over the exact raw body bytes before any database mutation.'
       'Use constant-time signature comparison; invalid signatures return 401 without writes.'
       'Valid new deliveries return 202; identical repeats return 200; conflicts return 409.'
-      'Then continue in this same turn with worker leases, expiry reclaim, crash recovery,'
-      'the direct argv sink, README, and focused tests in additional workspace writes.'
+      'Do not create __init__.py, db.py, server.py, or worker.py before __main__.py works.'
+      'After all help paths work, create tests/__init__.py and tests/test_cli.py with'
+      'subprocess checks using sys.executable.'
+      'Then continue with worker leases, expiry reclaim, crash recovery, direct argv sink,'
+      'README, and focused tests in additional workspace writes.'
       'Do not put the whole project into one giant write or call exec for shell commands.'
       'The harness independently runs project tests, three help commands, and the oracle.'
       'Do not run commands, tests, help checks, the service, worker, or oracle.'
@@ -712,12 +729,18 @@ function Get-RecoveryPrompt(
       }
     }
     $testsPackagePresent = $false
+    $entrypointPresent = $false
     if (-not [string]::IsNullOrWhiteSpace($ProjectPath)) {
+      $entrypointPresent = Test-Path -LiteralPath (
+        Join-Path (Join-Path $ProjectPath "webhookinbox") "__main__.py"
+      )
       $testsPackagePresent = Test-Path -LiteralPath (
         Join-Path (Join-Path $ProjectPath "tests") "__init__.py"
       )
     }
-    if (-not $testsPackagePresent -or -not $helpChecksPassed) {
+    if (-not $entrypointPresent) {
+      $case04Phase = "entrypoint"
+    } elseif (-not $testsPackagePresent -or -not $helpChecksPassed) {
       $case04Phase = "interface"
     } elseif (-not $projectTestsPassed) {
       $case04Phase = "workflow"
@@ -888,7 +911,9 @@ unittest suite, the project-specific help commands, and a smoke sequence.
     'Continue working through the missing items in SPEC.md.'
   }
   $priorityDirective = if ($case.Id -eq "04-webhook-inbox") {
-    if ($case04Phase -eq "interface") {
+    if ($case04Phase -eq "entrypoint") {
+      'Prioritize the single runnable __main__.py before support modules.'
+    } elseif ($case04Phase -eq "interface") {
       'Prioritize all three help commands and importable test discovery.'
     } elseif ($case04Phase -eq "workflow") {
       'Prioritize the failing local tests and the complete worker delivery flow.'
@@ -947,13 +972,22 @@ If anything remains incomplete, state it instead of claiming success.
   }
   if ($case.Id -eq "04-webhook-inbox") {
     $phaseInstructions = switch ($case04Phase) {
+      "entrypoint" {
+        @(
+          'The current file snapshot has no webhookinbox/__main__.py; create that file first.'
+          'Do not create __init__.py, db.py, server.py, worker.py, README, or tests before it.'
+          'Implement argparse subcommands for serve and worker so all three help commands work.'
+          'Keep the CLI in __main__.py and add the main guard.'
+        )
+      }
       "interface" {
         @(
-          'Harness feedback shows CLI help or test discovery is not ready; fix those first.'
-          'Register the worker subcommand so python -m webhookinbox worker --help succeeds.'
+          'The entrypoint exists, but CLI help or test discovery is not ready; fix those first.'
+          'Make python -m webhookinbox --help, serve --help, and worker --help all succeed.'
           'Create tests/__init__.py and tests/test_cli.py with subprocess checks for all three'
           'help paths, using sys.executable.'
-          'Do not implement worker delivery yet; first make test discovery and help succeed.'
+          'Do not split modules or implement worker delivery yet; first make discovery and help'
+          'succeed.'
         )
       }
       "workflow" {

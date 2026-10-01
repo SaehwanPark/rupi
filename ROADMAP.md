@@ -1330,11 +1330,14 @@ TUI rendering passed all budgets (3.31–3.90 µs/unit); checkpointed restore me
   Pi win: Pi resolved in turn 1 with 15,824 work tokens over 600,420 ms; Rupi did not resolve in
   four turns and used 31,666 work tokens over 2,396,345 ms. Rupi's tests failed because the test
   start directory was not importable, and worker help failed because the CLI exposed only serve.
-  Case 04 remains open; the next prompt iteration will prioritize those local test/help failures.
-  The recovery-gated prompt run
-  `bench-20261001-case04-recovery-gated-grace6-cap8-pi0861-low-matched4-600s` is pending; it
-  requires the full CLI and test discovery before advancing to worker behavior.
-  See the [Case 04 ledger](docs/benchmark/2026-09-29-case04-webhook-inbox-ledger.md).
+  The recovery-gated rerun
+  `bench-20261001-case04-recovery-gated-grace6-cap8-pi0861-low-matched4-600s` was another Pi win:
+  Pi resolved in turn 1 with 19,771 work tokens over 600,493 ms, while Rupi did not resolve after
+  four turns (26,135 work tokens over 2,007,731 ms). Rupi never passed help or project tests, and
+  its final files still lacked `webhookinbox/__main__.py`. Case 04 remains open. The next run,
+  `bench-20261001-case04-entrypoint-first-grace6-cap8-pi0861-low-matched4-600s`, gates recovery on
+  creating the entrypoint before support modules. See the
+  [Case 04 ledger](docs/benchmark/2026-09-29-case04-webhook-inbox-ledger.md).
 
   Case 05's pinned baseline was mixed. The embedded-spec prompt rerun was a Pi win, and the
   read-once entrypoint rerun was inconclusive. The valid-path, oracle-status rerun

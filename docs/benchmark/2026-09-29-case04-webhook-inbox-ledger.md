@@ -124,17 +124,42 @@ failed because the parser exposed only `serve`. The next prompt iteration will u
 results to prioritize the complete CLI surface and an importable tests package before worker
 implementation. The oracle remains hidden from recovery feedback.
 
+## Recovery-gated prompt rerun (R3)
+
+Run: `bench-20261001-case04-recovery-gated-grace6-cap8-pi0861-low-matched4-600s`.
+This used Pi 0.86.1, low reasoning, four turns, 600-second outer timeouts, eight model requests
+per turn, and a 594-second Rupi provider timeout. Recovery selected an interface phase until
+help and test discovery passed.
+
+| Agent | T | Elapsed ms | Work tokens | Req | Tools | Oracle/tests | Help T/S/W | Result |
+| --- | ---: | ---: | ---: | ---: | ---: | --- | --- | --- |
+| Rupi | 1 | 358,490 | 0 | 1 | 0 | 1 / 1 | 1 / 1 / 1 | no inference/tools |
+| Rupi | 2 | 600,233 | 12,764 | 2 | 2 | 1 / 1 | 1 / 1 / 1 | outer timeout |
+| Rupi | 3 | 448,784 | 0 | 2 | 0 | 1 / 1 | 1 / 1 / 1 | no inference/tools |
+| Rupi | 4 | 600,224 | 13,371 | 2 | 2 | 1 / 1 | 1 / 1 / 1 | outer timeout |
+| Pi | 1 | 600,493 | 19,771 | 7 | 7 | 0 / timed out | 0 / 0 / 0 | outer timeout; resolved |
+
+Rupi did not resolve after four turns. It used 26,135 work tokens over 2,007,731 ms; Pi resolved
+the oracle in turn 1 with 19,771 work tokens over 600,493 ms. Pi's project-test command timed
+out, but the oracle and all help checks passed. Rupi's oracle and tests failed in every turn, as
+did all three help commands. It took 1,407,238 ms longer and used 6,364 more work tokens, so Pi
+won this comparison by the oracle criterion.
+
+Rupi's final file snapshot contained `webhookinbox/__init__.py`, `db.py`, and `server.py`, but no
+`__main__.py` or tests package. The next prompt iteration will select an entrypoint phase when
+`__main__.py` is missing and direct the agent to create that single file before support modules.
+The all-case dry run passed; oracle status remains hidden from recovery prompts.
+
 ## Current outcome
 
-Case 04 remains open after two Pi wins: the full-spec first-write rerun and the R2
-admission-first rerun. PR #136 stays draft while the next recovery-guidance iteration is prepared.
+Case 04 remains open after three Pi wins: the full-spec first-write, R2 admission-first, and R3
+recovery-gated runs. PR #136 stays draft while the entrypoint-first prompt iteration is prepared.
 
-## Recovery-gated prompt iteration (R3, pending)
+## Entrypoint-first prompt iteration (R4, pending)
 
 Proposed run:
-`bench-20261001-case04-recovery-gated-grace6-cap8-pi0861-low-matched4-600s`.
-The initial prompt states the exact `serve` and `worker` command forms, requires all three help
-paths, and creates an importable tests package with subprocess help checks before worker logic.
-Recovery selects an interface phase when help or test discovery is missing, then advances to the
-worker workflow after those local checks pass. Oracle status and diagnostics remain hidden. The
-all-case dry run passed; the matched comparison is pending.
+`bench-20261001-case04-entrypoint-first-grace6-cap8-pi0861-low-matched4-600s`.
+The initial prompt directs the first write to `webhookinbox/__main__.py` and defers support
+modules until that file provides all three help paths. Recovery selects the entrypoint phase when
+the file is absent, then test/help interface repair, then worker implementation. The matched
+comparison is pending.
