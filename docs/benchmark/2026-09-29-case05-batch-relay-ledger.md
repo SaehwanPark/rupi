@@ -657,8 +657,23 @@ while Pi produced no application files. Rupi used 49,278 more work tokens. Neith
 the oracle, so R14 is inconclusive. R15 should target full batch validation and GET status while
 preserving the passing health and signed-admission slices. PR #137 remains draft.
 
-## Current outcome
+## Fourteenth-run outcome
 
 Case 05 remains open after R14's inconclusive comparison. Rupi now passes local checks and has a
 tested signed admission path, but the oracle still fails; Pi did not produce a project. R15 should
 continue into validation and status without reopening health or admission.
+
+## Fifteenth prompt iteration — pending
+
+Run: `bench-20261001-case05-validation-status-r15-grace6-cap8-pi0861-low-matched4-600s`.
+
+R15 keeps the initial R14 CLI, health, and signed-admission slice. Recovery advances to full batch
+validation, idempotency/conflict behavior, and ordered `GET /batches` status while preserving the
+passing health and admission behavior; worker work remains deferred. The all-case dry run,
+`git diff --check`, and changed-line length check passed. Prompt commit `8c107d5` is pushed; the
+matched run and CI are pending. PR #137 remains draft.
+
+## Current outcome
+
+R15's recovery prompt is committed and pushed. The matched run is pending; Case 05 remains open
+based on R14's inconclusive result.
