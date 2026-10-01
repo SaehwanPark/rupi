@@ -126,6 +126,9 @@ function Get-CaseGuidance([hashtable]$case, [string]$phase = "initial") {
         "initial" {
           return (@(
             'Build an import-safe CLI and persistent health server before batch behavior.'
+            'After reading SPEC.md, make the first source write to batchrelay/__main__.py.'
+            'It must run as python -m batchrelay and show top-level argparse help.'
+            'Do not create __init__.py, tests, or support modules before __main__.py runs.'
             'Never store database state as handler attribute `connection`.'
             '`BaseHTTPRequestHandler` reserves `connection` for the client socket.'
             'Create batchrelay/__main__.py with argparse and lazy command imports.'
@@ -143,6 +146,7 @@ function Get-CaseGuidance([hashtable]$case, [string]$phase = "initial") {
         "foundation" {
           return (@(
             'Repair the argparse CLI and importable tests package first.'
+            'If __main__.py is missing or not runnable, write or fix it before support files.'
             'Never store database state as handler attribute `connection`.'
             '`BaseHTTPRequestHandler` reserves `connection` for the client socket.'
             'Lazy-import server and worker after command parsing so all help commands work.'
@@ -286,6 +290,7 @@ verification only when the harness provides its results.
       'The benchmark harness runs project tests, all three help commands, and the independent'
       'oracle after each attempt.'
       'Do not run commands, tests, help checks, or launch the HTTP service or worker.'
+      'Do not call `exec` or run shell commands; rely on the harness for verification.'
       'Never inspect or run the external oracle.'
       'Use workspace read/write tools and rely on harness feedback for recovery.'
       'Report verification only when the harness provides its results.'
@@ -476,6 +481,9 @@ directories to its extended Windows path with `cd` or `cd /d`.
   } elseif ($case.Id -eq "05-batch-relay") {
     $caseSpecificInstructions = @(
       'Build an import-safe CLI and persistent health server before batch behavior.'
+      'After reading SPEC.md, make the first source write to batchrelay/__main__.py.'
+      'It must run as python -m batchrelay and show top-level argparse help.'
+      'Do not create __init__.py, tests, or support modules before __main__.py runs.'
       'Never store database state as handler attribute `connection`.'
       '`BaseHTTPRequestHandler` reserves `connection` for the client socket.'
       'Create batchrelay/__main__.py with argparse and lazy command imports.'
@@ -487,6 +495,7 @@ directories to its extended Windows path with `cd` or `cd /d`.
       'Keep command modules lazy so every help command succeeds before worker.py exists.'
       'Do not implement signed batch routes or worker behavior in this first phase.'
       'Advance only after harness project tests and all three help commands pass.'
+      'Do not call `exec` or run shell commands; rely on the harness for verification.'
       'Never inspect or run the external oracle.'
     )
   }
@@ -681,6 +690,7 @@ harness for verification.
       'Feedback also includes project-test and help results.'
       'Oracle diagnostics stay hidden; use local diagnostics and the initial SPEC.md read.'
       'Do not run tests or help commands; do not launch service, worker, or oracle.'
+      'Do not call `exec` or run shell commands; rely on the harness for verification.'
       'Never inspect or run the oracle. Use workspace read/write tools and harness results.'
     ) -join [Environment]::NewLine)
   } else {
@@ -768,6 +778,8 @@ If anything remains incomplete, state it instead of claiming success.
           'Complete this slice; advance after project tests and help pass.') -or
         -not $prompt.Contains(
           'Do not run tests or help commands; do not launch service, worker, or oracle.') -or
+        -not $prompt.Contains(
+          'Do not call `exec` or run shell commands; rely on the harness for verification.') -or
         $prompt.Contains('Read SPEC.md and inspect the files already present.')) {
       throw 'Case 05 recovery prompt must select a gated slice and defer verification.'
     }

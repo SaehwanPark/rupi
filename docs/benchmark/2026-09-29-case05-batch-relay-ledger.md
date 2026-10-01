@@ -559,3 +559,12 @@ zero-activity recovery sequence. PR #137 remains draft.
 
 Case 05 remains open after R12's inconclusive comparison. Pi reached passing local checks and an
 HTTP test module but failed the oracle; Rupi did not recover from its first-turn tool failure.
+
+## Thirteenth prompt iteration — pending
+
+Run: `bench-20261001-case05-first-source-write-no-exec-r13-grace6-cap8-pi0861-low-matched4-600s`.
+
+R13 requires the first source write to create a runnable `batchrelay/__main__.py` before tests or
+support modules, and explicitly prohibits `exec` and shell commands so the harness owns all
+verification. The all-case benchmark dry run and `git diff --check` passed; the matched run is
+pending. PR #137 remains draft.
