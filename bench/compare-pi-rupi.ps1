@@ -51,7 +51,7 @@ function Get-CaseDefinitions {
   )
 }
 
-function Get-CaseGuidance([hashtable]$case) {
+function Get-CaseGuidance([hashtable]$case, [string]$phase = "initial") {
   switch ($case.Id) {
     "01-task-ledger" {
       return (@(
@@ -122,22 +122,153 @@ function Get-CaseGuidance([hashtable]$case) {
       ) -join "`n")
     }
     "04-webhook-inbox" {
+      if ($phase -eq "initial") {
+        return (@(
+          'First tool call: workspace write webhookinbox/__main__.py as a runnable vertical slice.'
+          'The full Case 04 specification is embedded in this prompt.'
+          'Do not call read, exec, or another inspection tool before this first write.'
+          'Use the workspace write tool for the first source file.'
+          'In the first write, implement top-level, serve, and worker help; SQLite setup;'
+          'GET /healthz; and signed POST /deliveries admission.'
+          'Verify HMAC-SHA256 over the exact raw body bytes before any database mutation.'
+          'Use constant-time signature comparison; invalid signatures return 401 without writes.'
+          'Valid new deliveries return 202; identical repeats return 200; conflicts return 409.'
+          'Keep the CLI, HTTP handler, and SQLite operations in __main__.py until admission works.'
+          'After that first write, continue in this same turn with worker claim, lease commit,'
+          'expiry reclaim, crash recovery, direct argv sink, README, and focused tests.'
+          'Use additional workspace write or edit calls for the remaining implementation; do not'
+          'try to put the entire project into one giant first write.'
+          'Pass sink arguments directly without a shell and exchange one JSON line per delivery.'
+          'The harness independently runs project tests, three help commands, and the oracle.'
+          'Oracle results and diagnostics are not shown in recovery feedback.'
+          'Do not run commands, tests, help checks, the service, worker, or oracle.'
+        ) -join "`n")
+      }
       return (@(
-      'First tool call: write `webhookinbox/__main__.py` with the full service and worker.'
-      'Implement CLI help, HMAC routes, SQLite state, leases, and sink delivery.'
-      'Verify HMAC-SHA256 on raw bytes with constant-time comparison before any database write.'
-      'Commit leases before sinks; pass argv directly and send one JSON line.'
-      'Keep `worker --once` bounded and reclaim expired leases in insertion order.'
-      'The complete Case 04 specification is in the initial prompt.'
-      'Do not call `read`, `exec`, or another inspection tool before this first write.'
-      'Use the workspace write tool for this first source file.'
-      'Keep the whole implementation in `webhookinbox/__main__.py` until the flow works.'
-      'Do not create split modules or tests before the complete entrypoint works.'
-      'Write the README and focused tests after the core flow is runnable.'
-      'The harness runs project tests, three help checks, and the oracle after every turn.'
-      'Do not run commands, tests, help checks, or the service or worker.'
-      'Rely on harness results; never inspect the external oracle.'
+        'The complete Case 04 specification was embedded in the initial prompt; do not reread it.'
+        'Inspect existing project files and preserve any working admission and help behavior.'
+        'If the runnable admission slice is missing, create it first; otherwise continue with'
+        'worker claim, committed leases, expiry reclaim, crash recovery, and direct argv sink.'
+        'Then complete the README and focused tests required by the embedded specification.'
+        'Use additional workspace write or edit calls for bounded implementation steps.'
+        'The harness runs project tests and all three help commands after each attempt.'
+        'Do not run commands, tests, help checks, the service, worker, or oracle.'
       ) -join "`n")
+    }
+    "05-batch-relay" {
+      switch ($phase) {
+        "initial" {
+          return (@(
+            'Build an import-safe CLI, health server, and one signed batch admission path.'
+            'Create batchrelay/server.py with health and signed POST in the first service slice.'
+            'Create a thin __main__.py CLI in the same turn; show top-level argparse help.'
+            'Do not wait for CLI help to pass before implementing the HTTP routes.'
+            'Keep only argparse and lazy command dispatch in __main__.py; do not put routes there.'
+            'Never store database state as handler attribute `connection`.'
+            '`BaseHTTPRequestHandler` reserves `connection` for the client socket.'
+            'Use lazy argparse imports; server.run(db, secret, host, port) starts serve_forever().'
+            'Make GET /healthz return HTTP 200 JSON {"ok": true}.'
+            'Implement POST /batches for one signed batch containing one valid job.'
+            'Read raw body bytes from self.rfile; verify X-Batch-Signature before JSON parsing.'
+            'Require sha256=<lowercase HMAC-SHA256 hex> over raw bytes with SECRET as UTF-8 key.'
+            'Use hmac.compare_digest; missing, malformed, or wrong signatures return JSON 401.'
+            'Invalid signatures must not mutate SQLite; insert the valid batch and job atomically.'
+            'The valid one-job POST returns 202 with a pending job and attempts=0.'
+            'After route code exists, add tests/__init__.py plus CLI, server, and HTTP tests.'
+            'Use subprocess tests with sys.executable for top-level, serve, and worker help.'
+            'Subprocess-test serve: poll /healthz, confirm it stays alive, and clean up.'
+            'Test valid signed admission; assert bad signatures do not mutate the database.'
+            'Keep command imports lazy so all help commands pass before worker.py exists.'
+            'Defer validation, idempotency, batch status, and worker behavior.'
+            'After the signed POST and focused tests pass, update README only as SPEC.md requires.'
+            'Advance only after harness project tests and all three help commands pass.'
+            'Never inspect or run the external oracle.'
+          ) -join [Environment]::NewLine)
+        }
+        "foundation" {
+          return (@(
+            'Repair the argparse CLI and importable tests package first.'
+            'If __main__.py is missing or not runnable, write or fix it before support files.'
+            'Never store database state as handler attribute `connection`.'
+            '`BaseHTTPRequestHandler` reserves `connection` for the client socket.'
+            'Lazy-import server and worker after command parsing so all help commands work.'
+            'Ensure tests/__init__.py and subprocess checks in tests/test_cli.py exist.'
+            'Do not work on health, HTTP, or worker until project tests and help pass.'
+            'Never inspect or run the external oracle.'
+          ) -join [Environment]::NewLine)
+        }
+        "health" {
+          return (@(
+            'CLI and test discovery passed; add health and signed admission together.'
+            'Never store database state as handler attribute `connection`.'
+            '`BaseHTTPRequestHandler` reserves `connection` for the client socket.'
+            'Create server.py with run(db, secret, host, port); bind and call serve_forever().'
+            'Implement GET /healthz as HTTP 200 application/json with {"ok": true}.'
+            'Implement POST /batches for one signed batch containing one valid job.'
+            'Verify X-Batch-Signature over raw body bytes before JSON parsing.'
+            'A valid one-job POST returns 202 with attempts=0; bad signatures return 401.'
+            'Add tests/test_server.py and tests/test_http.py for health and focused admission.'
+            'Wire serve to server.run lazily; poll health and clean up the subprocess.'
+            'Preserve CLI behavior; defer full validation, status, and worker behavior.'
+            'Never inspect or run the external oracle.'
+          ) -join [Environment]::NewLine)
+        }
+        "admission" {
+          return (@(
+            'CLI and server health passed; complete only the first signed POST /batches path.'
+            'Never store database state as handler attribute `connection`.'
+            '`BaseHTTPRequestHandler` reserves `connection` for the client socket.'
+            'Add tests/test_http.py for one valid batch with one valid job and signature failures.'
+            'Use X-Batch-Signature: sha256=<lowercase HMAC-SHA256 hex> over exact raw body bytes.'
+            'Sign with SECRET as a UTF-8 key; verify HMAC before JSON parsing.'
+            'Compare the expected and supplied digests in constant time.'
+            'A new valid batch returns 202 with its job pending and attempts=0.'
+            'Insert the batch and job atomically.'
+            'Missing, malformed, or incorrect signatures return HTTP 401 without a database write.'
+            'Preserve the passing CLI and /healthz tests.'
+            'Defer replay/conflicts, full validation, GET status, and worker behavior.'
+            'Never inspect or run the external oracle.'
+          ) -join [Environment]::NewLine)
+        }
+        "contract" {
+          return (@(
+            'HTTP tests exist; keep routes in batchrelay/server.py and refine signed admission.'
+            'Never store database state as handler attribute `connection`.'
+            '`BaseHTTPRequestHandler` reserves `connection` for the client socket.'
+            'Keep tests/test_http.py focused on one valid signed POST and signature failures.'
+            'Use raw body bytes, verify HMAC before parsing, and compare digests in constant time.'
+            'A valid POST returns 202 with a pending job at attempts=0; the write is atomic.'
+            'Missing, malformed, or wrong signatures return 401 without a database write.'
+            'Preserve /healthz and all passing CLI/server tests.'
+            'Defer full validation, idempotency, batch status, and worker behavior.'
+            'Never inspect or run the external oracle.'
+          ) -join [Environment]::NewLine)
+        }
+        "worker" {
+          return (@(
+            'HTTP passed; implement worker --once with tests/test_worker.py.'
+            'Never store database state as handler attribute `connection`.'
+            '`BaseHTTPRequestHandler` reserves `connection` for the client socket.'
+            'Process runnable jobs in dependency order and reclaim expired leases.'
+            'Keep retryable failures pending; permanent failures block dependent jobs.'
+            'Worker --once attempts each runnable job once and never polls.'
+            'Invoke the sink as argv without a shell and send one JSON line for each claimed job.'
+            'Preserve every passing CLI and HTTP behavior; do not rewrite a passing slice.'
+            'After behavior and tests pass, update README only as SPEC.md requires.'
+            'Never inspect or run the external oracle.'
+          ) -join [Environment]::NewLine)
+        }
+        default {
+          return (@(
+            'All CLI, health, HTTP, and worker test files exist; project tests and help pass.'
+            'Never store database state as handler attribute `connection`.'
+            '`BaseHTTPRequestHandler` reserves `connection` for the client socket.'
+            'Use initial SPEC.md notes to fill missing behavior and add regressions.'
+            'Preserve passing slices, and update README only as SPEC.md requires.'
+            'The harness gives only oracle pass/fail status; never inspect or run the oracle.'
+          ) -join [Environment]::NewLine)
+        }
+      }
     }
     default {
       return (@(
@@ -172,23 +303,27 @@ function Get-InitialPrompt([hashtable]$case) {
   $toolingGuidance = Get-WindowsToolGuidance
   $embeddedSpec = ""
   $caseSpecBlock = ""
-  $specAccessOrder = if ($case.Id -eq "03-event-outbox") {
+  $specAccessOrder = if ($case.Id -eq "04-webhook-inbox") {
+    'Implement the Case 04 project from the complete embedded specification.'
+  } elseif ($case.Id -eq "03-event-outbox") {
     'Implement the complete service and worker from the embedded Case 03 specification.'
-  } elseif ($case.Id -eq "04-webhook-inbox") {
-    'Implement the complete service and worker from the embedded Case 04 specification.'
   } else {
     'Read SPEC.md completely before acting.'
   }
-  if ($case.Id -eq "03-event-outbox") {
+  if ($case.Id -in @("03-event-outbox", "04-webhook-inbox")) {
     $specPath = Join-Path (Join-Path $repoRoot $case.Source) "SPEC.md"
     $embeddedSpec = [IO.File]::ReadAllText($specPath)
-    $caseSpecBlock = "`nThe complete Case 03 specification follows:`n`n$embeddedSpec`n"
-  } elseif ($case.Id -eq "04-webhook-inbox") {
-    $specPath = Join-Path (Join-Path $repoRoot $case.Source) "SPEC.md"
-    $embeddedSpec = [IO.File]::ReadAllText($specPath)
-    $caseSpecBlock = "`nThe complete Case 04 specification follows:`n`n$embeddedSpec`n"
+    $caseName = if ($case.Id -eq "04-webhook-inbox") { "Case 04" } else { "Case 03" }
+    $caseSpecBlock = "`nThe complete $caseName specification follows:`n`n$embeddedSpec`n"
   }
-  $verificationGuidance = if ($case.Id -eq "02-reading-queue") {
+  $verificationGuidance = if ($case.Id -eq "04-webhook-inbox") {
+@'
+The benchmark harness independently runs project tests, all three help commands, and the
+acceptance oracle after each attempt. Oracle results and diagnostics are not shown in recovery
+feedback. Do not run commands, tests, help checks, the service, worker, or oracle. Use workspace
+read/write tools and rely on local harness feedback for recovery.
+'@
+  } elseif ($case.Id -eq "02-reading-queue") {
 @'
 The benchmark harness runs project tests and help commands after each attempt. It also
 runs the independent smoke sequence.
@@ -203,14 +338,16 @@ Do not run commands, tests, or help checks, or launch the HTTP service or worker
 Use workspace read/write tools and rely on harness feedback for recovery. Report
 verification only when the harness provides its results.
 '@
-  } elseif ($case.Id -eq "04-webhook-inbox") {
-@'
-The benchmark harness runs project tests, all three help commands, and the independent
-oracle after each attempt. Do not run commands, tests, or help checks, or launch the HTTP
-service or worker. Do not inspect or run the external oracle. Use workspace read/write
-tools and rely on harness feedback for recovery. Report verification only when the
-harness provides its results.
-'@
+  } elseif ($case.Id -eq "05-batch-relay") {
+    (@(
+      'The benchmark harness runs project tests, all three help commands, and the independent'
+      'oracle after each attempt.'
+      'Do not run commands, tests, help checks, or launch the HTTP service or worker.'
+      'Do not call `exec` or run shell commands; rely on the harness for verification.'
+      'Never inspect or run the external oracle.'
+      'Use workspace read/write tools and rely on harness feedback for recovery.'
+      'Report verification only when the harness provides its results.'
+    ) -join [Environment]::NewLine)
   } else {
 @'
 Complete the smallest runnable workflow described in SPEC.md first, then add the
@@ -264,22 +401,31 @@ directories to its extended Windows path with `cd` or `cd /d`.
     'Do not use shell commands to list or search'
     'including `dir /s`, `find`, `findstr`, `grep`, or `ls`.'
   )
-  if ($case.Id -eq "03-event-outbox") {
+  if ($case.Id -eq "04-webhook-inbox") {
+    $requiredInstructions += @(
+      'Implement the Case 04 project from the complete embedded specification.'
+      'The complete Case 04 specification follows:'
+      'Do not call read, exec, or another inspection tool before this first write.'
+      'The benchmark harness independently runs project tests, all three help commands, and the'
+      'acceptance oracle after each attempt.'
+      'Do not run commands, tests, help checks, the service, worker, or oracle.'
+    )
+  } elseif ($case.Id -eq "03-event-outbox") {
     $requiredInstructions += @(
       'Implement the complete service and worker from the embedded Case 03 specification.'
       'The full Case 03 specification is embedded in this prompt.'
       'Do not call `read`, `exec`, or another inspection tool before this first write.'
     )
-  } elseif ($case.Id -eq "04-webhook-inbox") {
-    $requiredInstructions += @(
-      'Implement the complete service and worker from the embedded Case 04 specification.'
-      'The complete Case 04 specification is in the initial prompt.'
-      'Do not call `read`, `exec`, or another inspection tool before this first write.'
-    )
   } else {
     $requiredInstructions += 'Read SPEC.md completely before acting'
   }
-  if ($case.Id -eq "02-reading-queue") {
+  if ($case.Id -eq "04-webhook-inbox") {
+    $requiredInstructions += @(
+      'The benchmark harness independently runs project tests, all three help commands, and the'
+      'acceptance oracle after each attempt.'
+      'Do not run commands, tests, help checks, the service, worker, or oracle.'
+    )
+  } elseif ($case.Id -eq "02-reading-queue") {
     $requiredInstructions += @(
       'The benchmark harness runs project tests and help commands after each attempt.'
       'Do not run commands, tests, or help checks, or start the service.'
@@ -289,12 +435,12 @@ directories to its extended Windows path with `cd` or `cd /d`.
       'The benchmark harness runs project tests and help commands after each attempt.'
       'Do not run commands, tests, or help checks, or launch the HTTP service or worker.'
     )
-  } elseif ($case.Id -eq "04-webhook-inbox") {
+  } elseif ($case.Id -eq "05-batch-relay") {
     $requiredInstructions += @(
       'The benchmark harness runs project tests, all three help commands, and the independent'
       'oracle after each attempt.'
-      'Do not run commands, tests, help checks, or the service or worker.'
-      'Do not inspect or run the external oracle.'
+      'Do not run commands, tests, help checks, or launch the HTTP service or worker.'
+      'Never inspect or run the external oracle.'
     )
   } else {
     $requiredInstructions += @(
@@ -316,11 +462,9 @@ directories to its extended Windows path with `cd` or `cd /d`.
   if (-not $prompt.Contains($guidance)) {
     throw "Initial benchmark prompt is missing case guidance for $($case.Id)."
   }
-  if ($case.Id -eq "03-event-outbox" -and -not $prompt.Contains($embeddedSpec)) {
-    throw 'Case 03 initial prompt is missing the complete project specification.'
-  }
-  if ($case.Id -eq "04-webhook-inbox" -and -not $prompt.Contains($embeddedSpec)) {
-    throw 'Case 04 initial prompt is missing the complete project specification.'
+  if ($case.Id -in @("03-event-outbox", "04-webhook-inbox") -and
+      -not $prompt.Contains($embeddedSpec)) {
+    throw "$caseName initial prompt is missing the complete project specification."
   }
   $templateTokens = @(
     '{{PACKAGE}}'
@@ -405,24 +549,50 @@ directories to its extended Windows path with `cd` or `cd /d`.
     }
   } elseif ($case.Id -eq "04-webhook-inbox") {
     $caseSpecificInstructions = @(
-        'First tool call: write `webhookinbox/__main__.py` with the full service and worker.'
-        'Implement CLI help, HMAC routes, SQLite state, leases, and sink delivery.'
-        'Verify HMAC-SHA256 on raw bytes with constant-time comparison before any database write.'
-        'Commit leases before sinks; pass argv directly and send one JSON line.'
-        'Keep `worker --once` bounded and reclaim expired leases in insertion order.'
-        'The complete Case 04 specification is in the initial prompt.'
-        'Do not call `read`, `exec`, or another inspection tool before this first write.'
-        'Use the workspace write tool for this first source file.'
-        'Keep the whole implementation in `webhookinbox/__main__.py` until the flow works.'
-        'Do not create split modules or tests before the complete entrypoint works.'
-        'Write the README and focused tests after the core flow is runnable.'
-        'The harness runs project tests, three help checks, and the oracle after every turn.'
-        'Do not run commands, tests, help checks, or the service or worker.'
-        'Rely on harness results; never inspect the external oracle.'
+      'First tool call: workspace write webhookinbox/__main__.py as a runnable vertical slice.'
+      'In the first write, implement top-level, serve, and worker help; SQLite setup;'
+      'GET /healthz; and signed POST /deliveries admission.'
+      'Verify HMAC-SHA256 over the exact raw body bytes before any database mutation.'
+      'Use constant-time signature comparison; invalid signatures return 401 without writes.'
+      'Valid new deliveries return 202; identical repeats return 200; conflicts return 409.'
+      'After that first write, continue in this same turn with worker claim, lease commit,'
+      'expiry reclaim, crash recovery, direct argv sink, README, and focused tests.'
+      'Use additional workspace write or edit calls for the remaining implementation; do not'
+      'try to put the entire project into one giant first write.'
+      'The harness independently runs project tests, three help commands, and the oracle.'
+      'Do not run commands, tests, help checks, the service, worker, or oracle.'
     )
-    if ($prompt.Contains('outbox/__main__.py') -or $prompt.Contains('batchrelay')) {
-      throw 'Case 04 initial prompt contains another case instructions.'
+    if ($prompt.Contains('The complete Case 03 specification follows:')) {
+      throw 'Case 04 initial prompt contains the Case 03 specification label.'
     }
+  } elseif ($case.Id -eq "05-batch-relay") {
+    $caseSpecificInstructions = @(
+      'Build an import-safe CLI, health server, and one signed batch admission path.'
+      'Create batchrelay/server.py with health and signed POST in the first service slice.'
+      'Create a thin __main__.py CLI in the same turn; show top-level argparse help.'
+      'Do not wait for CLI help to pass before implementing the HTTP routes.'
+      'Keep only argparse and lazy command dispatch in __main__.py; do not put routes there.'
+      'Never store database state as handler attribute `connection`.'
+      '`BaseHTTPRequestHandler` reserves `connection` for the client socket.'
+      'Use lazy argparse imports; server.run(db, secret, host, port) starts serve_forever().'
+      'Make GET /healthz return HTTP 200 JSON {"ok": true}.'
+      'Implement POST /batches for one signed batch containing one valid job.'
+      'Read raw body bytes from self.rfile; verify X-Batch-Signature before JSON parsing.'
+      'Require sha256=<lowercase HMAC-SHA256 hex> over raw bytes with SECRET as UTF-8 key.'
+      'Use hmac.compare_digest; missing, malformed, or wrong signatures return JSON 401.'
+      'Invalid signatures must not mutate SQLite; insert the valid batch and job atomically.'
+      'The valid one-job POST returns 202 with a pending job and attempts=0.'
+      'After route code exists, add tests/__init__.py plus CLI, server, and HTTP tests.'
+      'Use subprocess tests with sys.executable for top-level, serve, and worker help.'
+      'Subprocess-test serve: poll /healthz, confirm it stays alive, and clean up.'
+      'Test valid signed admission; assert bad signatures do not mutate the database.'
+      'Keep command imports lazy so all help commands pass before worker.py exists.'
+      'Defer validation, idempotency, batch status, and worker behavior.'
+      'After the signed POST and focused tests pass, update README only as SPEC.md requires.'
+      'Advance only after harness project tests and all three help commands pass.'
+      'Do not call `exec` or run shell commands; rely on the harness for verification.'
+      'Never inspect or run the external oracle.'
+    )
   }
   foreach ($instruction in $caseSpecificInstructions) {
     if (-not $prompt.Contains($instruction)) {
@@ -430,16 +600,10 @@ directories to its extended Windows path with `cd` or `cd /d`.
     }
   }
   if (
-    $case.Id -eq "03-event-outbox" -and
+    $case.Id -in @("03-event-outbox", "04-webhook-inbox") -and
     $prompt.Contains('Read SPEC.md completely before acting')
   ) {
     throw 'Case 03 prompt asks the agent to inspect SPEC.md before its first write.'
-  }
-  if (
-    $case.Id -eq "04-webhook-inbox" -and
-    $prompt.Contains('Read SPEC.md completely before acting')
-  ) {
-    throw 'Case 04 prompt asks the agent to inspect SPEC.md before its first write.'
   }
   return $prompt
 }
@@ -487,27 +651,136 @@ function Get-RecoveryFeedback([object]$verification) {
   $lines -join "`n"
 }
 
-function Get-RecoveryPrompt([hashtable]$case, [object]$verification) {
+function Get-RecoveryPrompt(
+  [hashtable]$case,
+  [object]$verification,
+  [string]$ProjectPath = ""
+) {
   $feedback = Get-RecoveryFeedback $verification
-  $toolingGuidance = Get-WindowsToolGuidance
-  $caseGuidance = Get-CaseGuidance $case
-  $recoveryHeader = if ($case.Id -eq "04-webhook-inbox") {
-    @(
-      'Use the full Case 04 spec and harness results from the preceding turn.'
-      'If no source exists, first write the full service and worker to `webhookinbox/__main__.py`.'
-      'Make that your first tool call, before any read or command.'
-      'If the entrypoint exists, inspect and edit it using the harness feedback.'
-      'Work only inside this workspace. Do not edit SPEC.md, any rupi config, or the external'
-      'acceptance oracle.'
-    ) -join "`n"
-  } else {
-    @(
-      'Read SPEC.md and inspect the files already present. Work only inside this'
-      'workspace and do not edit the specification, rupi configs, or the external'
-      'acceptance oracle.'
-    ) -join "`n"
+  $case05Phase = $null
+  if ($case.Id -eq "05-batch-relay") {
+    $oracleStatus = if ($verification.oracle.timed_out) {
+      "timed out"
+    } elseif ($verification.oracle.exit_code -eq 0) {
+      "passed"
+    } else {
+      "failed"
+    }
+    $oracleStatusLine = "Independent acceptance oracle: $oracleStatus (diagnostic details hidden)."
+    $feedback = "$oracleStatusLine`n$feedback"
+
+    $projectTestsPassed = $false
+    if ($verification.project_tests) {
+      $projectTestsPassed = -not $verification.project_tests.timed_out -and
+        $verification.project_tests.exit_code -eq 0
+    }
+    $helpChecksPassed = @($verification.help).Count -eq 3
+    foreach ($helpCheck in @($verification.help)) {
+      if ($helpCheck.timed_out -or $helpCheck.exit_code -ne 0) {
+        $helpChecksPassed = $false
+      }
+    }
+
+    $cliTestFilesPresent = $false
+    $serverTestPresent = $false
+    $httpTestPresent = $false
+    $contractTestPresent = $false
+    $workerTestPresent = $false
+    if (-not [string]::IsNullOrWhiteSpace($ProjectPath)) {
+      $testsPath = Join-Path $ProjectPath "tests"
+      $cliTestFilesPresent = (Test-Path -LiteralPath (Join-Path $testsPath "__init__.py")) -and
+        (Test-Path -LiteralPath (Join-Path $testsPath "test_cli.py"))
+      $serverTestPresent = Test-Path -LiteralPath (Join-Path $ProjectPath "tests\test_server.py")
+      $httpTestPresent = Test-Path -LiteralPath (Join-Path $ProjectPath "tests\test_http.py")
+      $contractTestPresent = Test-Path -LiteralPath (Join-Path $testsPath "test_contract.py")
+      $workerTestPresent = Test-Path -LiteralPath (Join-Path $ProjectPath "tests\test_worker.py")
+    }
+
+    if (-not $cliTestFilesPresent -or -not $helpChecksPassed) {
+      $case05Phase = "foundation"
+    } elseif (-not $projectTestsPassed) {
+      $case05Phase = if ($workerTestPresent) {
+        "worker"
+      } elseif ($contractTestPresent) {
+        "contract"
+      } elseif ($httpTestPresent) {
+        "admission"
+      } elseif ($serverTestPresent) {
+        "health"
+      } else {
+        "foundation"
+      }
+    } elseif (-not $serverTestPresent) {
+      $case05Phase = "health"
+    } elseif (-not $httpTestPresent) {
+      $case05Phase = "admission"
+    } elseif (-not $contractTestPresent) {
+      $case05Phase = "contract"
+    } elseif (-not $workerTestPresent) {
+      $case05Phase = "worker"
+    } else {
+      $case05Phase = "finish"
+    }
   }
-  $verificationGuidance = if ($case.Id -eq "02-reading-queue") {
+  $toolingGuidance = Get-WindowsToolGuidance
+  $caseGuidance = if ($case.Id -eq "05-batch-relay") {
+    Get-CaseGuidance $case $case05Phase
+  } elseif ($case.Id -eq "04-webhook-inbox") {
+    Get-CaseGuidance $case "recovery"
+  } else {
+    Get-CaseGuidance $case
+  }
+  $verificationResultLabel = if ($case.Id -eq "05-batch-relay") {
+    'Previous harness results (oracle status, project tests, and help commands):'
+  } else {
+    'Previous local verification results (project tests and help commands):'
+  }
+  $recoveryHeader = if ($case.Id -eq "04-webhook-inbox") {
+    'The complete Case 04 specification was embedded in the initial prompt; do not reread it. ' +
+      'Inspect the project files and preserve working behavior. ' +
+      'If no runnable admission slice exists, implement CLI help, SQLite, health, and signed ' +
+      'delivery admission first. Otherwise add the committed worker lease, ' +
+      'expiry reclaim, crash recovery, and direct argv sink while preserving admission. ' +
+      'Work only in this workspace; do not edit the specification, config, or oracle.'
+  } elseif ($case.Id -eq "05-batch-relay") {
+    $phaseHeader = switch ($case05Phase) {
+      "foundation" {
+        'CLI and test-discovery did not pass. Fix them before server, HTTP, or worker code.'
+      }
+      "health" {
+        'CLI and test discovery passed. Implement health and signed admission together.'
+      }
+      "admission" {
+        'CLI and server health passed. Complete and verify signed batch admission.'
+      }
+      "contract" {
+        'HTTP tests exist; keep server routes in batchrelay/server.py and refine signed admission.'
+      }
+      "worker" {
+        'The HTTP contract passed. Complete worker behavior while preserving prior slices.'
+      }
+      default {
+        'CLI, health, HTTP, and worker tests exist; local tests and help all pass.'
+      }
+    }
+    'Use SPEC.md read in the initial turn; do not reread it. ' +
+      'Inspect existing files and preserve passing behavior. ' +
+      $phaseHeader + ' ' +
+      'Work only in this workspace; do not edit the specification, config, or oracle.'
+  } else {
+    "Read SPEC.md and inspect the files already present. Work only inside this" +
+      [Environment]::NewLine +
+      "workspace and do not edit the specification, rupi configs, or the external" +
+      [Environment]::NewLine + "acceptance oracle."
+  }
+  $verificationGuidance = if ($case.Id -eq "04-webhook-inbox") {
+@'
+The benchmark harness reruns project tests and all three help commands after this attempt.
+It runs the acceptance oracle independently; its result and diagnostics are not shown here.
+Do not run commands, tests, help checks, the service, worker, or oracle. Use local test and help
+feedback to edit source files, then rely on the harness for verification.
+'@
+  } elseif ($case.Id -eq "02-reading-queue") {
 @'
 The benchmark harness reruns tests, help commands, and the independent smoke sequence
 after this attempt. Do not run commands, tests, or help checks, or start the service.
@@ -521,35 +794,58 @@ Do not run commands, tests, or help checks, or launch the HTTP service or worker
 Use the diagnostic excerpts above to inspect and edit source files, then rely on the
 harness for verification.
 '@
-  } elseif ($case.Id -eq "04-webhook-inbox") {
-@'
-The harness checks project tests, three help commands, and the independent oracle after
-each attempt. Recovery feedback contains project-test and help results. Do not run
-commands, tests, help checks, or the service or worker. Do not inspect or run the oracle.
-Use workspace read/write tools and rely on harness results.
-'@
+  } elseif ($case.Id -eq "05-batch-relay") {
+    (@(
+      'The harness reruns project tests, all three help commands, and the independent oracle after'
+      'each attempt. Recovery feedback gives only the oracle pass/fail status.'
+      'Feedback also includes project-test and help results.'
+      'Oracle diagnostics stay hidden; use local diagnostics and the initial SPEC.md read.'
+      'Do not run tests or help commands; do not launch service, worker, or oracle.'
+      'Do not call `exec` or run shell commands; rely on the harness for verification.'
+      'Never inspect or run the oracle. Use workspace read/write tools and harness results.'
+    ) -join [Environment]::NewLine)
   } else {
 @'
 Continue working through the missing items in SPEC.md, then run the complete project
 unittest suite, the project-specific help commands, and a smoke sequence.
 '@
   }
+  $completionDirective = if ($case.Id -eq "04-webhook-inbox") {
+    'Complete the next runnable implementation slice and the required README and tests.'
+  } elseif ($case.Id -eq "05-batch-relay") {
+    'Complete this slice; advance after project tests and help pass.'
+  } else {
+    'Finish every missing implementation, README section, and focused test required by the spec.'
+  }
+  $continuationDirective = if ($case.Id -eq "04-webhook-inbox") {
+    'Use local test and help feedback to repair the implementation; do not inspect oracle results.'
+  } elseif ($case.Id -eq "05-batch-relay") {
+    'Use failing local checks to repair this slice. Oracle status only; do not inspect or run it.'
+  } else {
+    'Continue working through the missing items in SPEC.md.'
+  }
+  $priorityDirective = if ($case.Id -eq "04-webhook-inbox") {
+    'Prioritize a working end-to-end admission and delivery path.'
+  } elseif ($case.Id -eq "05-batch-relay") {
+    'Prioritize the current gated phase.'
+  } else {
+    "Prioritize the full reliability contract: $($case.Focus)."
+  }
   $prompt = @"
 Continue the incomplete $($case.Package) implementation in this workspace.
-$recoveryHeader Finish every missing implementation, README section, and
-focused test required by the spec. Prioritize the full reliability contract:
-$($case.Focus).
+$recoveryHeader
+$completionDirective $priorityDirective
 
 $caseGuidance
 
 Use only Python standard-library modules.
 $toolingGuidance
 
-Previous local verification results (project tests and help commands):
+$verificationResultLabel
 $feedback
 
-Use any failing local results above to correct the implementation. Continue
-working through the missing items in SPEC.md.
+Use any failing local results above to correct the implementation.
+$continuationDirective
 $verificationGuidance
 If anything remains incomplete, state it instead of claiming success.
 "@
@@ -580,9 +876,51 @@ If anything remains incomplete, state it instead of claiming success.
         'Do not run commands, tests, or help checks, or launch the HTTP service or worker.')) {
     throw 'Case 03 recovery prompt must defer execution and verification to the harness.'
   }
-  if ($case.Id -eq "04-webhook-inbox" -and
-      -not $prompt.Contains('Do not run commands, tests, help checks')) {
-    throw 'Case 04 recovery prompt must defer execution and verification to the harness.'
+  if ($case.Id -eq "04-webhook-inbox") {
+    foreach ($instruction in @(
+      'The complete Case 04 specification was embedded in the initial prompt; do not reread it.'
+      'If no runnable admission slice exists, implement CLI help, SQLite, health, and signed'
+      'delivery admission first.'
+      'Otherwise add the committed worker lease, expiry reclaim, crash recovery, and direct argv'
+      'sink while preserving admission.'
+      'The benchmark harness reruns project tests and all three help commands after this attempt.'
+      'It runs the acceptance oracle independently; its result and diagnostics are not shown here.'
+      'Do not run commands, tests, help checks, the service, worker, or oracle.'
+      'Use local test and help'
+      'feedback to edit source files, then rely on the harness for verification.'
+    )) {
+      if (-not $prompt.Contains($instruction)) {
+        throw "Case 04 recovery prompt is missing: $instruction"
+      }
+    }
+    if ($prompt.Contains('Read SPEC.md and inspect the files already present.')) {
+      throw 'Case 04 recovery prompt must rely on the embedded specification.'
+    }
+  }
+  if ($case.Id -eq "05-batch-relay") {
+    $phaseInstruction = switch ($case05Phase) {
+      "foundation" { 'CLI and test-discovery did not pass.' }
+      "health" { 'CLI and test discovery passed.' }
+      "admission" { 'CLI and server health passed.' }
+      "contract" { 'HTTP tests exist;' }
+      "worker" { 'The HTTP contract passed.' }
+      default { 'CLI, health, HTTP, and worker tests exist' }
+    }
+    if (-not $prompt.Contains('do not reread it.') -or
+        -not $prompt.Contains('Recovery feedback gives only the oracle pass/fail status.') -or
+        -not $prompt.Contains('Never store database state as handler attribute `connection`.') -or
+        -not $prompt.Contains(
+          '`BaseHTTPRequestHandler` reserves `connection` for the client socket.') -or
+        -not $prompt.Contains($phaseInstruction) -or
+        -not $prompt.Contains(
+          'Complete this slice; advance after project tests and help pass.') -or
+        -not $prompt.Contains(
+          'Do not run tests or help commands; do not launch service, worker, or oracle.') -or
+        -not $prompt.Contains(
+          'Do not call `exec` or run shell commands; rely on the harness for verification.') -or
+        $prompt.Contains('Read SPEC.md and inspect the files already present.')) {
+      throw 'Case 05 recovery prompt must select a gated slice and defer verification.'
+    }
   }
   return $prompt
 }
@@ -890,7 +1228,7 @@ function Invoke-AgentCase([hashtable]$case, [string]$agent, [string]$root, [stri
     $prompt = if ($turn -eq 1) {
       Get-InitialPrompt $case
     } else {
-      Get-RecoveryPrompt $case $lastVerification
+      Get-RecoveryPrompt $case $lastVerification $workspace.project
     }
     $turnRoot = Join-Path $agentRoot ("turn-{0:D2}" -f $turn)
     New-Item -ItemType Directory -Force -Path $turnRoot | Out-Null
@@ -956,7 +1294,7 @@ if ($CaseId.Count -gt 0) {
 }
 if ($DryRun) {
   Write-Host "Thinking level: $ThinkingLevel"
-  Write-Host "Recovery feedback: project tests and help only"
+  Write-Host "Recovery feedback: project tests and help; Case 05 oracle status only"
   $cases | ForEach-Object {
     [void](Get-InitialPrompt $_)
     $dryRunHelp = @($_.Help | ForEach-Object {
@@ -968,6 +1306,12 @@ if ($DryRun) {
         }
       })
     $dryRunVerification = [pscustomobject]@{
+      oracle = [pscustomobject]@{
+        timed_out = $false
+        exit_code = 0
+        stderr_path = $null
+        stdout_path = $null
+      }
       project_tests = [pscustomobject]@{
         timed_out = $false
         exit_code = 0
@@ -1005,6 +1349,11 @@ if ($Agent -ne "rupi") {
 if (-not (Test-Path $rupiBinary)) { throw "Missing $rupiBinary; run cargo build --bin rupi first." }
 New-Item -ItemType Directory -Force -Path $runRoot | Out-Null
 $selectedAgents = if ($Agent -eq "all") { @("rupi", "pi") } else { @($Agent) }
+$recoveryFeedbackScope = if (@($cases | Where-Object { $_.Id -eq "05-batch-relay" }).Count -gt 0) {
+  "project_tests_and_help;case05_oracle_status_only"
+} else {
+  "project_tests_and_help"
+}
 $results = [Collections.Generic.List[object]]::new()
 foreach ($case in $cases) {
   foreach ($selectedAgent in $selectedAgents) {
@@ -1014,7 +1363,7 @@ foreach ($case in $cases) {
       run_id = $RunId
       pi_version = $piVersion
       thinking_level = $ThinkingLevel
-      recovery_feedback_scope = "project_tests_and_help"
+      recovery_feedback_scope = $recoveryFeedbackScope
       results = @($results)
     }
     Write-Json (Join-Path $runRoot "partial.json") $partial
@@ -1026,7 +1375,7 @@ $summary = [ordered]@{
   pi_version = $piVersion
   model = "qwen3.8-flash-next"
   thinking_level = $ThinkingLevel
-  recovery_feedback_scope = "project_tests_and_help"
+  recovery_feedback_scope = $recoveryFeedbackScope
   endpoint = "http://127.0.0.1:8000/v1"
   max_turns = $MaxTurns
   turn_timeout_seconds = $TurnTimeoutSeconds

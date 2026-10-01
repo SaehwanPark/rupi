@@ -101,6 +101,18 @@ result for both agents.
 ## Current outcome
 
 The full-spec first-write prompt experiment did not produce a Case 04 win. Case 04 remains open;
-PR #136 stays draft while the next optimization is prepared. The next prompt iteration should
-encourage early incremental implementation and tool use, since this run produced no Rupi
-inference usage for its first three turns and only one source write in turn 4.
+PR #136 stays draft while an incremental first-write prompt is prepared. The next iteration uses
+the embedded specification to ask for a runnable admission slice in the first source write, then
+continues with the worker, lease reclaim, sink protocol, README, and tests in additional writes
+during the same turn. It aims to prompt useful implementation activity earlier: Rupi made no
+inference requests in its first three turns and made one source write in turn 4 of the prior run.
+
+## Incremental first-write prompt iteration (pending)
+
+Proposed run:
+`bench-20261001-case04-incremental-admission-grace6-cap8-pi0861-low-matched4-600s`.
+The initial prompt retains the full Case 04 SPEC, directs the first write to implement CLI help,
+SQLite, health, and signed delivery admission, and asks for the rest of the workflow through
+additional writes in the same turn. Recovery prompts preserve working admission and use local
+project-test and help feedback; oracle results and diagnostics remain hidden. The prompt is
+validated by the all-case dry run; the matched comparison is pending.

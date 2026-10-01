@@ -1323,15 +1323,107 @@ TUI rendering passed all budgets (3.31–3.90 µs/unit); checkpointed restore me
   resolved the oracle in turn 1, while Rupi did not resolve after four turns. Rupi used 11,494
   work tokens over 2,388,175 ms; Pi used 17,631 over 600,159 ms. Rupi passed only top-level help
   in turn 4; Pi passed all help checks. Both project-test checks exited 1, separately from oracle
-  status. Case 04 remains open; see its
+  status. Case 04 remains open. The next iteration embeds the full spec, asks for runnable signed
+  admission in the first source write, then continues with the worker and remaining requirements
+  through additional writes in the same turn. Its proposed run is
+  `bench-20261001-case04-incremental-admission-grace6-cap8-pi0861-low-matched4-600s`; see the
   [Case 04 ledger](docs/benchmark/2026-09-29-case04-webhook-inbox-ledger.md).
 
-  Case 05 used the pinned Pi 0.86.1 run `bench-20260929-case05-pi0861-low-matched4-600s`.
-  Both resolved in turn 3 and passed the acceptance oracle and all help checks. Rupi used 61,387
-  work tokens over 1,785,865 ms; Pi used 37,207 over 1,800,734 ms. Rupi finished 14,869 ms
-  sooner but used 24,180 more work tokens, so the result is mixed rather than a strict oracle win.
-  Both project-test discovery checks failed because the `tests` start directory was not importable.
-  See the
+  Case 05's pinned baseline was mixed. The embedded-spec prompt rerun was a Pi win, and the
+  read-once entrypoint rerun was inconclusive. The valid-path, oracle-status rerun
+  `bench-20260930-case05-valid-path-oracle-status-r2-grace6-cap8-pi0861-low-matched4-600s` was
+  also inconclusive: neither agent resolved in four turns. Rupi used 25,136 work tokens over
+  621,025 ms; Pi used 51,970 over 2,401,259 ms. Rupi was 1,780,234 ms faster and used 26,834
+  fewer work tokens, but both failed the oracle every turn. Rupi's tests and help checks failed on
+  every turn; Pi passed project tests and help on its final turn. Oracle diagnostics reported
+  connection refused for both servers on every turn. Rupi's final help diagnostics reported a
+  missing `batchrelay.__main__`, and test discovery could not import `tests`. The next prompt will
+  prioritize an executable entrypoint, an importable test package, and persistent `/healthz`.
+  The follow-up `bench-20260930-case05-entrypoint-health-tests-first-grace6-cap8-pi0861-low-matched4-600s`
+  also did not resolve the case. Rupi used 31,023 work tokens over 2,397,930 ms; Pi used 32,460
+  over 2,401,427 ms. Rupi was 3,497 ms faster and used 1,437 fewer work tokens, but both oracles
+  failed every turn because neither server became reachable. Rupi passed help on turns 2–4 but
+  its project test discovery ran zero tests; Pi's tests and help failed every turn. Case 05
+  remains open. The next prompt now pins `serve` to a persistent `batchrelay.server.run` and
+  requires a subprocess health check before implementing batch and worker behavior. See the
+  [Case 05 ledger](docs/benchmark/2026-09-29-case05-batch-relay-ledger.md).
+
+  The explicit server-wiring rerun `bench-20260930-case05-server-run-health-test-grace6-cap8-pi0861-low-matched4-600s`
+  was a Pi win: Pi resolved in turn 3 with 31,586 work tokens over 1,801,019 ms; Rupi remained
+  unresolved after four turns with 58,100 work tokens over 2,292,113 ms. Rupi passed help on all
+  turns but failed project tests and never exposed a healthy server. Its generated entrypoint
+  imported a missing `batchrelay.server`, and `tests/test_server.py` was absent. The next prompt
+  will make the server module itself the first deliverable. Case 05 remains open; see the
+  [Case 05 ledger](docs/benchmark/2026-09-29-case05-batch-relay-ledger.md).
+
+  The server-module-first rerun
+  `bench-20260930-case05-server-module-first-smoke-r6-grace6-cap8-pi0861-low-matched4-600s`
+  was also a Pi win. Pi resolved in turn 2 with 31,543 work tokens over 1,200,648 ms; Rupi did
+  not resolve after four turns, using 26,694 work tokens over 2,390,898 ms. Rupi's two project
+  tests and all help checks passed, but oracle diagnostics reported `404 unknown path` for batch
+  admission and invalid-signature requests. The next prompt will prioritize signed batch
+  admission in the same first slice as server health. See the
+  [Case 05 ledger](docs/benchmark/2026-09-29-case05-batch-relay-ledger.md).
+
+  The signed-admission-first rerun
+  `bench-20260930-case05-signed-admission-first-r7-grace6-cap8-pi0861-low-matched4-600s`
+  was inconclusive: neither agent resolved or created a reachable server. Rupi was 582,942 ms
+  faster than Pi and used 14,858 more work tokens; both agents failed oracle, project-test, and
+  help checks on every turn. The next prompt returns to the health-first slice before signed
+  admission. See the [Case 05 ledger](docs/benchmark/2026-09-29-case05-batch-relay-ledger.md).
+
+  The health-first rerun
+  `bench-20260930-case05-health-first-recover-admission-r8-grace6-cap8-pi0861-low-matched4-600s`
+  was a Pi win. Pi resolved in turn 3 with 19,494 work tokens over 1,800,775 ms; Rupi remained
+  unresolved after four turns with 74,033 work tokens over 2,401,399 ms. Rupi's project tests and
+  help passed on turn 4, but the oracle failed every turn; final diagnostics reported a dropped
+  batch-cycle request and a worker that never reached the sink. Pi's oracle passed on turn 3,
+  while its project tests failed every turn. Case 05 remains open. The next prompt will focus on
+  batch-cycle handling and worker delivery. See the
+  [Case 05 ledger](docs/benchmark/2026-09-29-case05-batch-relay-ledger.md).
+
+  The HTTP-contract-first rerun
+  `bench-20260930-case05-http-contract-first-r9-grace6-cap8-pi0861-low-matched4-600s` was
+  inconclusive: neither agent resolved the oracle. Rupi was 27,277 ms faster than Pi but used
+  20,949 more work tokens. Rupi's oracle, project tests, and help checks failed every turn; Pi's
+  oracle and project tests also failed every turn. Turn 4 diagnostics show its entrypoint imports
+  a missing worker module before parsing arguments, and the generated project has no `tests`
+  package. The R10 prompt establishes an importable CLI and test package before adding HTTP
+  behavior. R10 was inconclusive: neither agent resolved the oracle. Rupi was 410,837 ms faster,
+  while Pi used 11,467 fewer work tokens. Rupi passed CLI, test discovery, and health checks but
+  did not implement HTTP behavior; Pi passed CLI checks but did not create a server. Case 05
+  remains open. The R11 prompt combined CLI and health, then gated signed admission,
+  contract/status, and worker on passing local checks. Its matched run was inconclusive: neither
+  agent resolved the oracle. Pi was 252,037 ms faster and used 43,066 fewer work tokens. Rupi's
+  local tests failed on turn 4 after the admission changes; Pi passed tests and help on turn 4 but
+  did not reach HTTP admission. R12 was inconclusive: neither agent resolved the oracle. Rupi was
+  1,306,672 ms faster and used 23,730 fewer work tokens, but a tool failure left its recovery turns
+  inactive and all local checks failed. Pi passed project checks on turns 1, 2, and 4 and produced
+  an HTTP test module. R13 was inconclusive: neither agent resolved the oracle. Rupi was
+  350,998 ms faster but used 15,715 more work tokens. The first-write/no-`exec` prompt avoided
+  stalled recovery and passed Rupi's CLI/server checks, but Rupi added no HTTP test module. Pi's
+  tests and help passed on turns 3–4, with `tests/test_http.py` present. R14 was inconclusive:
+  neither agent resolved the oracle. Rupi was 889,681 ms faster and finished with passing tests,
+  help, and `tests/test_http.py`; Pi created no application files. Rupi used 49,278 more work
+  tokens. Its prompt combined CLI, health, and one signed POST. R15 was inconclusive: neither agent
+  resolved the oracle. Pi was 23,090 ms faster and used 41,170 fewer work tokens. Rupi passed
+  health checks but has no `tests/test_http.py`; Pi passed local checks and finished with that test
+  module. R16 was also inconclusive: neither agent resolved the oracle. Rupi passed project tests
+  on turns 3–4 and help every turn; Pi failed project tests and help every turn. Rupi was 5,211 ms
+  faster but used 36,029 more work tokens. Rupi's required CLI, health, and HTTP test files arrived
+  by turn 4, but its server stayed in `batchrelay/__main__.py`; Pi produced support modules without
+  a runnable entrypoint. The all-case dry run and changed-line checks passed, and CI for docs head
+  `e19b1ef` passed on Ubuntu, macOS, and Windows. R17 now requires HTTP routes in
+  `batchrelay/server.py` and delays test scaffolding until the service starts; the all-case dry run
+  and changed-line checks passed. The first attempt stopped after Pi turn 1 because an internal
+  recovery guard still expected the previous wording. Guard fix `cc0c3a2` is pushed, and the matched
+  retry completed. Neither agent resolved the oracle. Pi was 750 ms faster and used 28,483 fewer
+  work tokens; both passed tests on turns 2–4 and help every turn. Rupi had three tool failures and
+  no final HTTP test, while Pi had `tests/test_http.py`. R18 removes the CLI-help prerequisite and
+  combines health and signed admission in one recovery slice. The all-case dry run and changed-line
+  checks passed. In the matched Pi 0.86.1 run, Rupi resolved the oracle in turn 4; Pi remained
+  unresolved. Rupi used 38,964 more work tokens and took 399 ms longer, but the pinned comparison
+  objective is met by the oracle result. See the
   [Case 05 ledger](docs/benchmark/2026-09-29-case05-batch-relay-ledger.md).
 
   Case 06 ran with the pinned Pi 0.86.1 baseline. Pi resolved on turn 4 after its outer timeout,
