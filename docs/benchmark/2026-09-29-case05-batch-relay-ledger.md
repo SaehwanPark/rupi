@@ -816,3 +816,18 @@ Case 05 remains open after R17's inconclusive matched retry. Neither agent resol
 Pi was 750 ms faster and used 28,483 fewer work tokens. Both passed tests on turns 2–4 and help on
 every turn, while Pi's final snapshot also includes `tests/test_http.py`. R18 should combine health
 and signed admission in one recovery slice. PR #137 remains draft.
+
+## Eighteenth prompt iteration — pending
+
+Run: `bench-20261001-case05-health-admission-r18-grace6-cap8-pi0861-low-matched4-600s`.
+
+Prompt commit `c0c8b01` removes the requirement to pass CLI help before creating HTTP routes. It
+combines persistent health and one signed POST in the first server slice and retains focused CLI,
+server, and HTTP tests. Full validation, status, and worker behavior remain deferred. The all-case
+dry run, `git diff --check`, and changed-line length check passed. The matched run is pending. PR
+#137 remains draft.
+
+## Current outcome
+
+R18's prompt is committed and pushed; the matched run is pending. Case 05 remains open after R17's
+inconclusive matched retry. PR #137 remains draft.

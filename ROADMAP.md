@@ -1414,8 +1414,10 @@ TUI rendering passed all budgets (3.31–3.90 µs/unit); checkpointed restore me
   recovery guard still expected the previous wording. Guard fix `cc0c3a2` is pushed, and the matched
   retry completed. Neither agent resolved the oracle. Pi was 750 ms faster and used 28,483 fewer
   work tokens; both passed tests on turns 2–4 and help every turn. Rupi had three tool failures and
-  no final HTTP test, while Pi had `tests/test_http.py`. R18 should combine server health and signed
-  admission in one recovery slice after CLI discovery passes. See the
+  no final HTTP test, while Pi had `tests/test_http.py`. R18 removes the CLI-help prerequisite and
+  combines health and signed admission in one recovery slice. The all-case dry run
+  and changed-line checks passed. Prompt commit `c0c8b01` is pushed; the matched run is pending. See
+  the
   [Case 05 ledger](docs/benchmark/2026-09-29-case05-batch-relay-ledger.md).
 
   Case 06 ran with the pinned Pi 0.86.1 baseline. Pi resolved on turn 4 after its outer timeout,
