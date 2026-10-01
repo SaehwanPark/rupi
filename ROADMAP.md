@@ -1334,9 +1334,13 @@ TUI rendering passed all budgets (3.31–3.90 µs/unit); checkpointed restore me
   `bench-20261001-case04-recovery-gated-grace6-cap8-pi0861-low-matched4-600s` was another Pi win:
   Pi resolved in turn 1 with 19,771 work tokens over 600,493 ms, while Rupi did not resolve after
   four turns (26,135 work tokens over 2,007,731 ms). Rupi never passed help or project tests, and
-  its final files still lacked `webhookinbox/__main__.py`. Case 04 remains open. The next run,
-  `bench-20261001-case04-entrypoint-first-grace6-cap8-pi0861-low-matched4-600s`, gates recovery on
-  creating the entrypoint before support modules. See the
+  its final files still lacked `webhookinbox/__main__.py`. The entrypoint-first rerun
+  `bench-20261001-case04-entrypoint-first-grace6-cap8-pi0861-low-matched4-600s` was Rupi's first
+  oracle resolution, in turn 2 with 17,547 work tokens over 1,022,843 ms. Pi resolved in turn 1
+  with 16,035 work tokens over 600,430 ms. Pi won under the fewer-turns or same-turn-fewer-tokens
+  criterion; Rupi's project tests found no tests. Case 04 remains open. The next run,
+  `bench-20261001-case04-one-turn-completion-grace6-cap8-pi0861-low-matched4-600s`, targets a
+  one-turn resolution with fewer tokens and a discovered test. See the
   [Case 04 ledger](docs/benchmark/2026-09-29-case04-webhook-inbox-ledger.md).
 
   Case 05's pinned baseline was mixed. The embedded-spec prompt rerun was a Pi win, and the

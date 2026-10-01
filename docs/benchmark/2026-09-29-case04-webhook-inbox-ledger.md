@@ -3,6 +3,13 @@
 This ledger records the initial run with an unrecorded Pi version and the later Pi 0.86.1
 rerun for `04-webhook-inbox` using local `qwen3.8-flash-next`.
 
+## Scope and win criterion
+
+Case 04 resolves only when the independent oracle exits zero. Rupi wins a matched comparison if
+it resolves in fewer turns than Pi, or if both resolve in the same turn and Rupi uses fewer
+inference-work tokens with no more agent wall time. Project-test and help results are recorded
+separately from oracle resolution.
+
 ## First matched run (Pi version not recorded)
 
 Run: `bench-20260929-case04-baseline-low-matched4-600s`.
@@ -150,16 +157,36 @@ Rupi's final file snapshot contained `webhookinbox/__init__.py`, `db.py`, and `s
 `__main__.py` is missing and direct the agent to create that single file before support modules.
 The all-case dry run passed; oracle status remains hidden from recovery prompts.
 
+## Entrypoint-first prompt rerun (R4)
+
+Run: `bench-20261001-case04-entrypoint-first-grace6-cap8-pi0861-low-matched4-600s`.
+This used Pi 0.86.1, low reasoning, four turns, 600-second outer timeouts, eight model requests
+per turn, and a 594-second Rupi provider timeout. Recovery required `__main__.py` before support
+modules.
+
+| Agent | T | Elapsed ms | Work | Req | Tools | Oracle/tests | Help T/S/W | Result |
+| --- | ---: | ---: | ---: | ---: | ---: | --- | --- | --- |
+| Rupi | 1 | 422,599 | 0 | 1 | 0 | 1 / 1 | 1 / 1 / 1 | no inference/tools |
+| Rupi | 2 | 600,244 | 17,547 | 6 | 6 | 0 / 5 | 0 / 0 / 0 | outer timeout; resolved |
+| Pi | 1 | 600,430 | 16,035 | 5 | 9 | 0 / 0 | 0 / 0 / 0 | outer timeout; resolved |
+
+Rupi resolved the oracle in turn 2 and passed every help command. Its project-test command exited
+5 because no tests were discovered; its snapshot contained only `tests/__init__.py` and a sink
+helper, not a `test_*.py` module. Pi resolved in turn 1 and passed project tests and all help
+checks. Rupi used 1,512 more work tokens and took 422,413 ms longer, so Pi won under the criterion
+above.
+
 ## Current outcome
 
-Case 04 remains open after three Pi wins: the full-spec first-write, R2 admission-first, and R3
-recovery-gated runs. PR #136 stays draft while the entrypoint-first prompt iteration is prepared.
+Case 04 remains open after four Pi wins. R4 was the first Rupi oracle resolution, but it required
+one more turn and used more work tokens and wall time than Pi. PR #136 stays draft while the next
+prompt iteration targets a one-turn, lower-token resolution and an actual discovered test.
 
-## Entrypoint-first prompt iteration (R4, pending)
+## One-turn completion prompt iteration (R5, pending)
 
 Proposed run:
-`bench-20261001-case04-entrypoint-first-grace6-cap8-pi0861-low-matched4-600s`.
-The initial prompt directs the first write to `webhookinbox/__main__.py` and defers support
-modules until that file provides all three help paths. Recovery selects the entrypoint phase when
-the file is absent, then test/help interface repair, then worker implementation. The matched
-comparison is pending.
+`bench-20261001-case04-one-turn-completion-grace6-cap8-pi0861-low-matched4-600s`.
+The initial prompt will keep the app in one `__main__.py` vertical slice and request a real
+`tests/test_cli.py` containing at least one unittest, not only test helpers. Recovery will repair
+test discovery explicitly when unittest exits 5, then complete remaining worker requirements.
+The all-case dry run and matched comparison are pending.
