@@ -126,6 +126,8 @@ function Get-CaseGuidance([hashtable]$case, [string]$phase = "initial") {
         "initial" {
           return (@(
             'Build an import-safe CLI and persistent health server before batch behavior.'
+            'Never store database state as handler attribute `connection`.'
+            '`BaseHTTPRequestHandler` reserves `connection` for the client socket.'
             'Create batchrelay/__main__.py with argparse and lazy command imports.'
             'Create tests/__init__.py, tests/test_cli.py, and tests/test_server.py.'
             'Use subprocess tests with sys.executable for top-level, serve, and worker help.'
@@ -141,6 +143,8 @@ function Get-CaseGuidance([hashtable]$case, [string]$phase = "initial") {
         "foundation" {
           return (@(
             'Repair the argparse CLI and importable tests package first.'
+            'Never store database state as handler attribute `connection`.'
+            '`BaseHTTPRequestHandler` reserves `connection` for the client socket.'
             'Lazy-import server and worker after command parsing so all help commands work.'
             'Ensure tests/__init__.py and subprocess checks in tests/test_cli.py exist.'
             'Do not work on health, HTTP, or worker until project tests and help pass.'
@@ -150,6 +154,8 @@ function Get-CaseGuidance([hashtable]$case, [string]$phase = "initial") {
         "health" {
           return (@(
             'The CLI and test-discovery foundation passed; implement only server health now.'
+            'Never store database state as handler attribute `connection`.'
+            '`BaseHTTPRequestHandler` reserves `connection` for the client socket.'
             'Create server.py with run(db, secret, host, port); bind and call serve_forever().'
             'Implement GET /healthz as HTTP 200 application/json with {"ok": true}.'
             'Wire the serve command to server.run with a lazy import after argument parsing.'
@@ -161,18 +167,26 @@ function Get-CaseGuidance([hashtable]$case, [string]$phase = "initial") {
         }
         "admission" {
           return (@(
-            'CLI and server health passed; implement signed POST /batches in tests/test_http.py.'
-            'Accept a valid signed batch and persist its jobs in one atomic database write.'
-            'New signed batches return 202; exact replays return 200; conflicts return 409.'
-            'Missing or invalid signatures return 401 before any database write.'
-            'Verify raw-byte HMAC-SHA256 before parsing and compare digests in constant time.'
-            'Preserve the passing CLI and health endpoint; do not implement worker behavior.'
+            'CLI and server health passed; complete only the first signed POST /batches path.'
+            'Never store database state as handler attribute `connection`.'
+            '`BaseHTTPRequestHandler` reserves `connection` for the client socket.'
+            'Add tests/test_http.py for one valid batch with one valid job and signature failures.'
+            'Use X-Batch-Signature: sha256=<lowercase HMAC-SHA256 hex> over exact raw body bytes.'
+            'Sign with SECRET as a UTF-8 key; verify HMAC before JSON parsing.'
+            'Compare the expected and supplied digests in constant time.'
+            'A new valid batch returns 202 with its job pending and attempts=0.'
+            'Insert the batch and job atomically.'
+            'Missing, malformed, or incorrect signatures return HTTP 401 without a database write.'
+            'Preserve the passing CLI and /healthz tests.'
+            'Defer replay/conflicts, full validation, GET status, and worker behavior.'
             'Never inspect or run the external oracle.'
           ) -join [Environment]::NewLine)
         }
         "contract" {
           return (@(
             'Signed admission passed; add validation and status tests in test_contract.py.'
+            'Never store database state as handler attribute `connection`.'
+            '`BaseHTTPRequestHandler` reserves `connection` for the client socket.'
             'Validate the full batch and dependency graph before one atomic database write.'
             'Malformed bodies, duplicate ids, and unknown fields return JSON 400.'
             'Missing or repeated dependencies, self-dependencies, and cycles return JSON 400.'
@@ -186,6 +200,8 @@ function Get-CaseGuidance([hashtable]$case, [string]$phase = "initial") {
         "worker" {
           return (@(
             'HTTP passed; implement worker --once with tests/test_worker.py.'
+            'Never store database state as handler attribute `connection`.'
+            '`BaseHTTPRequestHandler` reserves `connection` for the client socket.'
             'Process runnable jobs in dependency order and reclaim expired leases.'
             'Keep retryable failures pending; permanent failures block dependent jobs.'
             'Worker --once attempts each runnable job once and never polls.'
@@ -198,6 +214,8 @@ function Get-CaseGuidance([hashtable]$case, [string]$phase = "initial") {
         default {
           return (@(
             'All CLI, health, HTTP, and worker test files exist; project tests and help pass.'
+            'Never store database state as handler attribute `connection`.'
+            '`BaseHTTPRequestHandler` reserves `connection` for the client socket.'
             'Use initial SPEC.md notes to fill missing behavior and add regressions.'
             'Preserve passing slices, and update README only as SPEC.md requires.'
             'The harness gives only oracle pass/fail status; never inspect or run the oracle.'
@@ -458,6 +476,8 @@ directories to its extended Windows path with `cd` or `cd /d`.
   } elseif ($case.Id -eq "05-batch-relay") {
     $caseSpecificInstructions = @(
       'Build an import-safe CLI and persistent health server before batch behavior.'
+      'Never store database state as handler attribute `connection`.'
+      '`BaseHTTPRequestHandler` reserves `connection` for the client socket.'
       'Create batchrelay/__main__.py with argparse and lazy command imports.'
       'Create tests/__init__.py, tests/test_cli.py, and tests/test_server.py.'
       'Use subprocess tests with sys.executable for top-level, serve, and worker help.'
@@ -740,6 +760,9 @@ If anything remains incomplete, state it instead of claiming success.
     }
     if (-not $prompt.Contains('do not reread it.') -or
         -not $prompt.Contains('Recovery feedback gives only the oracle pass/fail status.') -or
+        -not $prompt.Contains('Never store database state as handler attribute `connection`.') -or
+        -not $prompt.Contains(
+          '`BaseHTTPRequestHandler` reserves `connection` for the client socket.') -or
         -not $prompt.Contains($phaseInstruction) -or
         -not $prompt.Contains(
           'Complete this slice; advance after project tests and help pass.') -or

@@ -1391,8 +1391,9 @@ TUI rendering passed all budgets (3.31–3.90 µs/unit); checkpointed restore me
   contract/status, and worker on passing local checks. Its matched run was inconclusive: neither
   agent resolved the oracle. Pi was 252,037 ms faster and used 43,066 fewer work tokens. Rupi's
   local tests failed on turn 4 after the admission changes; Pi passed tests and help on turn 4 but
-  did not reach HTTP admission. The next prompt will isolate the server handler fix before one
-  signed POST path. See the
+  did not reach HTTP admission. R12 isolates the server handler's reserved socket attribute and
+  limits admission to one valid signed POST plus signature-failure behavior. Replay, conflict,
+  validation, status, and worker behavior remain gated for later turns. See the
   [Case 05 ledger](docs/benchmark/2026-09-29-case05-batch-relay-ledger.md).
 
   Case 06 ran with the pinned Pi 0.86.1 baseline. Pi resolved on turn 4 after its outer timeout,

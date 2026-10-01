@@ -504,5 +504,16 @@ expanding to status, replay, validation, or worker behavior. PR #137 remains dra
 ## Current outcome
 
 Case 05 remains open after R11's inconclusive comparison. Pi finished with passing local checks,
-but neither agent resolved the oracle. The next prompt will isolate the server handler fix and one
-signed HTTP admission path.
+but neither agent resolved the oracle. R12 isolates the server handler's reserved socket attribute
+and limits admission to one valid signed POST plus signature-failure behavior.
+
+## Twelfth prompt iteration — pending
+
+Run: `bench-20260930-case05-one-signed-post-handler-guard-r12-grace6-cap8-pi0861-low-matched4-600s`.
+
+R11's turn-4 diagnostics showed that `RelayHandler.connection` conflicts with the socket property
+managed by `BaseHTTPRequestHandler`. R12 carries that invariant into every Case 05 phase and narrows
+signed admission to one valid batch POST plus missing, malformed, and incorrect signature behavior.
+Replay/conflict semantics, full validation, GET status, and worker behavior remain gated. The
+all-case benchmark dry run and `git diff --check` passed; the matched run is pending. PR #137
+remains draft.
