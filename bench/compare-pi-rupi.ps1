@@ -125,20 +125,28 @@ function Get-CaseGuidance([hashtable]$case, [string]$phase = "initial") {
       switch ($phase) {
         "initial" {
           return (@(
-            'Build an import-safe CLI and persistent health server before batch behavior.'
+            'Build an import-safe CLI, health server, and one signed batch admission path.'
             'After reading SPEC.md, make the first source write to batchrelay/__main__.py.'
-            'It must run as python -m batchrelay and show top-level argparse help.'
+            'The first module must run as python -m batchrelay and show top-level argparse help.'
+            'Keep CLI, health, and POST /batches in __main__.py until the service is runnable.'
             'Do not create __init__.py, tests, or support modules before __main__.py runs.'
             'Never store database state as handler attribute `connection`.'
             '`BaseHTTPRequestHandler` reserves `connection` for the client socket.'
-            'Create batchrelay/__main__.py with argparse and lazy command imports.'
-            'Create tests/__init__.py, tests/test_cli.py, and tests/test_server.py.'
-            'Use subprocess tests with sys.executable for top-level, serve, and worker help.'
-            'Implement server.run(db, secret, host, port).'
+            'Use lazy argparse imports; server.run(db, secret, host, port) starts serve_forever().'
             'Make GET /healthz return HTTP 200 JSON {"ok": true}.'
+            'Implement POST /batches for one signed batch containing one valid job.'
+            'Read raw body bytes from self.rfile; verify X-Batch-Signature before JSON parsing.'
+            'Require sha256=<lowercase HMAC-SHA256 hex> over raw bytes with SECRET as UTF-8 key.'
+            'Use hmac.compare_digest; missing, malformed, or wrong signatures return JSON 401.'
+            'Invalid signatures must not mutate SQLite; insert the valid batch and job atomically.'
+            'The valid one-job POST returns 202 with a pending job and attempts=0.'
+            'Create tests/__init__.py and test_cli.py, test_server.py, test_http.py under tests/.'
+            'Use subprocess tests with sys.executable for top-level, serve, and worker help.'
             'Subprocess-test serve: poll /healthz, confirm it stays alive, and clean up.'
-            'Keep command modules lazy so every help command succeeds before worker.py exists.'
-            'Do not implement signed batch routes or worker behavior in this first phase.'
+            'Test valid signed admission; assert bad signatures do not mutate the database.'
+            'Keep command imports lazy so all help commands pass before worker.py exists.'
+            'Defer validation, idempotency, batch status, and worker behavior.'
+            'After the signed POST and focused tests pass, update README only as SPEC.md requires.'
             'Advance only after harness project tests and all three help commands pass.'
             'Never inspect or run the external oracle.'
           ) -join [Environment]::NewLine)
@@ -157,7 +165,7 @@ function Get-CaseGuidance([hashtable]$case, [string]$phase = "initial") {
         }
         "health" {
           return (@(
-            'The CLI and test-discovery foundation passed; implement only server health now.'
+            'The CLI and test-discovery foundation passed; add the persistent health check.'
             'Never store database state as handler attribute `connection`.'
             '`BaseHTTPRequestHandler` reserves `connection` for the client socket.'
             'Create server.py with run(db, secret, host, port); bind and call serve_forever().'
@@ -165,7 +173,7 @@ function Get-CaseGuidance([hashtable]$case, [string]$phase = "initial") {
             'Wire the serve command to server.run with a lazy import after argument parsing.'
             'Add tests/test_server.py with a subprocess health check and cleanup.'
             'Check that the service stays alive while /healthz is polled.'
-            'Do not add batch routes or worker until this health test and all help checks pass.'
+            'Preserve any existing signed POST path; do not add broader batch or worker behavior.'
             'Never inspect or run the external oracle.'
           ) -join [Environment]::NewLine)
         }
@@ -188,16 +196,15 @@ function Get-CaseGuidance([hashtable]$case, [string]$phase = "initial") {
         }
         "contract" {
           return (@(
-            'Signed admission passed; add validation and status tests in test_contract.py.'
+            'A signed POST test exists; strengthen only one-job admission and its auth boundaries.'
             'Never store database state as handler attribute `connection`.'
             '`BaseHTTPRequestHandler` reserves `connection` for the client socket.'
-            'Validate the full batch and dependency graph before one atomic database write.'
-            'Malformed bodies, duplicate ids, and unknown fields return JSON 400.'
-            'Missing or repeated dependencies, self-dependencies, and cycles return JSON 400.'
-            'Rejected requests leave no rows, and the server stays up for the next request.'
-            'GET /batches/<batch_id> returns full status or JSON 404 for an unknown batch.'
-            'Test status reads and persistence across a server restart.'
-            'Do not start worker work until these focused contract tests pass.'
+            'Keep tests/test_http.py focused on one valid signed POST and signature failures.'
+            'Use raw body bytes, verify HMAC before parsing, and compare digests in constant time.'
+            'The accepted one-job batch returns 202, is atomic, and starts pending with attempts=0.'
+            'Missing, malformed, or wrong signatures return 401 without changing the database.'
+            'Preserve GET /healthz and every passing CLI/server test.'
+            'Defer full validation, idempotency, batch status, and worker behavior.'
             'Never inspect or run the external oracle.'
           ) -join [Environment]::NewLine)
         }
@@ -480,20 +487,28 @@ directories to its extended Windows path with `cd` or `cd /d`.
     }
   } elseif ($case.Id -eq "05-batch-relay") {
     $caseSpecificInstructions = @(
-      'Build an import-safe CLI and persistent health server before batch behavior.'
+      'Build an import-safe CLI, health server, and one signed batch admission path.'
       'After reading SPEC.md, make the first source write to batchrelay/__main__.py.'
-      'It must run as python -m batchrelay and show top-level argparse help.'
+      'The first module must run as python -m batchrelay and show top-level argparse help.'
+      'Keep CLI, health, and POST /batches in __main__.py until the service is runnable.'
       'Do not create __init__.py, tests, or support modules before __main__.py runs.'
       'Never store database state as handler attribute `connection`.'
       '`BaseHTTPRequestHandler` reserves `connection` for the client socket.'
-      'Create batchrelay/__main__.py with argparse and lazy command imports.'
-      'Create tests/__init__.py, tests/test_cli.py, and tests/test_server.py.'
-      'Use subprocess tests with sys.executable for top-level, serve, and worker help.'
-      'Implement server.run(db, secret, host, port).'
+      'Use lazy argparse imports; server.run(db, secret, host, port) starts serve_forever().'
       'Make GET /healthz return HTTP 200 JSON {"ok": true}.'
+      'Implement POST /batches for one signed batch containing one valid job.'
+      'Read raw body bytes from self.rfile; verify X-Batch-Signature before JSON parsing.'
+      'Require sha256=<lowercase HMAC-SHA256 hex> over raw bytes with SECRET as UTF-8 key.'
+      'Use hmac.compare_digest; missing, malformed, or wrong signatures return JSON 401.'
+      'Invalid signatures must not mutate SQLite; insert the valid batch and job atomically.'
+      'The valid one-job POST returns 202 with a pending job and attempts=0.'
+      'Create tests/__init__.py and test_cli.py, test_server.py, test_http.py under tests/.'
+      'Use subprocess tests with sys.executable for top-level, serve, and worker help.'
       'Subprocess-test serve: poll /healthz, confirm it stays alive, and clean up.'
-      'Keep command modules lazy so every help command succeeds before worker.py exists.'
-      'Do not implement signed batch routes or worker behavior in this first phase.'
+      'Test valid signed admission; assert bad signatures do not mutate the database.'
+      'Keep command imports lazy so all help commands pass before worker.py exists.'
+      'Defer validation, idempotency, batch status, and worker behavior.'
+      'After the signed POST and focused tests pass, update README only as SPEC.md requires.'
       'Advance only after harness project tests and all three help commands pass.'
       'Do not call `exec` or run shell commands; rely on the harness for verification.'
       'Never inspect or run the external oracle.'
@@ -650,7 +665,7 @@ function Get-RecoveryPrompt(
         'CLI and server health passed. Complete and verify signed batch admission.'
       }
       "contract" {
-        'Signed admission passed. Complete and verify HTTP validation and status.'
+        'A signed POST test exists. Refine only admission and authentication boundaries.'
       }
       "worker" {
         'The HTTP contract passed. Complete worker behavior while preserving prior slices.'
@@ -764,7 +779,7 @@ If anything remains incomplete, state it instead of claiming success.
       "foundation" { 'CLI and test-discovery did not pass.' }
       "health" { 'CLI and test discovery passed.' }
       "admission" { 'CLI and server health passed.' }
-      "contract" { 'Signed admission passed.' }
+      "contract" { 'A signed POST test exists.' }
       "worker" { 'The HTTP contract passed.' }
       default { 'CLI, health, HTTP, and worker tests exist' }
     }
