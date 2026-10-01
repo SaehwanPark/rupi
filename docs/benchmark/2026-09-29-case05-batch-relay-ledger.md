@@ -400,7 +400,7 @@ failed on every turn. Turn 4 diagnostics show `batchrelay/__main__.py` imports a
 no `tests` package, so unittest discovery fails. The next prompt will establish an importable CLI
 and test package before adding HTTP behavior. PR #137 remains draft.
 
-## Tenth prompt iteration — pending
+## Tenth prompt iteration — complete; inconclusive
 
 Run: `bench-20260930-case05-cli-importable-first-r10-grace6-cap8-pi0861-low-matched4-600s`.
 
@@ -409,12 +409,49 @@ import-safe argparse CLI with lazy command imports, `tests/__init__.py`, and sub
 for the package, `serve`, and `worker`. Recovery advances through health, HTTP, and worker only
 after local project tests and all help commands pass. Oracle diagnostics remain hidden.
 
-The all-case benchmark dry run and `git diff --check` passed. The matched R10 benchmark is pending;
-PR #137 remains draft.
+The all-case benchmark dry run and `git diff --check` passed.
+
+### Rupi result
+
+Rupi remained unresolved after four turns, using 42,629 work tokens over 1,990,405 ms. It used
+23,155 input tokens, 19,474 output tokens, 17 model requests, and 17 tool requests. Its oracle
+failed every turn; all three help commands passed every turn. Project tests ran zero tests on turn
+1, then passed on turns 2–4.
+
+| Turn | Elapsed | In / out | Work | Req / tools | Oracle / tests | Help | Call |
+| --- | ---: | ---: | ---: | ---: | --- | --- | --- |
+| 1 | 470,865 ms | 9,475 / 2,100 | 11,575 | 3 / 3 | failed / exit 5 | 0 / 0 / 0 | exit 1 |
+| 2 | 319,031 ms | 3,108 / 5,836 | 8,944 | 6 / 7 | failed / 0 | 0 / 0 / 0 | complete |
+| 3 | 600,316 ms | 9,839 / 11,112 | 20,951 | 6 / 6 | failed / 0 | 0 / 0 / 0 | outer timeout |
+| 4 | 600,193 ms | 733 / 426 | 1,159 | 2 / 1 | failed / 0 | 0 / 0 / 0 | outer timeout |
+
+The generated project includes `batchrelay/server.py` and `tests/test_server.py`; its 16 tests and
+all help commands pass. It has no `tests/test_http.py` or `batchrelay/worker.py`, so it did not
+complete the HTTP slice assigned on turn 4.
+
+### Pi result
+
+Pi remained unresolved after four turns, using 31,162 work tokens over 2,401,242 ms. It used
+10,366 input tokens, 20,796 output tokens, 20 model requests, and 20 tool requests. Its oracle
+failed every turn; project tests failed on turn 1 and passed on turns 2–4; all help commands
+passed every turn.
+
+| Turn | Elapsed | In / out | Work | Req / tools | Oracle / tests | Help | Call |
+| --- | ---: | ---: | ---: | ---: | --- | --- | --- |
+| 1 | 600,284 ms | 6,110 / 10,443 | 16,553 | 9 / 9 | failed / exit 1 | 0 / 0 / 0 | outer timeout |
+| 2 | 600,306 ms | 4,256 / 10,353 | 14,609 | 11 / 11 | failed / 0 | 0 / 0 / 0 | outer timeout |
+| 3 | 600,368 ms | 0 / 0 | 0 | 0 / 0 | failed / 0 | 0 / 0 / 0 | outer timeout |
+| 4 | 600,284 ms | 0 / 0 | 0 | 0 / 0 | failed / 0 | 0 / 0 / 0 | outer timeout |
+
+Pi created no server module. It passed the CLI checks but did not reach the health behavior.
+
+Neither agent resolved the oracle. Rupi finished 410,837 ms sooner, while Pi used 11,467 fewer
+work tokens, so this run is inconclusive. The next prompt should target one signed batch HTTP path
+after the health gate passes. PR #137 remains draft.
 
 ## Current outcome
 
-Case 05 remains open. The ninth HTTP-contract-first rerun was inconclusive: neither agent resolved
-the oracle. Rupi was faster but used more work tokens, and all Rupi checks failed every turn. The
-R10 prompt now establishes an importable CLI and test package before adding HTTP behavior; its
-matched run is pending.
+Case 05 remains open. R10 fixed Rupi's CLI import and test-discovery failures and produced a passing
+health slice, but it did not reach HTTP behavior. Pi passed CLI checks but did not create a server.
+Neither resolved the oracle; Rupi was faster and Pi used fewer work tokens. The next prompt should
+target one signed batch HTTP path after the health gate passes.

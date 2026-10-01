@@ -1384,7 +1384,10 @@ TUI rendering passed all budgets (3.31–3.90 µs/unit); checkpointed restore me
   oracle and project tests also failed every turn. Turn 4 diagnostics show its entrypoint imports
   a missing worker module before parsing arguments, and the generated project has no `tests`
   package. The R10 prompt establishes an importable CLI and test package before adding HTTP
-  behavior; its matched run is pending. Case 05 remains open; see the
+  behavior. R10 was inconclusive: neither agent resolved the oracle. Rupi was 410,837 ms faster,
+  while Pi used 11,467 fewer work tokens. Rupi passed CLI, test discovery, and health checks but
+  did not implement HTTP behavior; Pi passed CLI checks but did not create a server. Case 05
+  remains open. Next, target one signed batch HTTP path after health passes; see the
   [Case 05 ledger](docs/benchmark/2026-09-29-case05-batch-relay-ledger.md).
 
   Case 06 ran with the pinned Pi 0.86.1 baseline. Pi resolved on turn 4 after its outer timeout,
