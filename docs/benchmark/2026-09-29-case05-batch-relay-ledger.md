@@ -759,9 +759,7 @@ so R16 is inconclusive. Rupi's four required test files arrived by turn 4, but i
 in `__main__.py` and the oracle still failed. R17 should reduce first-turn scope to a runnable
 health and signed-admission server path with focused checks, then preserve it during recovery.
 
-## Current outcome
-
-## Seventeenth prompt iteration — pending
+## Seventeenth prompt iteration — complete; inconclusive
 
 Run: `bench-20261001-case05-server-signed-post-r17-retry-grace6-cap8-pi0861-low-matched4-600s`.
 
@@ -770,16 +768,51 @@ handlers in `batchrelay/server.py` and delays tests until the server starts, res
 R16 final snapshot, which kept its server in `__main__.py`. Recovery retains focused admission and
 authentication checks; full validation, status, and worker behavior remain deferred. The all-case
 dry run, `git diff --check`, and changed-line length check passed. PR CI for R16 documentation head
-`e19b1ef` passed on Ubuntu, macOS, and Windows. The matched run is pending. PR #137 remains draft.
+`e19b1ef` passed on Ubuntu, macOS, and Windows. PR #137 remains draft.
 
 The initial R17 attempt used this run ID:
 `bench-20261001-case05-server-signed-post-r17-grace6-cap8-pi0861-low-matched4-600s`
 It completed all four Rupi turns and Pi turn 1, then stopped when a recovery-prompt guard still
 required the previous contract-phase wording. That partial attempt is not a matched comparison.
-Guard fix `cc0c3a2` is pushed; its all-case dry run passed. The fresh retry above is pending.
+Guard fix `cc0c3a2` is pushed; its all-case dry run passed. The fresh retry above completed.
+
+### Rupi result
+
+Rupi remained unresolved after four turns, using 75,363 work tokens over 2,013,330 ms (51,116
+input, 24,247 output), 24 started/23 completed model requests, and 23 tool requests with three
+tool failures. Project tests passed on turns 2–4, all help checks passed every turn, and the oracle
+failed every turn. The final snapshot contains `batchrelay/server.py`, `storage.py`, and
+`validation.py` with CLI and server tests, but no `tests/test_http.py` or worker.
+
+| Turn | ms | In/out | Work | Req start/done | Tools | Tests | Oracle | Help | Call |
+| ---: | ---: | ---: | ---: | ---: | ---: | ---: | --- | --- | --- |
+| 1 | 544,820 | 14,018/2,053 | 16,071 | 4/4 | 3 | 1 | fail | 0/0/0 | complete |
+| 2 | 267,861 | 3,392/4,803 | 8,195 | 5/5 | 6 | 0 | fail | 0/0/0 | complete |
+| 3 | 600,381 | 7,371/10,114 | 17,485 | 8/7 | 8 | 0 | fail | 0/0/0 | timeout |
+| 4 | 600,268 | 26,335/7,277 | 33,612 | 7/7 | 6 | 0 | fail | 0/0/0 | timeout |
+
+### Pi result
+
+Pi remained unresolved after four turns, using 46,880 work tokens over 2,012,580 ms (15,163
+input, 31,717 output), 33 model requests, and 32 tool requests with no tool failures. Project tests
+passed on turns 2–4, all help checks passed every turn, and the oracle failed every turn. Its final
+snapshot contains `batchrelay/server.py` and CLI, server, and HTTP tests.
+
+| Turn | ms | In/out | Work | Req start/done | Tools | Tests | Oracle | Help | Call |
+| ---: | ---: | ---: | ---: | ---: | ---: | ---: | --- | --- | --- |
+| 1 | 600,354 | 7,459/10,888 | 18,347 | 14/14 | 14 | 1 | fail | 0/0/0 | timeout |
+| 2 | 211,605 | 2,085/3,536 | 5,621 | 6/6 | 5 | 0 | fail | 0/0/0 | complete |
+| 3 | 600,419 | 4,557/8,711 | 13,268 | 7/7 | 7 | 0 | fail | 0/0/0 | timeout |
+| 4 | 600,202 | 1,062/8,582 | 9,644 | 6/6 | 6 | 0 | fail | 0/0/0 | timeout |
+
+Pi was 750 ms faster and used 28,483 fewer work tokens. Both remained unresolved, so R17 is
+inconclusive, with a measured effort advantage for Pi. Rupi reached a separate server module by
+turn 3 but did not add an HTTP test by turn 4; Pi did. R18 should combine persistent health and
+one signed POST in a single recovery slice after CLI discovery passes, then preserve that path.
 
 ## Current outcome
 
-R17's first attempt stopped after Pi turn 1 because of a stale recovery-prompt guard; it is not a
-matched comparison. Guard fix `cc0c3a2` is pushed, and a fresh matched retry is pending. Case 05
-remains open after R16's inconclusive comparison. PR #137 remains draft.
+Case 05 remains open after R17's inconclusive matched retry. Neither agent resolved the oracle;
+Pi was 750 ms faster and used 28,483 fewer work tokens. Both passed tests on turns 2–4 and help on
+every turn, while Pi's final snapshot also includes `tests/test_http.py`. R18 should combine health
+and signed admission in one recovery slice. PR #137 remains draft.
