@@ -219,3 +219,41 @@ wires signed admission, durable ordered state, worker execution, and result tran
 Then cover ordered fan-in, selected fields, lease reclaim, and blocked dependents. Do not spend a
 recovery turn adding an isolated module without integrating the request-to-worker path. Runner
 output and logs were not read; this entry uses only per-turn `summary.json` and `files.json` fields.
+
+## Integrated vertical-slice retry result
+
+Run: `bench-20261002-case07-integrated-vertical-retry6-matched4-600s`.
+
+The matched settings used local `qwen3.8-flash-next`, pinned Pi 0.86.1, four turns, 600-second
+turn limits, six-second provider grace, eight requests per turn, and thinking off.
+
+| Agent | Turn | Work tokens | Tools | Tests | Help | Oracle |
+| --- | ---: | ---: | ---: | ---: | --- | ---: |
+| Rupi | 1 | 0 | 0 | 1 | 1/1/1 | 1 |
+| Rupi | 2 | 14,379 | 3 | 5 | 0/0/0 | 1 |
+| Rupi | 3 | 10,387 | 3 | 0 | 0/0/0 | 1 |
+| Rupi | 4 | 10,996 | 4 | 0 | 0/0/0 | 1 |
+| Pi | 1 | 17,336 | 2 | 1 | 0/0/1 | 1 |
+| Pi | 2 | 11,327 | 9 | 1 | 0/0/0 | 1 |
+| Pi | 3 | 6,923 | 9 | 1 | 0/0/0 | 1 |
+| Pi | 4 | 9,188 | 2 | 1 | 0/0/0 | 1 |
+
+Rupi turn 1 recorded zero work and no files. Turn 2 wrote the entry point and test package, but
+project test discovery exited 5. Turn 3 added the test module and passed project tests and help.
+Turn 4 kept those gates passing but changed only the test file snapshot; no workflow source module
+was added. The oracle failed on all four turns.
+
+Pi wrote its entry point on turn 1 and expanded it on turn 2. Turn 3 added the test package and
+module; turn 4 kept that snapshot. Its project tests failed on all four turns, while all help
+checks passed on turns 2 through 4. The oracle failed on every turn.
+
+Rupi used 35,762 work tokens and ten tools over 1,926,339 ms, starting 11 requests and completing
+10. Pi used 44,774 work tokens and 22 tools over 2,060,203 ms, starting and completing 24
+requests. Neither agent resolved the oracle, so there is no strict winner. The baseline Pi oracle
+win remains the last resolved comparison. Case 07 stays active.
+
+The workflow recovery phase did not produce workflow source in its final turn. For retry 7, move a
+bounded end-to-end path into the initial turn: after the compact entry point and both test files,
+require signed submission, durable ordered jobs, worker execution, and an observable result before
+the initial turn ends. Keep recovery focused on wiring and repairing that path. Runner output and
+logs were not read; this entry uses only per-turn `summary.json` and `files.json` fields.
