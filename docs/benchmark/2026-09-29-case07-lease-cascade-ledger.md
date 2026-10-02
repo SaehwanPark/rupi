@@ -347,3 +347,35 @@ turn 2. Retry 9 now says the second workspace write call must create both test f
 must not spend a separate call on the initializer alone. Foundation recovery repeats the
 prohibition. The all-case `-DryRun`, `git diff --check`, 100-column, and CRLF checks pass. Start the
 next matched attempt only after a fresh usage check.
+
+## Ninth matched retry result
+
+Run: `bench-20261002-case07-atomic-test-write-retry9-matched4-600s`.
+
+| Agent | Turn | Work tokens | Tools | Time | Tests | Help | Oracle |
+| --- | ---: | ---: | ---: | --- | ---: | --- | ---: |
+| Rupi | 1 | 0 | 0 | 594,151 ms timeout | 1 | 1/1/1 | 1 |
+| Rupi | 2 | 0 | 0 | 595,828 ms timeout | 1 | 1/1/1 | 1 |
+| Rupi | 3 | 0 | 0 | 597,634 ms timeout | 1 | 1/1/1 | 1 |
+| Rupi | 4 | 0 | 0 | 599,257 ms timeout | 1 | 1/1/1 | 1 |
+| Pi | 1 | 16,929 | 2 | 600,235 ms timeout | 5 | 0/0/0 | 1 |
+| Pi | 2 | 11,689 | 3 | 600,264 ms timeout | 1 | 0/0/0 | 1 |
+| Pi | 3 | 7,679 | 2 | 600,247 ms timeout | 0 | 0/0/0 | 1 |
+| Pi | 4 | 5,130 | 1 | 600,314 ms timeout | 0 | 0/0/0 | 1 |
+
+Rupi's four turns each failed with a timeout and show zero usage records, work tokens, and tool
+requests. Tests and all three help checks exited 1 on every turn. Its file snapshots contain no
+application files, so the new prompt instruction was not meaningfully exercised.
+
+Pi passed all help checks every turn. Its project tests exited 5 on turn 1 and 1 on turn 2, then
+passed on turns 3–4. The test module first appeared on turn 2; turn 3 added `validation.py`, and
+turn 4 added `storage.py`. No server or worker source appeared. Its oracle failed on every turn.
+
+Pi used 41,427 work tokens and eight tools over 2,401,060 ms. Neither agent resolved the case, so
+there is no strict winner. The baseline Pi oracle win remains the last resolved comparison. This
+entry uses only per-turn `summary.json` and `files.json`; runner output, agent output, and session
+traces were not read.
+
+Retry 9 does not establish whether the prompt refinement helped because Rupi had no metered work or
+tool activity. Check current usage, then choose the next matched attempt based on whether the
+provider is available; do not infer a prompt regression from these zero-work timeouts.
