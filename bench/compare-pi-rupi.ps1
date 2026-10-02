@@ -320,6 +320,42 @@ function Get-CaseGuidance([hashtable]$case, [string]$phase = "initial") {
         }
       }
     }
+    "06-artifact-pipeline" {
+      if ($phase -eq "initial") {
+        return (@(
+          'The complete Case 06 specification is embedded; do not reread SPEC.md.'
+          'First tool call: write a runnable vertical slice in artifactpipe/__main__.py.'
+          'Do not inspect files or run commands before this first source write.'
+          ('Keep CLI, HTTP handler, and SQLite operations in __main__.py until ' +
+            'the vertical slice runs.')
+          'Use a guarded CLI with top-level, serve, and worker help.'
+          'Implement GET /healthz and signed POST /pipelines in this first slice.'
+          'Verify HMAC-SHA256 on exact raw bytes before JSON parsing.'
+          'Persist accepted pipelines and jobs atomically.'
+          'Add tests/__init__.py and tests/test_artifactpipe.py before worker work.'
+          'Include an importable unittest.TestCase with at least one test_ method.'
+          'Then complete validation, idempotency, status, and worker --once.'
+          'Use ordered DAG claims, bounded leases, outputs, retries, and blocking.'
+          'Invoke sinks by direct argv; resolve declared input_refs from dependencies.'
+          'Finish README last; use only Python standard-library modules.'
+          'The harness runs project tests, three help commands, and oracle after every attempt.'
+          'Do not run commands, tests, help checks, service, worker, or oracle.'
+        ) -join [Environment]::NewLine)
+      }
+      return (@(
+        'Use local project-test and help diagnostics plus oracle pass/fail only.'
+        'If no app source exists, write the CLI/health/signed-admission slice first.'
+        'If tests/test_artifactpipe.py is absent, create it before feature expansion.'
+        ('If project-test discovery exits 5, add tests/test_artifactpipe.py with a ' +
+          'TestCase and test_ method.')
+        'Fix the first project-test or help failure before adding more behavior.'
+        ('If tests/help pass but oracle fails, complete validation, data flow, and ' +
+          'worker transitions.')
+        'Preserve passing CLI/server behavior while filling the smallest remaining gap.'
+        'Keep worker --once bounded; use direct argv and do not poll.'
+        'Use standard-library modules; finish README after executable behavior.'
+      ) -join [Environment]::NewLine)
+    }
     default {
       return (@(
         "Prioritize the complete $($case.Focus) workflow described in SPEC.md."
@@ -357,13 +393,21 @@ function Get-InitialPrompt([hashtable]$case) {
     'Implement the Case 04 project from the complete embedded specification.'
   } elseif ($case.Id -eq "03-event-outbox") {
     'Implement the complete service and worker from the embedded Case 03 specification.'
+  } elseif ($case.Id -eq "06-artifact-pipeline") {
+    'Implement Case 06 from the complete embedded specification.'
   } else {
     'Read SPEC.md completely before acting.'
   }
-  if ($case.Id -in @("03-event-outbox", "04-webhook-inbox")) {
+  if ($case.Id -in @("03-event-outbox", "04-webhook-inbox", "06-artifact-pipeline")) {
     $specPath = Join-Path (Join-Path $repoRoot $case.Source) "SPEC.md"
     $embeddedSpec = [IO.File]::ReadAllText($specPath)
-    $caseName = if ($case.Id -eq "04-webhook-inbox") { "Case 04" } else { "Case 03" }
+    $caseName = if ($case.Id -eq "04-webhook-inbox") {
+      "Case 04"
+    } elseif ($case.Id -eq "06-artifact-pipeline") {
+      "Case 06"
+    } else {
+      "Case 03"
+    }
     $caseSpecBlock = "`nThe complete $caseName specification follows:`n`n$embeddedSpec`n"
   }
   $verificationGuidance = if ($case.Id -eq "04-webhook-inbox") {
@@ -406,6 +450,14 @@ commands described by SPEC.md, plus a small smoke check. Do not treat your final
 summary as proof: report exact commands and statuses only after running them, and
 state any incomplete requirement explicitly.
 '@
+  }
+  if ($case.Id -eq "06-artifact-pipeline") {
+    $verificationGuidance = @(
+      'The harness runs tests, three help commands, and the oracle after every attempt.'
+      'Oracle diagnostics stay hidden; recovery receives only pass or fail.'
+      'Do not run commands, tests, help checks, the service, worker, or oracle.'
+      'Use workspace read/write tools and the harness results.'
+    ) -join [Environment]::NewLine
   }
   $prompt = @'
 You are implementing the `{{PACKAGE}}` Python package in the current workspace.
@@ -466,6 +518,12 @@ directories to its extended Windows path with `cd` or `cd /d`.
       'The full Case 03 specification is embedded in this prompt.'
       'Do not call `read`, `exec`, or another inspection tool before this first write.'
     )
+  } elseif ($case.Id -eq "06-artifact-pipeline") {
+    $requiredInstructions += @(
+      'Implement Case 06 from the complete embedded specification.'
+      'The complete Case 06 specification follows:'
+      'First tool call: write a runnable vertical slice in artifactpipe/__main__.py.'
+    )
   } else {
     $requiredInstructions += 'Read SPEC.md completely before acting'
   }
@@ -502,6 +560,12 @@ directories to its extended Windows path with `cd` or `cd /d`.
       'Do not run commands, tests, help checks, or launch the HTTP service or worker.'
       'Never inspect or run the external oracle.'
     )
+  } elseif ($case.Id -eq "06-artifact-pipeline") {
+    $requiredInstructions += @(
+      'The harness runs tests, three help commands, and the oracle after every attempt.'
+      'Oracle diagnostics stay hidden; recovery receives only pass or fail.'
+      'Do not run commands, tests, help checks, the service, worker, or oracle.'
+    )
   } else {
     $requiredInstructions += @(
       'Run the project unittest suite'
@@ -522,7 +586,7 @@ directories to its extended Windows path with `cd` or `cd /d`.
   if (-not $prompt.Contains($guidance)) {
     throw "Initial benchmark prompt is missing case guidance for $($case.Id)."
   }
-  if ($case.Id -in @("03-event-outbox", "04-webhook-inbox") -and
+  if ($case.Id -in @("03-event-outbox", "04-webhook-inbox", "06-artifact-pipeline") -and
       -not $prompt.Contains($embeddedSpec)) {
     throw "$caseName initial prompt is missing the complete project specification."
   }
@@ -657,6 +721,26 @@ directories to its extended Windows path with `cd` or `cd /d`.
       'Do not call `exec` or run shell commands; rely on the harness for verification.'
       'Never inspect or run the external oracle.'
     )
+  } elseif ($case.Id -eq "06-artifact-pipeline") {
+    $caseSpecificInstructions = @(
+      'The complete Case 06 specification is embedded; do not reread SPEC.md.'
+      'First tool call: write a runnable vertical slice in artifactpipe/__main__.py.'
+      'Do not inspect files or run commands before this first source write.'
+      ('Keep CLI, HTTP handler, and SQLite operations in __main__.py until ' +
+        'the vertical slice runs.')
+      'Use a guarded CLI with top-level, serve, and worker help.'
+      'Implement GET /healthz and signed POST /pipelines in this first slice.'
+      'Verify HMAC-SHA256 on exact raw bytes before JSON parsing.'
+      'Persist accepted pipelines and jobs atomically.'
+      'Add tests/__init__.py and tests/test_artifactpipe.py before worker work.'
+      'Include an importable unittest.TestCase with at least one test_ method.'
+      'Then complete validation, idempotency, status, and worker --once.'
+      'Use ordered DAG claims, bounded leases, outputs, retries, and blocking.'
+      'Invoke sinks by direct argv; resolve declared input_refs from dependencies.'
+      'Finish README last; use only Python standard-library modules.'
+      'The harness runs project tests, three help commands, and oracle after every attempt.'
+      'Do not run commands, tests, help checks, service, worker, or oracle.'
+    )
   }
   foreach ($instruction in $caseSpecificInstructions) {
     if (-not $prompt.Contains($instruction)) {
@@ -664,10 +748,10 @@ directories to its extended Windows path with `cd` or `cd /d`.
     }
   }
   if (
-    $case.Id -in @("03-event-outbox", "04-webhook-inbox") -and
+    $case.Id -in @("03-event-outbox", "04-webhook-inbox", "06-artifact-pipeline") -and
     $prompt.Contains('Read SPEC.md completely before acting')
   ) {
-    throw 'Case 03 prompt asks the agent to inspect SPEC.md before its first write.'
+    throw 'Embedded-spec prompts must not request a SPEC.md reread before the first write.'
   }
   return $prompt
 }
@@ -943,6 +1027,77 @@ unittest suite, the project-specific help commands, and a smoke sequence.
   } else {
     "Prioritize the full reliability contract: $($case.Focus)."
   }
+  if ($case.Id -eq "06-artifact-pipeline") {
+    $oracleStatus = if ($verification.oracle.timed_out) {
+      "timed out"
+    } elseif ($verification.oracle.exit_code -eq 0) {
+      "passed"
+    } else {
+      "failed"
+    }
+    $feedback = "Independent acceptance oracle: $oracleStatus (diagnostic details hidden)." +
+      [Environment]::NewLine + $feedback
+    $caseGuidance = Get-CaseGuidance $case "recovery"
+    $verificationResultLabel =
+      'Previous harness results (oracle, project tests, and three help commands):'
+    $recoveryHeader =
+      'The full Case 06 spec was embedded initially; do not reread it. ' +
+      'Preserve working CLI/server behavior. Use local test/help feedback and ' +
+      'oracle pass/fail only.'
+    $verificationGuidance = @(
+      'The harness reruns tests, three help commands, and oracle after every attempt.'
+      'Recovery shows oracle pass/fail only and hides diagnostic output.'
+      'When the app exists but the test module is missing, make discovery the only task.'
+      'Create tests/__init__.py and tests/test_artifactpipe.py in one workspace write.'
+      ('Add a unittest.TestCase.test_entrypoint_importable method that imports ' +
+        'artifactpipe.__main__ and asserts it is not None.')
+      'Do not run commands, tests, help checks, service, worker, or oracle.'
+      'Use local test/help feedback to make changes, then rely on the harness.'
+    ) -join [Environment]::NewLine
+    $appPresent = $false
+    $testModulePresent = $false
+    $failedHelpChecks = @(
+      $verification.help | Where-Object { $_.exit_code -ne 0 }
+    )
+    $allHelpPassed = $verification.help.Count -eq 3 -and
+      $failedHelpChecks.Count -eq 0
+    if (-not [string]::IsNullOrWhiteSpace($ProjectPath)) {
+      $appPresent = Test-Path -LiteralPath (Join-Path $ProjectPath "artifactpipe\__main__.py")
+      $testModulePresent = Test-Path -LiteralPath (
+        Join-Path (Join-Path $ProjectPath "tests") "test_artifactpipe.py"
+      )
+    }
+    if (-not $appPresent) {
+      $completionDirective = 'Write the runnable CLI/health/signed-admission slice first.'
+      $priorityDirective = 'Prioritize a working entry point and all three help paths.'
+    } elseif (-not $testModulePresent) {
+      $completionDirective =
+        'Complete only test discovery in this recovery turn; do not expand app behavior.'
+      $priorityDirective =
+        ('Use one write for tests/__init__.py and tests/test_artifactpipe.py; add a ' +
+          'discoverable unittest.TestCase test_entrypoint_importable method.')
+    } elseif ($verification.project_tests.exit_code -eq 5) {
+      $completionDirective =
+        ('Project-test discovery exited 5; make test_artifactpipe.py importable ' +
+          'with a test_ method.')
+      $priorityDirective =
+        'Prioritize discoverable tests, then preserve the passing CLI and server.'
+    } elseif ($verification.project_tests.exit_code -eq 0 -and
+        $allHelpPassed -and -not $verification.resolved) {
+      $completionDirective =
+        'With tests and help passing, close the remaining end-to-end DAG gap.'
+      $priorityDirective =
+        ('Implement the signed DAG end to end: admit the declared graph, run jobs in ' +
+          'dependency order, and resolve downstream scalar references from upstream JSON output.')
+    } else {
+      $completionDirective =
+        'Continue from project-test/help feedback; implement the smallest missing slice.'
+      $priorityDirective =
+        'Prioritize signed admission, declared output references, and worker transitions.'
+    }
+    $continuationDirective =
+      'Preserve the passing CLI and server; use oracle pass/fail only, never its diagnostics.'
+  }
   $prompt = @"
 Continue the incomplete $($case.Package) implementation in this workspace.
 $recoveryHeader
@@ -1075,6 +1230,26 @@ If anything remains incomplete, state it instead of claiming success.
           'Do not call `exec` or run shell commands; rely on the harness for verification.') -or
         $prompt.Contains('Read SPEC.md and inspect the files already present.')) {
       throw 'Case 05 recovery prompt must select a gated slice and defer verification.'
+    }
+  }
+  if ($case.Id -eq "06-artifact-pipeline") {
+    $recoveryRequirements = @(
+      'Independent acceptance oracle: '
+      '(diagnostic details hidden).'
+      'The full Case 06 spec was embedded initially; do not reread it.'
+      'Recovery shows oracle pass/fail only and hides diagnostic output.'
+      'When the app exists but the test module is missing, make discovery the only task.'
+      'Create tests/__init__.py and tests/test_artifactpipe.py in one workspace write.'
+      ('Add a unittest.TestCase.test_entrypoint_importable method that imports ' +
+        'artifactpipe.__main__ and asserts it is not None.')
+      ('If project-test discovery exits 5, add tests/test_artifactpipe.py with a ' +
+        'TestCase and test_ method.')
+      'Do not run commands, tests, help checks, service, worker, or oracle.'
+    )
+    foreach ($requirement in $recoveryRequirements) {
+      if (-not $prompt.Contains($requirement)) {
+        throw "Case 06 recovery prompt is missing: $requirement"
+      }
     }
   }
   return $prompt
