@@ -396,6 +396,20 @@ function Get-CaseGuidance([hashtable]$case, [string]$phase = "initial") {
           'Do not add storage or worker logic until the tests and help paths pass.'
         ) -join [Environment]::NewLine)
       }
+      if ($phase -eq "workflow") {
+        return (@(
+          'Project tests and all help checks pass, but the independent oracle failed.'
+          'Do not repeat CLI, health-route, or test-discovery scaffolding.'
+          'Audit the existing implementation against the complete embedded specification.'
+          'Complete signed admission and durable ordered pipeline and job state.'
+          'Implement worker --once with ordered claims, bounded leases, and expiry reclaim.'
+          'Resolve only declared inputs from successful dependency outputs.'
+          'Build barrier input in depends_on order from only the selected collect.field values.'
+          'Fail a barrier with a missing selected field and block its dependents.'
+          'Add focused workflow tests; leave README and cleanup until behavior is complete.'
+          'Do not run commands, tests, help checks, service, worker, or oracle.'
+        ) -join [Environment]::NewLine)
+      }
       return (@(
         'Use the embedded Case 07 specification, local tests/help, and oracle pass/fail only.'
         'Fix the earliest failing local gate before expanding the worker workflow.'
@@ -1899,6 +1913,20 @@ if ($DryRun) {
       foreach ($instruction in $foundationRequirements) {
         if (-not $foundationGuidance.Contains($instruction)) {
           throw "Case 07 foundation guidance is missing: $instruction"
+        }
+      }
+      $workflowGuidance = Get-CaseGuidance $_ "workflow"
+      $workflowRequirements = @(
+        'Project tests and all help checks pass, but the independent oracle failed.'
+        'Do not repeat CLI, health-route, or test-discovery scaffolding.'
+        'Complete signed admission and durable ordered pipeline and job state.'
+        'Implement worker --once with ordered claims, bounded leases, and expiry reclaim.'
+        'Build barrier input in depends_on order from only the selected collect.field values.'
+        'Fail a barrier with a missing selected field and block its dependents.'
+      )
+      foreach ($instruction in $workflowRequirements) {
+        if (-not $workflowGuidance.Contains($instruction)) {
+          throw "Case 07 workflow guidance is missing: $instruction"
         }
       }
     }
