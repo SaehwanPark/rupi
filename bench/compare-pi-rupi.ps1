@@ -332,7 +332,7 @@ function Get-CaseGuidance([hashtable]$case, [string]$phase = "initial") {
           'Implement GET /healthz and signed POST /pipelines in this first slice.'
           'Verify HMAC-SHA256 on exact raw bytes before JSON parsing.'
           'Persist accepted pipelines and jobs atomically.'
-          'After the slice runs, create tests/__init__.py and tests/test_artifactpipe.py.'
+          'Add tests/__init__.py and tests/test_artifactpipe.py before worker work.'
           'Include an importable unittest.TestCase with at least one test_ method.'
           'Then complete validation, idempotency, status, and worker --once.'
           'Use ordered DAG claims, bounded leases, outputs, retries, and blocking.'
@@ -345,6 +345,7 @@ function Get-CaseGuidance([hashtable]$case, [string]$phase = "initial") {
       return (@(
         'Use local project-test and help diagnostics plus oracle pass/fail only.'
         'If no app source exists, write the CLI/health/signed-admission slice first.'
+        'If tests/test_artifactpipe.py is absent, create it before feature expansion.'
         ('If project-test discovery exits 5, add tests/test_artifactpipe.py with a ' +
           'TestCase and test_ method.')
         'Fix the first project-test or help failure before adding more behavior.'
@@ -731,7 +732,7 @@ directories to its extended Windows path with `cd` or `cd /d`.
       'Implement GET /healthz and signed POST /pipelines in this first slice.'
       'Verify HMAC-SHA256 on exact raw bytes before JSON parsing.'
       'Persist accepted pipelines and jobs atomically.'
-      'After the slice runs, create tests/__init__.py and tests/test_artifactpipe.py.'
+      'Add tests/__init__.py and tests/test_artifactpipe.py before worker work.'
       'Include an importable unittest.TestCase with at least one test_ method.'
       'Then complete validation, idempotency, status, and worker --once.'
       'Use ordered DAG claims, bounded leases, outputs, retries, and blocking.'
@@ -1046,19 +1047,40 @@ unittest suite, the project-specific help commands, and a smoke sequence.
     $verificationGuidance = @(
       'The harness reruns tests, three help commands, and oracle after every attempt.'
       'Recovery shows oracle pass/fail only and hides diagnostic output.'
+      'If tests/test_artifactpipe.py is absent, create it before feature expansion.'
       'Do not run commands, tests, help checks, service, worker, or oracle.'
       'Use local test/help feedback to make changes, then rely on the harness.'
     ) -join [Environment]::NewLine
-    $completionDirective = if ($verification.project_tests.exit_code -eq 5) {
-      ('Project-test discovery exited 5; add tests/test_artifactpipe.py with a ' +
-        'TestCase and test_ method.')
+    $appPresent = $false
+    $testModulePresent = $false
+    if (-not [string]::IsNullOrWhiteSpace($ProjectPath)) {
+      $appPresent = Test-Path -LiteralPath (Join-Path $ProjectPath "artifactpipe\__main__.py")
+      $testModulePresent = Test-Path -LiteralPath (
+        Join-Path (Join-Path $ProjectPath "tests") "test_artifactpipe.py"
+      )
+    }
+    if (-not $appPresent) {
+      $completionDirective = 'Write the runnable CLI/health/signed-admission slice first.'
+      $priorityDirective = 'Prioritize a working entry point and all three help paths.'
+    } elseif (-not $testModulePresent) {
+      $completionDirective =
+        'Create tests/__init__.py and tests/test_artifactpipe.py before feature expansion.'
+      $priorityDirective =
+        'Prioritize an importable unittest.TestCase with a test_ method.'
+    } elseif ($verification.project_tests.exit_code -eq 5) {
+      $completionDirective =
+        ('Project-test discovery exited 5; make test_artifactpipe.py importable ' +
+          'with a test_ method.')
+      $priorityDirective =
+        'Prioritize discoverable tests, then preserve the passing CLI and server.'
     } else {
-      'Continue from project-test/help feedback; implement the smallest missing slice.'
+      $completionDirective =
+        'Continue from project-test/help feedback; implement the smallest missing slice.'
+      $priorityDirective =
+        'Prioritize signed admission, declared output references, and worker transitions.'
     }
     $continuationDirective =
       'Preserve the passing CLI and server; use oracle pass/fail only, never its diagnostics.'
-    $priorityDirective =
-      'Prioritize signed admission, declared output references, and worker transitions.'
   }
   $prompt = @"
 Continue the incomplete $($case.Package) implementation in this workspace.
@@ -1200,6 +1222,7 @@ If anything remains incomplete, state it instead of claiming success.
       '(diagnostic details hidden).'
       'The full Case 06 spec was embedded initially; do not reread it.'
       'Recovery shows oracle pass/fail only and hides diagnostic output.'
+      'If tests/test_artifactpipe.py is absent, create it before feature expansion.'
       ('If project-test discovery exits 5, add tests/test_artifactpipe.py with a ' +
         'TestCase and test_ method.')
       'Do not run commands, tests, help checks, service, worker, or oracle.'
