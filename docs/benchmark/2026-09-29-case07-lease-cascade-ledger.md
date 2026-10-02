@@ -379,3 +379,10 @@ traces were not read.
 Retry 9 does not establish whether the prompt refinement helped because Rupi had no metered work or
 tool activity. Check current usage, then choose the next matched attempt based on whether the
 provider is available; do not infer a prompt regression from these zero-work timeouts.
+
+## Tenth retry plan
+
+The usage check after retry 9 reported 18% in the five-hour window and 77% weekly, below the
+stop thresholds. Retry 9 produced no Rupi usage records or tool activity, so keep its prompt
+revision unchanged and repeat the same matched four-turn comparison to obtain usable evidence
+before tuning further.
