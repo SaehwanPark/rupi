@@ -453,3 +453,48 @@ The all-case `bench/compare-pi-rupi.ps1 -DryRun` passed after this prompt change
 `git diff --check`, 100-column, and CRLF checks passed. The post-run usage check reported 12%
 five-hour and 79% weekly use. Keep the prompt revision unchanged for retry 12; begin another
 matched four-turn comparison only after a fresh usage check.
+
+## Twelfth matched retry result
+
+- Run: `bench-20261002-case07-workflow-write-retry12-matched4-600s`.
+- Settings matched: pinned Pi 0.86.1, Case 07, four turns, 600-second turn
+  limit, 6-second provider grace, eight requests per turn, thinking off.
+
+| Agent | Turn | Work tokens | Tools | Time | Tests | Help | Oracle |
+| --- | ---: | ---: | ---: | --- | ---: | --- | ---: |
+| Rupi | 1 | 19,737 | 7 | 600,333 ms timeout | 0 | 0/0/0 | 1 |
+| Rupi | 2 | 0 | 0 | 595,800 ms timeout status | 0 | 0/0/0 | 1 |
+| Rupi | 3 | 0 | 0 | 596,901 ms timeout status | 0 | 0/0/0 | 1 |
+| Rupi | 4 | 6,774 | 1 | 600,211 ms timeout | 0 | 0/0/0 | 1 |
+| Pi | 1 | 18,227 | 3 | 600,169 ms timeout | 1 | 0/0/0 | 1 |
+| Pi | 2 | 0 | 0 | 600,205 ms timeout | 1 | 0/0/0 | 1 |
+| Pi | 3 | 12,584 | 1 | 600,167 ms timeout | 1 | 0/0/0 | 1 |
+| Pi | 4 | 9,364 | 1 | 600,258 ms timeout | 1 | 0/0/0 | 1 |
+
+Rupi started 11 requests and completed 10, recording seven usage records. It used 26,511
+work tokens and eight tools over 2,393,245 ms. Tests and all help checks passed every turn,
+but the oracle failed every turn. The first snapshot contained `__main__.py` and both test files.
+Turn 4 added `__init__.py`. No storage, server, or worker source appeared.
+
+Pi started and completed five requests, with five usage records. It used 40,175 work tokens
+and five tools over 2,400,799 ms. Help passed every turn; project tests and oracle failed
+every turn. Pi created the entry point and tests on turn 1; later snapshots were unchanged.
+
+Neither agent resolved the case, so there was no strict winner. The baseline Pi oracle win
+remains the last resolved comparison. This entry uses per-turn `summary.json` and `files.json`
+only; raw runner output, agent output, session traces, and aggregate `results.json` were not read.
+
+The post-run usage check reported 9% five-hour and 1% weekly use. Before retry 13, sharpen
+workflow recovery so its required next write updates the existing `__main__.py` with an
+integrated workflow path. Keep Case 07 active; no strict Rupi oracle win has been verified.
+
+## Thirteenth workflow prompt revision
+
+- Retry 12 added only `__init__.py` in Rupi turn 4 after tests/help already passed.
+- Workflow recovery now requires the next write to update existing `__main__.py` with raw-body
+  HMAC admission, atomic SQLite state, worker `--once`, direct-argv sink execution, and retrieval.
+- It keeps helpers deferred until that path exists, then prioritizes declared inputs, ordered
+  selected-field fan-in, dependency blocking, and expired-lease reclaim.
+- All-case `bench/compare-pi-rupi.ps1 -DryRun` exited 0. `git diff --check`, the changed-line
+  100-column limit, and CRLF checks passed.
+- Run retry 13 with the matched settings after a fresh usage check; keep Case 07 active.

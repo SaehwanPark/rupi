@@ -412,18 +412,18 @@ function Get-CaseGuidance([hashtable]$case, [string]$phase = "initial") {
           'Project tests and all help checks pass, but the independent oracle failed.'
           'Keep the passing tests and help paths intact.'
           'Do not repeat CLI, health-route, or test-discovery scaffolding.'
-          'The next workspace call must write workflow code before any further audit.'
+          'The next workspace write must update existing leasecascade/__main__.py.'
           'Use prior turn context; do not inspect files before that write.'
-          'Implement signed submission, durable ordered jobs, worker --once, and result retrieval.'
-          'Wire each new module into __main__.py before ending the turn.'
-          'Complete the documented signed submit and persist its ordered pipeline and jobs.'
-          'Use worker --once to claim and execute a runnable job in the integrated path.'
-          'Invoke the sink with direct argv and persist lease, output, and terminal transitions.'
-          'Expose the resulting pipeline and job state through the documented retrieval endpoint.'
-          'Then resolve declared inputs from successful dependencies and preserve insertion order.'
+          'Implement POST /pipelines with raw-body HMAC and atomic SQLite admission.'
+          'Keep workflow code in that file; do not create __init__.py or helper modules yet.'
+          'Persist ordered jobs, then run worker --once through a direct-argv sink.'
+          'Implement GET /pipelines/<pipeline_id> for persisted pipeline and job state.'
+          'Preserve all passing project tests and the three help paths.'
+          'Then implement declared inputs, ordered selected-field fan-in, and dependency blocking.'
+          'Reclaim expired leases; do not run a barrier sink when a selected field is missing.'
           'Build fan-in in depends_on order from only the selected collect.field values.'
           'Fail missing selections without running the sink, block dependents, and reclaim leases.'
-          'Add one focused unittest for submission through worker result; leave README last.'
+          'Add a focused unittest after the integrated path exists; leave README last.'
           'Do not run commands, tests, help checks, service, worker, or oracle.'
         ) -join [Environment]::NewLine)
       }
@@ -1244,7 +1244,7 @@ unittest suite, the project-specific help commands, and a smoke sequence.
       }
       "local" { 'Repair the first failing project test before expanding behavior.' }
       "passed" { 'The oracle passed; preserve behavior and finish only missing spec items.' }
-      default { 'Complete the end-to-end lease cascade and preserve passing local checks.' }
+      default { 'Complete the integrated workflow in __main__.py; preserve tests and help.' }
     }
   } else {
     'Finish every missing implementation, README section, and focused test required by the spec.'
@@ -1289,8 +1289,8 @@ unittest suite, the project-specific help commands, and a smoke sequence.
         'Preserve the oracle-passing workflow; finish any missing README or spec requirements.'
       }
       default {
-        ('Write the signed-submit-to-worker path first; then finish ordered dependency ' +
-          'transitions, selected-field fan-in, lease reclaim, and blocked dependents.')
+        ('Update existing __main__.py first with the integrated signed-submit-to-worker ' +
+          'path; add no package initializer or helper module yet.')
       }
     }
   } else {
@@ -1970,14 +1970,14 @@ if ($DryRun) {
         'Project tests and all help checks pass, but the independent oracle failed.'
         'Keep the passing tests and help paths intact.'
         'Do not repeat CLI, health-route, or test-discovery scaffolding.'
-        'The next workspace call must write workflow code before any further audit.'
+        'The next workspace write must update existing leasecascade/__main__.py.'
         'Use prior turn context; do not inspect files before that write.'
-        'Implement signed submission, durable ordered jobs, worker --once, and result retrieval.'
-        'Wire each new module into __main__.py before ending the turn.'
-        'Complete the documented signed submit and persist its ordered pipeline and jobs.'
-        'Use worker --once to claim and execute a runnable job in the integrated path.'
-        'Invoke the sink with direct argv and persist lease, output, and terminal transitions.'
-        'Expose the resulting pipeline and job state through the documented retrieval endpoint.'
+        'Implement POST /pipelines with raw-body HMAC and atomic SQLite admission.'
+        'Keep workflow code in that file; do not create __init__.py or helper modules yet.'
+        'Persist ordered jobs, then run worker --once through a direct-argv sink.'
+        'Implement GET /pipelines/<pipeline_id> for persisted pipeline and job state.'
+        'Preserve all passing project tests and the three help paths.'
+        'Then implement declared inputs, ordered selected-field fan-in, and dependency blocking.'
         'Build fan-in in depends_on order from only the selected collect.field values.'
         'Fail missing selections without running the sink, block dependents, and reclaim leases.'
       )
