@@ -142,3 +142,41 @@ For retry 4, require the test package and module as the second workspace write, 
 foundation recovery to add the test module before persistence or worker behavior. The all-case
 `-DryRun` passes, including a prompt check for the foundation phase. Keep Case 07 active; update
 ROADMAP only after verified strict oracle progress.
+
+## Explicit test-write retry result
+
+Run: `bench-20261002-case07-explicit-test-write-retry4-matched4-600s`.
+
+The matched settings used local `qwen3.8-flash-next`, pinned Pi 0.86.1, four turns, 600-second
+turn limits, six-second provider grace, eight requests per turn, and thinking off.
+
+| Agent | Turn | Work tokens | Tools | Tests | Help | Oracle |
+| --- | ---: | ---: | ---: | ---: | --- | ---: |
+| Rupi | 1 | 16,719 | 1 | 1 | 0/0/0 | 1 |
+| Rupi | 2 | 0 | 0 | 1 | 0/0/0 | 1 |
+| Rupi | 3 | 3,828 | 3 | 0 | 0/0/0 | 1 |
+| Rupi | 4 | 0 | 0 | 0 | 0/0/0 | 1 |
+| Pi | 1 | 17,772 | 1 | 1 | 1/1/1 | 1 |
+| Pi | 2 | 12,605 | 14 | 0 | 0/0/0 | 1 |
+| Pi | 3 | 0 | 0 | 0 | 0/0/0 | 1 |
+| Pi | 4 | 0 | 0 | 0 | 0/0/0 | 1 |
+
+Rupi wrote a 3,001-byte `leasecascade/__main__.py` on turn 1. Turn 3 added
+`leasecascade/__init__.py`, `tests/__init__.py`, and `tests/test_leasecascade.py`; the files
+remained unchanged on turn 4. Rupi help passed on every turn, and project tests passed on turns
+3 and 4. Turns 2 and 4 recorded timeout failures with no work tokens or tool calls.
+
+Pi turn 1 wrote a 5,839-byte entry point, but tests and help failed. By turn 2, its snapshot
+included package and test files, and a 5,400-byte entry point. Tests and help passed on turns
+2 through 4. Turns 3 and 4 timed out without requests, tokens, or tool calls.
+
+Both agents failed the oracle on all four turns and neither resolved the case. Rupi used 20,547
+work tokens and four tools over 2,208,889 ms. Pi used 30,377 work tokens and 15 tools over
+2,315,568 ms. There is no strict winner; the baseline Pi oracle win remains the last resolved
+comparison. Case 07 stays active.
+
+The prompt moved Rupi past test discovery and help, but no attempt passed the oracle. For retry 5,
+when these local gates pass and the oracle still fails, direct the recovery turn to audit and finish
+the signed admission, durable ordered state, lease/reclaim, and selected-field barrier workflow.
+Do not spend that phase repeating CLI or test-discovery scaffolding. Runner output and logs were
+not read; this entry uses only per-turn `summary.json` and `files.json` fields.
