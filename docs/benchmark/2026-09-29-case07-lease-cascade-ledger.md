@@ -386,3 +386,27 @@ The usage check after retry 9 reported 18% in the five-hour window and 77% weekl
 stop thresholds. Retry 9 produced no Rupi usage records or tool activity, so keep its prompt
 revision unchanged and repeat the same matched four-turn comparison to obtain usable evidence
 before tuning further.
+
+## Tenth matched retry status
+
+Run: `bench-20261002-case07-atomic-test-write-retry10-matched4-600s`.
+
+Rupi produced all four turn records. Each started and completed one model request but recorded zero
+usage records, work tokens, or tool requests. Each turn summary reports `failed/timeout` and exit
+code 1, with elapsed times of 594,185, 406,655, 596,112, and 597,872 ms. Tests, all three help
+checks, and the oracle exited 1 on every turn. Each six-file snapshot contained only benchmark
+configuration, `.gitignore`, and `SPEC.md`; no application files were created.
+
+Pi produced only turn 1: it timed out after 600,234 ms with 7,482 work tokens and one `write` tool.
+Its six-file snapshot contained no application files; tests, all help checks, and the oracle exited
+1. After writing that turn record, the runner remained idle with no child process and did not start
+Pi turns 2–4. The idle wrapper was stopped, and the per-turn artifacts were preserved.
+
+This is an incomplete run, not a matched comparison; it provides no strict winner. The baseline Pi
+oracle win remains the last resolved result. Evidence uses only per-turn `summary.json` and
+`files.json`; runner output, agent output, session traces, and aggregate results were not read.
+
+Retry 9 and retry 10 produced no metered Rupi work, so neither evaluates the current prompt. The
+post-run usage check reports 3% in the five-hour window and 77% weekly. Retry 11 should repeat the
+current prompt with the same matched settings after a fresh usage check to determine whether the
+zero-work pattern persists before any further prompt change.
