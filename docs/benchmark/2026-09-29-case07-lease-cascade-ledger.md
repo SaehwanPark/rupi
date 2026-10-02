@@ -294,3 +294,12 @@ test module was still missing and added the module only on turn 4. For retry 8, 
 module the only allowed next write: create both test files together, and prohibit validation,
 storage, server, or worker files until test discovery and help pass. Runner output and logs were
 not read; this entry uses only per-turn `summary.json` and `files.json` fields.
+
+## Eighth foundation prompt revision
+
+Retry 8 requires both test files together as the next source write after the entry point. During
+foundation recovery, a missing test file or test-discovery exit 5 restricts the next write to those
+tests. Until test discovery and all three help checks pass, no other source files may be written;
+validation, storage, server, and worker files are explicitly deferred. The all-case
+`bench/compare-pi-rupi.ps1 -DryRun` passed with the new prompt checks. Start the matched retry
+only after a fresh usage check.

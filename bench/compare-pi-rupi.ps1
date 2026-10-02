@@ -371,6 +371,8 @@ function Get-CaseGuidance([hashtable]$case, [string]$phase = "initial") {
           'Include an importable unittest.TestCase with at least one test_ method.'
           'Cover the three help paths with subprocess checks using sys.executable.'
           'Do not call exec or add persistence or worker code before both test files exist.'
+          'After the entry point, the next source write must create both test files together.'
+          'Do not write validation, storage, server, or worker files until tests and help pass.'
           'Third write: complete one vertical path from signed submission through a worker result.'
           'Connect documented HTTP routes, durable ordered jobs, and worker --once end to end.'
           'Invoke the sink with direct argv and persist output and terminal status.'
@@ -395,10 +397,12 @@ function Get-CaseGuidance([hashtable]$case, [string]$phase = "initial") {
         return (@(
           'Project tests or help checks still fail; fix both foundation gates before workflow code.'
           'If tests are missing, add tests/__init__.py and tests/test_leasecascade.py in one write.'
+          'If a test is missing or discovery exits 5, next write only both test files.'
+          'While either gate fails, write only the two test files.'
           'Define an importable unittest.TestCase with at least one test_ method.'
           'Cover the three help paths with subprocess checks using sys.executable.'
           'Use workspace write tools only; no exec or running checks, services, workers, or oracle.'
-          'Do not add storage or worker logic until the tests and help paths pass.'
+          'Do not write validation, storage, server, or worker files until tests and all help pass.'
         ) -join [Environment]::NewLine)
       }
       if ($phase -eq "workflow") {
@@ -627,6 +631,8 @@ directories to its extended Windows path with `cd` or `cd /d`.
       'Include an importable unittest.TestCase with at least one test_ method.'
       'Cover the three help paths with subprocess checks using sys.executable.'
       'Do not call exec or add persistence or worker code before both test files exist.'
+      'After the entry point, the next source write must create both test files together.'
+      'Do not write validation, storage, server, or worker files until tests and help pass.'
       'Use helper modules for later behavior; keep each source write narrowly scoped.'
       'Use standard-library imports and a main guard.'
       'Implement signed pipeline admission and durable ordered job state.'
@@ -876,6 +882,8 @@ directories to its extended Windows path with `cd` or `cd /d`.
       'Include an importable unittest.TestCase with at least one test_ method.'
       'Cover the three help paths with subprocess checks using sys.executable.'
       'Do not call exec or add persistence or worker code before both test files exist.'
+      'After the entry point, the next source write must create both test files together.'
+      'Do not write validation, storage, server, or worker files until tests and help pass.'
       'Use helper modules for later behavior; keep each source write narrowly scoped.'
       'Implement signed pipeline admission and durable ordered job state.'
       'Then add worker --once with bounded leases, direct argv, and no polling.'
@@ -1912,6 +1920,8 @@ if ($DryRun) {
     if ($_.Id -eq "07-lease-cascade") {
       $initialGuidance = Get-CaseGuidance $_
       $initialRequirements = @(
+        'After the entry point, the next source write must create both test files together.'
+        'Do not write validation, storage, server, or worker files until tests and help pass.'
         'Third write: complete one vertical path from signed submission through a worker result.'
         'Connect documented HTTP routes, durable ordered jobs, and worker --once end to end.'
         'Invoke the sink with direct argv and persist output and terminal status.'
@@ -1927,9 +1937,11 @@ if ($DryRun) {
       $foundationRequirements = @(
         'Project tests or help checks still fail; fix both foundation gates before workflow code.'
         'If tests are missing, add tests/__init__.py and tests/test_leasecascade.py in one write.'
+        'If a test is missing or discovery exits 5, next write only both test files.'
+        'While either gate fails, write only the two test files.'
         'Cover the three help paths with subprocess checks using sys.executable.'
         'Use workspace write tools only; no exec or running checks, services, workers, or oracle.'
-        'Do not add storage or worker logic until the tests and help paths pass.'
+        'Do not write validation, storage, server, or worker files until tests and all help pass.'
       )
       foreach ($instruction in $foundationRequirements) {
         if (-not $foundationGuidance.Contains($instruction)) {
