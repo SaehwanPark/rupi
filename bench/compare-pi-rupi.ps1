@@ -366,8 +366,9 @@ function Get-CaseGuidance([hashtable]$case, [string]$phase = "initial") {
           'Keep the entry point under 150 lines with top-level, serve, and worker help.'
           'Implement serve with a standard-library GET /healthz route and valid options.'
           'Defer SQLite, HMAC, pipeline state, and worker execution to later writes.'
-          'Second write: create both test files in one workspace write.'
+          'Second write call: create both test files together in one workspace write.'
           'Create tests/__init__.py and tests/test_leasecascade.py.'
+          'Never use a separate write call for tests/__init__.py alone.'
           'Include an importable unittest.TestCase with at least one test_ method.'
           'Cover the three help paths with subprocess checks using sys.executable.'
           'Do not call exec or add persistence or worker code before both test files exist.'
@@ -397,6 +398,7 @@ function Get-CaseGuidance([hashtable]$case, [string]$phase = "initial") {
         return (@(
           'Project tests or help checks still fail; fix both foundation gates before workflow code.'
           'If tests are missing, add tests/__init__.py and tests/test_leasecascade.py in one write.'
+          'Never use a separate write call for tests/__init__.py alone.'
           'If a test is missing or discovery exits 5, next write only both test files.'
           'While either gate fails, write only the two test files.'
           'Define an importable unittest.TestCase with at least one test_ method.'
@@ -626,8 +628,9 @@ directories to its extended Windows path with `cd` or `cd /d`.
       'Keep the entry point under 150 lines with top-level, serve, and worker help.'
       'Implement serve with a standard-library GET /healthz route and valid options.'
       'Defer SQLite, HMAC, pipeline state, and worker execution to later writes.'
-      'Second write: create both test files in one workspace write.'
+      'Second write call: create both test files together in one workspace write.'
       'Create tests/__init__.py and tests/test_leasecascade.py.'
+      'Never use a separate write call for tests/__init__.py alone.'
       'Include an importable unittest.TestCase with at least one test_ method.'
       'Cover the three help paths with subprocess checks using sys.executable.'
       'Do not call exec or add persistence or worker code before both test files exist.'
@@ -877,8 +880,9 @@ directories to its extended Windows path with `cd` or `cd /d`.
       'Keep the entry point under 150 lines with top-level, serve, and worker help.'
       'Implement serve with a standard-library GET /healthz route and valid options.'
       'Defer SQLite, HMAC, pipeline state, and worker execution to later writes.'
-      'Second write: create both test files in one workspace write.'
+      'Second write call: create both test files together in one workspace write.'
       'Create tests/__init__.py and tests/test_leasecascade.py.'
+      'Never use a separate write call for tests/__init__.py alone.'
       'Include an importable unittest.TestCase with at least one test_ method.'
       'Cover the three help paths with subprocess checks using sys.executable.'
       'Do not call exec or add persistence or worker code before both test files exist.'
@@ -1920,6 +1924,8 @@ if ($DryRun) {
     if ($_.Id -eq "07-lease-cascade") {
       $initialGuidance = Get-CaseGuidance $_
       $initialRequirements = @(
+        'Second write call: create both test files together in one workspace write.'
+        'Never use a separate write call for tests/__init__.py alone.'
         'After the entry point, the next source write must create both test files together.'
         'Do not write validation, storage, server, or worker files until tests and help pass.'
         'Third write: complete one vertical path from signed submission through a worker result.'
@@ -1937,6 +1943,7 @@ if ($DryRun) {
       $foundationRequirements = @(
         'Project tests or help checks still fail; fix both foundation gates before workflow code.'
         'If tests are missing, add tests/__init__.py and tests/test_leasecascade.py in one write.'
+        'Never use a separate write call for tests/__init__.py alone.'
         'If a test is missing or discovery exits 5, next write only both test files.'
         'While either gate fails, write only the two test files.'
         'Cover the three help paths with subprocess checks using sys.executable.'

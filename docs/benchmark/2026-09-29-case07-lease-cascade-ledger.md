@@ -303,3 +303,47 @@ tests. Until test discovery and all three help checks pass, no other source file
 validation, storage, server, and worker files are explicitly deferred. The all-case
 `bench/compare-pi-rupi.ps1 -DryRun` passed with the new prompt checks. Start the matched retry
 only after a fresh usage check.
+
+## Eighth matched retry result
+
+Run: `bench-20261002-case07-foundation-test-only-retry8-matched4-600s`.
+
+| Agent | Turn | Work tokens | Tools | Time | Tests | Help | Oracle |
+| --- | ---: | ---: | ---: | --- | ---: | --- | ---: |
+| Rupi | 1 | 19,494 | 2 | 600,213 ms timeout | 5 | 0/0/0 | 1 |
+| Rupi | 2 | 19,787 | 4 | 266,833 ms | 0 | 0/0/0 | 1 |
+| Rupi | 3 | 11,550 | 1 | 600,408 ms timeout | 0 | 0/0/0 | 1 |
+| Rupi | 4 | 20,113 | 6 | 600,490 ms timeout | 0 | 0/0/0 | 1 |
+| Pi | 1 | 8,574 | 1 | 600,238 ms timeout | 1 | 1/1/1 | 1 |
+| Pi | 2 | 8,047 | 7 | 273,073 ms | 0 | 0/0/0 | 1 |
+| Pi | 3 | 0 | 0 | 600,238 ms timeout | 0 | 0/0/0 | 1 |
+| Pi | 4 | 0 | 0 | 600,215 ms timeout | 0 | 0/0/0 | 1 |
+
+Rupi passed all three help checks on every turn. Project-test discovery exited 5 on turn 1, then
+tests passed on turns 2–4. The first snapshot had `__main__.py` and `tests/__init__.py`; the test
+module arrived on turn 2. Turn 3 added the package initializer. Turn 4 added `storage.py` and
+`validation.py` after the local gates passed, but no server or worker source appeared. The oracle
+failed all four turns.
+
+Pi failed tests and all help checks on turn 1, then passed them on turns 2–4. It added the test
+package and module on turn 2; turns 3–4 had no requests or tools and did not change the snapshot.
+The oracle failed all four turns.
+
+Rupi used 70,944 work tokens and 13 tools over 2,067,944 ms. Pi used 16,621 work tokens and eight
+tools over 2,073,764 ms. Neither resolved the case, so there is no strict winner. The baseline Pi
+oracle win remains the last resolved comparison. This entry uses only per-turn `summary.json` and
+`files.json`; runner output, agent output, and session traces were not read.
+
+Retry 8 kept workflow modules out until tests and help passed, but Rupi still used its second
+source write for `tests/__init__.py` alone and timed out before creating the test module. Retry 9
+will explicitly prohibit an initializer-only write: the second write call must create both test
+files together, including an importable `TestCase` and `test_` method. Keep the current recovery
+restriction on non-test source until test discovery and all help checks pass.
+
+## Ninth initial-write refinement
+
+Retry 8 used Rupi's second write for `tests/__init__.py` alone; the test module arrived only on
+turn 2. Retry 9 now says the second workspace write call must create both test files together and
+must not spend a separate call on the initializer alone. Foundation recovery repeats the
+prohibition. The all-case `-DryRun`, `git diff --check`, 100-column, and CRLF checks pass. Start the
+next matched attempt only after a fresh usage check.
