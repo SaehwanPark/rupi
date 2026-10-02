@@ -257,3 +257,40 @@ bounded end-to-end path into the initial turn: after the compact entry point and
 require signed submission, durable ordered jobs, worker execution, and an observable result before
 the initial turn ends. Keep recovery focused on wiring and repairing that path. Runner output and
 logs were not read; this entry uses only per-turn `summary.json` and `files.json` fields.
+
+## Initial-turn vertical-path retry result
+
+Run: `bench-20261002-case07-initial-vertical-retry7-matched4-600s`.
+
+The matched settings used local `qwen3.8-flash-next`, pinned Pi 0.86.1, four turns, 600-second
+turn limits, six-second provider grace, eight requests per turn, and thinking off.
+
+| Agent | Turn | Work tokens | Tools | Tests | Help | Oracle |
+| --- | ---: | ---: | ---: | ---: | --- | ---: |
+| Rupi | 1 | 15,265 | 2 | 5 | 0/0/0 | 1 |
+| Rupi | 2 | 732 | 1 | 5 | 0/0/0 | 1 |
+| Rupi | 3 | 9,507 | 1 | 5 | 0/0/0 | 1 |
+| Rupi | 4 | 8,492 | 1 | 1 | 0/0/0 | 1 |
+| Pi | 1 | 0 | 0 | 1 | 1/1/1 | 1 |
+| Pi | 2 | 5,817 | 8 | 1 | 1/1/1 | 1 |
+| Pi | 3 | 0 | 0 | 1 | 1/1/1 | 1 |
+| Pi | 4 | 0 | 0 | 1 | 1/1/1 | 1 |
+
+Rupi passed all three help checks on every turn. Test discovery exited 5 on turns 1–3, then the
+project tests exited 1 on turn 4. Its snapshots show an entry point and test package from turn 1,
+`validation.py` from turn 3, and `tests/test_leasecascade.py` only on turn 4. The oracle failed on
+all turns; no integrated workflow path appeared.
+
+Pi added no application files on any turn. Its project tests, help checks, and oracle failed on
+every turn. All eight calls timed out at the 600-second limit.
+
+Rupi used 33,996 work tokens and five tools over 2,401,056 ms, starting nine requests and
+completing eight. Pi used 5,817 work tokens and eight tools over 2,400,855 ms, starting and
+completing five requests. Neither agent resolved the case, so there is no strict winner. The
+baseline Pi oracle win remains the last resolved comparison. Case 07 stays active.
+
+Retry 7 requested the test files before workflow code, but Rupi wrote `validation.py` while the
+test module was still missing and added the module only on turn 4. For retry 8, make the missing
+module the only allowed next write: create both test files together, and prohibit validation,
+storage, server, or worker files until test discovery and help pass. Runner output and logs were
+not read; this entry uses only per-turn `summary.json` and `files.json` fields.
