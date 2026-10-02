@@ -356,6 +356,40 @@ function Get-CaseGuidance([hashtable]$case, [string]$phase = "initial") {
         'Use standard-library modules; finish README after executable behavior.'
       ) -join [Environment]::NewLine)
     }
+    "07-lease-cascade" {
+      if ($phase -eq "initial") {
+        return (@(
+          'The complete Case 07 specification is embedded; do not reread SPEC.md.'
+          'First tool call: write a runnable leasecascade/__main__.py entry point.'
+          'Include top-level, serve, and worker help, plus GET /healthz.'
+          'Add tests/__init__.py and tests/test_leasecascade.py before worker expansion.'
+          'Include an importable unittest.TestCase with at least one test_ method.'
+          'Keep imports standard-library-only and use a main guard.'
+          'Implement signed pipeline admission and durable ordered job state.'
+          'Then add worker --once with bounded leases, direct argv, and no polling.'
+          'Claim runnable jobs in pipeline and job insertion order.'
+          'Resolve only declared input_refs from successful dependency outputs.'
+          'Build barrier fan_in in declared dependency order and include only collect.field.'
+          'Use depends_on order and omit all other dependency output fields.'
+          'Missing selected output fails the barrier without invoking its sink.'
+          'Failed or blocked dependencies block dependents; expired leases are reclaimable.'
+          'The harness runs tests, three help commands, and oracle after every attempt.'
+          'Do not run commands, tests, help checks, service, worker, or oracle.'
+          'Finish README after the executable workflow; rely on harness feedback.'
+        ) -join [Environment]::NewLine)
+      }
+      return (@(
+        'Use the embedded Case 07 specification, local tests/help, and oracle pass/fail only.'
+        'Fix the earliest failing local gate before expanding the worker workflow.'
+        'Preserve the existing CLI, HTTP, and durable state behavior.'
+        'Keep worker --once bounded and invoke the sink with direct argv, never a shell.'
+        'Claim only runnable jobs in pipeline/job insertion order; reclaim expired leases.'
+        'Use only declared input_refs and successful dependency outputs.'
+        'Build barrier fan_in in depends_on order with only the selected collect.field.'
+        'Fail a barrier locally if a dependency lacks that field, then block dependents.'
+        'Do not run commands, tests, help checks, service, worker, or oracle.'
+      ) -join [Environment]::NewLine)
+    }
     default {
       return (@(
         "Prioritize the complete $($case.Focus) workflow described in SPEC.md."
@@ -395,16 +429,22 @@ function Get-InitialPrompt([hashtable]$case) {
     'Implement the complete service and worker from the embedded Case 03 specification.'
   } elseif ($case.Id -eq "06-artifact-pipeline") {
     'Implement Case 06 from the complete embedded specification.'
+  } elseif ($case.Id -eq "07-lease-cascade") {
+    'Implement Case 07 from the complete embedded specification.'
   } else {
     'Read SPEC.md completely before acting.'
   }
-  if ($case.Id -in @("03-event-outbox", "04-webhook-inbox", "06-artifact-pipeline")) {
+  if ($case.Id -in @(
+      "03-event-outbox", "04-webhook-inbox", "06-artifact-pipeline", "07-lease-cascade"
+    )) {
     $specPath = Join-Path (Join-Path $repoRoot $case.Source) "SPEC.md"
     $embeddedSpec = [IO.File]::ReadAllText($specPath)
     $caseName = if ($case.Id -eq "04-webhook-inbox") {
       "Case 04"
     } elseif ($case.Id -eq "06-artifact-pipeline") {
       "Case 06"
+    } elseif ($case.Id -eq "07-lease-cascade") {
+      "Case 07"
     } else {
       "Case 03"
     }
@@ -456,6 +496,13 @@ state any incomplete requirement explicitly.
       'The harness runs tests, three help commands, and the oracle after every attempt.'
       'Oracle diagnostics stay hidden; recovery receives only pass or fail.'
       'Do not run commands, tests, help checks, the service, worker, or oracle.'
+      'Use workspace read/write tools and the harness results.'
+    ) -join [Environment]::NewLine
+  } elseif ($case.Id -eq "07-lease-cascade") {
+    $verificationGuidance = @(
+      'The harness runs tests, three help commands, and the oracle after every attempt.'
+      'Recovery receives only oracle pass/fail status; oracle diagnostics stay hidden.'
+      'Do not run commands, tests, help checks, service, worker, or oracle.'
       'Use workspace read/write tools and the harness results.'
     ) -join [Environment]::NewLine
   }
@@ -524,6 +571,16 @@ directories to its extended Windows path with `cd` or `cd /d`.
       'The complete Case 06 specification follows:'
       'First tool call: write a runnable vertical slice in artifactpipe/__main__.py.'
     )
+  } elseif ($case.Id -eq "07-lease-cascade") {
+    $requiredInstructions += @(
+      'Implement Case 07 from the complete embedded specification.'
+      'The complete Case 07 specification follows:'
+      'First tool call: write a runnable leasecascade/__main__.py entry point.'
+      'Add tests/__init__.py and tests/test_leasecascade.py before worker expansion.'
+      'The harness runs tests, three help commands, and the oracle after every attempt.'
+      'Recovery receives only oracle pass/fail status; oracle diagnostics stay hidden.'
+      'Do not run commands, tests, help checks, service, worker, or oracle.'
+    )
   } else {
     $requiredInstructions += 'Read SPEC.md completely before acting'
   }
@@ -566,6 +623,12 @@ directories to its extended Windows path with `cd` or `cd /d`.
       'Oracle diagnostics stay hidden; recovery receives only pass or fail.'
       'Do not run commands, tests, help checks, the service, worker, or oracle.'
     )
+  } elseif ($case.Id -eq "07-lease-cascade") {
+    $requiredInstructions += @(
+      'The harness runs tests, three help commands, and the oracle after every attempt.'
+      'Recovery receives only oracle pass/fail status; oracle diagnostics stay hidden.'
+      'Do not run commands, tests, help checks, service, worker, or oracle.'
+    )
   } else {
     $requiredInstructions += @(
       'Run the project unittest suite'
@@ -586,7 +649,9 @@ directories to its extended Windows path with `cd` or `cd /d`.
   if (-not $prompt.Contains($guidance)) {
     throw "Initial benchmark prompt is missing case guidance for $($case.Id)."
   }
-  if ($case.Id -in @("03-event-outbox", "04-webhook-inbox", "06-artifact-pipeline") -and
+  if ($case.Id -in @(
+      "03-event-outbox", "04-webhook-inbox", "06-artifact-pipeline", "07-lease-cascade"
+    ) -and
       -not $prompt.Contains($embeddedSpec)) {
     throw "$caseName initial prompt is missing the complete project specification."
   }
@@ -741,6 +806,20 @@ directories to its extended Windows path with `cd` or `cd /d`.
       'The harness runs project tests, three help commands, and oracle after every attempt.'
       'Do not run commands, tests, help checks, service, worker, or oracle.'
     )
+  } elseif ($case.Id -eq "07-lease-cascade") {
+    $caseSpecificInstructions = @(
+      'The complete Case 07 specification is embedded; do not reread SPEC.md.'
+      'First tool call: write a runnable leasecascade/__main__.py entry point.'
+      'Include top-level, serve, and worker help, plus GET /healthz.'
+      'Add tests/__init__.py and tests/test_leasecascade.py before worker expansion.'
+      'Include an importable unittest.TestCase with at least one test_ method.'
+      'Implement signed pipeline admission and durable ordered job state.'
+      'Then add worker --once with bounded leases, direct argv, and no polling.'
+      'Claim runnable jobs in pipeline and job insertion order.'
+      'Build barrier fan_in in declared dependency order and include only collect.field.'
+      'The harness runs tests, three help commands, and oracle after every attempt.'
+      'Do not run commands, tests, help checks, service, worker, or oracle.'
+    )
   }
   foreach ($instruction in $caseSpecificInstructions) {
     if (-not $prompt.Contains($instruction)) {
@@ -748,7 +827,9 @@ directories to its extended Windows path with `cd` or `cd /d`.
     }
   }
   if (
-    $case.Id -in @("03-event-outbox", "04-webhook-inbox", "06-artifact-pipeline") -and
+    $case.Id -in @(
+      "03-event-outbox", "04-webhook-inbox", "06-artifact-pipeline", "07-lease-cascade"
+    ) -and
     $prompt.Contains('Read SPEC.md completely before acting')
   ) {
     throw 'Embedded-spec prompts must not request a SPEC.md reread before the first write.'
@@ -807,6 +888,7 @@ function Get-RecoveryPrompt(
   $feedback = Get-RecoveryFeedback $verification
   $case04Phase = $null
   $case05Phase = $null
+  $case07Phase = $null
   if ($case.Id -eq "04-webhook-inbox") {
     $projectTestsPassed = $false
     if ($verification.project_tests) {
@@ -910,17 +992,69 @@ function Get-RecoveryPrompt(
     } else {
       $case05Phase = "finish"
     }
+  } elseif ($case.Id -eq "07-lease-cascade") {
+    $oracleStatus = if ($verification.oracle.timed_out) {
+      "timed out"
+    } elseif ($verification.oracle.exit_code -eq 0) {
+      "passed"
+    } else {
+      "failed"
+    }
+    $feedback = "Independent acceptance oracle: $oracleStatus (diagnostic details hidden)." +
+      [Environment]::NewLine + $feedback
+
+    $projectTestsPassed = $verification.project_tests -and
+      -not $verification.project_tests.timed_out -and
+      $verification.project_tests.exit_code -eq 0
+    $helpChecksPassed = @($verification.help).Count -eq 3
+    foreach ($helpCheck in @($verification.help)) {
+      if ($helpCheck.timed_out -or $helpCheck.exit_code -ne 0) {
+        $helpChecksPassed = $false
+      }
+    }
+    $entrypointPresent = $false
+    $testPackagePresent = $false
+    $testModulePresent = $false
+    $noTestsDiscovered = $false
+    if (-not [string]::IsNullOrWhiteSpace($ProjectPath)) {
+      $entrypointPresent = Test-Path -LiteralPath (
+        Join-Path (Join-Path $ProjectPath "leasecascade") "__main__.py"
+      )
+      $testsPath = Join-Path $ProjectPath "tests"
+      $testPackagePresent = Test-Path -LiteralPath (Join-Path $testsPath "__init__.py")
+      $testModulePresent = Test-Path -LiteralPath (Join-Path $testsPath "test_leasecascade.py")
+    }
+    if ($verification.project_tests -and -not $verification.project_tests.timed_out) {
+      $noTestsDiscovered = $verification.project_tests.exit_code -eq 5
+    }
+
+    if (-not $entrypointPresent) {
+      $case07Phase = "entrypoint"
+    } elseif (-not $testPackagePresent -or -not $testModulePresent -or
+        $noTestsDiscovered -or -not $helpChecksPassed) {
+      $case07Phase = "foundation"
+    } elseif (-not $projectTestsPassed) {
+      $case07Phase = "local"
+    } elseif ($oracleStatus -eq "passed") {
+      $case07Phase = "passed"
+    } else {
+      $case07Phase = "workflow"
+    }
   }
   $toolingGuidance = Get-WindowsToolGuidance
   $caseGuidance = if ($case.Id -eq "04-webhook-inbox") {
     Get-CaseGuidance $case $case04Phase
   } elseif ($case.Id -eq "05-batch-relay") {
     Get-CaseGuidance $case $case05Phase
+  } elseif ($case.Id -eq "07-lease-cascade") {
+    Get-CaseGuidance $case $case07Phase
   } else {
     Get-CaseGuidance $case
   }
   $verificationResultLabel = if ($case.Id -eq "05-batch-relay") {
     'Previous harness results (oracle status, project tests, and help commands):'
+  } elseif ($case.Id -eq "07-lease-cascade") {
+    'Previous harness results (oracle status, project tests, and three help commands):'
   } else {
     'Previous local verification results (project tests and help commands):'
   }
@@ -953,6 +1087,10 @@ function Get-RecoveryPrompt(
       'Inspect existing files and preserve passing behavior. ' +
       $phaseHeader + ' ' +
       'Work only in this workspace; do not edit the specification, config, or oracle.'
+  } elseif ($case.Id -eq "07-lease-cascade") {
+    'The complete Case 07 specification was embedded initially; do not reread it. ' +
+      'Inspect existing files, preserve working behavior, and use oracle pass/fail only. ' +
+      'Work only in this workspace; do not inspect or run the oracle.'
   } else {
     "Read SPEC.md and inspect the files already present. Work only inside this" +
       [Environment]::NewLine +
@@ -990,6 +1128,14 @@ harness for verification.
       'Do not call `exec` or run shell commands; rely on the harness for verification.'
       'Never inspect or run the oracle. Use workspace read/write tools and harness results.'
     ) -join [Environment]::NewLine)
+  } elseif ($case.Id -eq "07-lease-cascade") {
+    (@(
+      'The harness reruns tests, all three help commands, and the independent oracle after each'
+      'attempt. Recovery receives only oracle pass/fail status; diagnostics stay hidden.'
+      'Use the local test/help diagnostics and initial embedded specification.'
+      'Do not run commands, tests, help checks, service, worker, or oracle.'
+      'Use workspace read/write tools and rely on harness feedback for verification.'
+    ) -join [Environment]::NewLine)
   } else {
 @'
 Continue working through the missing items in SPEC.md, then run the complete project
@@ -1000,6 +1146,16 @@ unittest suite, the project-specific help commands, and a smoke sequence.
     'Complete this phase while preserving working admission and CLI behavior.'
   } elseif ($case.Id -eq "05-batch-relay") {
     'Complete this slice; advance after project tests and help pass.'
+  } elseif ($case.Id -eq "07-lease-cascade") {
+    switch ($case07Phase) {
+      "entrypoint" { 'Create the runnable application entry point and all help paths.' }
+      "foundation" {
+        'Fix failed help paths and ensure unittest discovery works before worker expansion.'
+      }
+      "local" { 'Repair the first failing project test before expanding behavior.' }
+      "passed" { 'The oracle passed; preserve behavior and finish only missing spec items.' }
+      default { 'Complete the end-to-end lease cascade and preserve passing local checks.' }
+    }
   } else {
     'Finish every missing implementation, README section, and focused test required by the spec.'
   }
@@ -1007,6 +1163,8 @@ unittest suite, the project-specific help commands, and a smoke sequence.
     'Continue from local test and help feedback; oracle results remain hidden.'
   } elseif ($case.Id -eq "05-batch-relay") {
     'Use failing local checks to repair this slice. Oracle status only; do not inspect or run it.'
+  } elseif ($case.Id -eq "07-lease-cascade") {
+    'Use local test/help feedback and oracle pass/fail only; never inspect or run the oracle.'
   } else {
     'Continue working through the missing items in SPEC.md.'
   }
@@ -1024,6 +1182,27 @@ unittest suite, the project-specific help commands, and a smoke sequence.
     }
   } elseif ($case.Id -eq "05-batch-relay") {
     'Prioritize the current gated phase.'
+  } elseif ($case.Id -eq "07-lease-cascade") {
+    switch ($case07Phase) {
+      "entrypoint" {
+        ('Write leasecascade/__main__.py with guarded CLI, three help paths, health, ' +
+          'and signed admission.')
+      }
+      "foundation" {
+        ('Fix failed help paths and create tests/__init__.py plus ' +
+          'tests/test_leasecascade.py with a discoverable unittest.')
+      }
+      "local" {
+        'Use the first failing project test to make the smallest repair.'
+      }
+      "passed" {
+        'Preserve the oracle-passing workflow; finish any missing README or spec requirements.'
+      }
+      default {
+        ('Complete worker lease/reclaim and dependency transitions, then verify ordered ' +
+          'selected-field fan-in and blocked dependents against the embedded specification.')
+      }
+    }
   } else {
     "Prioritize the full reliability contract: $($case.Focus)."
   }
@@ -1250,6 +1429,27 @@ If anything remains incomplete, state it instead of claiming success.
       if (-not $prompt.Contains($requirement)) {
         throw "Case 06 recovery prompt is missing: $requirement"
       }
+    }
+  }
+  if ($case.Id -eq "07-lease-cascade") {
+    $recoveryRequirements = @(
+      'Independent acceptance oracle: '
+      '(diagnostic details hidden).'
+      'The complete Case 07 specification was embedded initially; do not reread it.'
+      'Inspect existing files, preserve working behavior, and use oracle pass/fail only.'
+      'Recovery receives only oracle pass/fail status; diagnostics stay hidden.'
+      'Use local test/help feedback and oracle pass/fail only; never inspect or run the oracle.'
+      'Do not run commands, tests, help checks, service, worker, or oracle.'
+      $completionDirective
+      $priorityDirective
+    )
+    foreach ($requirement in $recoveryRequirements) {
+      if (-not $prompt.Contains($requirement)) {
+        throw "Case 07 recovery prompt is missing: $requirement"
+      }
+    }
+    if ($prompt.Contains('Read SPEC.md and inspect the files already present.')) {
+      throw 'Case 07 recovery prompt must use the embedded spec and phase guidance.'
     }
   }
   return $prompt
@@ -1622,9 +1822,16 @@ if ($CaseId.Count -gt 0) {
   $cases = @($cases | Where-Object { $requestedIds -contains $_.Id })
   if ($cases.Count -eq 0) { throw "No matching cases: $($requestedIds -join ', ')" }
 }
+$recoveryFeedbackScope = "project_tests_and_help"
+if (@($cases | Where-Object { $_.Id -eq "05-batch-relay" }).Count -gt 0) {
+  $recoveryFeedbackScope += ";case05_oracle_status_only"
+}
+if (@($cases | Where-Object { $_.Id -eq "07-lease-cascade" }).Count -gt 0) {
+  $recoveryFeedbackScope += ";case07_oracle_status_only"
+}
 if ($DryRun) {
   Write-Host "Thinking level: $ThinkingLevel"
-  Write-Host "Recovery feedback: project tests and help; Case 05 oracle status only"
+  Write-Host "Recovery feedback scope: $recoveryFeedbackScope"
   $cases | ForEach-Object {
     [void](Get-InitialPrompt $_)
     $dryRunHelp = @($_.Help | ForEach-Object {
@@ -1679,11 +1886,6 @@ if ($Agent -ne "rupi") {
 if (-not (Test-Path $rupiBinary)) { throw "Missing $rupiBinary; run cargo build --bin rupi first." }
 New-Item -ItemType Directory -Force -Path $runRoot | Out-Null
 $selectedAgents = if ($Agent -eq "all") { @("rupi", "pi") } else { @($Agent) }
-$recoveryFeedbackScope = if (@($cases | Where-Object { $_.Id -eq "05-batch-relay" }).Count -gt 0) {
-  "project_tests_and_help;case05_oracle_status_only"
-} else {
-  "project_tests_and_help"
-}
 $results = [Collections.Generic.List[object]]::new()
 foreach ($case in $cases) {
   foreach ($selectedAgent in $selectedAgents) {
