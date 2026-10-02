@@ -498,3 +498,19 @@ integrated workflow path. Keep Case 07 active; no strict Rupi oracle win has bee
 - All-case `bench/compare-pi-rupi.ps1 -DryRun` exited 0. `git diff --check`, the changed-line
   100-column limit, and CRLF checks passed.
 - Run retry 13 with the matched settings after a fresh usage check; keep Case 07 active.
+
+## Thirteenth retry status (interrupted, incomplete)
+
+- Run: `bench-20261002-case07-integrated-workflow-write-retry13-matched4-600s`.
+- Rupi turn 1 reached 600,255 ms with 16,965 work tokens and three `write` calls.
+  Tests exited 1, all help checks exited 0, and the oracle exited 1.
+- Turn 1 had the entry point and both test files, but no separate storage, server, or
+  worker source.
+- Rupi turn 2 was interrupted during wrap-up. A per-turn `files.json` exists with nine
+  files and no additional application modules; there is no turn 2 `summary.json`.
+- The runner tree was stopped and verified gone. Pi did not run, so retry 13 is not a
+  matched comparison and has no winner.
+- Evidence is limited to per-turn `summary.json` and `files.json`; raw output, logs,
+  traces, and aggregate `results.json` were not read.
+- Usage after stopping was 14% five-hour and 2% weekly. Resume with a fresh usage check
+  and a new matched run; do not combine retry 13's partial Rupi turns with later Pi turns.
