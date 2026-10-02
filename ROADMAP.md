@@ -1451,12 +1451,15 @@ TUI rendering passed all budgets (3.31–3.90 µs/unit); checkpointed restore me
   objective is met by the oracle result. See the
   [Case 05 ledger](docs/benchmark/2026-09-29-case05-batch-relay-ledger.md).
 
-  Case 06 ran with the pinned Pi 0.86.1 baseline. Pi resolved on turn 4 after its outer timeout,
-  passing the oracle, all 61 project tests, and every help check. Rupi did not resolve; its oracle
-  runs could not reach a healthy server, test discovery could not import `tests`, and all help
-  checks failed. Pi used 45,632 work tokens over 2,401,085 ms; Rupi used 69,551 over 2,214,433
-  ms. Pi was 186,652 ms slower but used 23,919 fewer work tokens, a strict oracle win. See the
+  Case 06's Sep 29 baseline run with pinned Pi 0.86.1 was a strict Pi oracle win.
+  Pi resolved on turn 4 after its outer timeout, passing the oracle, all 61 project tests,
+  and every help check. Rupi did not resolve. See the
   [Case 06 ledger](docs/benchmark/2026-09-29-case06-artifact-pipeline-ledger.md).
+  The Oct 2 matched retry produced a strict Rupi oracle win: Rupi resolved in turn 2 after
+  its outer timeout, while Pi did not resolve in four turns. Rupi used 31,406 work tokens
+  over 915,351 ms; Pi used 25,848 over 2,400,909 ms. Rupi finished 1,485,558 ms faster
+  but used 5,558 more work tokens. Rupi's project tests still exited 1, so the live-project
+  gate above remains active. See PR #138 and the updated Case 06 ledger.
 
   Case 07 used the pinned Pi 0.86.1 run `bench-20260929-case07-pi0861-low-matched4-600s`. Pi
   resolved on turn 4 after its outer timeout, passing all five oracle tests, 53 project tests, and
