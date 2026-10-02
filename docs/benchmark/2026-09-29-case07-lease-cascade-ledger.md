@@ -102,3 +102,43 @@ For a third attempt, constrain the first write to the runnable CLI/help and heal
 discovery before persistence or worker behavior, and keep later writes narrowly scoped. Pi wrote a
 45,962-byte entry point without resolving the oracle, while Rupi added no application files.
 Case 07 stays active until a matched attempt produces a strict oracle win.
+
+## Bounded-slice retry result
+
+Run: `bench-20261002-case07-bounded-slice-retry3-matched4-600s`.
+
+The matched retry used local `qwen3.8-flash-next`, pinned Pi 0.86.1, four turns, 600-second
+turn limits, six-second provider grace, eight requests per turn, and thinking off.
+
+| Agent | Turn | Work tokens | Tool requests | Application files added |
+| --- | ---: | ---: | ---: | --- |
+| Rupi | 1 | 9,020 | 3 | entry point and test package |
+| Rupi | 2 | 12,596 | 1 | none |
+| Rupi | 3 | 0 | 0 | none |
+| Rupi | 4 | 7,117 | 0 | none |
+| Pi | 1 | 18,477 | 6 | four app files and two test files |
+| Pi | 2 | 12,149 | 8 | three app files |
+| Pi | 3 | 10,065 | 7 | none |
+| Pi | 4 | 7,348 | 3 | one test helper |
+
+Rupi added `leasecascade/__main__.py` and `tests/__init__.py`, but no test module. Project tests
+exited 5 and all three help checks exited 1 on every turn. Its oracle also exited 1 every turn.
+
+Pi added `leasecascade/__main__.py`, `pipeline.py`, `signing.py`, and `storage.py`, plus
+`tests/__init__.py` and `tests/test_leasecascade.py` on turn 1. Turn 2 added `__init__.py`,
+`serve_cmd.py`, and `worker_cmd.py`; turn 4 added `tests/sink_program.py`.
+
+Pi project tests and all three help commands passed on every turn, but the oracle exited 1 on
+every turn. All four Pi calls reached the 600-second limit. Neither agent resolved the oracle, so
+there is no strict winner. The baseline Pi win remains the last resolved comparison, and Case 07
+remains active.
+
+The isolated worktree used the existing root `rupi.exe`; rebuilding remained unavailable because
+the installed pinned 1.98.1 toolchain lacks the Cargo component. Runner stdout/stderr and raw agent
+output were not read. Only per-turn `summary.json` and `files.json` fields were used.
+
+The bounded first slice moved Pi past the local gates, while Rupi still lacked a test module.
+For retry 4, require the test package and module as the second workspace write, and direct
+foundation recovery to add the test module before persistence or worker behavior. The all-case
+`-DryRun` passes, including a prompt check for the foundation phase. Keep Case 07 active; update
+ROADMAP only after verified strict oracle progress.

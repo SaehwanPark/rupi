@@ -366,8 +366,11 @@ function Get-CaseGuidance([hashtable]$case, [string]$phase = "initial") {
           'Keep the entry point under 150 lines with top-level, serve, and worker help.'
           'Implement serve with a standard-library GET /healthz route and valid options.'
           'Defer SQLite, HMAC, pipeline state, and worker execution to later writes.'
-          'Next add tests/__init__.py and tests/test_leasecascade.py with discovered unittest'
-          'smoke checks for all three help paths, before adding storage or worker behavior.'
+          'Second write: create both test files in one workspace write.'
+          'Create tests/__init__.py and tests/test_leasecascade.py.'
+          'Include an importable unittest.TestCase with at least one test_ method.'
+          'Cover the three help paths with subprocess checks using sys.executable.'
+          'Do not call exec or add persistence or worker code before both test files exist.'
           'Use helper modules for later behavior; keep each source write narrowly scoped.'
           'Use standard-library imports and a main guard.'
           'Implement signed pipeline admission and durable ordered job state.'
@@ -381,6 +384,16 @@ function Get-CaseGuidance([hashtable]$case, [string]$phase = "initial") {
           'The harness runs tests, three help commands, and oracle after every attempt.'
           'Do not run commands, tests, help checks, service, worker, or oracle.'
           'Finish README after the executable workflow; rely on harness feedback.'
+        ) -join [Environment]::NewLine)
+      }
+      if ($phase -eq "foundation") {
+        return (@(
+          'Project tests or help checks still fail; fix both foundation gates before workflow code.'
+          'If tests are missing, add tests/__init__.py and tests/test_leasecascade.py in one write.'
+          'Define an importable unittest.TestCase with at least one test_ method.'
+          'Cover the three help paths with subprocess checks using sys.executable.'
+          'Use workspace write tools only; no exec or running checks, services, workers, or oracle.'
+          'Do not add storage or worker logic until the tests and help paths pass.'
         ) -join [Environment]::NewLine)
       }
       return (@(
@@ -587,8 +600,11 @@ directories to its extended Windows path with `cd` or `cd /d`.
       'Keep the entry point under 150 lines with top-level, serve, and worker help.'
       'Implement serve with a standard-library GET /healthz route and valid options.'
       'Defer SQLite, HMAC, pipeline state, and worker execution to later writes.'
-      'Next add tests/__init__.py and tests/test_leasecascade.py with discovered unittest'
-      'smoke checks for all three help paths, before adding storage or worker behavior.'
+      'Second write: create both test files in one workspace write.'
+      'Create tests/__init__.py and tests/test_leasecascade.py.'
+      'Include an importable unittest.TestCase with at least one test_ method.'
+      'Cover the three help paths with subprocess checks using sys.executable.'
+      'Do not call exec or add persistence or worker code before both test files exist.'
       'Use helper modules for later behavior; keep each source write narrowly scoped.'
       'Use standard-library imports and a main guard.'
       'Implement signed pipeline admission and durable ordered job state.'
@@ -833,8 +849,11 @@ directories to its extended Windows path with `cd` or `cd /d`.
       'Keep the entry point under 150 lines with top-level, serve, and worker help.'
       'Implement serve with a standard-library GET /healthz route and valid options.'
       'Defer SQLite, HMAC, pipeline state, and worker execution to later writes.'
-      'Next add tests/__init__.py and tests/test_leasecascade.py with discovered unittest'
-      'smoke checks for all three help paths, before adding storage or worker behavior.'
+      'Second write: create both test files in one workspace write.'
+      'Create tests/__init__.py and tests/test_leasecascade.py.'
+      'Include an importable unittest.TestCase with at least one test_ method.'
+      'Cover the three help paths with subprocess checks using sys.executable.'
+      'Do not call exec or add persistence or worker code before both test files exist.'
       'Use helper modules for later behavior; keep each source write narrowly scoped.'
       'Implement signed pipeline admission and durable ordered job state.'
       'Then add worker --once with bounded leases, direct argv, and no polling.'
@@ -1868,6 +1887,21 @@ if ($DryRun) {
   Write-Host "Recovery feedback scope: $recoveryFeedbackScope"
   $cases | ForEach-Object {
     [void](Get-InitialPrompt $_)
+    if ($_.Id -eq "07-lease-cascade") {
+      $foundationGuidance = Get-CaseGuidance $_ "foundation"
+      $foundationRequirements = @(
+        'Project tests or help checks still fail; fix both foundation gates before workflow code.'
+        'If tests are missing, add tests/__init__.py and tests/test_leasecascade.py in one write.'
+        'Cover the three help paths with subprocess checks using sys.executable.'
+        'Use workspace write tools only; no exec or running checks, services, workers, or oracle.'
+        'Do not add storage or worker logic until the tests and help paths pass.'
+      )
+      foreach ($instruction in $foundationRequirements) {
+        if (-not $foundationGuidance.Contains($instruction)) {
+          throw "Case 07 foundation guidance is missing: $instruction"
+        }
+      }
+    }
     $dryRunHelp = @($_.Help | ForEach-Object {
         [pscustomobject]@{
           timed_out = $false
