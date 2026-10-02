@@ -180,3 +180,42 @@ when these local gates pass and the oracle still fails, direct the recovery turn
 the signed admission, durable ordered state, lease/reclaim, and selected-field barrier workflow.
 Do not spend that phase repeating CLI or test-discovery scaffolding. Runner output and logs were
 not read; this entry uses only per-turn `summary.json` and `files.json` fields.
+
+## Workflow-focused recovery retry result
+
+Run: `bench-20261002-case07-workflow-recovery-retry5-matched4-600s`.
+
+The matched settings used local `qwen3.8-flash-next`, pinned Pi 0.86.1, four turns, 600-second
+turn limits, six-second provider grace, eight requests per turn, and thinking off.
+
+| Agent | Turn | Work tokens | Tools | Tests | Help | Oracle |
+| --- | ---: | ---: | ---: | ---: | --- | ---: |
+| Rupi | 1 | 19,531 | 3 | 0 | 0/0/0 | 1 |
+| Rupi | 2 | 18,209 | 4 | 0 | 0/0/0 | 1 |
+| Rupi | 3 | 3,829 | 1 | 0 | 0/0/0 | 1 |
+| Rupi | 4 | 10,141 | 1 | 0 | 0/0/0 | 1 |
+| Pi | 1 | 0 | 0 | 1 | 1/1/1 | 1 |
+| Pi | 2 | 8,609 | 10 | 1 | 1/1/1 | 1 |
+| Pi | 3 | 0 | 0 | 1 | 1/1/1 | 1 |
+| Pi | 4 | 13,326 | 7 | 0 | 0/0/0 | 1 |
+
+Rupi passed project tests and all three help checks on every turn. Its first snapshot included the
+entry point and both test files; later turns added `storage.py`, `serve.py`, and `worker.py` in
+sequence. The oracle failed on all four turns.
+
+Pi had no application files on turn 1. Turn 2 added a 355-byte entry point, and turn 3 did not
+change the snapshot. Turn 4 added a 9,683-byte `cli.py`, package and test files, and a README.
+Project tests and all help checks passed only on turn 4. The oracle failed on every turn.
+
+All eight turns reached the 600-second limit. Rupi used 51,710 work tokens and nine tools over
+2,400,970 ms; it started 11 requests and completed 10. Pi used 21,935 work tokens and 17 tools
+over 2,400,855 ms, starting and completing 11 requests. Neither agent resolved the case, so there
+is no strict winner. The baseline Pi oracle win remains the last resolved comparison. Case 07 stays
+active.
+
+Retry 5 moved Rupi into workflow modules but added storage, serving, and worker behavior in
+separate turns without an oracle pass. For retry 6, prioritize one end-to-end vertical slice that
+wires signed admission, durable ordered state, worker execution, and result transitions together.
+Then cover ordered fan-in, selected fields, lease reclaim, and blocked dependents. Do not spend a
+recovery turn adding an isolated module without integrating the request-to-worker path. Runner
+output and logs were not read; this entry uses only per-turn `summary.json` and `files.json` fields.
