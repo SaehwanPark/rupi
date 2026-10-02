@@ -371,6 +371,11 @@ function Get-CaseGuidance([hashtable]$case, [string]$phase = "initial") {
           'Include an importable unittest.TestCase with at least one test_ method.'
           'Cover the three help paths with subprocess checks using sys.executable.'
           'Do not call exec or add persistence or worker code before both test files exist.'
+          'Third write: complete one vertical path from signed submission through a worker result.'
+          'Connect documented HTTP routes, durable ordered jobs, and worker --once end to end.'
+          'Invoke the sink with direct argv and persist output and terminal status.'
+          'Expose the result through the documented pipeline/job retrieval route.'
+          'Do not stop after CLI/tests or leave storage, server, and worker modules unconnected.'
           'Use helper modules for later behavior; keep each source write narrowly scoped.'
           'Use standard-library imports and a main guard.'
           'Implement signed pipeline admission and durable ordered job state.'
@@ -1905,6 +1910,19 @@ if ($DryRun) {
   $cases | ForEach-Object {
     [void](Get-InitialPrompt $_)
     if ($_.Id -eq "07-lease-cascade") {
+      $initialGuidance = Get-CaseGuidance $_
+      $initialRequirements = @(
+        'Third write: complete one vertical path from signed submission through a worker result.'
+        'Connect documented HTTP routes, durable ordered jobs, and worker --once end to end.'
+        'Invoke the sink with direct argv and persist output and terminal status.'
+        'Expose the result through the documented pipeline/job retrieval route.'
+        'Do not stop after CLI/tests or leave storage, server, and worker modules unconnected.'
+      )
+      foreach ($instruction in $initialRequirements) {
+        if (-not $initialGuidance.Contains($instruction)) {
+          throw "Case 07 initial guidance is missing: $instruction"
+        }
+      }
       $foundationGuidance = Get-CaseGuidance $_ "foundation"
       $foundationRequirements = @(
         'Project tests or help checks still fail; fix both foundation gates before workflow code.'
