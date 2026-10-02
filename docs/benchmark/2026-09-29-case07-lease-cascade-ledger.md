@@ -410,3 +410,46 @@ Retry 9 and retry 10 produced no metered Rupi work, so neither evaluates the cur
 post-run usage check reports 3% in the five-hour window and 77% weekly. Retry 11 should repeat the
 current prompt with the same matched settings after a fresh usage check to determine whether the
 zero-work pattern persists before any further prompt change.
+
+## Eleventh matched retry result
+
+Run: `bench-20261002-case07-atomic-test-write-retry11-matched4-600s`.
+
+| Agent | Turn | Work tokens | Tools | Time | Tests | Help | Oracle |
+| --- | ---: | ---: | ---: | --- | ---: | --- | ---: |
+| Rupi | 1 | 0 | 0 | 594,150 ms; timeout status | 1 | 1/1/1 | 1 |
+| Rupi | 2 | 7,877 | 1 | 600,188 ms timeout | 1 | 1/1/1 | 1 |
+| Rupi | 3 | 11,535 | 6 | 600,251 ms timeout | 0 | 0/0/0 | 1 |
+| Rupi | 4 | 991 | 1 | 600,355 ms timeout | 0 | 0/0/0 | 1 |
+| Pi | 1 | 0 | 0 | 600,265 ms timeout | 1 | 1/1/1 | 1 |
+| Pi | 2 | 13,776 | 14 | 600,224 ms timeout | 1 | 0/0/0 | 1 |
+| Pi | 3 | 10,235 | 6 | 378,633 ms | 0 | 0/0/0 | 1 |
+| Pi | 4 | 0 | 0 | 600,284 ms timeout | 0 | 0/0/0 | 1 |
+
+Rupi started 12 and completed 11 model requests, with eight usage records. It used 20,403 work
+tokens and eight tools over 2,394,944 ms. The entry point first appeared in turn 2; both test
+files first appeared in turn 3. Tests and all help checks passed on turns 3–4, but the oracle
+failed on every turn. Turn 4 made one `grep` call and did not change the snapshot; no separate
+storage, server, or worker files appeared.
+
+Pi started and completed 15 requests and used 24,011 work tokens and 20 tools over 2,179,406 ms.
+Tests and help passed on turns 3–4; the oracle failed on all four turns. The final snapshot
+contains the package, entry point, and tests, but no separate server or worker modules.
+
+Neither agent resolved the case, so there is no strict winner. The baseline Pi oracle win remains
+the last resolved comparison. This entry uses only per-turn `summary.json` and `files.json`; raw
+runner output, agent output, session traces, and aggregate results were not read.
+
+## Twelfth workflow prompt revision
+
+Retry 11 passed tests and all help checks by turn 3, but Rupi made only one `grep` call in turn 4
+and added no workflow source. The workflow-phase recovery now tells the agent to use prior-turn
+context and make a source write before any further inspection. It prioritizes the integrated signed
+submission, durable ordered jobs, `worker --once`, and result retrieval; each new module must be
+wired to `__main__.py` in the same recovery turn. Dependency ordering, selected-field fan-in, lease
+reclaim, and blocked dependents remain in scope.
+
+The all-case `bench/compare-pi-rupi.ps1 -DryRun` passed after this prompt change.
+`git diff --check`, 100-column, and CRLF checks passed. The post-run usage check reported 12%
+five-hour and 79% weekly use. Keep the prompt revision unchanged for retry 12; begin another
+matched four-turn comparison only after a fresh usage check.

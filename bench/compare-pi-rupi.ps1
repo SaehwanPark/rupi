@@ -412,7 +412,10 @@ function Get-CaseGuidance([hashtable]$case, [string]$phase = "initial") {
           'Project tests and all help checks pass, but the independent oracle failed.'
           'Keep the passing tests and help paths intact.'
           'Do not repeat CLI, health-route, or test-discovery scaffolding.'
-          'Audit existing modules and wire them together before adding another standalone module.'
+          'The next workspace call must write workflow code before any further audit.'
+          'Use prior turn context; do not inspect files before that write.'
+          'Implement signed submission, durable ordered jobs, worker --once, and result retrieval.'
+          'Wire each new module into __main__.py before ending the turn.'
           'Complete the documented signed submit and persist its ordered pipeline and jobs.'
           'Use worker --once to claim and execute a runnable job in the integrated path.'
           'Invoke the sink with direct argv and persist lease, output, and terminal transitions.'
@@ -1168,6 +1171,11 @@ function Get-RecoveryPrompt(
       'The complete Case 07 specification was embedded initially; do not reread it. ' +
         'No runnable entrypoint exists. Write `leasecascade/__main__.py` before inspection. ' +
         'Use oracle pass/fail only; work in this workspace and do not inspect or run the oracle.'
+    } elseif ($case07Phase -eq "workflow") {
+      'The complete Case 07 specification was embedded initially; do not reread it. ' +
+        'Tests and all three help commands pass. Use prior turn context and make an ' +
+        'implementation write before any file inspection or audit. Use oracle pass/fail only; ' +
+        'work in this workspace and do not inspect or run the oracle.'
     } else {
       'The complete Case 07 specification was embedded initially; do not reread it. ' +
         'Inspect existing files, preserve working behavior, and use oracle pass/fail only. ' +
@@ -1281,8 +1289,8 @@ unittest suite, the project-specific help commands, and a smoke sequence.
         'Preserve the oracle-passing workflow; finish any missing README or spec requirements.'
       }
       default {
-        ('Complete worker lease/reclaim and dependency transitions, then verify ordered ' +
-          'selected-field fan-in and blocked dependents against the embedded specification.')
+        ('Write the signed-submit-to-worker path first; then finish ordered dependency ' +
+          'transitions, selected-field fan-in, lease reclaim, and blocked dependents.')
       }
     }
   } else {
@@ -1516,6 +1524,8 @@ If anything remains incomplete, state it instead of claiming success.
   if ($case.Id -eq "07-lease-cascade") {
     $recoveryHeaderRequirement = if ($case07Phase -eq "entrypoint") {
       'No runnable entrypoint exists. Write `leasecascade/__main__.py` before inspection.'
+    } elseif ($case07Phase -eq "workflow") {
+      'implementation write before any file inspection or audit.'
     } else {
       'Inspect existing files, preserve working behavior, and use oracle pass/fail only.'
     }
@@ -1960,7 +1970,10 @@ if ($DryRun) {
         'Project tests and all help checks pass, but the independent oracle failed.'
         'Keep the passing tests and help paths intact.'
         'Do not repeat CLI, health-route, or test-discovery scaffolding.'
-        'Audit existing modules and wire them together before adding another standalone module.'
+        'The next workspace call must write workflow code before any further audit.'
+        'Use prior turn context; do not inspect files before that write.'
+        'Implement signed submission, durable ordered jobs, worker --once, and result retrieval.'
+        'Wire each new module into __main__.py before ending the turn.'
         'Complete the documented signed submit and persist its ordered pipeline and jobs.'
         'Use worker --once to claim and execute a runnable job in the integrated path.'
         'Invoke the sink with direct argv and persist lease, output, and terminal transitions.'
