@@ -1056,6 +1056,11 @@ unittest suite, the project-specific help commands, and a smoke sequence.
     ) -join [Environment]::NewLine
     $appPresent = $false
     $testModulePresent = $false
+    $failedHelpChecks = @(
+      $verification.help | Where-Object { $_.exit_code -ne 0 }
+    )
+    $allHelpPassed = $verification.help.Count -eq 3 -and
+      $failedHelpChecks.Count -eq 0
     if (-not [string]::IsNullOrWhiteSpace($ProjectPath)) {
       $appPresent = Test-Path -LiteralPath (Join-Path $ProjectPath "artifactpipe\__main__.py")
       $testModulePresent = Test-Path -LiteralPath (
@@ -1077,6 +1082,13 @@ unittest suite, the project-specific help commands, and a smoke sequence.
           'with a test_ method.')
       $priorityDirective =
         'Prioritize discoverable tests, then preserve the passing CLI and server.'
+    } elseif ($verification.project_tests.exit_code -eq 0 -and
+        $allHelpPassed -and -not $verification.resolved) {
+      $completionDirective =
+        'With tests and help passing, close the remaining end-to-end DAG gap.'
+      $priorityDirective =
+        ('Implement the signed DAG end to end: admit the declared graph, run jobs in ' +
+          'dependency order, and resolve downstream scalar references from upstream JSON output.')
     } else {
       $completionDirective =
         'Continue from project-test/help feedback; implement the smallest missing slice.'
