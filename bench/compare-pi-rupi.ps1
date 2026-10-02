@@ -399,14 +399,17 @@ function Get-CaseGuidance([hashtable]$case, [string]$phase = "initial") {
       if ($phase -eq "workflow") {
         return (@(
           'Project tests and all help checks pass, but the independent oracle failed.'
+          'Keep the passing tests and help paths intact.'
           'Do not repeat CLI, health-route, or test-discovery scaffolding.'
-          'Audit the existing implementation against the complete embedded specification.'
-          'Complete signed admission and durable ordered pipeline and job state.'
-          'Implement worker --once with ordered claims, bounded leases, and expiry reclaim.'
-          'Resolve only declared inputs from successful dependency outputs.'
-          'Build barrier input in depends_on order from only the selected collect.field values.'
-          'Fail a barrier with a missing selected field and block its dependents.'
-          'Add focused workflow tests; leave README and cleanup until behavior is complete.'
+          'Audit existing modules and wire them together before adding another standalone module.'
+          'Complete the documented signed submit and persist its ordered pipeline and jobs.'
+          'Use worker --once to claim and execute a runnable job in the integrated path.'
+          'Invoke the sink with direct argv and persist lease, output, and terminal transitions.'
+          'Expose the resulting pipeline and job state through the documented retrieval endpoint.'
+          'Then resolve declared inputs from successful dependencies and preserve insertion order.'
+          'Build fan-in in depends_on order from only the selected collect.field values.'
+          'Fail missing selections without running the sink, block dependents, and reclaim leases.'
+          'Add one focused unittest for submission through worker result; leave README last.'
           'Do not run commands, tests, help checks, service, worker, or oracle.'
         ) -join [Environment]::NewLine)
       }
@@ -1918,11 +1921,15 @@ if ($DryRun) {
       $workflowGuidance = Get-CaseGuidance $_ "workflow"
       $workflowRequirements = @(
         'Project tests and all help checks pass, but the independent oracle failed.'
+        'Keep the passing tests and help paths intact.'
         'Do not repeat CLI, health-route, or test-discovery scaffolding.'
-        'Complete signed admission and durable ordered pipeline and job state.'
-        'Implement worker --once with ordered claims, bounded leases, and expiry reclaim.'
-        'Build barrier input in depends_on order from only the selected collect.field values.'
-        'Fail a barrier with a missing selected field and block its dependents.'
+        'Audit existing modules and wire them together before adding another standalone module.'
+        'Complete the documented signed submit and persist its ordered pipeline and jobs.'
+        'Use worker --once to claim and execute a runnable job in the integrated path.'
+        'Invoke the sink with direct argv and persist lease, output, and terminal transitions.'
+        'Expose the resulting pipeline and job state through the documented retrieval endpoint.'
+        'Build fan-in in depends_on order from only the selected collect.field values.'
+        'Fail missing selections without running the sink, block dependents, and reclaim leases.'
       )
       foreach ($instruction in $workflowRequirements) {
         if (-not $workflowGuidance.Contains($instruction)) {
