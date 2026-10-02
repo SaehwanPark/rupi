@@ -69,3 +69,36 @@ The worktree could not rebuild `rupi.exe`: the installed pinned 1.98.1 toolchain
 component. The run used the existing root binary; the root and benchmark base had no Rust crate
 source differences. Runner stdout/stderr and raw agent output were redirected or retained without
 being read. Only per-turn `summary.json` and `files.json` fields were used for this entry.
+
+## Bounded-slice retry
+
+Run: `bench-20261002-case07-lease-cascade-firstwrite-retry2-matched4-600s`.
+
+The matched retry used local `qwen3.8-flash-next`, pinned Pi 0.86.1, four turns, 600-second
+turn limits, six-second provider grace, eight requests per turn, and thinking off.
+
+| Agent | Turn | Work tokens | Tool requests | Application files added |
+| --- | ---: | ---: | ---: | --- |
+| Rupi | 1 | 0 | 0 | none |
+| Rupi | 2 | 0 | 0 | none |
+| Rupi | 3 | 0 | 0 | none |
+| Rupi | 4 | 0 | 0 | none |
+| Pi | 1 | 17,456 | 1 | `leasecascade/__main__.py` (45,962 bytes) |
+| Pi | 2 | 1,725 | 4 | none |
+| Pi | 3 | 0 | 0 | none |
+| Pi | 4 | 0 | 0 | none |
+
+Rupi recorded one completed model request per turn, but zero work tokens and zero tool calls
+on every turn; no application files were added. Pi used three model requests and five tool calls.
+Every turn failed project tests, the oracle, and all three help commands with exit code 1. Pi's
+four calls reached the 600-second limit. Neither agent resolved the oracle, so this retry has no
+winner. The baseline Pi win remains the last strict result, and Case 07 remains active.
+
+The isolated worktree used the existing root `rupi.exe`; rebuilding remained unavailable because
+the installed pinned 1.98.1 toolchain lacks the Cargo component. Runner stdout/stderr and raw agent
+output were not read. Only per-turn `summary.json` and `files.json` fields were used here.
+
+For a third attempt, constrain the first write to the runnable CLI/help and health route, add test
+discovery before persistence or worker behavior, and keep later writes narrowly scoped. Pi wrote a
+45,962-byte entry point without resolving the oracle, while Rupi added no application files.
+Case 07 stays active until a matched attempt produces a strict oracle win.

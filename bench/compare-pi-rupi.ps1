@@ -360,16 +360,16 @@ function Get-CaseGuidance([hashtable]$case, [string]$phase = "initial") {
       if ($phase -eq "initial") {
         return (@(
           'The complete Case 07 specification is embedded; do not reread SPEC.md.'
-          'First tool call: write the runnable application entry point in leasecascade/__main__.py.'
+          'First tool call: write a compact, runnable CLI in leasecascade/__main__.py.'
           'Do not inspect files or run commands before this first source write.'
-          'Use the workspace write tool for this first source file.'
-          'The first write must create __main__.py; do not create only __init__.py.'
-          'Include top-level, serve, and worker help, plus GET /healthz.'
-          ('Keep CLI, HTTP handling, and SQLite operations in __main__.py until the ' +
-            'first runnable slice works.')
-          'Add tests/__init__.py and tests/test_leasecascade.py before worker expansion.'
-          'Include an importable unittest.TestCase with at least one test_ method.'
-          'Keep imports standard-library-only and use a main guard.'
+          'Use the workspace write tool; this first write must create __main__.py.'
+          'Keep the entry point under 150 lines with top-level, serve, and worker help.'
+          'Implement serve with a standard-library GET /healthz route and valid options.'
+          'Defer SQLite, HMAC, pipeline state, and worker execution to later writes.'
+          'Next add tests/__init__.py and tests/test_leasecascade.py with discovered unittest'
+          'smoke checks for all three help paths, before adding storage or worker behavior.'
+          'Use helper modules for later behavior; keep each source write narrowly scoped.'
+          'Use standard-library imports and a main guard.'
           'Implement signed pipeline admission and durable ordered job state.'
           'Then add worker --once with bounded leases, direct argv, and no polling.'
           'Claim runnable jobs in pipeline and job insertion order.'
@@ -581,11 +581,20 @@ directories to its extended Windows path with `cd` or `cd /d`.
     $requiredInstructions += @(
       'Implement Case 07 from the complete embedded specification.'
       'The complete Case 07 specification follows:'
-      'First tool call: write the runnable application entry point in leasecascade/__main__.py.'
+      'First tool call: write a compact, runnable CLI in leasecascade/__main__.py.'
       'Do not inspect files or run commands before this first source write.'
-      'Use the workspace write tool for this first source file.'
-      'The first write must create __main__.py; do not create only __init__.py.'
-      'Add tests/__init__.py and tests/test_leasecascade.py before worker expansion.'
+      'Use the workspace write tool; this first write must create __main__.py.'
+      'Keep the entry point under 150 lines with top-level, serve, and worker help.'
+      'Implement serve with a standard-library GET /healthz route and valid options.'
+      'Defer SQLite, HMAC, pipeline state, and worker execution to later writes.'
+      'Next add tests/__init__.py and tests/test_leasecascade.py with discovered unittest'
+      'smoke checks for all three help paths, before adding storage or worker behavior.'
+      'Use helper modules for later behavior; keep each source write narrowly scoped.'
+      'Use standard-library imports and a main guard.'
+      'Implement signed pipeline admission and durable ordered job state.'
+      'Then add worker --once with bounded leases, direct argv, and no polling.'
+      'Claim runnable jobs in pipeline and job insertion order.'
+      'Build barrier fan_in in declared dependency order and include only collect.field.'
       'The harness runs tests, three help commands, and the oracle after every attempt.'
       'Recovery receives only oracle pass/fail status; oracle diagnostics stay hidden.'
       'Do not run commands, tests, help checks, service, worker, or oracle.'
@@ -818,13 +827,15 @@ directories to its extended Windows path with `cd` or `cd /d`.
   } elseif ($case.Id -eq "07-lease-cascade") {
     $caseSpecificInstructions = @(
       'The complete Case 07 specification is embedded; do not reread SPEC.md.'
-      'First tool call: write the runnable application entry point in leasecascade/__main__.py.'
+      'First tool call: write a compact, runnable CLI in leasecascade/__main__.py.'
       'Do not inspect files or run commands before this first source write.'
-      'Use the workspace write tool for this first source file.'
-      'The first write must create __main__.py; do not create only __init__.py.'
-      'Include top-level, serve, and worker help, plus GET /healthz.'
-      'Add tests/__init__.py and tests/test_leasecascade.py before worker expansion.'
-      'Include an importable unittest.TestCase with at least one test_ method.'
+      'Use the workspace write tool; this first write must create __main__.py.'
+      'Keep the entry point under 150 lines with top-level, serve, and worker help.'
+      'Implement serve with a standard-library GET /healthz route and valid options.'
+      'Defer SQLite, HMAC, pipeline state, and worker execution to later writes.'
+      'Next add tests/__init__.py and tests/test_leasecascade.py with discovered unittest'
+      'smoke checks for all three help paths, before adding storage or worker behavior.'
+      'Use helper modules for later behavior; keep each source write narrowly scoped.'
       'Implement signed pipeline admission and durable ordered job state.'
       'Then add worker --once with bounded leases, direct argv, and no polling.'
       'Claim runnable jobs in pipeline and job insertion order.'
@@ -1166,7 +1177,7 @@ unittest suite, the project-specific help commands, and a smoke sequence.
     'Complete this slice; advance after project tests and help pass.'
   } elseif ($case.Id -eq "07-lease-cascade") {
     switch ($case07Phase) {
-      "entrypoint" { 'Create the runnable application entry point and all help paths.' }
+      "entrypoint" { 'Create a compact runnable entry point with all help paths and /healthz.' }
       "foundation" {
         'Fix failed help paths and ensure unittest discovery works before worker expansion.'
       }
@@ -1203,8 +1214,8 @@ unittest suite, the project-specific help commands, and a smoke sequence.
   } elseif ($case.Id -eq "07-lease-cascade") {
     switch ($case07Phase) {
       "entrypoint" {
-        ('Write leasecascade/__main__.py with all help paths, health, and signed admission; ' +
-          'do not inspect files or create only __init__.py before that first write.')
+        ('Write a compact leasecascade/__main__.py with all help paths and /healthz; ' +
+          'defer persistence, signing, and worker execution to later writes.')
       }
       "foundation" {
         ('Fix failed help paths and create tests/__init__.py plus ' +
