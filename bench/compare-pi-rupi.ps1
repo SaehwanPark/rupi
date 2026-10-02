@@ -360,8 +360,13 @@ function Get-CaseGuidance([hashtable]$case, [string]$phase = "initial") {
       if ($phase -eq "initial") {
         return (@(
           'The complete Case 07 specification is embedded; do not reread SPEC.md.'
-          'First tool call: write a runnable leasecascade/__main__.py entry point.'
+          'First tool call: write the runnable application entry point in leasecascade/__main__.py.'
+          'Do not inspect files or run commands before this first source write.'
+          'Use the workspace write tool for this first source file.'
+          'The first write must create __main__.py; do not create only __init__.py.'
           'Include top-level, serve, and worker help, plus GET /healthz.'
+          ('Keep CLI, HTTP handling, and SQLite operations in __main__.py until the ' +
+            'first runnable slice works.')
           'Add tests/__init__.py and tests/test_leasecascade.py before worker expansion.'
           'Include an importable unittest.TestCase with at least one test_ method.'
           'Keep imports standard-library-only and use a main guard.'
@@ -382,6 +387,7 @@ function Get-CaseGuidance([hashtable]$case, [string]$phase = "initial") {
         'Use the embedded Case 07 specification, local tests/help, and oracle pass/fail only.'
         'Fix the earliest failing local gate before expanding the worker workflow.'
         'Preserve the existing CLI, HTTP, and durable state behavior.'
+        '__main__.py is the application entry point; __init__.py alone is not runnable.'
         'Keep worker --once bounded and invoke the sink with direct argv, never a shell.'
         'Claim only runnable jobs in pipeline/job insertion order; reclaim expired leases.'
         'Use only declared input_refs and successful dependency outputs.'
@@ -575,7 +581,10 @@ directories to its extended Windows path with `cd` or `cd /d`.
     $requiredInstructions += @(
       'Implement Case 07 from the complete embedded specification.'
       'The complete Case 07 specification follows:'
-      'First tool call: write a runnable leasecascade/__main__.py entry point.'
+      'First tool call: write the runnable application entry point in leasecascade/__main__.py.'
+      'Do not inspect files or run commands before this first source write.'
+      'Use the workspace write tool for this first source file.'
+      'The first write must create __main__.py; do not create only __init__.py.'
       'Add tests/__init__.py and tests/test_leasecascade.py before worker expansion.'
       'The harness runs tests, three help commands, and the oracle after every attempt.'
       'Recovery receives only oracle pass/fail status; oracle diagnostics stay hidden.'
@@ -809,7 +818,10 @@ directories to its extended Windows path with `cd` or `cd /d`.
   } elseif ($case.Id -eq "07-lease-cascade") {
     $caseSpecificInstructions = @(
       'The complete Case 07 specification is embedded; do not reread SPEC.md.'
-      'First tool call: write a runnable leasecascade/__main__.py entry point.'
+      'First tool call: write the runnable application entry point in leasecascade/__main__.py.'
+      'Do not inspect files or run commands before this first source write.'
+      'Use the workspace write tool for this first source file.'
+      'The first write must create __main__.py; do not create only __init__.py.'
       'Include top-level, serve, and worker help, plus GET /healthz.'
       'Add tests/__init__.py and tests/test_leasecascade.py before worker expansion.'
       'Include an importable unittest.TestCase with at least one test_ method.'
@@ -1088,9 +1100,15 @@ function Get-RecoveryPrompt(
       $phaseHeader + ' ' +
       'Work only in this workspace; do not edit the specification, config, or oracle.'
   } elseif ($case.Id -eq "07-lease-cascade") {
-    'The complete Case 07 specification was embedded initially; do not reread it. ' +
-      'Inspect existing files, preserve working behavior, and use oracle pass/fail only. ' +
-      'Work only in this workspace; do not inspect or run the oracle.'
+    if ($case07Phase -eq "entrypoint") {
+      'The complete Case 07 specification was embedded initially; do not reread it. ' +
+        'No runnable entrypoint exists. Write `leasecascade/__main__.py` before inspection. ' +
+        'Use oracle pass/fail only; work in this workspace and do not inspect or run the oracle.'
+    } else {
+      'The complete Case 07 specification was embedded initially; do not reread it. ' +
+        'Inspect existing files, preserve working behavior, and use oracle pass/fail only. ' +
+        'Work only in this workspace; do not inspect or run the oracle.'
+    }
   } else {
     "Read SPEC.md and inspect the files already present. Work only inside this" +
       [Environment]::NewLine +
@@ -1185,8 +1203,8 @@ unittest suite, the project-specific help commands, and a smoke sequence.
   } elseif ($case.Id -eq "07-lease-cascade") {
     switch ($case07Phase) {
       "entrypoint" {
-        ('Write leasecascade/__main__.py with guarded CLI, three help paths, health, ' +
-          'and signed admission.')
+        ('Write leasecascade/__main__.py with all help paths, health, and signed admission; ' +
+          'do not inspect files or create only __init__.py before that first write.')
       }
       "foundation" {
         ('Fix failed help paths and create tests/__init__.py plus ' +
@@ -1432,11 +1450,16 @@ If anything remains incomplete, state it instead of claiming success.
     }
   }
   if ($case.Id -eq "07-lease-cascade") {
+    $recoveryHeaderRequirement = if ($case07Phase -eq "entrypoint") {
+      'No runnable entrypoint exists. Write `leasecascade/__main__.py` before inspection.'
+    } else {
+      'Inspect existing files, preserve working behavior, and use oracle pass/fail only.'
+    }
     $recoveryRequirements = @(
       'Independent acceptance oracle: '
       '(diagnostic details hidden).'
       'The complete Case 07 specification was embedded initially; do not reread it.'
-      'Inspect existing files, preserve working behavior, and use oracle pass/fail only.'
+      $recoveryHeaderRequirement
       'Recovery receives only oracle pass/fail status; diagnostics stay hidden.'
       'Use local test/help feedback and oracle pass/fail only; never inspect or run the oracle.'
       'Do not run commands, tests, help checks, service, worker, or oracle.'

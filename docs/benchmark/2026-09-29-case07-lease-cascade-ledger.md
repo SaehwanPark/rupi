@@ -35,8 +35,37 @@ Pi resolved on turn 4 after the outer timeout. Its final turn passed the accepta
 53 project tests, and all three help checks. Pi used 62,288 work tokens over 2,401,022 ms, with
 50 requests and 57 tools.
 
-## Outcome
+## Baseline outcome
 
 Pi resolved where Rupi did not, a strict oracle win. Pi used 7,477 fewer work tokens but took
 112,263 ms longer. Rupi project-test discovery could not import `tests`; oracle requests were
-disconnected, and worker help still failed on turn 4. Case 08 is next.
+disconnected, and worker help still failed on turn 4. Case 08 was next at that checkpoint.
+
+## Prompt-guided retry
+
+Run: `bench-20261002-case07-lease-cascade-guided-retry1-matched4-600s`.
+
+The matched retry used local `qwen3.8-flash-next`, pinned Pi 0.86.1, four turns, 600-second
+turn limits, six-second provider grace, eight requests per turn, and thinking off. Recovery
+feedback included project tests, help results, and oracle pass/fail status only.
+
+| Agent | Turn | Work tokens | Tool requests | Application files added |
+| --- | ---: | ---: | ---: | --- |
+| Rupi | 1 | 6,744 | 1 | none |
+| Rupi | 2 | 0 | 0 | none |
+| Rupi | 3 | 0 | 0 | none |
+| Rupi | 4 | 13,621 | 2 | `leasecascade/__init__.py` only |
+| Pi | 1 | 0 | 0 | none |
+| Pi | 2 | 5,584 | 7 | none |
+| Pi | 3 | 0 | 0 | none |
+| Pi | 4 | 0 | 0 | none |
+
+Every turn failed project tests with exit code 1, failed the oracle with exit code 1, and failed
+all three help commands with exit code 1. Neither agent resolved the oracle. The strict oracle
+comparison therefore has no winner in this retry; the baseline Pi win remains the last resolved
+comparison. Case 07 remains the active target.
+
+The worktree could not rebuild `rupi.exe`: the installed pinned 1.98.1 toolchain lacks its Cargo
+component. The run used the existing root binary; the root and benchmark base had no Rust crate
+source differences. Runner stdout/stderr and raw agent output were redirected or retained without
+being read. Only per-turn `summary.json` and `files.json` fields were used for this entry.
