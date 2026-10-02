@@ -1047,7 +1047,10 @@ unittest suite, the project-specific help commands, and a smoke sequence.
     $verificationGuidance = @(
       'The harness reruns tests, three help commands, and oracle after every attempt.'
       'Recovery shows oracle pass/fail only and hides diagnostic output.'
-      'If tests/test_artifactpipe.py is absent, create it before feature expansion.'
+      'When the app exists but the test module is missing, make discovery the only task.'
+      'Create tests/__init__.py and tests/test_artifactpipe.py in one workspace write.'
+      ('Add a unittest.TestCase.test_entrypoint_importable method that imports ' +
+        'artifactpipe.__main__ and asserts it is not None.')
       'Do not run commands, tests, help checks, service, worker, or oracle.'
       'Use local test/help feedback to make changes, then rely on the harness.'
     ) -join [Environment]::NewLine
@@ -1064,9 +1067,10 @@ unittest suite, the project-specific help commands, and a smoke sequence.
       $priorityDirective = 'Prioritize a working entry point and all three help paths.'
     } elseif (-not $testModulePresent) {
       $completionDirective =
-        'Create tests/__init__.py and tests/test_artifactpipe.py before feature expansion.'
+        'Complete only test discovery in this recovery turn; do not expand app behavior.'
       $priorityDirective =
-        'Prioritize an importable unittest.TestCase with a test_ method.'
+        ('Use one write for tests/__init__.py and tests/test_artifactpipe.py; add a ' +
+          'discoverable unittest.TestCase test_entrypoint_importable method.')
     } elseif ($verification.project_tests.exit_code -eq 5) {
       $completionDirective =
         ('Project-test discovery exited 5; make test_artifactpipe.py importable ' +
@@ -1222,7 +1226,10 @@ If anything remains incomplete, state it instead of claiming success.
       '(diagnostic details hidden).'
       'The full Case 06 spec was embedded initially; do not reread it.'
       'Recovery shows oracle pass/fail only and hides diagnostic output.'
-      'If tests/test_artifactpipe.py is absent, create it before feature expansion.'
+      'When the app exists but the test module is missing, make discovery the only task.'
+      'Create tests/__init__.py and tests/test_artifactpipe.py in one workspace write.'
+      ('Add a unittest.TestCase.test_entrypoint_importable method that imports ' +
+        'artifactpipe.__main__ and asserts it is not None.')
       ('If project-test discovery exits 5, add tests/test_artifactpipe.py with a ' +
         'TestCase and test_ method.')
       'Do not run commands, tests, help checks, service, worker, or oracle.'
