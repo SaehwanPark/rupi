@@ -17,6 +17,7 @@ pinned Pi 0.86.1 on the oracle.
   The latest benchmark change limits the foundation turn, requests workflow tests before
   expansion, and includes the complete public specification in every recovery prompt.
   Explicit off control, native tools/request policies, and outer budgets remain unchanged.
+  Retry 24 is running with that revision; Rupi turn 1 is active.
 - Case 07 remains active. No retry after the baseline produced a strict oracle winner;
   the baseline Pi strict oracle win remains the last resolved result.
 - Request-budget clarification: the eight-request parameter caps Rupi. Pi retains its
@@ -419,3 +420,13 @@ workflow, and local-test prompts. CRLF, 100-column, and parent invariant/scope r
 An unintended Case 06 draft replacement was restored. No standalone project tests were run.
 The tracked harness matches the reviewed draft and passes the same checks. Fresh retry 24
 is required for oracle evidence; no runtime, provider, or native budget changes were made.
+
+## Retry 24: active
+
+Run: `bench-20261003-case07-visible-contract-retry24-matched4-600s`, revision `8b91b4d`.
+Pre-run parent usage: 62% five-hour and 45% weekly. Existing binary, explicit off control,
+native file tools/request policies, and standard shared budgets. Rupi turn 1 is running.
+Runner PID 37364; tool session 29356. Output stays unread in
+`.benchmark/retry24-runner-unread.log`. Inspect only per-turn summary/files/help.
+Next five-hour reset: 2026-10-03 01:16 PM ET; at 95%, wait through 01:18 PM without
+checking usage during the wait. No oracle evidence yet; merge still requires a strict win.

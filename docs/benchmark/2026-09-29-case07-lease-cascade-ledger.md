@@ -1347,3 +1347,11 @@ and local-test directives. CRLF, changed-line columns, and parent invariant revi
 An unintended Case 06 replacement in the draft was restored. Native controls/budgets and
 other cases remain. Installed by bounded patch after retry 23; tracked source matches the
 reviewed draft and passes the same checks. Fresh retry 24 is required; no oracle claim yet.
+
+## Twenty-fourth fresh comparison launched
+
+Run: `bench-20261003-case07-visible-contract-retry24-matched4-600s`, revision `8b91b4d`.
+Pre-run usage: 62% five-hour and 45% weekly. Existing binary, explicit off configuration,
+native file tools/request policies, four turns, and 600-second outer limits. Full public
+specification is included in every recovery prompt; foundation and test priorities changed
+as described above. Rupi turn 1 is running. Runner 37364; tool session 29356. No outcome yet.
