@@ -621,3 +621,16 @@ were run. Start retry 15 with the standard matched settings after a fresh usage 
   eight requests per turn, thinking off, and the existing binary.
 - Rupi turn 1 is active. Inspect only per-turn summaries, file snapshots, and help output.
   Record the completed matched result before deciding on another revision or merge.
+
+## Fifteenth retry progress: Rupi turns 1-2
+
+| Turn | Work tokens | Tools | Time | Tests | Help | Oracle |
+| ---: | ---: | ---: | --- | ---: | --- | ---: |
+| 1 | 0 | 0 | 519,493 ms; timeout status | 1 | 1/1/1 | 1 |
+| 2 | 2,403 | 1 | 600,329 ms timeout | 1 | 0/0/0 | 1 |
+
+Turn 1 recorded one started/completed request but no metered work or tools, and no application
+files. It does not establish a prompt effect. Turn 2 made one completed `write` and created a
+2,511-byte entry point, with no test files or other application modules. All help checks passed;
+tests and oracle failed. Turn 3 is running. The matched comparison has no outcome yet.
+Evidence uses only per-turn `summary.json` and `files.json`.

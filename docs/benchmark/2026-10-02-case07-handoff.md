@@ -90,7 +90,10 @@ Run: `bench-20261002-case07-foundation-repair-retry15-matched4-600s`.
 
 - Started with prompt revision `26dcff1` after usage check: 14% five-hour and 7% weekly.
 - Uses the standard matched Case 07 settings and existing binary, with pinned Pi 0.86.1.
-- At this checkpoint, Rupi turn 1 is running. Runner output remains unread in
+- Rupi turn 1 had zero work or tools and no application files; all checks failed.
+  Turn 2 used 2,403 work tokens and one write, creating a 2,511-byte entry point.
+  Help passed all three checks; tests and oracle failed. No test files exist in its snapshot.
+- At this checkpoint, Rupi turn 3 is running. Runner output remains unread in
   `.benchmark/retry15-runner-unread.log`.
 - Runner PID at launch: 34400. Check liveness and per-turn artifacts before restarting.
 - Artifacts are under `.benchmark/runs/` followed by the run ID above.
