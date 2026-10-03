@@ -360,6 +360,8 @@ function Get-CaseGuidance([hashtable]$case, [string]$phase = "initial") {
       if ($phase -eq "initial") {
         return (@(
           'The complete Case 07 specification is embedded; do not reread SPEC.md.'
+          'The current directory contains SPEC.md and is already the project root.'
+          'Use leasecascade/ and tests/ paths directly relative to this current directory.'
           'First tool call: write a compact, runnable CLI in leasecascade/__main__.py.'
           'Do not inspect files or run commands before this first source write.'
           'Use the workspace write tool; this first write must create __main__.py.'
@@ -398,6 +400,8 @@ function Get-CaseGuidance([hashtable]$case, [string]$phase = "initial") {
       }
       if ($phase -eq "entrypoint") {
         return (@(
+          'The current directory contains SPEC.md and is already the project root.'
+          'Use leasecascade/ and tests/ paths directly relative to this current directory.'
           'First tool call: write a compact, runnable CLI in leasecascade/__main__.py.'
           'Do not inspect files or run commands before this first source write.'
           'Keep the entry point under 150 lines with top-level, serve, and worker help.'
@@ -441,17 +445,18 @@ function Get-CaseGuidance([hashtable]$case, [string]$phase = "initial") {
           'Project tests and all help checks pass, but the independent oracle failed.'
           'Keep the passing tests and help paths intact.'
           'Do not repeat CLI, health-route, or test-discovery scaffolding.'
-          'The next source mutation must be a small edit to existing leasecascade/__main__.py.'
-          'Use prior context; if the exact edit anchor is unknown, read only __main__.py once.'
+          'When worker delivery is missing, advance leasecascade/__main__.py through small edits.'
+          'Use prior context; read the intended source or test file once if its anchor is unknown.'
           'After that read, the next tool call must edit source rather than inspect more files.'
           'Each edit adds at most 80 lines; apply the first edit before designing later slices.'
-          'Choose the first missing behavior: signed admission, retrieval, worker, then data flow.'
+          'Before worker delivery, advance signed admission, retrieval, then worker in small edits.'
           'If admission is missing, first add raw-body HMAC and atomic SQLite pipeline/job state.'
           'Then connect POST /pipelines and GET /pipelines/<pipeline_id> in small separate edits.'
           'Keep workflow code in that file; do not create __init__.py or helper modules yet.'
           'Then add ordered leased claims, a direct-argv sink, and persisted terminal output.'
           'Use a bounded worker --once; reclaim expired leases without polling.'
-          'When worker delivery is implemented, next edit must extend tests/test_leasecascade.py.'
+          ('If worker delivery is implemented and workflow tests are missing, edit ' +
+            'tests/test_leasecascade.py next.')
           'Keep workflow tests small; exercise your real helpers with temporary SQLite and a sink.'
           'Test signed admission, persisted retrieval, and worker delivery of declared inputs.'
           'Test a barrier whose depends_on order reverses the two dependency insertion positions.'
@@ -459,7 +464,8 @@ function Get-CaseGuidance([hashtable]$case, [string]$phase = "initial") {
           'Return extra private output fields from dependencies and assert they are excluded.'
           'Missing collect.field test: no barrier sink call, failed barrier, blocked dependent.'
           'Use local helper calls or bounded subprocess fixtures; close every resource in tests.'
-          'Then end this attempt for harness feedback; repair implementation if these tests fail.'
+          'After adding missing workflow tests, end this attempt for harness feedback.'
+          'If those tests fail, repair the implementation using the next harness feedback.'
           'Preserve all passing project tests and the three help paths.'
           'Then implement declared inputs, ordered selected-field fan-in, and dependency blocking.'
           'Reclaim expired leases; do not run a barrier sink when a selected field is missing.'
@@ -1220,7 +1226,7 @@ function Get-RecoveryPrompt(
     } elseif ($case07Phase -eq "workflow") {
       'The complete Case 07 specification was embedded initially; do not reread it. ' +
         'Tests and all three help commands pass. Use prior turn context for small source edits. ' +
-        'Read only __main__.py once if an exact edit anchor is unknown. ' +
+        'Read the intended source or test file once if an exact edit anchor is unknown. ' +
         'Use oracle pass/fail only; ' +
         'work in this workspace and do not inspect or run the oracle.'
     } else {
@@ -1291,7 +1297,11 @@ unittest suite, the project-specific help commands, and a smoke sequence.
       }
       "local" { 'Repair the first failing project test before expanding behavior.' }
       "passed" { 'The oracle passed; preserve behavior and finish only missing spec items.' }
-      default { 'Advance the integrated workflow through small edits; preserve tests and help.' }
+      default {
+        ('If worker delivery is implemented and workflow tests are missing, add tests and ' +
+          'yield for harness feedback. Otherwise continue small implementation edits; ' +
+          'preserve passing tests and help.')
+      }
     }
   } else {
     'Finish every missing implementation, README section, and focused test required by the spec.'
@@ -1336,8 +1346,9 @@ unittest suite, the project-specific help commands, and a smoke sequence.
         'Preserve the oracle-passing workflow; finish any missing README or spec requirements.'
       }
       default {
-        ('Edit the first missing workflow behavior in __main__.py with at most 80 new lines; ' +
-          'continue admission, retrieval, worker, and data flow in separate edits.')
+        ('If worker delivery is implemented and workflow tests are missing, edit ' +
+          'tests/test_leasecascade.py next. Otherwise add the next missing behavior in ' +
+          '__main__.py with at most 80 new lines.')
       }
     }
   } else {
@@ -1572,7 +1583,7 @@ If anything remains incomplete, state it instead of claiming success.
     $recoveryHeaderRequirement = if ($case07Phase -eq "entrypoint") {
       'No runnable entrypoint exists. Write `leasecascade/__main__.py` before inspection.'
     } elseif ($case07Phase -eq "workflow") {
-      'Read only __main__.py once if an exact edit anchor is unknown.'
+      'Read the intended source or test file once if an exact edit anchor is unknown.'
     } else {
       'Inspect existing files, preserve working behavior, and use oracle pass/fail only.'
     }
@@ -2013,6 +2024,8 @@ if ($DryRun) {
       $entrypointGuidance = Get-CaseGuidance $_ "entrypoint"
       $entrypointRequirements = @(
         'First tool call: write a compact, runnable CLI in leasecascade/__main__.py.'
+        'The current directory contains SPEC.md and is already the project root.'
+        'Use leasecascade/ and tests/ paths directly relative to this current directory.'
         'Do not inspect files or run commands before this first source write.'
         'Use standard-library imports and a main guard; do not import absent local modules.'
         'Define needed constants in __main__.py; do not import __version__ from the package.'
@@ -2027,6 +2040,8 @@ if ($DryRun) {
       }
       $initialGuidance = Get-CaseGuidance $_
       $initialRequirements = @(
+        'The current directory contains SPEC.md and is already the project root.'
+        'Use leasecascade/ and tests/ paths directly relative to this current directory.'
         'Second write call: create tests/test_leasecascade.py with a real unittest.'
         'Third write call: create tests/__init__.py after the test module exists.'
         'Use standard-library imports and a main guard; do not import absent local modules.'
@@ -2078,22 +2093,23 @@ if ($DryRun) {
         'Project tests and all help checks pass, but the independent oracle failed.'
         'Keep the passing tests and help paths intact.'
         'Do not repeat CLI, health-route, or test-discovery scaffolding.'
-        'The next source mutation must be a small edit to existing leasecascade/__main__.py.'
-        'Use prior context; if the exact edit anchor is unknown, read only __main__.py once.'
+        'When worker delivery is missing, advance leasecascade/__main__.py through small edits.'
+        'Use prior context; read the intended source or test file once if its anchor is unknown.'
         'After that read, the next tool call must edit source rather than inspect more files.'
         'Each edit adds at most 80 lines; apply the first edit before designing later slices.'
-        'Choose the first missing behavior: signed admission, retrieval, worker, then data flow.'
+        'Before worker delivery, advance signed admission, retrieval, then worker in small edits.'
         'If admission is missing, first add raw-body HMAC and atomic SQLite pipeline/job state.'
         'Then connect POST /pipelines and GET /pipelines/<pipeline_id> in small separate edits.'
         'Keep workflow code in that file; do not create __init__.py or helper modules yet.'
         'Then add ordered leased claims, a direct-argv sink, and persisted terminal output.'
         'Use a bounded worker --once; reclaim expired leases without polling.'
-        'When worker delivery is implemented, next edit must extend tests/test_leasecascade.py.'
+        ('If worker delivery is implemented and workflow tests are missing, edit ' +
+          'tests/test_leasecascade.py next.')
         'Test signed admission, persisted retrieval, and worker delivery of declared inputs.'
         'Test a barrier whose depends_on order reverses the two dependency insertion positions.'
         'Assert fan_in contains only collect.field values, with job_id/value items in that order.'
         'Missing collect.field test: no barrier sink call, failed barrier, blocked dependent.'
-        'Then end this attempt for harness feedback; repair implementation if these tests fail.'
+        'After adding missing workflow tests, end this attempt for harness feedback.'
         'Preserve all passing project tests and the three help paths.'
         'Then implement declared inputs, ordered selected-field fan-in, and dependency blocking.'
         'Build fan-in in depends_on order from only the selected collect.field values.'
@@ -2137,6 +2153,47 @@ if ($DryRun) {
       help = $dryRunHelp
     }
     [void](Get-RecoveryPrompt $_ $dryRunVerification)
+    if ($_.Id -eq "07-lease-cascade") {
+      $dryRunProject = Join-Path ([IO.Path]::GetTempPath()) (
+        "rupi-case07-dryrun-" + [Guid]::NewGuid().ToString("N")
+      )
+      $dryRunPackage = Join-Path $dryRunProject "leasecascade"
+      $dryRunTests = Join-Path $dryRunProject "tests"
+      $dryRunFiles = @(
+        (Join-Path $dryRunPackage "__main__.py")
+        (Join-Path $dryRunTests "__init__.py")
+        (Join-Path $dryRunTests "test_leasecascade.py")
+      )
+      try {
+        New-Item -ItemType Directory -Path $dryRunPackage, $dryRunTests | Out-Null
+        foreach ($file in $dryRunFiles) { [IO.File]::WriteAllText($file, "") }
+        $dryRunVerification.oracle.exit_code = 1
+        $workflowPrompt = Get-RecoveryPrompt $_ $dryRunVerification $dryRunProject
+        $workflowPromptRequirements = @(
+          ('If worker delivery is implemented and workflow tests are missing, edit ' +
+            'tests/test_leasecascade.py next. Otherwise add the next missing behavior')
+          ('If worker delivery is implemented and workflow tests are missing, add tests and ' +
+            'yield for harness feedback. Otherwise continue small implementation edits')
+        )
+        foreach ($instruction in $workflowPromptRequirements) {
+          if (-not $workflowPrompt.Contains($instruction)) {
+            throw "Case 07 assembled workflow prompt is missing: $instruction"
+          }
+        }
+      } finally {
+        foreach ($file in $dryRunFiles) {
+          if (Test-Path -LiteralPath $file) { Remove-Item -LiteralPath $file -Force }
+        }
+        foreach ($directory in @($dryRunPackage, $dryRunTests, $dryRunProject)) {
+          if (Test-Path -LiteralPath $directory) {
+            if (@(Get-ChildItem -LiteralPath $directory -Force).Count -ne 0) {
+              throw "Dry-run directory contains unexpected files: $directory"
+            }
+            Remove-Item -LiteralPath $directory -Force
+          }
+        }
+      }
+    }
     "{0}: package={1}; focus={2}" -f $_.Id, $_.Package, $_.Focus
   }
   exit 0

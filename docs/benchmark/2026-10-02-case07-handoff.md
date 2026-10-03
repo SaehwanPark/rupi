@@ -13,9 +13,10 @@ pinned Pi 0.86.1 on the oracle.
 - Worktree: `C:\Users\saehwan\repos\rupi-case07-lease-cascade`
 - Branch: `fix/case07-lease-cascade`
 - Draft PR: [#139](https://github.com/SaehwanPark/rupi/pull/139)
-- Latest benchmark change requests early workflow tests after worker code exists in
-  `bench/compare-pi-rupi.ps1`. Bounded edits and native file tools remain.
-  Retry 18 is complete; retry 19 is running at revision `34ff2cf`.
+- Latest benchmark change aligns early workflow-test guidance with recovery priority,
+  completion, and file-read instructions in `bench/compare-pi-rupi.ps1`. It also clarifies
+  project-relative paths. Bounded edits, native file tools, and request policies remain.
+  Retry 19 is complete; retry 20 has not started.
 - Case 07 remains active. No retry after the baseline produced a strict oracle winner;
   the baseline Pi strict oracle win remains the last resolved result.
 - Request-budget clarification: the eight-request parameter caps Rupi. Pi retains its
@@ -27,14 +28,14 @@ pinned Pi 0.86.1 on the oracle.
 - No Rust source changes were made. The benchmark uses the existing
   `target/debug/rupi.exe`; the installed Rust toolchain lacks the Cargo component.
 
-## Latest completed comparison: retry 18
+## Latest completed comparison: retry 19
 
-Run: `bench-20261003-case07-bounded-edits-retry18-matched4-600s`.
+Run: `bench-20261003-case07-workflow-fixtures-retry19-matched4-600s`.
 
 | Agent | Work tokens | Tools | Tests | Help | Oracle |
 | --- | ---: | ---: | ---: | --- | ---: |
-| Rupi | 84,934 | 18 | Passed all turns | Passed all turns | Failed all turns |
-| Pi | 45,643 | 20 | Passed all turns | Passed all turns | Failed all turns |
+| Rupi | 81,170 | 19 | Passed all turns | Passed all turns | Failed all turns |
+| Pi | 37,096 | 22 | Passed turns 3-4 | Passed turns 3-4 | Failed all turns |
 
 Neither agent resolved the oracle. The per-turn results and timings are in
 [the Case 07 ledger](2026-09-29-case07-lease-cascade-ledger.md).
@@ -144,8 +145,8 @@ then separate test-module and initializer writes. Evaluate the revision as a fre
 
 1. Start in the benchmark worktree and confirm branch `fix/case07-lease-cascade`.
 2. Make a fresh Codex usage check before launching another benchmark.
-3. Retry 18 is complete; retry 19 is running. Finish this pair for the early workflow
-   test revision. Treat retry 13 as incomplete; do not combine different runs.
+3. Retry 19 is complete; retry 20 has not started. Use a fresh pair for the aligned recovery
+   and relative-path revision. Treat retry 13 as incomplete; do not combine different runs.
 4. Use pinned Pi at
    `..\rupi\.benchmark\tools\pi-0.86.1\pi.ps1` and the standard settings:
    Case 07, four turns, 600 seconds per turn, 6-second provider grace, eight requests per
@@ -217,7 +218,7 @@ Then yield for harness feedback and repair implementation. No standalone tests a
 by the parent. New per-turn summaries record `harness_model_request_cap`: eight for Rupi,
 null for Pi, meaning the harness sets no Pi request cap. Existing policies remain unchanged.
 
-## Retry 19: running
+## Retry 19: complete
 
 Run: `bench-20261003-case07-workflow-fixtures-retry19-matched4-600s`, revision `34ff2cf`.
 Pre-run usage: 29% five-hour and 25% weekly. Standard shared settings and native request
@@ -226,11 +227,17 @@ tools; tests/help passed, oracle failed. Its summary records request cap eight.
 Rupi completed all four turns: 81,170 work tokens, 19 tool requests, 1,944,223 ms.
 Tests/help passed every turn; oracle failed every turn. Final entry point: 22,149 bytes;
 test module: 1,746 bytes. One tool failed on turn 2; other recorded calls completed.
-Pi turn 1 is running; no matched outcome yet. Post-Rupi usage: 44% five-hour and 27% weekly.
-Runner PID: 32144; tool session: 46863.
+Pi used 37,096 work tokens, 22 tools, 1,987,797 ms. Tests/help passed only on turns 3-4;
+oracle failed every turn. Turn 1 wrote files under an extra project/ directory; help reported
+no leasecascade module. Turn 2 had zero work/tools and the same snapshot. Turn 3 created
+the correct root-level files. Turn 4 grew the entry point to 10,576 bytes with two edits.
+Runner exit 0; process tree gone. No strict winner. Rupi used 44,074 more work tokens and
+took 43,574 ms less. Post-run usage: 58% five-hour and 29% weekly.
 Runner output stays unread in
 `.benchmark/retry19-runner-unread.log`; artifacts are under `.benchmark/runs/` and this run ID.
 
-After this pair, align workflow recovery's priority/completion directives with its new
-early-test guidance: priority currently selects an application edit unconditionally, while
-the guidance selects tests once worker delivery exists. Do not change the active runner.
+The next revision aligns workflow priority and completion with early tests after worker
+delivery is implemented. A single read may target the intended source or test file before
+editing. Initial and entrypoint recovery clarify that leasecascade/ and tests/ are relative
+to the current directory containing SPEC.md. DryRun now checks the assembled workflow
+prompt using temporary file markers, which are removed without recursive deletion.

@@ -977,3 +977,46 @@ Source review found a directive conflict: workflow priority still unconditionall
 an application edit, while the new guidance asks for tests once worker delivery exists.
 After this pair finishes, align priority/completion text and corresponding guards. Do not
 infer that this caused the observed outcome or modify the active runner.
+
+## Nineteenth matched retry result
+
+Runner exit 0; process tree gone. Revision `34ff2cf`, existing binary, unchanged native
+file tools/request policies and shared turn/time/model/thinking settings. Every summary
+records request cap eight for Rupi and null for Pi, consistent with harness configuration.
+
+| Agent | Turn | Work tokens | Tools | Time | Tests | Help | Oracle |
+| --- | ---: | ---: | ---: | --- | ---: | --- | ---: |
+| Pi | 1 | 17,543 | 9 | 422,187 ms | 1 | 1/1/1 | 1 |
+| Pi | 2 | 0 | 0 | 600,308 ms timeout | 1 | 1/1/1 | 1 |
+| Pi | 3 | 9,167 | 11 | 365,069 ms | 0 | 0/0/0 | 1 |
+| Pi | 4 | 10,386 | 2 | 600,233 ms timeout | 0 | 0/0/0 | 1 |
+
+Pi totals: 37,096 work tokens, 22 tools, 1,987,797 ms. Rupi totals: 81,170 work tokens,
+19 tool requests, 1,944,223 ms. Rupi passed tests/help every turn; Pi passed from turn 3.
+Every oracle check failed. No strict winner. Rupi used 44,074 more work tokens and took
+43,574 ms less. Baseline Pi remains the last resolved oracle winner; Case 07 stays active.
+
+Pi's first snapshot put application/tests under an extra `project/` directory; generated
+help reported no leasecascade module. Turn 2 recorded zero work/tools and the same snapshot.
+Turn 3 used four writes, three directory listings, two reads, and two edits; correct root
+files were created while nested copies remained. Turn 4 completed two edits and grew the
+root entry point to 10,576 bytes. Its root test module stayed 4,024 bytes after turn 3.
+Post-run usage: 58% five-hour and 29% weekly. Only permitted evidence was inspected.
+
+## Next revision: coherent recovery and explicit relative paths
+
+Workflow priority and completion now match the early-test rule once worker delivery is
+implemented. The one-read allowance includes the source or test file selected for editing.
+Initial and entrypoint prompts clarify that the current directory already contains SPEC.md;
+leasecascade/ and tests/ belong directly beneath it. This addresses the observed nested path.
+
+Existing DryRun now checks the assembled workflow prompt with temporary empty file markers,
+then removes those markers and empty directories without recursive deletion. This exercises
+the actual classifier and priority/completion composition without running project tests.
+Parent invariant-review verdict: pass. Full oracle evidence remains pending for a fresh pair.
+
+The final text makes the test branch conditional on missing workflow coverage. When those
+tests already exist, continue remaining implementation edits; yield after adding missing
+tests. Guidance, priority, completion, and the one-file read allowance agree on that choice.
+All-case DryRun now exercises the assembled workflow prompt; diff, CRLF, and changed-line
+100-column checks pass. No standalone project tests were run by the parent.
