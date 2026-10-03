@@ -527,3 +527,14 @@ integrated workflow path. Keep Case 07 active; no strict Rupi oracle win has bee
 - Retry 13 remains incomplete; none of its partial turns will be combined with retry 14.
 - Inspect only per-turn `summary.json` and `files.json`, plus generated help output.
   Keep Case 07 active and merge only after a verified strict Rupi oracle win.
+
+## Fourteenth retry progress: Rupi turn 1
+
+- Turn 1 timed out after 600,744 ms: 9,155 work tokens and two completed `write` calls.
+- Tests exited 5; all three help checks and the oracle exited 1.
+- The eight-file snapshot has a 3,887-byte `leasecascade/__main__.py` and a 37-byte
+  `tests/__init__.py`, without the test module or any workflow source module.
+- Generated help stderr reports that the entry point imports the missing `server` module.
+  This is a concrete runnable-entry-point failure; no application source was inspected.
+- Turn 2 started. The comparison is still active and has no outcome yet.
+- Evidence: per-turn `summary.json`, `files.json`, and generated help output only.
