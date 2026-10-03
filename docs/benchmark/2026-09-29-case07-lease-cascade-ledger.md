@@ -1497,3 +1497,22 @@ native replay, native file tools/request policies, four turns, 600-second outer 
 six-second provider grace. Rupi turn 1 running. Runner 35264, wrapper 19660, session 38972.
 Runner output stays unread; permitted metadata only. Last usage 6% five-hour and 51%
 weekly; next reset 06:16 PM ET. No new result; Case 07 remains active.
+
+## Twenty-sixth comparison progress: Rupi complete
+
+| Turn | Work tokens | Tool requests | Time | Tests | Help | Oracle |
+| ---: | ---: | ---: | --- | ---: | --- | ---: |
+| 1 | 16,814 | 4 | 182,331 ms completed | 0 | 0/0/0 | 1 |
+| 2 | 23,206 | 4 | 600,291 ms timeout | 0 | 0/0/0 | 1 |
+| 3 | 14,193 | 7 | 600,358 ms timeout | 1 | 0/0/0 | 1 |
+| 4 | 46,832 | 12 | 486,642 ms request budget | 1 | 0/0/0 | 1 |
+
+Totals: 101,045 recorded work tokens, 27 requests, 25 completions/two failures, zero
+Unknown, 1,869,622 ms. Every oracle failed; help passed all turns, tests passed 1-2 only.
+Turn 1 read and three writes, three completions/one failure; source 3,141 bytes, tests
+1,138 bytes. Turn 2 read and three edits, all completed; source 20,807 bytes. Turn 3
+five edits/two reads, all completed; source 20,800 bytes, tests 8,540 bytes. Turn 4 two
+reads/two writes/eight greps, 11 completions/one failure; new storage.py 3,038 bytes and
+validation.py 5,115 bytes. Entry-point/test sizes unchanged. Causes/coverage unknown;
+contents and diagnostics remain unread. Model completions include abandoned prior requests.
+Pi turn 1 running. Parent usage 18% five-hour and 52% weekly; CI passed all jobs at 77f4080.

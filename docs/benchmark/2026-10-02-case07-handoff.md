@@ -542,3 +542,15 @@ Runner PID 35264; wrapper PID 19660; tool session 38972. Output stays unread in
 `.benchmark/retry26-runner-unread.log`. Inspect only permitted per-turn metadata/help
 and selected configuration fields. Last usage 6% five-hour and 51% weekly; next reset
 06:16 PM ET. No new oracle evidence; merge still requires a strict Rupi oracle win.
+
+Rupi complete: 101,045 recorded work tokens, 27 requests (25 completions/two failures),
+zero Unknown, 1,869,622 ms. Help passed all turns; tests passed turns 1-2 and failed 3-4.
+Every oracle failed. Turn 1 completed at 182,331 ms with read/three writes, one failure.
+Turn 2 outer timeout at 600,291 ms with read/three completed edits; entry point 20,807
+bytes, tests still 1,138 bytes. Turn 3 outer timeout at 600,358 ms with five edits/two
+reads, all completed; tests grew to 8,540 bytes and source 20,800 bytes. Turn 4 hit its
+request budget at 486,642 ms: two reads/two writes/eight greps, 11 completions/one failure.
+New storage.py 3,038 bytes and validation.py 5,115 bytes; entry-point/test sizes unchanged.
+Causes/coverage unknown; generated content/diagnostics unread. Completion counts include
+abandoned prior-turn requests. Pi turn 1 running. Usage 18% five-hour and 52% weekly;
+latest pushed head 77f4080 passed all CI jobs. Source stays unchanged during the pair.
