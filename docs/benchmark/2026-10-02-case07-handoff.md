@@ -118,7 +118,9 @@ Run: `bench-20261003-case07-foundation-repair-retry16-matched4-600s`.
 - Rupi turn 4 wrote a 5,013-byte entry point with 12,239 work tokens, but help failed on
   its import of the absent `__version__` symbol from the package. No test files exist.
 - Rupi totals: 13,485 work tokens, two tools, and 2,153,627 ms. All checks failed every turn.
-- At this checkpoint, Pi turn 1 is running. Runner PID at launch: 9840.
+- Pi turns 1-2 timed out; both failed all checks. Turn 2 used 3,622 work tokens and
+  seven inspection tools, with no application files in its snapshot. Pi turn 3 is running.
+- Runner PID at launch: 9840. Latest usage: 79% five-hour and 18% weekly.
 - Runner output remains unread in `.benchmark/retry16-runner-unread.log`.
 - Artifacts are under `.benchmark/runs/` followed by the run ID above.
 

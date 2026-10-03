@@ -735,3 +735,11 @@ Source review found that entrypoint recovery uses generic fallback guidance, wit
 initial phase's explicit ban on absent local imports. In the next tool-policy slice, give
 entrypoint recovery the same compact, self-contained CLI/health instructions and local
 constants, then consecutive test writes. Preserve the full specification and oracle gate.
+
+## Sixteenth retry progress: Pi turn 2 complete
+
+Pi turns 1-2 timed out at 600,242 and 600,234 ms; all checks failed in both turns.
+Turn 1 recorded zero work/tools. Turn 2 used 3,622 work tokens and seven completed
+inspection calls (`ls`, `find`, five `read`), with no writes. Both snapshots contain only
+the six configuration/specification files. Generated help reports no `leasecascade` module.
+Pi turn 3 is running. Latest parent usage: 79% five-hour and 18% weekly.
