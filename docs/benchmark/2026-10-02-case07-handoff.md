@@ -115,7 +115,10 @@ Run: `bench-20261003-case07-foundation-repair-retry16-matched4-600s`.
 - Uses the standard matched settings and existing binary, with pinned Pi 0.86.1.
 - Rupi turns 1-2 recorded zero work/tools and no application files. Turn 3 used 1,246
   work tokens and one `exec`, creating no application files; all checks failed.
-- At this checkpoint, Rupi turn 4 is running. Runner PID at launch: 9840.
+- Rupi turn 4 wrote a 5,013-byte entry point with 12,239 work tokens, but help failed on
+  its import of the absent `__version__` symbol from the package. No test files exist.
+- Rupi totals: 13,485 work tokens, two tools, and 2,153,627 ms. All checks failed every turn.
+- At this checkpoint, Pi turn 1 is running. Runner PID at launch: 9840.
 - Runner output remains unread in `.benchmark/retry16-runner-unread.log`.
 - Artifacts are under `.benchmark/runs/` followed by the run ID above.
 
@@ -124,6 +127,8 @@ tool allowlists for both agents. Native Rupi policy and pinned Pi CLI support th
 Rust changes. Use Rupi `read,write,edit,glob,grep` and Pi `read,write,edit,grep,find,ls`,
 record configured allowlists in per-turn summaries, and keep all standard matched budgets.
 Do not change the active retry 16 or mix its turns into the next comparison.
+Also give entrypoint recovery explicit self-contained CLI/health guidance: it currently uses
+generic fallback guidance and omits the initial phase's warning against absent local imports.
 
 ## Resume steps
 

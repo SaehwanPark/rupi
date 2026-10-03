@@ -719,3 +719,19 @@ agents: Rupi `read,write,edit,glob,grep`; Pi `read,write,edit,grep,find,ls`. Kee
 and the standard matched time/turn/request/thinking settings unchanged. Record the configured
 allowlists in permitted per-turn summaries. This changes tool availability relative to earlier
 runs, so evaluate it as a new matched pair and do not mix prior turns into its result.
+
+## Sixteenth retry progress: Rupi complete, Pi running
+
+Rupi turn 4 timed out after 600,188 ms with 12,239 work tokens and one completed `write`.
+It created a 5,013-byte `leasecascade/__main__.py` but no package initializer or test files.
+All help checks failed: generated help stderr reports an import of the missing `__version__`
+symbol from `leasecascade`. Project tests and oracle also failed.
+
+Rupi totals: 13,485 work tokens, two tools (one `exec`, one `write`), and 2,153,627 ms.
+Tests, help, and oracle failed every turn. Pi turn 1 is running; no matched outcome exists.
+Evidence is per-turn `summary.json`, `files.json`, and generated help only.
+
+Source review found that entrypoint recovery uses generic fallback guidance, without the
+initial phase's explicit ban on absent local imports. In the next tool-policy slice, give
+entrypoint recovery the same compact, self-contained CLI/health instructions and local
+constants, then consecutive test writes. Preserve the full specification and oracle gate.
