@@ -641,7 +641,7 @@ Rupi turn 3 timed out after 600,246 ms with 7,860 work tokens and three complete
 It added both test files and the package initializer; the 2,511-byte entry point remained
 unchanged. Project tests and all help checks passed, but the oracle failed.
 
-Turn 4 ended after 598,010 ms with timeout status, one started/completed request, no usage
+Turn 4 ended after 598,010 ms with timeout status, no usage
 records, no work tokens, and no tools. The final snapshot is unchanged from turn 3. Tests
 and help stayed passing; the oracle failed. Workflow recovery was not exercised by a source
 write in this turn, so do not infer its effectiveness from that zero-work timeout.
