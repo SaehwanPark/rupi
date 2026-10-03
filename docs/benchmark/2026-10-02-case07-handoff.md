@@ -19,6 +19,7 @@ pinned Pi 0.86.1 on the oracle.
   Explicit off control, native tools/request policies, and outer budgets remain unchanged.
   Native reasoning replay is now enabled only for Case 07's explicitly Native endpoint.
   The user selected low for both agents in the next fresh pair and requested no questions.
+  Retry 25 is running with that configuration; Rupi is complete and Pi turn 1 is active.
 - Case 07 remains active. No retry after the baseline produced a strict oracle winner;
   the baseline Pi strict oracle win remains the last resolved result.
 - Request-budget clarification: the eight-request parameter caps Rupi. Pi retains its
@@ -484,3 +485,15 @@ Runner PID 6136; wrapper PID 19360; tool session 74861. Output remains unread in
 `.benchmark/retry25-runner-unread.log`. Only per-turn summary/files/help are permitted.
 No new oracle evidence yet. Last usage: 82% five-hour and 48% weekly; next reset 01:16 PM
 ET, with the policy wait through 01:18 PM if 95% is reached. Source stays fixed mid-pair.
+
+Rupi complete: 93,075 recorded work tokens, 15 tool requests (13 completions, two failures),
+1,590,925 ms. Tests/help passed every turn; every oracle failed. Turn 1 completed in
+197,316 ms with read and three writes. Turn 2 outer timeout at 600,467 ms with one write;
+entry point reached 21,390 bytes while tests stayed 1,207 bytes. Turn 3 hit its request
+budget at 509,207 ms with four edits and three reads; tests grew to 8,802 bytes. Turn 4
+completed in 283,935 ms with three edit requests, one completion and two known failures;
+entry point reached 21,918 bytes. No Unknown recorded. Failure causes/coverage unknown.
+Selected generated fields confirm thinking low, Native exposure, and preserve_reasoning
+true. These are configuration evidence, not observed native reasoning contents. Pi turn 1
+is running. Parent usage 89% five-hour and 49% weekly; reset 01:16 PM ET. Latest pushed
+head 2bdc880 passed all three CI jobs. No strict Rupi win; merge remains pending evidence.

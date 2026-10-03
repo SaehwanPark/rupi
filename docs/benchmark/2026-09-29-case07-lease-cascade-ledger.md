@@ -1427,3 +1427,22 @@ control, configured native reasoning replay. Existing binary/model, native file 
 request policies, four turns, 600-second outer limits, six-second provider grace. Rupi
 turn 1 running. Runner 6136, wrapper 19360, tool session 74861. Runner output stays unread.
 Last parent usage 82% five-hour and 48% weekly. No outcome yet; Case 07 remains active.
+
+## Twenty-fifth comparison progress: Rupi complete
+
+| Turn | Work tokens | Tool requests | Time | Tests | Help | Oracle |
+| ---: | ---: | ---: | --- | ---: | --- | ---: |
+| 1 | 21,860 | 4 | 197,316 ms completed | 0 | 0/0/0 | 1 |
+| 2 | 14,644 | 1 | 600,467 ms timeout | 0 | 0/0/0 | 1 |
+| 3 | 29,421 | 7 | 509,207 ms request budget | 0 | 0/0/0 | 1 |
+| 4 | 27,150 | 3 | 283,935 ms completed | 0 | 0/0/0 | 1 |
+
+Totals: 93,075 recorded work tokens, 15 requests, 13 completions, two failures, zero Unknown,
+1,590,925 ms. Every oracle failed. Turn 1 read then wrote three files: entry point 2,785
+bytes and tests 1,207 bytes. Turn 2 wrote the entry point to 21,390 bytes. Turn 3 completed
+four edits and three reads; tests reached 8,802 bytes. Completion counts include a prior
+abandoned request. Turn 4 had three edits, one completion/two failures; entry point 21,918
+bytes, test size unchanged. Failure causes and coverage unknown. Tests/help passed every
+turn. Selected generated configuration confirms low thinking, Native exposure, and replay
+enabled; actual native contents remain unread. Pi turn 1 running; no complete pair result.
+Parent usage 89% five-hour and 49% weekly. All CI jobs passed at 2bdc880.
