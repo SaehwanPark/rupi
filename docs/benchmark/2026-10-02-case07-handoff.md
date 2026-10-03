@@ -222,6 +222,15 @@ null for Pi, meaning the harness sets no Pi request cap. Existing policies remai
 Run: `bench-20261003-case07-workflow-fixtures-retry19-matched4-600s`, revision `34ff2cf`.
 Pre-run usage: 29% five-hour and 25% weekly. Standard shared settings and native request
 policies unchanged. Rupi turn 1 finished in 198,140 ms with 11,653 work tokens and three
-tools; tests/help passed, oracle failed. Its summary records request cap eight. Turn 2 is running.
+tools; tests/help passed, oracle failed. Its summary records request cap eight.
+Rupi completed all four turns: 81,170 work tokens, 19 tool requests, 1,944,223 ms.
+Tests/help passed every turn; oracle failed every turn. Final entry point: 22,149 bytes;
+test module: 1,746 bytes. One tool failed on turn 2; other recorded calls completed.
+Pi turn 1 is running; no matched outcome yet. Post-Rupi usage: 44% five-hour and 27% weekly.
+Runner PID: 32144; tool session: 46863.
 Runner output stays unread in
 `.benchmark/retry19-runner-unread.log`; artifacts are under `.benchmark/runs/` and this run ID.
+
+After this pair, align workflow recovery's priority/completion directives with its new
+early-test guidance: priority currently selects an application edit unconditionally, while
+the guidance selects tests once worker delivery exists. Do not change the active runner.

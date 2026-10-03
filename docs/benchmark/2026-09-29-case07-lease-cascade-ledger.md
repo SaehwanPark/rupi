@@ -955,3 +955,25 @@ policies, standard shared turn/time/model/thinking settings. Rupi turn 1 is runn
 Turn 1 finished without outer timeout in 198,140 ms: 11,653 work tokens, three tools,
 tests exit 0, all help checks exit 0, oracle exit 1. Its summary records the configured native
 file tools and `harness_model_request_cap: 8`. Turn 2 is running; no matched outcome yet.
+
+## Nineteenth retry progress: Rupi complete
+
+| Turn | Work tokens | Tool requests | Time | Tests | Help | Oracle |
+| ---: | ---: | ---: | --- | ---: | --- | ---: |
+| 1 | 11,653 | 3 | 198,140 ms | 0 | 0/0/0 | 1 |
+| 2 | 27,242 | 7 | 545,506 ms | 0 | 0/0/0 | 1 |
+| 3 | 29,541 | 3 | 600,345 ms timeout | 0 | 0/0/0 | 1 |
+| 4 | 12,734 | 6 | 600,232 ms timeout | 0 | 0/0/0 | 1 |
+
+Rupi totals: 81,170 work tokens, 19 tool requests, 1,944,223 ms. Turn 2 exhausted the
+request budget with six completed tools and one failed request. Its entry point grew to
+12,592 bytes, while tests stayed unchanged. Turn 3 completed one read and two edits,
+growing the entry point to 16,494 bytes; tests remained unchanged. Turn 4 completed five
+edits and one read. Final entry point: 22,149 bytes; test module grew from 1,547 to 1,746
+bytes. Coverage is unknown from snapshots. Every turn passed tests/help and failed oracle.
+Pi turn 1 is running; no matched result. Parent usage: 44% five-hour and 27% weekly.
+
+Source review found a directive conflict: workflow priority still unconditionally asks for
+an application edit, while the new guidance asks for tests once worker delivery exists.
+After this pair finishes, align priority/completion text and corresponding guards. Do not
+infer that this caused the observed outcome or modify the active runner.
