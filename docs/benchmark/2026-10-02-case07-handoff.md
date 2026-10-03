@@ -162,6 +162,8 @@ Run: `bench-20261003-case07-file-tools-retry17-matched4-600s`.
 
 - Revision `e3fdefa`; pre-run usage: 86% five-hour and 19% weekly.
 - New native file-tool configuration for both agents; standard matched budgets unchanged.
-- Rupi turn 1 is running. No comparison outcome yet.
+- Rupi turn 1 timed out after 600,296 ms with 16,286 work tokens and three tools.
+  Project tests and all help checks passed; oracle failed. Rupi turn 2 is running.
+- Configured Rupi allowlist in its summary: `read,write,edit,grep`. No comparison outcome yet.
 - Runner output is redirected to `.benchmark/retry17-runner-unread.log` and stays unread.
 - Artifacts are under `.benchmark/runs/` followed by the run ID above.

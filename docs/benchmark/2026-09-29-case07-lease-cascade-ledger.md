@@ -795,3 +795,9 @@ Run: `bench-20261003-case07-file-tools-retry17-matched4-600s`, revision `e3fdefa
 Pre-run usage: 86% five-hour and 19% weekly. New native file-only tool configuration,
 standard matched budgets unchanged, pinned Pi 0.86.1, and existing Rupi binary.
 Rupi turn 1 is running. The run needs its own complete matched outcome.
+
+## Seventeenth retry progress: Rupi turn 1
+
+Turn 1 timed out after 600,296 ms: 16,286 work tokens, three tools, project tests exit 0,
+all three help checks exit 0, and oracle exit 1. Its summary records the configured native
+allowlist `read,write,edit,grep`. Rupi turn 2 is running; the matched comparison is incomplete.
