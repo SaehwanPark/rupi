@@ -1355,3 +1355,24 @@ Pre-run usage: 62% five-hour and 45% weekly. Existing binary, explicit off confi
 native file tools/request policies, four turns, and 600-second outer limits. Full public
 specification is included in every recovery prompt; foundation and test priorities changed
 as described above. Rupi turn 1 is running. Runner 37364; tool session 29356. No outcome yet.
+
+## Twenty-fourth comparison progress: Rupi complete
+
+| Turn | Work tokens | Tools | Time | Tests | Help | Oracle |
+| ---: | ---: | ---: | --- | ---: | --- | ---: |
+| 1 | 15,410 | 3 | 370,203 ms completed | 0 | 0/0/0 | 1 |
+| 2 | 15,130 | 1 | 600,252 ms timeout | 0 | 0/0/0 | 1 |
+| 3 | 4,011 | 1 | 600,310 ms timeout | 0 | 0/0/0 | 1 |
+| 4 | 19,552 | 6 | 600,170 ms timeout | 0 | 0/0/0 | 1 |
+
+Totals: 54,103 recorded work tokens, 11 completed tools, 2,170,935 ms. Turn 1 completed
+three writes; entry point 4,117 bytes, test module 1,535 bytes. Turn 2 completed one edit
+and entry point grew to 4,551 bytes. Turn 3 completed one read; metadata stayed unchanged.
+Turn 4 completed six edits and entry point reached 22,910 bytes. The test-file size stayed
+unchanged in every snapshot; this does not establish content equality or coverage. Every
+oracle failed. Model completion counts include abandoned prior-turn requests; do not infer
+extra successful requests. Pi turn 1 is running. No complete matched result yet.
+
+Parent usage: 73% five-hour and 47% weekly. CI passed all three OS jobs at a87e2dc.
+An optional user question asks whether the next fresh pair should use low or remain off;
+the active pair is unchanged. No generated code, tests, or diagnostics were inspected.

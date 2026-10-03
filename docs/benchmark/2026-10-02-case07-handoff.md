@@ -17,7 +17,7 @@ pinned Pi 0.86.1 on the oracle.
   The latest benchmark change limits the foundation turn, requests workflow tests before
   expansion, and includes the complete public specification in every recovery prompt.
   Explicit off control, native tools/request policies, and outer budgets remain unchanged.
-  Retry 24 is running with that revision; Rupi turn 1 is active.
+  Retry 24 is running with that revision; Rupi is complete and Pi turn 1 is active.
 - Case 07 remains active. No retry after the baseline produced a strict oracle winner;
   the baseline Pi strict oracle win remains the last resolved result.
 - Request-budget clarification: the eight-request parameter caps Rupi. Pi retains its
@@ -430,3 +430,14 @@ Runner PID 37364; tool session 29356. Output stays unread in
 `.benchmark/retry24-runner-unread.log`. Inspect only per-turn summary/files/help.
 Next five-hour reset: 2026-10-03 01:16 PM ET; at 95%, wait through 01:18 PM without
 checking usage during the wait. No oracle evidence yet; merge still requires a strict win.
+
+Rupi is complete: 54,103 recorded work tokens, 11 completed tools, 2,170,935 ms. Tests
+and all help checks passed every turn; every oracle failed. Turn 1 completed in 370,203
+ms with three writes. Turn 2 outer timeout at 600,252 ms with one edit; entry point grew
+to 4,551 bytes. Turn 3 outer timeout at 600,310 ms with one read and unchanged metadata.
+Turn 4 outer timeout at 600,170 ms with six edits; entry point reached 22,910 bytes.
+Test module remained 1,535 bytes in every snapshot; content/coverage are unknown. Model
+completion counts include abandoned prior-turn requests, not only successful current work.
+Pi turn 1 is running. Parent usage: 73% five-hour and 47% weekly. CI passed all OS jobs
+at a87e2dc. An optional user preference question asks low versus off for the next fresh
+pair, citing the low baseline oracle pass; current retry 24 settings remain unchanged.
