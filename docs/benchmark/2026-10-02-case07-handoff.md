@@ -257,3 +257,7 @@ Tests/help passed; oracle failed. Turn 3 is running; entry point is now 9,417 by
 Turn 3 ended at its request budget in 426,767 ms with 32,156 work tokens and seven
 completed tools. Tests/help passed; oracle failed. Turn 4 is running; entry point is
 25,257 bytes and test-file sizes remain unchanged.
+Rupi is complete: 78,598 work tokens, 19 completed tools, 2,162,900 ms. Tests/help passed
+every turn; oracle failed every turn. Turn 4 timed out at 600,294 ms with 11,700 work
+tokens and six completed edits. Final entry point is 29,723 bytes; test module stays
+2,497 bytes. Pi turn 1 is running. Parent usage: 71% five-hour and 31% weekly.

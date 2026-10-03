@@ -1046,3 +1046,17 @@ are unchanged. Turn 3 is running. No timeout cause is inferred from these observ
 Turn 3 ended at the request budget after 426,767 ms: 32,156 work tokens, six completed
 edits and one completed read. Tests and all help passed; oracle failed. Entry point is
 25,257 bytes; test-file sizes remain unchanged. Turn 4 is running; coverage is unknown.
+
+## Twentieth retry progress: Rupi complete
+
+| Turn | Work tokens | Tool requests | Time | Tests | Help | Oracle |
+| ---: | ---: | ---: | --- | ---: | --- | ---: |
+| 1 | 20,744 | 4 | 535,635 ms | 0 | 0/0/0 | 1 |
+| 2 | 13,998 | 2 | 600,204 ms timeout | 0 | 0/0/0 | 1 |
+| 3 | 32,156 | 7 | 426,767 ms | 0 | 0/0/0 | 1 |
+| 4 | 11,700 | 6 | 600,294 ms timeout | 0 | 0/0/0 | 1 |
+
+Rupi totals: 78,598 work tokens, 19 completed tools, 2,162,900 ms. All tests/help passed;
+every oracle check failed. Turn 4 completed six edits, growing the entry point to 29,723
+bytes. Test module remains 2,497 bytes; coverage is unknown from permitted evidence.
+Pi turn 1 is running. Parent usage: 71% five-hour and 31% weekly. No matched result yet.
