@@ -314,6 +314,10 @@ Final entry point: 27,488 bytes; test module: 9,910 bytes. Coverage/failure caus
 Pi turn 1 is running. Parent usage reached 95% five-hour and 35% weekly at 07:59 AM ET.
 Per the root policy, wait through the 08:14 AM reset plus two minutes (08:16 AM ET),
 without checking usage during the wait. Pi continues independently in session 71986.
+Wait completed at 08:16 AM ET; fresh parent usage is 0% five-hour and 35% weekly.
+Pi turn 1 completed in 528,043 ms with 16,794 work tokens and three completed writes.
+Help passed; project tests timed out at 180,149 ms, and oracle failed. Entry point is
+25,566 bytes; test module 14,803 bytes. Pi turn 2 is running; coverage/timeout cause unknown.
 
 ## Pending correction: explicit off control
 

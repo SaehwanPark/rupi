@@ -1172,3 +1172,11 @@ Parent usage reached 95% five-hour and 35% weekly at 07:59 AM ET. Root usage pol
 requires waiting through the 08:14 AM reset plus two minutes, until 08:16 AM ET.
 Do not poll usage during the wait. Pi turn 1 continues independently. Runner PID 24236;
 tool session 71986. The thinking-control correction remains pending until this pair ends.
+
+## Twenty-first retry progress: quota wait complete and Pi turn 1
+
+Wait completed at 08:16 AM ET; fresh parent usage is 0% five-hour and 35% weekly.
+Pi turn 1 completed three writes in 528,043 ms with 16,794 work tokens. Entry point is
+25,566 bytes; test module is 14,803 bytes; both test files are present. All help passed.
+Project tests timed out at 180,149 ms with null exit code; oracle failed. Generated test
+coverage and timeout cause are unknown. Pi turn 2 is running; only permitted evidence read.
