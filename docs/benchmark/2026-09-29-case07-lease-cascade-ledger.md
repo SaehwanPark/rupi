@@ -949,3 +949,9 @@ failover, startup, or roadmap boundary changes. Fresh matched oracle evidence is
 Run: `bench-20261003-case07-workflow-fixtures-retry19-matched4-600s`, revision `34ff2cf`.
 Pre-run usage: 29% five-hour and 25% weekly. Existing binary, native file tools and request
 policies, standard shared turn/time/model/thinking settings. Rupi turn 1 is running.
+
+## Nineteenth retry progress: Rupi turn 1
+
+Turn 1 finished without outer timeout in 198,140 ms: 11,653 work tokens, three tools,
+tests exit 0, all help checks exit 0, oracle exit 1. Its summary records the configured native
+file tools and `harness_model_request_cap: 8`. Turn 2 is running; no matched outcome yet.

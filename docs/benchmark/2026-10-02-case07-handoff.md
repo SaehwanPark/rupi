@@ -221,5 +221,7 @@ null for Pi, meaning the harness sets no Pi request cap. Existing policies remai
 
 Run: `bench-20261003-case07-workflow-fixtures-retry19-matched4-600s`, revision `34ff2cf`.
 Pre-run usage: 29% five-hour and 25% weekly. Standard shared settings and native request
-policies unchanged. Rupi turn 1 is running. Runner output stays unread in
+policies unchanged. Rupi turn 1 finished in 198,140 ms with 11,653 work tokens and three
+tools; tests/help passed, oracle failed. Its summary records request cap eight. Turn 2 is running.
+Runner output stays unread in
 `.benchmark/retry19-runner-unread.log`; artifacts are under `.benchmark/runs/` and this run ID.
