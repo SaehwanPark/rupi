@@ -788,3 +788,10 @@ Case 07 isolation, unchanged budgets, and honest configured-versus-observed prov
 No runtime, replay, failover, startup, or roadmap contract changes. All-case `-DryRun`,
 `git diff --check`, CRLF, and changed-line 100-column checks pass. No standalone tests or
 Rust checks were run; matched performance and oracle evidence are pending.
+
+## Seventeenth matched retry started
+
+Run: `bench-20261003-case07-file-tools-retry17-matched4-600s`, revision `e3fdefa`.
+Pre-run usage: 86% five-hour and 19% weekly. New native file-only tool configuration,
+standard matched budgets unchanged, pinned Pi 0.86.1, and existing Rupi binary.
+Rupi turn 1 is running. The run needs its own complete matched outcome.

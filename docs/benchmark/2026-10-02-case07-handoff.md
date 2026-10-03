@@ -14,7 +14,7 @@ pinned Pi 0.86.1 on the oracle.
 - Branch: `fix/case07-lease-cascade`
 - Draft PR: [#139](https://github.com/SaehwanPark/rupi/pull/139)
 - Latest benchmark change restricts Case 07 to native file tools and strengthens entrypoint
-  recovery in `bench/compare-pi-rupi.ps1`. Retry 17 has not started.
+  recovery in `bench/compare-pi-rupi.ps1` at `e3fdefa`. Retry 17 is running.
 - Case 07 remains active. No retry after the baseline produced a strict oracle winner;
   the baseline Pi strict oracle win remains the last resolved result.
 - The root checkout is detached at `04b229c` and retains an unrelated user change in
@@ -140,7 +140,7 @@ then separate test-module and initializer writes. Evaluate the revision as a fre
 
 1. Start in the benchmark worktree and confirm branch `fix/case07-lease-cascade`.
 2. Make a fresh Codex usage check before launching another benchmark.
-3. Retry 16 is complete; retry 17 has not started. Use a fresh matched run for the new
+3. Retry 16 is complete; retry 17 is running. Finish that matched pair under the new
    tool configuration. Treat retry 13 as incomplete; do not combine different runs.
 4. Use pinned Pi at
    `..\rupi\.benchmark\tools\pi-0.86.1\pi.ps1` and the standard settings:
@@ -155,3 +155,13 @@ then separate test-module and initializer writes. Evaluate the revision as a fre
 The current prompt revision is in `bench/compare-pi-rupi.ps1`. Its all-case `-DryRun`,
 `git diff --check`, changed-line 100-column, and CRLF checks pass. Runs use the existing
 Rupi binary because this machine's installed Rust toolchain lacks the Cargo component.
+
+## Retry 17: running
+
+Run: `bench-20261003-case07-file-tools-retry17-matched4-600s`.
+
+- Revision `e3fdefa`; pre-run usage: 86% five-hour and 19% weekly.
+- New native file-tool configuration for both agents; standard matched budgets unchanged.
+- Rupi turn 1 is running. No comparison outcome yet.
+- Runner output is redirected to `.benchmark/retry17-runner-unread.log` and stays unread.
+- Artifacts are under `.benchmark/runs/` followed by the run ID above.
