@@ -22,7 +22,7 @@ pinned Pi 0.86.1 on the oracle.
   The latest revision isolates Rupi's global skill discovery, requests a compact README
   as the fourth foundation write, and uses public interfaces in workflow tests.
   Recovery from known edit failures and protection for Unknown mutations remain.
-  The next fresh pair will use a shared 2,048-token thinking budget through a local relay.
+  Retry 28 is active with a shared 2,048-token thinking budget through a local relay.
   Low effort, model, prompts, native policies, and turn/time limits remain.
 - Case 07 remains active. No retry after the baseline produced a strict oracle winner;
   the baseline Pi strict oracle win remains the last resolved result.
@@ -680,3 +680,18 @@ Other cases/defaults retain their routes. Core/binary, provenance, request/Unkno
 prompts, file policies, and turn limits remain. Source review found no blocking invariant
 issues. Python syntax, existing all-case off/default and low/2048 DryRun checks pass.
 Live transport is pending a fresh pair; this is a hypothesis, not oracle evidence.
+
+## Retry 28: active
+
+Run: `bench-20261003-case07-budget2048-low-retry28-matched4-600s`, source `c4980be`.
+Started 2026-10-03 03:43 PM ET. Existing binary/model, low for both, native replay,
+isolated discovery, same prompts/native tools/request policies, four turns, 600-second
+outer limits, six-second grace. Both agents route through the 2,048-token local relay.
+Relay PID 24436, runner 13036, wrapper 9392, tool session 93206. Rupi turn 1 active.
+Health metadata reports the budget, fixed upstream, content logging false, one injected
+request. A non-inference models-route check reached the expected alias. Selected generated
+Rupi config confirms low, relay URL, explicit Native exposure, and replay enabled.
+Shared server PID 27356 remains. Relay/runner logs stay unread. No actual request/response
+content inspected; numeric injection metadata does not prove template enforcement.
+Last parent usage 56% five-hour/58% weekly; next reset 06:16 PM ET. CI for this revision
+is pending. Keep source/settings fixed until the pair completes; no oracle result yet.

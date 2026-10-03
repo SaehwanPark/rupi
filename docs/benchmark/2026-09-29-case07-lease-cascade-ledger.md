@@ -1641,3 +1641,17 @@ case through port 8001, with generated configuration and per-turn metadata plus 
 Defaults/other cases retain routes; prompts/native policies/model/turn limits/core stay.
 Parent invariant review, Python syntax, existing all-case off/default and low/2048 DryRun
 checks pass. Evaluate a fresh pair with 2,048 tokens; source review is not oracle evidence.
+
+## Twenty-eighth fresh comparison launched
+
+Run: `bench-20261003-case07-budget2048-low-retry28-matched4-600s`, source `c4980be`.
+Started 2026-10-03 03:43 PM ET. Same existing binary/model, low/native replay, isolated
+discovery, public prompts/native policies, four turns, 600-second outer limits, six-second
+grace. Both agents use the 2,048-token loopback relay. Rupi turn 1 active. Relay 24436,
+runner 13036, wrapper 9392, session 93206; shared server 27356 remains unchanged.
+Python syntax/draft equality, existing off/default and low/2048 DryRun, CRLF, columns,
+diff, and parent invariant review pass. Relay health/configuration and non-inference models
+route are ready. Health reports one injected request, no content logging; selected Rupi
+config confirms low/relay/native/replay. Actual content and budget enforcement unknown.
+Runner/relay logs unread. Last usage 56% five-hour/58% weekly; reset 06:16 PM ET. CI
+pending for new revision; no oracle evidence yet. Source/settings stay fixed mid-pair.
