@@ -1154,3 +1154,21 @@ Turn 3 is running. This verifies recovery of the foundation, not the full workfl
 Turn 3 ended at the eight-request budget after 543,157 ms: 36,892 work tokens, six
 completed edits and one read. Entry point grew to 19,637 bytes; test-file sizes stayed
 unchanged. Tests/help passed; oracle failed. The final Rupi turn is running.
+
+## Twenty-first retry progress: Rupi complete and quota wait
+
+| Turn | Work tokens | Tools | Time | Tests | Help | Oracle |
+| ---: | ---: | ---: | --- | ---: | --- | ---: |
+| 1 | 0 | 0 | 594,149 ms runtime timeout | 1 | 1/1/1 | 1 |
+| 2 | 11,164 | 3 | 385,086 ms | 0 | 0/0/0 | 1 |
+| 3 | 36,892 | 7 | 543,157 ms | 0 | 0/0/0 | 1 |
+| 4 | 15,342 | 5 | 600,232 ms timeout | 1 | 0/0/0 | 1 |
+
+Rupi totals: 63,398 work tokens, 15 completed tools, 2,122,624 ms. Turn 4 completed five
+edits; entry point reached 27,488 bytes and test module grew to 9,910 bytes. Tests failed;
+help passed. Coverage and test-failure cause are unknown. Every oracle check failed.
+
+Parent usage reached 95% five-hour and 35% weekly at 07:59 AM ET. Root usage policy
+requires waiting through the 08:14 AM reset plus two minutes, until 08:16 AM ET.
+Do not poll usage during the wait. Pi turn 1 continues independently. Runner PID 24236;
+tool session 71986. The thinking-control correction remains pending until this pair ends.

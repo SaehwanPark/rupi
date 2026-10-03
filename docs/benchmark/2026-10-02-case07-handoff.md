@@ -308,6 +308,12 @@ Rupi turn 3 is running. Entry point: 5,003 bytes; test module: 2,053 bytes.
 Rupi turn 3 ended at the request budget after 543,157 ms with 36,892 work tokens and
 seven completed tools. Tests/help passed; oracle failed. Entry point is 19,637 bytes;
 test-file sizes stayed unchanged. Rupi turn 4 is running.
+Rupi is complete: 63,398 work tokens, 15 completed tools, 2,122,624 ms. Turn 4 timed out
+with 15,342 work tokens and five completed edits. Tests failed; help passed; oracle failed.
+Final entry point: 27,488 bytes; test module: 9,910 bytes. Coverage/failure cause unknown.
+Pi turn 1 is running. Parent usage reached 95% five-hour and 35% weekly at 07:59 AM ET.
+Per the root policy, wait through the 08:14 AM reset plus two minutes (08:16 AM ET),
+without checking usage during the wait. Pi continues independently in session 71986.
 
 ## Pending correction: explicit off control
 
