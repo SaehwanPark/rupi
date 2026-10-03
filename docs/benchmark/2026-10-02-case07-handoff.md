@@ -13,15 +13,15 @@ pinned Pi 0.86.1 on the oracle.
 - Worktree: `C:\Users\saehwan\repos\rupi-case07-lease-cascade`
 - Branch: `fix/case07-lease-cascade`
 - Draft PR: [#139](https://github.com/SaehwanPark/rupi/pull/139)
-- Retry 25 is complete and failed every oracle for both agents; retry 21 is incomplete.
+- Retry 26 is complete and failed every oracle for both agents; retry 21 is incomplete.
   The latest benchmark change limits the foundation turn, requests workflow tests before
   expansion, and includes the complete public specification in every recovery prompt.
   Explicit thinking control, native tools/request policies, and outer budgets remain.
   Native reasoning replay is now enabled only for Case 07's explicitly Native endpoint.
   The user selected low for both agents in the next fresh pair and requested no questions.
-  The latest revision adds recovery from explicitly unmodified failed edits, with narrow
-  target reads and exact anchors. Unknown mutations remain protected from replay.
-  Retry 26 is running with that revision; Rupi turn 1 is active.
+  The latest revision isolates Rupi's global skill discovery, requests a compact README
+  as the fourth foundation write, and uses public interfaces in workflow tests.
+  Recovery from known edit failures and protection for Unknown mutations remain.
 - Case 07 remains active. No retry after the baseline produced a strict oracle winner;
   the baseline Pi strict oracle win remains the last resolved result.
 - Request-budget clarification: the eight-request parameter caps Rupi. Pi retains its
@@ -37,14 +37,14 @@ pinned Pi 0.86.1 on the oracle.
 - No Rust source changes were made. The benchmark uses the existing
   `target/debug/rupi.exe`; the installed Rust toolchain lacks the Cargo component.
 
-## Latest completed comparison: retry 25
+## Latest completed comparison: retry 26
 
-Run: `bench-20261003-case07-native-replay-low-retry25-matched4-600s`.
+Run: `bench-20261003-case07-edit-recovery-low-retry26-matched4-600s`.
 
 | Agent | Work tokens | Tools | Tests | Help | Oracle |
 | --- | ---: | ---: | ---: | --- | ---: |
-| Rupi | 93,075 | 15 | Passed all turns | Passed all turns | Failed all turns |
-| Pi | 50,475 | 21 | Passed all turns | Passed all turns | Failed all turns |
+| Rupi | 101,045 | 27 | Passed turns 1-2 | Passed all turns | Failed all turns |
+| Pi | 53,013 | 36 | Passed all turns | Passed all turns | Failed all turns |
 
 Neither agent resolved the oracle. The per-turn results and timings are in
 [the Case 07 ledger](2026-09-29-case07-lease-cascade-ledger.md).
@@ -154,15 +154,19 @@ then separate test-module and initializer writes. Evaluate the revision as a fre
 
 1. Start in the benchmark worktree and confirm branch `fix/case07-lease-cascade`.
 2. Make a fresh Codex usage check before launching another benchmark.
-3. Retry 22 is complete without an oracle pass; retry 21 is incomplete. Use a fresh
-   retry 23 for continued initial work. Preserve artifacts and never combine different runs.
+3. Retry 26 is complete without an oracle pass; retry 21 is incomplete. Continue the
+   latest active pair, keeping its source fixed, or launch a fresh pair after completion.
+   Preserve artifacts and never combine runs. Make decisions without further questions.
 4. Use pinned Pi at
    `..\rupi\.benchmark\tools\pi-0.86.1\pi.ps1` and the standard settings:
    Case 07, four turns, 600 seconds per turn, 6-second provider grace, eight requests per
-   Rupi turn, thinking off. Pi uses its native request policy under the same outer limits.
-5. Inspect only per-turn `summary.json` and `files.json`, plus generated help output.
+   Rupi turn, thinking low for both. Pi retains its native request policy under those limits.
+   Case 07 explicitly configures native reasoning replay and skill discovery isolation.
+5. Inspect per-turn `summary.json`, `files.json`, generated help, and selected config fields.
    Do not read acceptance-test source, runner stdout/stderr, agent logs, session traces, or
-   aggregate `results.json`. Do not run standalone tests.
+   aggregate `results.json` or generated source/tests. Do not run standalone tests.
+   Source/CLI audits may inspect help and numeric native skills-listing diagnostics;
+   do not inspect skill bodies or actual model request prompts from runs.
 6. Append verified results to the ledger and update PR #139. Keep ROADMAP active until
    evidence supports a change. Merge only after a strict Rupi oracle win.
 
@@ -532,7 +536,7 @@ review pass. No Rust/core/tool implementation changes, provenance weakening, or 
 tests. Other cases, initial prompts, low thinking, native replay, tools, and budgets remain.
 Retry 26 must be a fresh pair; no oracle success is claimed from source review.
 
-## Retry 26: active
+## Retry 26: complete
 
 Run: `bench-20261003-case07-edit-recovery-low-retry26-matched4-600s`, revision `a17c429`.
 Started 2026-10-03 01:38 PM ET. Same model/existing binary, user-selected low for both,
@@ -554,3 +558,48 @@ New storage.py 3,038 bytes and validation.py 5,115 bytes; entry-point/test sizes
 Causes/coverage unknown; generated content/diagnostics unread. Completion counts include
 abandoned prior-turn requests. Pi turn 1 running. Usage 18% five-hour and 52% weekly;
 latest pushed head 77f4080 passed all CI jobs. Source stays unchanged during the pair.
+
+Pi complete: 53,013 recorded work tokens, 36 calls, 1,947,675 ms. Tests/help passed every
+turn; every oracle failed. Turn 1 completed at 146,898 ms with ls and three writes.
+Turn 2 outer timeout at 600,272 ms with two reads/two edits/write; source 22,301 bytes,
+tests 6,443 bytes. Turn 3 outer timeout at 600,260 ms with 12 reads, ls, and seven edits;
+source 22,150 bytes, tests 6,067 bytes. Turn 4 outer timeout at 600,245 ms with seven
+reads and unchanged paths/sizes. Pi failure/Unknown metrics are null; coverage unknown.
+Neither snapshot includes README; source review confirms ordinary documentation is captured.
+Runner exit 0; runner/wrapper/direct children gone. Rupi recorded 48,032 more work tokens
+and took 78,053 ms less; unrecorded inference remains unknown. No strict winner. Baseline
+low Pi remains last resolved oracle winner. CI passed all jobs at 1b61f0a. Usage 32%
+five-hour and 55% weekly; next reset 06:16 PM ET. Case 07 stays active.
+
+## Next revision: public deliverables and isolated skill discovery
+
+Public SPEC defines CLI/HTTP/sink behavior and requires README. Snapshot source includes
+documentation, so missing README is verified. Actual test/oracle failure causes remain
+unknown. The reviewed draft requests README under 80 lines as the fourth foundation write,
+covering commands, signing, routes, states, collect/fan_in, leases, sink, persistence, and
+exact checks. Describe implementation honestly. Initial/entrypoint/completion/priority
+instructions agree on four writes. Workflow tests use public CLI/HTTP/sink surfaces with
+standard-library helpers inside the test module. Replace unsupported private API coupling
+only with equivalent public checks; preserve every public-spec assertion. No generated
+tests were read, so private coupling is a possible failure mode rather than an observed cause.
+
+Source audit found a configuration difference: Pi disables skills; Rupi run builds a global
+catalog. Rupi does not automatically read repository AGENTS.md. Existing binary CLI listing
+diagnostic: inherited profile has 14 global entries/4,071 characters; an empty child profile
+has zero entries/characters. Only numeric diagnostics were inspected, not bodies or actual
+model requests. This establishes source/configuration behavior, not past model exposure.
+
+Case 07 Rupi now uses an empty agent-root discovery-profile, removing inherited HOME only
+from the child ProcessStartInfo environment and setting child USERPROFILE. Parent/operator
+profile and core defaults remain. Pi retains its disabling flags. Summary skill-discovery
+metadata records configured modes. Invoke-External supports explicit null-key removal;
+other cases provide no new environment overrides. Existing all-case DryRun checks scope
+and profile mapping. The exact reviewed consumer/native skills diagnostic returned exit 0,
+empty listing/profile, and unchanged parent environment; no inference ran.
+
+Reviewed draft .benchmark/case07-public-surfaces-draft.ps1 installed by bounded patch after
+retry 26. Tracked/draft equality, off/low DryRun, CRLF, columns, whitespace, and parent
+invariant/scope review pass. Existing guards cover README and public test boundaries.
+No Rust/binary changes, core tool weakening, standalone tests, or acceptance details read.
+Low/replay controls, model, native tools/request policies, and turn/time budgets remain.
+Evaluate a fresh retry 27; do not attribute an outcome solely to one simultaneous change.

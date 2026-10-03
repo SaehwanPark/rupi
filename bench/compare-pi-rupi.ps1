@@ -366,19 +366,22 @@ function Get-CaseGuidance([hashtable]$case, [string]$phase = "initial") {
           'Review the embedded specification as file inspection before this first source write.'
           'Use the workspace write tool; this first write must create __main__.py.'
           'Keep the first CLI write under 90 lines with top-level, serve, and worker help.'
-          'This attempt covers only CLI/health and help tests; do not plan workflow code yet.'
+          'This attempt covers CLI/health, help tests, and README; do not plan workflow code yet.'
           'Implement serve with a standard-library GET /healthz route and valid options.'
           'Defer SQLite, HMAC, pipeline state, and worker execution until the test files exist.'
           'Second write call: create tests/test_leasecascade.py with a real unittest.'
           'Keep initial tests under 60 lines; cover only imports and the three help paths.'
           'Third write call: create tests/__init__.py after the test module exists.'
+          'Fourth write: create README.md under 80 lines with the public contract and exact checks.'
+          'Cover commands, HMAC, routes, states, collect/fan_in, leases, sink, and persistence.'
+          'Document implemented behavior honestly; keep command examples aligned with code.'
           'Each write call creates one file; write the test module before its initializer.'
           'Include an importable unittest.TestCase with at least one test_ method.'
           'Cover the three help paths with subprocess checks using sys.executable.'
           'Use native file tools and delegate all execution and verification to the harness.'
           'After the entry point, write the test module and initializer in consecutive calls.'
           'Keep all workflow code in __main__.py; do not create helper modules.'
-          'Complete only CLI/health and help tests in this attempt; yield after the three writes.'
+          'Complete CLI/health, help tests, and README in this attempt; yield after four writes.'
           'Use the next harness feedback to begin workflow tests and implementation.'
           'Apply subsequent source edits of at most 80 new lines while preserving passing behavior.'
           'Invoke the sink with direct argv and persist output and terminal status.'
@@ -395,7 +398,7 @@ function Get-CaseGuidance([hashtable]$case, [string]$phase = "initial") {
           'Failed or blocked dependencies block dependents; expired leases are reclaimable.'
           'The harness runs tests, three help commands, and oracle after every attempt.'
           'Do not run commands, tests, help checks, service, worker, or oracle.'
-          'Finish README after the executable workflow; rely on harness feedback.'
+          'Keep README commands and implemented behavior aligned during later repairs.'
         ) -join [Environment]::NewLine)
       }
       if ($phase -eq "entrypoint") {
@@ -405,7 +408,7 @@ function Get-CaseGuidance([hashtable]$case, [string]$phase = "initial") {
           'First tool call: write a compact, runnable CLI in leasecascade/__main__.py.'
           'Review the embedded specification as file inspection before this first source write.'
           'Keep the first CLI write under 90 lines with top-level, serve, and worker help.'
-          'This attempt covers only CLI/health and help tests; do not plan workflow code yet.'
+          'This attempt covers CLI/health, help tests, and README; do not plan workflow code yet.'
           'Implement serve with a standard-library GET /healthz route and valid options.'
           'Use standard-library imports and a main guard; do not import absent local modules.'
           'Define needed constants in __main__.py; do not import __version__ from the package.'
@@ -413,8 +416,11 @@ function Get-CaseGuidance([hashtable]$case, [string]$phase = "initial") {
           'Second write call: create tests/test_leasecascade.py with a real unittest.'
           'Keep initial tests under 60 lines; cover only imports and the three help paths.'
           'Third write call: create tests/__init__.py after the test module exists.'
+          'Fourth write: create README.md under 80 lines with the public contract and exact checks.'
+          'Cover commands, HMAC, routes, states, collect/fan_in, leases, sink, and persistence.'
+          'Document implemented behavior honestly; keep command examples aligned with code.'
           'Cover the three help paths with subprocess checks using sys.executable.'
-          'Complete only CLI/health and help tests in this attempt; yield after the three writes.'
+          'Complete CLI/health, help tests, and README in this attempt; yield after four writes.'
           'Keep all workflow code in __main__.py; do not create helper modules.'
           'Apply subsequent source edits of at most 80 new lines while preserving passing behavior.'
           'Complete workflow behavior in later attempts using public-spec tests and small edits.'
@@ -439,6 +445,9 @@ function Get-CaseGuidance([hashtable]$case, [string]$phase = "initial") {
         return (@(
           'Repair the project-test failure shown in the diagnostic excerpt before adding features.'
           'Preserve the public-specification assertions and fix the implementation in small edits.'
+          'If tests assume an undocumented private API, replace that coupling with public checks.'
+          'Preserve every public-spec assertion; never weaken expectations to make tests pass.'
+          'Keep application repairs in __main__.py; test helpers belong inside the test module.'
           'Each implementation edit adds at most 80 lines; preserve passing tests and help.'
           'Use the existing source and test context; read only the relevant file when needed.'
           'Repair other failures from the same feedback while the request budget remains.'
@@ -465,11 +474,16 @@ function Get-CaseGuidance([hashtable]$case, [string]$phase = "initial") {
           'Keep workflow tests small; use the real CLI and HTTP contract before implementation.'
           'Use finite HTTP/process timeouts and terminate/wait for the server in finally.'
           'Test signed admission, persisted retrieval, and worker delivery of declared inputs.'
+          'Exercise workflow behavior only through documented CLI, HTTP, and sink interfaces.'
+          'Use sys.executable -m leasecascade, raw HTTP requests, and bounded sink fixtures.'
+          'Keep test helpers in tests/test_leasecascade.py; use only standard-library imports.'
+          'Do not import private application modules or assume undocumented function/class names.'
+          'Do not create application helper modules just to satisfy test-specific internal imports.'
           'Test a barrier whose depends_on order reverses the two dependency insertion positions.'
           'Assert fan_in contains only collect.field values, with job_id/value items in that order.'
           'Return extra private output fields from dependencies and assert they are excluded.'
           'Missing collect.field test: no barrier sink call, failed barrier, blocked dependent.'
-          'Use local helper calls or bounded subprocess fixtures; close every resource in tests.'
+          'Use bounded subprocess fixtures and close every resource in tests.'
           'After adding missing workflow tests, end this attempt for harness feedback.'
           'If those tests fail, repair the implementation using the next harness feedback.'
           'Preserve all passing project tests and the three help paths.'
@@ -479,7 +493,7 @@ function Get-CaseGuidance([hashtable]$case, [string]$phase = "initial") {
           'Fail missing selections without running the sink, block dependents, and reclaim leases.'
           'Do not rewrite the whole application in one call or repeat implemented behavior.'
           'Use later attempts to finish small implementation edits while keeping workflow tests.'
-          'Leave README last.'
+          'If README is missing, write it before ending this attempt; retain the public checks.'
           'Do not run commands, tests, help checks, service, worker, or oracle.'
         ) -join [Environment]::NewLine)
       }
@@ -690,13 +704,16 @@ directories to its extended Windows path with `cd` or `cd /d`.
       'Second write call: create tests/test_leasecascade.py with a real unittest.'
       'Keep initial tests under 60 lines; cover only imports and the three help paths.'
       'Third write call: create tests/__init__.py after the test module exists.'
+      'Fourth write: create README.md under 80 lines with the public contract and exact checks.'
+      'Cover commands, HMAC, routes, states, collect/fan_in, leases, sink, and persistence.'
+      'Document implemented behavior honestly; keep command examples aligned with code.'
       'Each write call creates one file; write the test module before its initializer.'
       'Include an importable unittest.TestCase with at least one test_ method.'
       'Cover the three help paths with subprocess checks using sys.executable.'
       'Use native file tools and delegate all execution and verification to the harness.'
       'After the entry point, write the test module and initializer in consecutive calls.'
       'Keep all workflow code in __main__.py; do not create helper modules.'
-      'Complete only CLI/health and help tests in this attempt; yield after the three writes.'
+      'Complete CLI/health, help tests, and README in this attempt; yield after four writes.'
       'Complete workflow behavior in later attempts using public-spec tests and small edits.'
       'Use standard-library imports and a main guard; do not import absent local modules.'
       'Implement signed pipeline admission and durable ordered job state.'
@@ -944,13 +961,16 @@ directories to its extended Windows path with `cd` or `cd /d`.
       'Second write call: create tests/test_leasecascade.py with a real unittest.'
       'Keep initial tests under 60 lines; cover only imports and the three help paths.'
       'Third write call: create tests/__init__.py after the test module exists.'
+      'Fourth write: create README.md under 80 lines with the public contract and exact checks.'
+      'Cover commands, HMAC, routes, states, collect/fan_in, leases, sink, and persistence.'
+      'Document implemented behavior honestly; keep command examples aligned with code.'
       'Each write call creates one file; write the test module before its initializer.'
       'Include an importable unittest.TestCase with at least one test_ method.'
       'Cover the three help paths with subprocess checks using sys.executable.'
       'Use native file tools and delegate all execution and verification to the harness.'
       'After the entry point, write the test module and initializer in consecutive calls.'
       'Keep all workflow code in __main__.py; do not create helper modules.'
-      'Complete only CLI/health and help tests in this attempt; yield after the three writes.'
+      'Complete CLI/health, help tests, and README in this attempt; yield after four writes.'
       'Complete workflow behavior in later attempts using public-spec tests and small edits.'
       'Implement signed pipeline admission and durable ordered job state.'
       'Then add worker --once with bounded leases, direct argv, and no polling.'
@@ -1300,8 +1320,8 @@ unittest suite, the project-specific help commands, and a smoke sequence.
   } elseif ($case.Id -eq "07-lease-cascade") {
     switch ($case07Phase) {
       "entrypoint" {
-        ('Complete only a compact entry point and its help tests in this attempt; ' +
-          'yield after the three foundation writes.')
+        ('Complete a compact entry point, help tests, and README in this attempt; ' +
+          'yield after the four foundation writes.')
       }
       "foundation" {
         'Fix failed help paths and ensure unittest discovery works before worker expansion.'
@@ -1343,8 +1363,8 @@ unittest suite, the project-specific help commands, and a smoke sequence.
   } elseif ($case.Id -eq "07-lease-cascade") {
     switch ($case07Phase) {
       "entrypoint" {
-        ('Write CLI/health in __main__.py, then the test module and initializer; ' +
-          'stop after those three writes and wait for harness feedback.')
+        ('Write CLI/health in __main__.py, then both test files and README; ' +
+          'stop after those four writes and wait for harness feedback.')
       }
       "foundation" {
         ('Fix failed help paths and create tests/__init__.py plus ' +
@@ -1673,7 +1693,11 @@ function Invoke-External {
     [void]$psi.ArgumentList.Add($argument)
   }
   foreach ($entry in $Environment.GetEnumerator()) {
-    $psi.Environment[$entry.Key] = [string]$entry.Value
+    if ($null -eq $entry.Value) {
+      [void]$psi.Environment.Remove($entry.Key)
+    } else {
+      $psi.Environment[$entry.Key] = [string]$entry.Value
+    }
   }
 
   $process = [Diagnostics.Process]::new()
@@ -1713,6 +1737,14 @@ function Get-BenchmarkTools([hashtable]$case, [string]$agent) {
     return @("read", "write", "edit", "bash", "powershell", "grep", "find", "ls")
   }
   return @()
+}
+
+function Get-BenchmarkEnvironment([hashtable]$case, [string]$agent, [string]$agentRoot) {
+  if ($case.Id -ne "07-lease-cascade" -or $agent -ne "rupi") { return @{} }
+  return @{
+    HOME = $null
+    USERPROFILE = (Join-Path $agentRoot "discovery-profile")
+  }
 }
 
 function Set-BenchmarkReasoningCompatibility([hashtable]$case, [object]$endpoint) {
@@ -1977,6 +2009,10 @@ function Invoke-AgentCase([hashtable]$case, [string]$agent, [string]$root, [stri
   New-Item -ItemType Directory -Force -Path $agentRoot | Out-Null
   $workspace = New-BenchmarkWorkspace $case $agentRoot $thinkingLevel
   $piConfig = New-PiConfig $agentRoot
+  $benchmarkEnvironment = Get-BenchmarkEnvironment $case $agent $agentRoot
+  if ($benchmarkEnvironment.ContainsKey("USERPROFILE")) {
+    New-Item -ItemType Directory -Path $benchmarkEnvironment.USERPROFILE -Force | Out-Null
+  }
   $turns = [Collections.Generic.List[object]]::new()
   $resolved = $false; $sessionId = $null; $lastVerification = $null
   for ($turn = 1; $turn -le $MaxTurns; $turn++) {
@@ -1994,7 +2030,10 @@ function Invoke-AgentCase([hashtable]$case, [string]$agent, [string]$root, [stri
       $args.Add("run"); $args.Add("--config"); $args.Add($workspace.config); $args.Add("--cwd"); $args.Add(".")
       if ($sessionId) { $args.Add("--resume"); $args.Add($sessionId) }
       $args.Add("--prompt"); $args.Add($prompt); $args.Add("--no-color"); $args.Add("--no-reasoning"); $args.Add("--verbose")
-      $call = Invoke-External -FileName $rupiBinary -Arguments @($args) -WorkingDirectory $workspace.project -StdoutPath (Join-Path $turnRoot "stdout.txt") -StderrPath (Join-Path $turnRoot "stderr.txt") -TimeoutSeconds $TurnTimeoutSeconds
+      $call = Invoke-External -FileName $rupiBinary -Arguments @($args) `
+        -WorkingDirectory $workspace.project -StdoutPath (Join-Path $turnRoot "stdout.txt") `
+        -StderrPath (Join-Path $turnRoot "stderr.txt") -TimeoutSeconds $TurnTimeoutSeconds `
+        -Environment $benchmarkEnvironment
       $metrics = Read-RupiMetrics $workspace.project $traceLinesBefore
       $sessionId = Get-RupiSessionId $workspace.project
     } else {
@@ -2041,6 +2080,9 @@ function Invoke-AgentCase([hashtable]$case, [string]$agent, [string]$root, [stri
         off_value = "none"
       }
       $turnRecord["configured_native_reasoning_replay"] = $true
+      $turnRecord["configured_skill_discovery"] = if ($agent -eq "rupi") {
+        "empty_child_profile"
+      } else { "disabled_flags" }
     }
     Write-Json (Join-Path $turnRoot "summary.json") $turnRecord
     [void]$turns.Add($turnRecord)
@@ -2071,7 +2113,19 @@ if ($DryRun) {
   Write-Host "Recovery feedback scope: $recoveryFeedbackScope"
   $cases | ForEach-Object {
     [void](Get-InitialPrompt $_)
+    $environmentRoot = Join-Path ([IO.Path]::GetTempPath()) "rupi-case07-environment"
+    $rupiEnvironment = Get-BenchmarkEnvironment $_ "rupi" $environmentRoot
+    $piEnvironment = Get-BenchmarkEnvironment $_ "pi" $environmentRoot
+    if ($piEnvironment.Count -ne 0 -or
+        ($_.Id -ne "07-lease-cascade" -and $rupiEnvironment.Count -ne 0)) {
+      throw "Only Case 07 Rupi may receive an isolated discovery profile."
+    }
     if ($_.Id -eq "07-lease-cascade") {
+      if ($rupiEnvironment.Count -ne 2 -or -not $rupiEnvironment.ContainsKey("HOME") -or
+          $null -ne $rupiEnvironment.HOME -or
+          $rupiEnvironment.USERPROFILE -ne (Join-Path $environmentRoot "discovery-profile")) {
+        throw "Case 07 Rupi must remove inherited HOME and use an isolated USERPROFILE."
+      }
       if ((@(Get-BenchmarkTools $_ "rupi") -join ",") -ne "read,write,edit,grep") {
         throw "Case 07 Rupi tool allowlist differs from its file-only profile."
       }
@@ -2137,8 +2191,11 @@ if ($DryRun) {
         'Second write call: create tests/test_leasecascade.py with a real unittest.'
         'Keep initial tests under 60 lines; cover only imports and the three help paths.'
         'Third write call: create tests/__init__.py after the test module exists.'
-        'This attempt covers only CLI/health and help tests; do not plan workflow code yet.'
-        'Complete only CLI/health and help tests in this attempt; yield after the three writes.'
+        'Fourth write: create README.md under 80 lines with the public contract and exact checks.'
+        'Cover commands, HMAC, routes, states, collect/fan_in, leases, sink, and persistence.'
+        'Document implemented behavior honestly; keep command examples aligned with code.'
+        'This attempt covers CLI/health, help tests, and README; do not plan workflow code yet.'
+        'Complete CLI/health, help tests, and README in this attempt; yield after four writes.'
         'Keep all workflow code in __main__.py; do not create helper modules.'
         'Apply subsequent source edits of at most 80 new lines while preserving passing behavior.'
         'Complete workflow behavior in later attempts using public-spec tests and small edits.'
@@ -2155,11 +2212,14 @@ if ($DryRun) {
         'Second write call: create tests/test_leasecascade.py with a real unittest.'
         'Keep initial tests under 60 lines; cover only imports and the three help paths.'
         'Third write call: create tests/__init__.py after the test module exists.'
+        'Fourth write: create README.md under 80 lines with the public contract and exact checks.'
+        'Cover commands, HMAC, routes, states, collect/fan_in, leases, sink, and persistence.'
+        'Document implemented behavior honestly; keep command examples aligned with code.'
         'Use standard-library imports and a main guard; do not import absent local modules.'
         'Each write call creates one file; write the test module before its initializer.'
         'After the entry point, write the test module and initializer in consecutive calls.'
         'Keep all workflow code in __main__.py; do not create helper modules.'
-        'Complete only CLI/health and help tests in this attempt; yield after the three writes.'
+        'Complete CLI/health, help tests, and README in this attempt; yield after four writes.'
         'Use the next harness feedback to begin workflow tests and implementation.'
         'Apply subsequent source edits of at most 80 new lines while preserving passing behavior.'
         'Invoke the sink with direct argv and persist output and terminal status.'
@@ -2191,6 +2251,9 @@ if ($DryRun) {
       $localGuidance = Get-CaseGuidance $_ "local"
       $localRequirements = @(
         'Preserve the public-specification assertions and fix the implementation in small edits.'
+        'If tests assume an undocumented private API, replace that coupling with public checks.'
+        'Preserve every public-spec assertion; never weaken expectations to make tests pass.'
+        'Keep application repairs in __main__.py; test helpers belong inside the test module.'
         'Each implementation edit adds at most 80 lines; preserve passing tests and help.'
         'Repair other failures from the same feedback while the request budget remains.'
         'Then yield for harness feedback; do not run checks, service, worker, or oracle.'
@@ -2219,6 +2282,11 @@ if ($DryRun) {
           'tests/test_leasecascade.py next.')
         'Use finite HTTP/process timeouts and terminate/wait for the server in finally.'
         'Test signed admission, persisted retrieval, and worker delivery of declared inputs.'
+        'Exercise workflow behavior only through documented CLI, HTTP, and sink interfaces.'
+        'Use sys.executable -m leasecascade, raw HTTP requests, and bounded sink fixtures.'
+        'Keep test helpers in tests/test_leasecascade.py; use only standard-library imports.'
+        'Do not import private application modules or assume undocumented function/class names.'
+        'Do not create application helper modules just to satisfy test-specific internal imports.'
         'Test a barrier whose depends_on order reverses the two dependency insertion positions.'
         'Assert fan_in contains only collect.field values, with job_id/value items in that order.'
         'Missing collect.field test: no barrier sink call, failed barrier, blocked dependent.'
@@ -2280,10 +2348,10 @@ if ($DryRun) {
       $entrypointPromptRequirements = @(
         'The complete Case 07 specification for this recovery follows:'
         $case07Spec
-        ('Complete only a compact entry point and its help tests in this attempt; ' +
-          'yield after the three foundation writes.')
-        ('Write CLI/health in __main__.py, then the test module and initializer; ' +
-          'stop after those three writes and wait for harness feedback.')
+        ('Complete a compact entry point, help tests, and README in this attempt; ' +
+          'yield after the four foundation writes.')
+        ('Write CLI/health in __main__.py, then both test files and README; ' +
+          'stop after those four writes and wait for harness feedback.')
       )
       foreach ($instruction in $entrypointPromptRequirements) {
         if (-not $dryRunRecovery.Contains($instruction)) {

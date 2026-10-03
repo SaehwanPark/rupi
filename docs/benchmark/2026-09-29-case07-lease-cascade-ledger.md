@@ -1516,3 +1516,53 @@ reads/two writes/eight greps, 11 completions/one failure; new storage.py 3,038 b
 validation.py 5,115 bytes. Entry-point/test sizes unchanged. Causes/coverage unknown;
 contents and diagnostics remain unread. Model completions include abandoned prior requests.
 Pi turn 1 running. Parent usage 18% five-hour and 52% weekly; CI passed all jobs at 77f4080.
+
+## Twenty-sixth fresh comparison result
+
+Source a17c429, low/native replay, existing binary and native policies. Every oracle failed.
+
+| Agent | Turn | Work tokens | Tool requests | Time | Tests | Help | Oracle |
+| --- | ---: | ---: | ---: | --- | ---: | --- | ---: |
+| Pi | 1 | 9,475 | 4 | 146,898 ms completed | 0 | 0/0/0 | 1 |
+| Pi | 2 | 15,820 | 5 | 600,272 ms timeout | 0 | 0/0/0 | 1 |
+| Pi | 3 | 17,079 | 20 | 600,260 ms timeout | 0 | 0/0/0 | 1 |
+| Pi | 4 | 10,639 | 7 | 600,245 ms timeout | 0 | 0/0/0 | 1 |
+
+Pi: 53,013 recorded work tokens, 36 calls, 1,947,675 ms. Rupi: 101,045 recorded work
+tokens, 27 requests (25 completions/two failures), 1,869,622 ms. No strict winner. Rupi
+recorded 48,032 more work tokens and took 78,053 ms less; unrecorded inference is unknown.
+Baseline low Pi remains last resolved oracle winner; Case 07 stays active.
+
+Pi turn 1 ls/three writes; turn 2 two reads/two edits/write, source 22,301 bytes and tests
+6,443 bytes. Turn 3 12 reads/ls/seven edits, source 22,150 and tests 6,067 bytes. Turn 4
+seven reads, unchanged paths/sizes. Tests/help passed every turn; failure/Unknown metrics
+null. Coverage/failure causes unknown. No README in either agent's snapshots; snapshot
+source includes ordinary documentation. Runner exit 0; runner/wrapper/direct children gone.
+CI passed all jobs at 1b61f0a. Parent usage 32% five-hour and 55% weekly; reset 06:16 PM ET.
+
+## Next revision: public surfaces, README, and skill isolation
+
+Public SPEC requires README and documents CLI/HTTP/sink interfaces. Request compact honest
+README as fourth foundation write. Keep workflow tests on those public interfaces, with
+standard-library helpers inside the test module and no invented private application API.
+Local repair preserves every public assertion while replacing unsupported private coupling
+with equivalent public checks. Missing README is verified; test failure causes are unknown.
+
+Pi disables skills. Rupi run source builds a global catalog; repository AGENTS.md is not
+automatically loaded. Existing binary native CLI listing diagnostic: inherited profile 14
+global entries/4,071 characters; empty child profile zero. Only numeric catalog diagnostics
+were inspected, no bodies, actual request prompts, or agent output. Source/CLI policies do
+not establish historical model exposure or failure causes.
+
+Case 07 Rupi uses an empty agent-root discovery-profile, child HOME removal/USERPROFILE
+override; parent/operator profile and core defaults stay. Pi retains disabling flags.
+Summary records configured skill discovery modes. Other cases have no environment overrides;
+null handling only removes explicitly supplied child keys. Exact consumer/native CLI probe
+passed: exit 0, empty listing/profile, parent environment unchanged; no inference.
+
+Reviewed parent draft installed after retry 26. Tracked/draft equality, existing all-case
+off/low DryRun, CRLF, columns, diff, and parent invariant/scope review pass. Initial,
+entrypoint, completion, priority, and guards agree on four writes; public test boundaries
+are guarded. Model, binary, low/replay controls, tools/native budgets remain. No Rust/core
+changes, standalone tests, or acceptance details read. Fresh retry 27 is needed; simultaneous
+changes do not support attributing an outcome solely to any one change.
