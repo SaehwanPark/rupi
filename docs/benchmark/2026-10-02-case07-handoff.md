@@ -15,7 +15,7 @@ pinned Pi 0.86.1 on the oracle.
 - Worktree: `C:\Users\saehwan\repos\rupi-case07-lease-cascade`
 - Branch: `fix/case07-lease-cascade`
 - Draft PR: [#139](https://github.com/SaehwanPark/rupi/pull/139)
-- Retry 27 is complete and failed every oracle for both agents; retry 21 is incomplete.
+- Retry 28 is complete and failed every oracle for both agents; retry 21 is incomplete.
   The latest benchmark change limits the foundation turn, requests workflow tests before
   expansion, and includes the complete public specification in every recovery prompt.
   Explicit thinking control, native tools/request policies, and outer budgets remain.
@@ -24,7 +24,7 @@ pinned Pi 0.86.1 on the oracle.
   The latest revision isolates Rupi's global skill discovery, requests a compact README
   as the fourth foundation write, and uses public interfaces in workflow tests.
   Recovery from known edit failures and protection for Unknown mutations remain.
-  Retry 28 Rupi is complete without an oracle pass; Pi turn 1 is active.
+  The next fresh pair raises only Rupi's request cap from 8 to 12.
   Both use a shared 2,048-token thinking budget through a local relay.
   Low effort, model, prompts, native policies, and turn/time limits remain.
 - Case 07 remains active. No retry after the baseline produced a strict oracle winner;
@@ -42,14 +42,14 @@ pinned Pi 0.86.1 on the oracle.
 - No Rust source changes were made. The benchmark uses the existing
   `target/debug/rupi.exe`; the installed Rust toolchain lacks the Cargo component.
 
-## Latest completed comparison: retry 27
+## Latest completed comparison: retry 28
 
-Run: `bench-20261003-case07-isolated-public-low-retry27-matched4-600s`.
+Run: `bench-20261003-case07-budget2048-low-retry28-matched4-600s`.
 
 | Agent | Work tokens | Tools | Tests | Help | Oracle |
 | --- | ---: | ---: | ---: | --- | ---: |
-| Rupi | 88,654 | 18 | Passed turns 1-2 | Passed all turns | Failed all turns |
-| Pi | 41,806 | 22 | Passed turn 1 only | Passed turns 1,2,4 | Failed all turns |
+| Rupi | 129,152 | 25 | Passed all turns | Passed all turns | Failed all turns |
+| Pi | 67,010 | 31 | Passed all turns | Passed all turns | Failed all turns |
 
 Neither agent resolved the oracle. The per-turn results and timings are in
 [the Case 07 ledger](2026-09-29-case07-lease-cascade-ledger.md).
@@ -159,13 +159,13 @@ then separate test-module and initializer writes. Evaluate the revision as a fre
 
 1. Start in the benchmark worktree and confirm branch `fix/case07-lease-cascade`.
 2. Make a fresh Codex usage check before launching another benchmark.
-3. Retry 27 is complete without an oracle pass; retry 21 is incomplete. Continue the
+3. Retry 28 is complete without an oracle pass; retry 21 is incomplete. Continue the
    latest active pair, keeping its source fixed, or launch a fresh pair after completion.
    Preserve artifacts and never combine runs. Make decisions without further questions.
 4. Use pinned Pi at
    `..\rupi\.benchmark\tools\pi-0.86.1\pi.ps1` and the standard settings:
-   Case 07, four turns, 600 seconds per turn, 6-second provider grace, eight requests per
-   Rupi turn, thinking low for both. Pi retains its native request policy under those limits.
+   Case 07, four turns, 600 seconds per turn, 6-second provider grace, thinking low for both.
+   The next control uses `-MaxModelRequestsPerTurn 12`; Pi keeps its native request policy.
    Case 07 explicitly configures native reasoning replay and skill discovery isolation.
    For the budget experiment, start `bench/case07-thinking-budget-relay.py --budget 2048`
    hidden on loopback port 8001, then pass `-Case07ReasoningBudgetTokens 2048` to the runner.
@@ -684,7 +684,7 @@ prompts, file policies, and turn limits remain. Source review found no blocking 
 issues. Python syntax, existing all-case off/default and low/2048 DryRun checks pass.
 Live transport is pending a fresh pair; this is a hypothesis, not oracle evidence.
 
-## Retry 28: active
+## Retry 28: complete
 
 Run: `bench-20261003-case07-budget2048-low-retry28-matched4-600s`, source `c4980be`.
 Started 2026-10-03 03:43 PM ET. Existing binary/model, low for both, native replay,
@@ -719,3 +719,18 @@ Pi keeps its native request policy. This addresses an observed limit, not an est
 oracle failure cause. Do not change the active pair. Latest pushed results head b6fc672;
 its CI is pending. Prior head 9a086ae passed all jobs. No new source revision is needed
 for the existing request-cap CLI parameter.
+
+Pi complete: 67,010 recorded work tokens, 31 calls, 2,037,464 ms call time. Tests/help
+passed throughout; every oracle failed. Turn 1 completed at 388,616 ms with ls/four
+writes/read/edit; source 5,633 bytes, tests 1,013, empty initializer, README 2,329.
+Turn 2 completed at 448,331 ms with six reads/three edits; source 17,982 bytes, tests
+4,993. Turn 3 outer timeout at 600,296 ms with seven reads/two edits/two writes; source
+17,707 bytes, new tests/sink_echo.py 374 bytes and sink_missing_field.py 365 bytes.
+Turn 4 outer timeout at 600,221 ms with three reads/edit; tests grew to 9,158 bytes,
+other paths/sizes unchanged. Pi failure/Unknown metrics null; coverage/causes unknown.
+Runner exit 0; runner/wrapper/direct children gone. Health counter 64 is forwarded
+requests, not completed-request or total-inference evidence. Shared server/relay remain.
+No strict winner. Rupi recorded 62,142 more work tokens and took 192,792 ms less call
+time; verification excluded and unrecorded inference unknown. Baseline low Pi remains
+last resolved oracle winner. CI passed all jobs at 05daddc. Usage 84% five-hour/63%
+weekly; next reset 06:16 PM ET. Case 07 stays active; next fresh pair uses Rupi cap12.

@@ -1683,3 +1683,29 @@ raise only Rupi's cap from8 to12 via the existing CLI. Turns2/4 exhausted the cu
 turn4 left151,334 ms of its outer call window. Pi retains its native request policy.
 This targets an observed limit, not a known oracle cause. Source/settings stay fixed during
 retry28. Results pushed at b6fc672; CI pending, prior9a086ae passed all three jobs.
+
+## Twenty-eighth fresh comparison result
+
+Source c4980be, low/shared budget2,048, Rupi cap8/Pi native policy. All oracles failed.
+
+| Agent | Turn | Work tokens | Tool requests | Call time | Tests | Help | Oracle |
+| --- | ---: | ---: | ---: | --- | ---: | --- | ---: |
+| Pi | 1 | 16,519 | 7 | 388,616 ms completed | 0 | 0/0/0 | 1 |
+| Pi | 2 | 16,073 | 9 | 448,331 ms completed | 0 | 0/0/0 | 1 |
+| Pi | 3 | 20,372 | 11 | 600,296 ms timeout | 0 | 0/0/0 | 1 |
+| Pi | 4 | 14,046 | 4 | 600,221 ms timeout | 0 | 0/0/0 | 1 |
+
+Pi: 67,010 recorded work tokens, 31 calls, 2,037,464 ms call time. Tests/help passed
+throughout; every oracle failed. Turn 1 ls/four writes/read/edit; source5,633/tests1,013/
+README2,329 bytes and empty test initializer. Turn 2 six reads/three edits; source17,982,
+tests4,993 bytes. Turn 3 seven reads/two edits/two writes; source17,707, new sink_echo.py
+374/sink_missing_field.py365 bytes under tests. Turn 4 three reads/edit; tests9,158 bytes,
+other paths/sizes unchanged. Failure/Unknown metrics null; contents/coverage/causes unknown.
+
+Rupi: 129,152 recorded work tokens, 25 completed requests, 1,844,672 ms call time. No
+strict winner. Rupi recorded62,142 more work tokens and took192,792 ms less call time;
+verification excluded, unrecorded inference unknown. Baseline low Pi remains last resolved
+oracle winner. Runner exit0; runner/wrapper/direct children gone. Relay counter64 records
+forwarded requests, not completions or total inference. Shared server/relay retained.
+CI passed all jobs at05daddc. Usage84% five-hour/63% weekly; reset06:16 PM ET. Case07
+stays active. Next control raises only Rupi's cap to12; same low/budget/model/turn limits.
