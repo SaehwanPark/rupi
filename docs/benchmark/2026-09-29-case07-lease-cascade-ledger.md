@@ -514,3 +514,16 @@ integrated workflow path. Keep Case 07 active; no strict Rupi oracle win has bee
   traces, and aggregate `results.json` were not read.
 - Usage after stopping was 14% five-hour and 2% weekly. Resume with a fresh usage check
   and a new matched run; do not combine retry 13's partial Rupi turns with later Pi turns.
+
+## Fourteenth matched retry plan
+
+- Resume from the Case 07 handoff at `04b229c`; retain the current prompt revision.
+- Restored `fix/case07-lease-cascade` in the clean benchmark worktree. The root checkout
+  remains at the same commit with its unrelated usage-policy edit preserved.
+- Fresh Codex usage: 19% five-hour and 3% weekly, below the current stop thresholds.
+- Run: `bench-20261002-case07-integrated-workflow-write-retry14-matched4-600s`.
+- Settings: pinned Pi 0.86.1, four turns, 600-second turn limit, 6-second provider grace,
+  eight requests per turn, thinking off, and the existing Rupi binary.
+- Retry 13 remains incomplete; none of its partial turns will be combined with retry 14.
+- Inspect only per-turn `summary.json` and `files.json`, plus generated help output.
+  Keep Case 07 active and merge only after a verified strict Rupi oracle win.
