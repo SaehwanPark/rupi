@@ -862,3 +862,9 @@ Parent review confirms the harness feedback boundary and unchanged runtime invar
 Run: `bench-20261003-case07-bounded-edits-retry18-matched4-600s`, revision `8cb9a78`.
 Pre-run usage: 3% five-hour and 21% weekly. Standard matched budgets, native file tools,
 and existing Rupi binary unchanged. Rupi turn 1 is running; no matched outcome yet.
+
+## Eighteenth retry progress: Rupi turn 1
+
+Rupi turn 1 finished without outer timeout in 208,058 ms: 13,740 work tokens, four tools,
+project tests exit 0, all help checks exit 0, and oracle exit 1. Its summary records the
+native file-tool allowlist. Turn 2 is running; no matched outcome yet.
