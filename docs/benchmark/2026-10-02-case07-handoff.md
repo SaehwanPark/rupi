@@ -113,9 +113,17 @@ Run: `bench-20261003-case07-foundation-repair-retry16-matched4-600s`.
 
 - Prompt unchanged at `26dcff1`; usage before launch: 51% five-hour and 13% weekly.
 - Uses the standard matched settings and existing binary, with pinned Pi 0.86.1.
-- At this checkpoint, Rupi turn 1 is running. Runner PID at launch: 9840.
+- Rupi turns 1-2 recorded zero work/tools and no application files. Turn 3 used 1,246
+  work tokens and one `exec`, creating no application files; all checks failed.
+- At this checkpoint, Rupi turn 4 is running. Runner PID at launch: 9840.
 - Runner output remains unread in `.benchmark/retry16-runner-unread.log`.
 - Artifacts are under `.benchmark/runs/` followed by the run ID above.
+
+Next slice after retry 16: enforce the existing no-command instruction through Case 07
+tool allowlists for both agents. Native Rupi policy and pinned Pi CLI support this without
+Rust changes. Use Rupi `read,write,edit,glob,grep` and Pi `read,write,edit,grep,find,ls`,
+record configured allowlists in per-turn summaries, and keep all standard matched budgets.
+Do not change the active retry 16 or mix its turns into the next comparison.
 
 ## Resume steps
 

@@ -698,3 +698,24 @@ run standalone tests.
 - Rupi turn 1 is active. Retry 15 ended with zero work and tools in both final turns,
   so repeat before tuning the unexercised workflow write directive.
 - Keep evidence restricted to per-turn summaries, snapshots, and generated help.
+
+## Sixteenth retry progress and next tool-policy slice
+
+- Rupi turns 1-2 ended with timeout status at 358,940 and 594,222 ms. Both recorded
+  zero work and tools, no application files, and failing tests/help/oracle.
+- Turn 3 timed out after 600,277 ms: 1,246 work tokens and one completed `exec` request.
+  Its snapshot still has only the six configuration/specification files. Generated help
+  reports `No module named leasecascade`. No application source was inspected.
+- Turn 4 is running. The matched comparison has no outcome yet.
+
+The lone `exec` violated the prompt's existing no-command instruction. Both runtimes can
+enforce the intended boundary without Rust changes: Rupi's `ToolPolicy.allow` filters both
+offered definitions and calls (`crates/rupi-core/src/config.rs`,
+`crates/rupi-tools/src/registry.rs`); installed pinned Pi accepts an explicit `--tools`
+allowlist (`dist/cli/args.js`). The Case 07 base config already has a tools policy.
+
+After retry 16 finishes, restrict Case 07 to equivalent workspace file tools for both
+agents: Rupi `read,write,edit,glob,grep`; Pi `read,write,edit,grep,find,ls`. Keep other cases
+and the standard matched time/turn/request/thinking settings unchanged. Record the configured
+allowlists in permitted per-turn summaries. This changes tool availability relative to earlier
+runs, so evaluate it as a new matched pair and do not mix prior turns into its result.
