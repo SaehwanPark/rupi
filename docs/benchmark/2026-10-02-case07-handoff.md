@@ -13,11 +13,12 @@ pinned Pi 0.86.1 on the oracle.
 - Worktree: `C:\Users\saehwan\repos\rupi-case07-lease-cascade`
 - Branch: `fix/case07-lease-cascade`
 - Draft PR: [#139](https://github.com/SaehwanPark/rupi/pull/139)
-- Retry 23 is complete and failed every oracle for both agents; retry 21 is incomplete.
+- Retry 24 is complete and failed every oracle for both agents; retry 21 is incomplete.
   The latest benchmark change limits the foundation turn, requests workflow tests before
   expansion, and includes the complete public specification in every recovery prompt.
   Explicit off control, native tools/request policies, and outer budgets remain unchanged.
-  Retry 24 is running with that revision; Rupi is complete and Pi turn 1 is active.
+  Native reasoning replay is now enabled only for Case 07's explicitly Native endpoint.
+  The user selected low for both agents in the next fresh pair and requested no questions.
 - Case 07 remains active. No retry after the baseline produced a strict oracle winner;
   the baseline Pi strict oracle win remains the last resolved result.
 - Request-budget clarification: the eight-request parameter caps Rupi. Pi retains its
@@ -33,14 +34,14 @@ pinned Pi 0.86.1 on the oracle.
 - No Rust source changes were made. The benchmark uses the existing
   `target/debug/rupi.exe`; the installed Rust toolchain lacks the Cargo component.
 
-## Latest completed comparison: retry 23
+## Latest completed comparison: retry 24
 
-Run: `bench-20261003-case07-continuous-initial-retry23-matched4-600s`.
+Run: `bench-20261003-case07-visible-contract-retry24-matched4-600s`.
 
 | Agent | Work tokens | Tools | Tests | Help | Oracle |
 | --- | ---: | ---: | ---: | --- | ---: |
-| Rupi | 14,537 | 3 | Failed all turns | Passed turn 4 | Failed all turns |
-| Pi | 47,834 | 22 | Failed all turns | Passed all turns | Failed all turns |
+| Rupi | 54,103 | 11 | Passed all turns | Passed all turns | Failed all turns |
+| Pi | 23,947 | 5 | Passed all turns | Passed all turns | Failed all turns |
 
 Neither agent resolved the oracle. The per-turn results and timings are in
 [the Case 07 ledger](2026-09-29-case07-lease-cascade-ledger.md).
@@ -421,7 +422,7 @@ An unintended Case 06 draft replacement was restored. No standalone project test
 The tracked harness matches the reviewed draft and passes the same checks. Fresh retry 24
 is required for oracle evidence; no runtime, provider, or native budget changes were made.
 
-## Retry 24: active
+## Retry 24: complete
 
 Run: `bench-20261003-case07-visible-contract-retry24-matched4-600s`, revision `8b91b4d`.
 Pre-run parent usage: 62% five-hour and 45% weekly. Existing binary, explicit off control,
@@ -441,3 +442,34 @@ completion counts include abandoned prior-turn requests, not only successful cur
 Pi turn 1 is running. Parent usage: 73% five-hour and 47% weekly. CI passed all OS jobs
 at a87e2dc. An optional user preference question asks low versus off for the next fresh
 pair, citing the low baseline oracle pass; current retry 24 settings remain unchanged.
+
+Pi completed: 23,947 recorded work tokens, five calls, 2,216,960 ms. Turn 1 completed
+in 416,102 ms with ls and three writes; turn 2 timed out at 600,235 ms with one read.
+Turns 3-4 timed out at 600,242 and 600,381 ms with zero recorded work/tools. Tests/help
+passed every turn; every oracle failed. Final entry point: 3,736 bytes; tests: 1,619 bytes.
+Snapshot paths/sizes stayed unchanged after turn 1; content equality and coverage unknown.
+Runner exit 0; runner and direct children gone. No strict winner. Rupi recorded 30,156
+more work tokens and took 46,025 ms less. Unrecorded timed-out inference remains unknown.
+Post-run parent usage: 82% five-hour and 48% weekly. CI passed all OS jobs at 5beb3db.
+
+## Next revision: native reasoning replay; user-selected low thinking
+
+Rupi preserve_reasoning defaults false. Case 07 already claims exposed_reasoning native;
+the opt-in mapper replays only assistant blocks with Native provenance as reasoning_content.
+Pinned Pi's installed provider and actual bundle replay returned native fields by signature.
+The shared server declares --reasoning-preserve; its help describes full-history retention.
+This establishes source/configuration policies, not actual historical fields or timeout cause.
+No reasoning contents, traces, request prompts, or agent outputs were inspected.
+
+The reviewed draft .benchmark/case07-reasoning-replay-draft.ps1 was installed by bounded
+patch after retry 24. It requires an explicit native exposure claim before any endpoint
+mutation and enables preserve_reasoning for Case 07 only. Core defaults/provenance,
+prompts, tools, and native budgets remain. Summary configured_native_reasoning_replay
+records the configured policy, not observed native data. Existing all-case DryRun rejects
+missing/non-native claims without mutation and preserves unrelated settings. Tracked
+source matches the draft; off/low DryRun, CRLF, changed-line columns, diff, and parent
+invariant review pass. No Rust changes or standalone project tests.
+
+The user selected low for both agents after retry 24 and requested autonomous decisions
+without further questions. Retry 25 uses a fresh pair with the same model and other
+settings. Do not combine off/low runs or attribute an outcome solely to either change.

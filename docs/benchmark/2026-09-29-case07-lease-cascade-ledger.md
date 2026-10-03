@@ -1376,3 +1376,45 @@ extra successful requests. Pi turn 1 is running. No complete matched result yet.
 Parent usage: 73% five-hour and 47% weekly. CI passed all three OS jobs at a87e2dc.
 An optional user question asks whether the next fresh pair should use low or remain off;
 the active pair is unchanged. No generated code, tests, or diagnostics were inspected.
+
+## Twenty-fourth fresh comparison result
+
+Revision 8b91b4d; runner exit 0 and runner/direct children gone. Every oracle failed.
+
+| Agent | Turn | Work tokens | Tools | Time | Tests | Help | Oracle |
+| --- | ---: | ---: | ---: | --- | ---: | --- | ---: |
+| Pi | 1 | 19,871 | 4 | 416,102 ms completed | 0 | 0/0/0 | 1 |
+| Pi | 2 | 4,076 | 1 | 600,235 ms timeout | 0 | 0/0/0 | 1 |
+| Pi | 3 | 0 | 0 | 600,242 ms timeout | 0 | 0/0/0 | 1 |
+| Pi | 4 | 0 | 0 | 600,381 ms timeout | 0 | 0/0/0 | 1 |
+
+Pi totals: 23,947 recorded work tokens, five calls, 2,216,960 ms. Rupi totals: 54,103
+recorded work tokens, 11 completed tools, 2,170,935 ms. Tests/help passed every turn for
+both agents; every oracle failed. No strict winner; baseline low Pi remains the last
+resolved oracle winner. Rupi recorded 30,156 more work tokens and took 46,025 ms less;
+these are not exact total-consumption comparisons because timed-out inference is unknown.
+
+Pi turn 1 recorded ls and three writes; turn 2 one read; turns 3-4 zero recorded tools.
+Entry point 3,736 bytes and tests 1,619 bytes; snapshot paths/sizes stayed unchanged after
+turn 1. This does not establish content equality or coverage. No generated source, tests,
+diagnostics, traces, or aggregate results were read. Post-run usage: 82% five-hour and
+48% weekly. CI passed all three OS jobs at 5beb3db. Case 07 remains active.
+
+## Next revision: explicit native reasoning replay
+
+Source audit: Rupi defaults preserve_reasoning false, while pinned Pi's installed provider
+and bundle replay nonempty returned native fields by their signatures. The shared server
+declares --reasoning-preserve. These establish configuration/source behavior, not actual
+historical reasoning data or timeout causes. Case 07 already declares Native exposure;
+Rupi's opt-in mapper only serializes assistant Native blocks, excluding other provenance.
+
+The reviewed parent draft enables preserve_reasoning only after an explicit native claim,
+before mutating endpoint configuration. Installed after retry 24 by bounded patch; core
+defaults/provenance, prompts, tools, and budgets remain. New summary replay metadata
+records configuration only. Existing all-case DryRun checks reject missing/non-native
+claims without mutation, preserve unrelated fields, and leave other cases unchanged.
+Tracked/draft equality, off/low DryRun, CRLF, columns, diff, and parent invariant review pass.
+
+User chose low for both agents in the next fresh pair and requested no further questions.
+Fresh retry 25 keeps the same model, turn/time limits, and native request policies. Never
+combine off/low runs or attribute outcome solely to replay or thinking. Oracle evidence pending.

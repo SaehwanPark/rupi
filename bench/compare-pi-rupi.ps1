@@ -1703,8 +1703,12 @@ function Get-BenchmarkTools([hashtable]$case, [string]$agent) {
   return @()
 }
 
-function Set-BenchmarkThinkingControl([hashtable]$case, [object]$endpoint) {
+function Set-BenchmarkReasoningCompatibility([hashtable]$case, [object]$endpoint) {
   if ($case.Id -ne "07-lease-cascade") { return }
+  if ($null -eq $endpoint.capabilities -or
+      $endpoint.capabilities.exposed_reasoning -cne "native") {
+    throw "Case 07 reasoning replay requires an explicit native exposure claim."
+  }
   if ($null -eq $endpoint.PSObject.Properties["openai_compat"] -or
       $null -eq $endpoint.openai_compat) {
     $endpoint | Add-Member -MemberType NoteProperty -Name openai_compat -Force -Value (
@@ -1715,6 +1719,8 @@ function Set-BenchmarkThinkingControl([hashtable]$case, [object]$endpoint) {
     -Value "reasoning_effort"
   $endpoint.openai_compat | Add-Member -MemberType NoteProperty -Name thinking_disable -Force `
     -Value "reasoning_effort_none"
+  $endpoint.openai_compat | Add-Member -MemberType NoteProperty -Name preserve_reasoning -Force `
+    -Value $true
 }
 
 function New-BenchmarkWorkspace([hashtable]$case, [string]$agentRoot, [string]$thinkingLevel) {
@@ -1754,7 +1760,7 @@ function New-BenchmarkWorkspace([hashtable]$case, [string]$agentRoot, [string]$t
       $config.limits.max_model_requests_per_turn = $MaxModelRequestsPerTurn
     }
     if ($config.endpoints -and $config.endpoints.Count -gt 0) {
-      Set-BenchmarkThinkingControl $case $config.endpoints[0]
+      Set-BenchmarkReasoningCompatibility $case $config.endpoints[0]
       if ($config.endpoints[0].capabilities) {
         $config.endpoints[0].capabilities.max_output_tokens = 16384
       }
@@ -2022,6 +2028,7 @@ function Invoke-AgentCase([hashtable]$case, [string]$agent, [string]$root, [stri
         dialect = "reasoning_effort"
         off_value = "none"
       }
+      $turnRecord["configured_native_reasoning_replay"] = $true
     }
     Write-Json (Join-Path $turnRoot "summary.json") $turnRecord
     [void]$turns.Add($turnRecord)
@@ -2059,29 +2066,53 @@ if ($DryRun) {
       if ((@(Get-BenchmarkTools $_ "pi") -join ",") -ne "read,write,edit,grep,find,ls") {
         throw "Case 07 Pi tool allowlist differs from its file-only profile."
       }
-      $thinkingEndpoints = @(
-        [pscustomobject]@{}
-        [pscustomobject]@{ openai_compat = $null }
+      $reasoningEndpoints = @(
         [pscustomobject]@{
+          capabilities = [pscustomobject]@{ exposed_reasoning = "native" }
+        }
+        [pscustomobject]@{
+          capabilities = [pscustomobject]@{ exposed_reasoning = "native" }
+          openai_compat = $null
+        }
+        [pscustomobject]@{
+          capabilities = [pscustomobject]@{ exposed_reasoning = "native" }
           openai_compat = [pscustomobject]@{
             thinking_input = "none"
             thinking_disable = "omit"
+            preserve_reasoning = $false
             stream = $false
             max_tokens_field = "max_tokens"
           }
         }
       )
-      foreach ($endpoint in $thinkingEndpoints) {
-        Set-BenchmarkThinkingControl $_ $endpoint
+      foreach ($endpoint in $reasoningEndpoints) {
+        Set-BenchmarkReasoningCompatibility $_ $endpoint
         if ($endpoint.openai_compat.thinking_input -ne "reasoning_effort" -or
-            $endpoint.openai_compat.thinking_disable -ne "reasoning_effort_none") {
-          throw "Case 07 thinking control must explicitly match Pi's off mapping."
+            $endpoint.openai_compat.thinking_disable -ne "reasoning_effort_none" -or
+            $endpoint.openai_compat.preserve_reasoning -ne $true) {
+          throw "Case 07 must configure explicit thinking control and native reasoning replay."
         }
       }
-      $preservedCompat = $thinkingEndpoints[2].openai_compat
+      foreach ($exposure in @($null, "none", "provider_summary", "declared")) {
+        $invalidEndpoint = [pscustomobject]@{
+          capabilities = [pscustomobject]@{ exposed_reasoning = $exposure }
+        }
+        $endpointBefore = $invalidEndpoint | ConvertTo-Json -Depth 4 -Compress
+        $rejected = $false
+        try { Set-BenchmarkReasoningCompatibility $_ $invalidEndpoint } catch {
+          if ($_.Exception.Message -ne
+              "Case 07 reasoning replay requires an explicit native exposure claim.") { throw }
+          $rejected = $true
+        }
+        if (-not $rejected -or
+            ($invalidEndpoint | ConvertTo-Json -Depth 4 -Compress) -ne $endpointBefore) {
+          throw "Case 07 must reject non-native exposure before mutating endpoint compatibility."
+        }
+      }
+      $preservedCompat = $reasoningEndpoints[2].openai_compat
       if ($preservedCompat.stream -ne $false -or
           $preservedCompat.max_tokens_field -ne "max_tokens") {
-        throw "Case 07 thinking control must preserve other endpoint compatibility settings."
+        throw "Case 07 reasoning compatibility must preserve other endpoint settings."
       }
       $entrypointGuidance = Get-CaseGuidance $_ "entrypoint"
       $entrypointRequirements = @(
@@ -2195,7 +2226,7 @@ if ($DryRun) {
         openai_compat = [pscustomobject]@{ thinking_input = "none" }
       }
       $endpointBefore = $unchangedEndpoint | ConvertTo-Json -Depth 4 -Compress
-      Set-BenchmarkThinkingControl $_ $unchangedEndpoint
+      Set-BenchmarkReasoningCompatibility $_ $unchangedEndpoint
       if (($unchangedEndpoint | ConvertTo-Json -Depth 4 -Compress) -ne $endpointBefore) {
         throw "Non-Case 07 endpoint compatibility settings must remain unchanged."
       }
