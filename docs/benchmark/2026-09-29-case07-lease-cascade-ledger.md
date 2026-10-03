@@ -1102,3 +1102,19 @@ Pi's final turn completed four edits and two writes, growing storage.py to 11,53
 and adding server.py and worker.py. Entry-point/test-file sizes stayed unchanged through
 all four turns. Rupi's test-file sizes also remained unchanged; coverage is unknown.
 Post-run parent usage: 80% five-hour and 33% weekly. Only permitted evidence was inspected.
+
+## Next revision: connected initial write
+
+Initial guidance previously required a CLI/health foundation and deferred the workflow to
+later attempts. Retry 20 passed that foundation but never passed the oracle; test-file sizes
+stayed unchanged for both agents. The next measured hypothesis requests a compact complete
+public-spec workflow in the first __main__.py write, targeting 350-450 lines, followed by
+separate test-module and initializer writes. Keep workflow code in that entry point.
+
+Existing recovery still uses 80-line edits and public-spec fixtures. The compact CLI/health
+entrypoint fallback remains available if the initial write does not create an application.
+Native tools, request policies, shared budgets, other cases, and Rust code are unchanged.
+No oracle failure cause or generated test coverage is inferred from snapshot sizes.
+
+Parent invariant-review verdict: pass. All-case DryRun, diff, CRLF, and changed-line
+100-column checks pass. Fresh matched oracle evidence is pending for retry 21.

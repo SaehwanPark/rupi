@@ -13,10 +13,10 @@ pinned Pi 0.86.1 on the oracle.
 - Worktree: `C:\Users\saehwan\repos\rupi-case07-lease-cascade`
 - Branch: `fix/case07-lease-cascade`
 - Draft PR: [#139](https://github.com/SaehwanPark/rupi/pull/139)
-- Latest benchmark change aligns early workflow-test guidance with recovery priority,
-  completion, and file-read instructions in `bench/compare-pi-rupi.ps1`. It also clarifies
-  project-relative paths. Bounded edits, native file tools, and request policies remain.
-  Retry 19 is complete; retry 20 has not started.
+- Latest benchmark change requests a compact, connected workflow in the initial source
+  write, then the test module and initializer. Recovery retains bounded edits and the
+  compact entrypoint fallback. Native file tools and request policies remain unchanged.
+  Retry 20 is complete; retry 21 has not started.
 - Case 07 remains active. No retry after the baseline produced a strict oracle winner;
   the baseline Pi strict oracle win remains the last resolved result.
 - Request-budget clarification: the eight-request parameter caps Rupi. Pi retains its
@@ -28,14 +28,14 @@ pinned Pi 0.86.1 on the oracle.
 - No Rust source changes were made. The benchmark uses the existing
   `target/debug/rupi.exe`; the installed Rust toolchain lacks the Cargo component.
 
-## Latest completed comparison: retry 19
+## Latest completed comparison: retry 20
 
-Run: `bench-20261003-case07-workflow-fixtures-retry19-matched4-600s`.
+Run: `bench-20261003-case07-coherent-recovery-retry20-matched4-600s`.
 
 | Agent | Work tokens | Tools | Tests | Help | Oracle |
 | --- | ---: | ---: | ---: | --- | ---: |
-| Rupi | 81,170 | 19 | Passed all turns | Passed all turns | Failed all turns |
-| Pi | 37,096 | 22 | Passed turns 3-4 | Passed turns 3-4 | Failed all turns |
+| Rupi | 78,598 | 19 | Passed all turns | Passed all turns | Failed all turns |
+| Pi | 35,800 | 15 | Passed all turns | Passed all turns | Failed all turns |
 
 Neither agent resolved the oracle. The per-turn results and timings are in
 [the Case 07 ledger](2026-09-29-case07-lease-cascade-ledger.md).
@@ -275,3 +275,14 @@ unchanged through all four turns; storage grew and server/worker modules were ad
 Both agents passed tests/help every turn and failed every oracle check. No strict winner.
 Rupi used 42,798 more work tokens and took 123,574 ms longer. Runner exit 0; process tree
 gone. Post-run parent usage: 80% five-hour and 33% weekly. Retry 21 has not started.
+
+## Next revision: connected initial write
+
+The initial source write now requests admission, retrieval, and worker behavior together
+in a compact self-contained module, targeting 350-450 lines. The next two writes still
+create the test module and initializer, then yield for harness feedback. Helper modules
+are deferred by keeping workflow code in the entry point across attempts. Recovery keeps
+80-line edits, public-spec workflow tests, and the existing compact entrypoint fallback.
+This is a prompt hypothesis; it does not establish why previous oracle checks failed.
+All-case DryRun, diff, changed-line 100-column, CRLF checks, and parent invariant review
+pass. A fresh matched retry 21 is required. No standalone project tests were run.
