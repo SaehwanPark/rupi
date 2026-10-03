@@ -1576,3 +1576,23 @@ Native tools/request policies, four turns, 600-second outer limits, six-second g
 Rupi turn 1 active; runner 24136, wrapper 38908, session 14217. Unread runner log retained.
 Generated discovery profile exists/empty; actual model context remains uninspected. Last
 usage 32% five-hour and 55% weekly; next reset 06:16 PM ET. No new oracle result yet.
+
+## Twenty-seventh comparison progress: Rupi complete
+
+| Turn | Work tokens | Tool requests | Time | Tests | Help | Oracle |
+| ---: | ---: | ---: | --- | ---: | --- | ---: |
+| 1 | 19,990 | 5 | 247,219 ms completed | 0 | 0/0/0 | 1 |
+| 2 | 29,741 | 2 | 600,400 ms timeout | 0 | 0/0/0 | 1 |
+| 3 | 13,490 | 8 | 600,327 ms timeout | 1 | 0/0/0 | 1 |
+| 4 | 25,433 | 3 | 222,135 ms completed | 1 | 0/0/0 | 1 |
+
+Totals: 88,654 recorded work tokens, 18 completed tool requests, zero failures/Unknown,
+1,670,081 ms. Every oracle failed; help passed throughout, tests passed turns 1-2 only.
+Turn 1 read/four writes; README 3,998 bytes, source 2,831 bytes, tests 1,181 bytes.
+Turn 2 read/edit; tests 1,415 bytes, source/README sizes unchanged. Turn 3 eight edits;
+source 8,540 bytes, tests 11,755 bytes. Turn 4 two reads/edit; source 8,549 bytes,
+test/README sizes unchanged. All Rupi summaries record empty_child_profile and native replay.
+Completion counters include abandoned prior-turn requests. Content/coverage, failure causes,
+and actual reasoning unknown. Pi turn 1 active; source/server settings remain fixed.
+Parent usage 46% five-hour and 57% weekly; next reset 06:16 PM ET. CI passed all jobs
+at f90339e. No strict Rupi win is possible from this pair; finish Pi before classification.

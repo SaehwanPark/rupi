@@ -22,7 +22,7 @@ pinned Pi 0.86.1 on the oracle.
   The latest revision isolates Rupi's global skill discovery, requests a compact README
   as the fourth foundation write, and uses public interfaces in workflow tests.
   Recovery from known edit failures and protection for Unknown mutations remain.
-  Retry 27 is running with that revision; Rupi turn 1 is active.
+  Retry 27 Rupi is complete: every oracle failed. Pi turn 1 is active.
 - Case 07 remains active. No retry after the baseline produced a strict oracle winner;
   the baseline Pi strict oracle win remains the last resolved result.
 - Request-budget clarification: the eight-request parameter caps Rupi. Pi retains its
@@ -616,3 +616,16 @@ Runner 24136, wrapper 38908, tool session 14217. Output remains unread in
 `.benchmark/retry27-runner-unread.log`. Generated discovery profile exists and is empty;
 this is configuration/filesystem evidence, not inspected model context. Last parent usage
 32% five-hour and 55% weekly; next reset 06:16 PM ET. No new oracle evidence yet.
+
+Rupi complete: 88,654 recorded work tokens, 18 completed tool requests, zero failures or
+Unknown, 1,670,081 ms. Help passed throughout; tests passed turns 1-2 and failed 3-4.
+Every oracle failed. Turn 1 completed at 247,219 ms with read/four writes; README 3,998
+bytes, source 2,831 bytes, tests 1,181 bytes. Turn 2 outer timeout at 600,400 ms with
+read/edit; tests grew to 1,415 bytes, source/README sizes unchanged. Turn 3 outer timeout
+at 600,327 ms with eight completed edits; source 8,540 bytes, tests 11,755 bytes.
+Turn 4 completed at 222,135 ms with two reads/edit; source 8,549 bytes, test/README sizes
+unchanged. Model completion counters include abandoned prior-turn requests. Content,
+coverage, failure causes, and actual reasoning remain unknown. Every Rupi summary records
+empty_child_profile and native replay enabled. Pi turn 1 active; pair remains incomplete.
+Parent usage 46% five-hour and 57% weekly; next reset 06:16 PM ET. CI passed all three
+OS jobs at f90339e. Source/server settings remain fixed until the pair finishes.
