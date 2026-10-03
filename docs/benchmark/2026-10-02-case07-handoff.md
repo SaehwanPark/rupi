@@ -347,3 +347,11 @@ existing binary, native file tools/request policies, and standard shared budgets
 turn 1 is running. Runner PID: 27812; tool session: 18505. Output remains unread in
 `.benchmark/retry22-runner-unread.log`. Inspect only permitted per-turn metadata/help;
 configured_thinking_control describes the configuration, not observed requests/reasoning.
+Rupi is complete: 59,786 work tokens, 16 tool requests (15 completions, one failure),
+1,983,746 ms. Turn 1 runtime timeout with zero recorded work/tools; turn 2 outer timeout
+with three writes and failed tests. Turn 3 restored tests/help in 266,218 ms; turn 4 ended
+at its request budget in 523,198 ms. Every oracle failed. Final entry point: 20,377 bytes;
+test module: 4,591 bytes. All summaries record configured off/reasoning_effort/none.
+Pi turn 1 is running. Parent usage: 17% five-hour and 38% weekly. PR CI passed on all
+three OS jobs. Source audit found no evidence that the initial specification was dropped
+on provider failure; no session traces were inspected and recovery remains unchanged.

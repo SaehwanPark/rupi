@@ -1213,3 +1213,27 @@ Pre-run usage: 4% five-hour and 36% weekly. Both configurations explicitly map o
 reasoning_effort none. Current prompt, existing binary, native file tools/request policies,
 and standard shared turn/time/model/thinking settings. Rupi turn 1 is running.
 No oracle outcome yet. Configured-control metadata is not an observed wire trace.
+
+## Twenty-second comparison progress: Rupi complete
+
+| Turn | Work tokens | Tools | Time | Tests | Help | Oracle |
+| ---: | ---: | ---: | --- | ---: | --- | ---: |
+| 1 | 0 | 0 | 594,150 ms runtime timeout | 1 | 1/1/1 | 1 |
+| 2 | 12,685 | 3 | 600,180 ms timeout | 1 | 0/0/0 | 1 |
+| 3 | 10,438 | 6 | 266,218 ms | 0 | 0/0/0 | 1 |
+| 4 | 36,663 | 7 | 523,198 ms | 0 | 0/0/0 | 1 |
+
+Rupi totals: 59,786 work tokens, 16 tool requests (15 completions, one failure),
+1,983,746 ms. Every summary records configured off/reasoning_effort/none. Turn 1 created
+no application/tests. Turn 2 completed three writes: entry point 6,796 bytes and test
+module 4,212 bytes; help passed, tests failed. Turn 3 restored passing tests/help with
+four edit requests and two reads; one request failed. Entry point reached 7,048 bytes;
+tests 4,591 bytes. Turn 4 completed seven edits and exhausted the eight-request budget;
+entry point reached 20,377 bytes, test-file sizes stayed unchanged. Every oracle failed.
+Coverage and failure causes remain unknown. Pi turn 1 is running; no matched result yet.
+
+Source audit records user input before the first provider request and restores projected
+messages on resume. No source evidence of lost initial specification was found; session
+traces were not inspected. Relevant source dates precede the existing binary timestamp,
+which is not proof of its build revision. No prompt or binary changes during this run.
+Parent usage: 17% five-hour and 38% weekly. PR CI passed on macOS, Ubuntu, and Windows.
