@@ -16,7 +16,7 @@ pinned Pi 0.86.1 on the oracle.
 - Latest benchmark change requests a compact, connected workflow in the initial source
   write, then the test module and initializer. Recovery retains bounded edits and the
   compact entrypoint fallback. Native file tools and request policies remain unchanged.
-  Retry 20 is complete; retry 21 has not started.
+  Retry 20 is complete; retry 21 is running at revision `01b0203`.
 - Case 07 remains active. No retry after the baseline produced a strict oracle winner;
   the baseline Pi strict oracle win remains the last resolved result.
 - Request-budget clarification: the eight-request parameter caps Rupi. Pi retains its
@@ -145,8 +145,8 @@ then separate test-module and initializer writes. Evaluate the revision as a fre
 
 1. Start in the benchmark worktree and confirm branch `fix/case07-lease-cascade`.
 2. Make a fresh Codex usage check before launching another benchmark.
-3. Retry 20 is complete without an oracle pass. Use a fresh pair for any next prompt
-   revision. Treat retry 13 as incomplete; do not combine different runs.
+3. Retry 21 is running for the connected-initial-write revision; retry 20 is complete
+   without an oracle pass. Treat retry 13 as incomplete; do not combine different runs.
 4. Use pinned Pi at
    `..\rupi\.benchmark\tools\pi-0.86.1\pi.ps1` and the standard settings:
    Case 07, four turns, 600 seconds per turn, 6-second provider grace, eight requests per
@@ -286,3 +286,12 @@ are deferred by keeping workflow code in the entry point across attempts. Recove
 This is a prompt hypothesis; it does not establish why previous oracle checks failed.
 All-case DryRun, diff, changed-line 100-column, CRLF checks, and parent invariant review
 pass. A fresh matched retry 21 is required. No standalone project tests were run.
+
+## Retry 21: running
+
+Run: `bench-20261003-case07-connected-initial-retry21-matched4-600s`, revision `01b0203`.
+Pre-run usage: 81% five-hour and 33% weekly. Existing binary, native file tools/request
+policies, and standard shared turn/time/model/thinking settings. Rupi turn 1 is running.
+Runner PID: 24236; tool session: 71986. Output stays unread in
+`.benchmark/retry21-runner-unread.log`. Next five-hour reset is 2026-10-03 08:14 AM ET.
+At 95% usage, follow the root policy and wait through reset plus two minutes.

@@ -1118,3 +1118,10 @@ No oracle failure cause or generated test coverage is inferred from snapshot siz
 
 Parent invariant-review verdict: pass. All-case DryRun, diff, CRLF, and changed-line
 100-column checks pass. Fresh matched oracle evidence is pending for retry 21.
+
+## Twenty-first matched retry started
+
+Run: `bench-20261003-case07-connected-initial-retry21-matched4-600s`, revision `01b0203`.
+Pre-run usage: 81% five-hour and 33% weekly. Existing binary, native file tools/request
+policies, and standard shared turn/time/model/thinking settings. Rupi turn 1 is running.
+No oracle outcome yet; output stays unread. Next five-hour reset: 08:14 AM ET.
