@@ -1418,3 +1418,12 @@ Tracked/draft equality, off/low DryRun, CRLF, columns, diff, and parent invarian
 User chose low for both agents in the next fresh pair and requested no further questions.
 Fresh retry 25 keeps the same model, turn/time limits, and native request policies. Never
 combine off/low runs or attribute outcome solely to replay or thinking. Oracle evidence pending.
+
+## Twenty-fifth fresh comparison launched
+
+Run: `bench-20261003-case07-native-replay-low-retry25-matched4-600s`, source `7c653e7`.
+Started 2026-10-03 12:39 PM ET. User-selected low for both agents, explicit thinking
+control, configured native reasoning replay. Existing binary/model, native file tools and
+request policies, four turns, 600-second outer limits, six-second provider grace. Rupi
+turn 1 running. Runner 6136, wrapper 19360, tool session 74861. Runner output stays unread.
+Last parent usage 82% five-hour and 48% weekly. No outcome yet; Case 07 remains active.

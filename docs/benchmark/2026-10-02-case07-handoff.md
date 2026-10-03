@@ -473,3 +473,14 @@ invariant review pass. No Rust changes or standalone project tests.
 The user selected low for both agents after retry 24 and requested autonomous decisions
 without further questions. Retry 25 uses a fresh pair with the same model and other
 settings. Do not combine off/low runs or attribute an outcome solely to either change.
+
+## Retry 25: active
+
+Run: `bench-20261003-case07-native-replay-low-retry25-matched4-600s`, revision `7c653e7`.
+Started 2026-10-03 12:39 PM ET after the reviewed source was committed and pushed.
+Low for both agents; existing binary, model, native file tools/request policies, four
+turns, 600-second outer limits, and six-second provider grace. Rupi turn 1 is running.
+Runner PID 6136; wrapper PID 19360; tool session 74861. Output remains unread in
+`.benchmark/retry25-runner-unread.log`. Only per-turn summary/files/help are permitted.
+No new oracle evidence yet. Last usage: 82% five-hour and 48% weekly; next reset 01:16 PM
+ET, with the policy wait through 01:18 PM if 95% is reached. Source stays fixed mid-pair.
