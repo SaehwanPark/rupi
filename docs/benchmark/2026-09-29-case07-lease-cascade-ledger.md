@@ -1596,3 +1596,48 @@ Completion counters include abandoned prior-turn requests. Content/coverage, fai
 and actual reasoning unknown. Pi turn 1 active; source/server settings remain fixed.
 Parent usage 46% five-hour and 57% weekly; next reset 06:16 PM ET. CI passed all jobs
 at f90339e. No strict Rupi win is possible from this pair; finish Pi before classification.
+
+## Twenty-seventh fresh comparison result
+
+Source 33e8996, low/native replay, isolated skill discovery and public deliverables.
+
+| Agent | Turn | Work tokens | Tool requests | Time | Tests | Help | Oracle |
+| --- | ---: | ---: | ---: | --- | --- | --- | ---: |
+| Pi | 1 | 8,701 | 4 | 143,023 ms completed | 0 | 0/0/0 | 1 |
+| Pi | 2 | 8,657 | 5 | 219,961 ms completed | timeout | 0/0/0 | 1 |
+| Pi | 3 | 15,079 | 7 | 600,303 ms timeout | 1 | 1/1/1 | 1 |
+| Pi | 4 | 9,369 | 6 | 133,499 ms completed | 1 | 0/0/0 | 1 |
+
+Pi totals: 41,806 recorded work tokens, 22 calls, 1,096,786 ms. All oracles failed.
+Tests turn 2 timed out at 180,163 ms (exit null); tests passed only turn 1. Help passed
+turns 1,2,4. Permitted turn 3 help stderr identifies an unterminated triple-quoted string
+preventing entry-point import; this is not an oracle diagnosis. Turn 1 four writes,
+README 3,335/source 3,022/tests 1,114 bytes. Turn 2 read/three edits/ls; tests 7,230 bytes,
+source/README sizes unchanged. Turn 3 two reads/five edits; source 19,777 bytes. Turn 4
+four reads/two edits; source 19,587 bytes, test/README sizes unchanged. Failure/Unknown
+metrics null; content/coverage and oracle causes unknown.
+
+Rupi: 88,654 recorded work tokens, 18 completed requests, 1,670,081 ms; all oracles failed.
+No strict winner. Rupi recorded 46,848 more work tokens and took 573,295 ms more;
+unrecorded inference remains unknown. Baseline low Pi remains last resolved oracle winner.
+Runner exit 0; runner/wrapper/direct children gone. CI passed all jobs at 3ef04a4.
+Usage 56% five-hour and 58% weekly; next reset 06:16 PM ET. Case 07 remains active.
+
+## Next experiment: budgeted low thinking through a local relay
+
+Server help/pinned source separate effort hint from numeric thinking budget. Live CLI has
+low/on/preserve and no explicit budget; default -1, historical/environment behavior unknown.
+Pinned defaults use native extraction. /props generation fields are a fresh task object,
+not proof of actual chat response format. Source links are in the Case 07 handoff.
+Automatic approval review rejected preparation of a server restart script with only
+"blocked by policy". Nothing executed/created; retain the shared server.
+
+Benchmark-only relay forwards to fixed loopback upstream, adds reasoning_budget_tokens,
+requires low/same model, forwards raw streaming responses, closes upstream on disconnect,
+and never retries or logs content. Both agents use it. JSON is reserialized and connections
+close per request; the additional transport hop limits causal interpretation. Enforcement
+depends on template thinking tags. Optional Case07ReasoningBudgetTokens routes only this
+case through port 8001, with generated configuration and per-turn metadata plus preflight.
+Defaults/other cases retain routes; prompts/native policies/model/turn limits/core stay.
+Parent invariant review, Python syntax, existing all-case off/default and low/2048 DryRun
+checks pass. Evaluate a fresh pair with 2,048 tokens; source review is not oracle evidence.

@@ -13,7 +13,7 @@ pinned Pi 0.86.1 on the oracle.
 - Worktree: `C:\Users\saehwan\repos\rupi-case07-lease-cascade`
 - Branch: `fix/case07-lease-cascade`
 - Draft PR: [#139](https://github.com/SaehwanPark/rupi/pull/139)
-- Retry 26 is complete and failed every oracle for both agents; retry 21 is incomplete.
+- Retry 27 is complete and failed every oracle for both agents; retry 21 is incomplete.
   The latest benchmark change limits the foundation turn, requests workflow tests before
   expansion, and includes the complete public specification in every recovery prompt.
   Explicit thinking control, native tools/request policies, and outer budgets remain.
@@ -22,7 +22,8 @@ pinned Pi 0.86.1 on the oracle.
   The latest revision isolates Rupi's global skill discovery, requests a compact README
   as the fourth foundation write, and uses public interfaces in workflow tests.
   Recovery from known edit failures and protection for Unknown mutations remain.
-  Retry 27 Rupi is complete: every oracle failed. Pi turn 1 is active.
+  The next fresh pair will use a shared 2,048-token thinking budget through a local relay.
+  Low effort, model, prompts, native policies, and turn/time limits remain.
 - Case 07 remains active. No retry after the baseline produced a strict oracle winner;
   the baseline Pi strict oracle win remains the last resolved result.
 - Request-budget clarification: the eight-request parameter caps Rupi. Pi retains its
@@ -38,14 +39,14 @@ pinned Pi 0.86.1 on the oracle.
 - No Rust source changes were made. The benchmark uses the existing
   `target/debug/rupi.exe`; the installed Rust toolchain lacks the Cargo component.
 
-## Latest completed comparison: retry 26
+## Latest completed comparison: retry 27
 
-Run: `bench-20261003-case07-edit-recovery-low-retry26-matched4-600s`.
+Run: `bench-20261003-case07-isolated-public-low-retry27-matched4-600s`.
 
 | Agent | Work tokens | Tools | Tests | Help | Oracle |
 | --- | ---: | ---: | ---: | --- | ---: |
-| Rupi | 101,045 | 27 | Passed turns 1-2 | Passed all turns | Failed all turns |
-| Pi | 53,013 | 36 | Passed all turns | Passed all turns | Failed all turns |
+| Rupi | 88,654 | 18 | Passed turns 1-2 | Passed all turns | Failed all turns |
+| Pi | 41,806 | 22 | Passed turn 1 only | Passed turns 1,2,4 | Failed all turns |
 
 Neither agent resolved the oracle. The per-turn results and timings are in
 [the Case 07 ledger](2026-09-29-case07-lease-cascade-ledger.md).
@@ -155,7 +156,7 @@ then separate test-module and initializer writes. Evaluate the revision as a fre
 
 1. Start in the benchmark worktree and confirm branch `fix/case07-lease-cascade`.
 2. Make a fresh Codex usage check before launching another benchmark.
-3. Retry 26 is complete without an oracle pass; retry 21 is incomplete. Continue the
+3. Retry 27 is complete without an oracle pass; retry 21 is incomplete. Continue the
    latest active pair, keeping its source fixed, or launch a fresh pair after completion.
    Preserve artifacts and never combine runs. Make decisions without further questions.
 4. Use pinned Pi at
@@ -163,6 +164,9 @@ then separate test-module and initializer writes. Evaluate the revision as a fre
    Case 07, four turns, 600 seconds per turn, 6-second provider grace, eight requests per
    Rupi turn, thinking low for both. Pi retains its native request policy under those limits.
    Case 07 explicitly configures native reasoning replay and skill discovery isolation.
+   For the budget experiment, start `bench/case07-thinking-budget-relay.py --budget 2048`
+   hidden on loopback port 8001, then pass `-Case07ReasoningBudgetTokens 2048` to the runner.
+   Read only `/healthz` configuration/counters; never log or inspect model payloads.
 5. Inspect per-turn `summary.json`, `files.json`, generated help, and selected config fields.
    Do not read acceptance-test source, runner stdout/stderr, agent logs, session traces, or
    aggregate `results.json` or generated source/tests. Do not run standalone tests.
@@ -605,7 +609,7 @@ No Rust/binary changes, core tool weakening, standalone tests, or acceptance det
 Low/replay controls, model, native tools/request policies, and turn/time budgets remain.
 Evaluate a fresh retry 27; do not attribute an outcome solely to one simultaneous change.
 
-## Retry 27: active
+## Retry 27: complete
 
 Run: `bench-20261003-case07-isolated-public-low-retry27-matched4-600s`, source `33e8996`.
 Started 2026-10-03 02:48 PM ET. Existing binary/model, low for both, explicit thinking
@@ -629,3 +633,50 @@ coverage, failure causes, and actual reasoning remain unknown. Every Rupi summar
 empty_child_profile and native replay enabled. Pi turn 1 active; pair remains incomplete.
 Parent usage 46% five-hour and 57% weekly; next reset 06:16 PM ET. CI passed all three
 OS jobs at f90339e. Source/server settings remain fixed until the pair finishes.
+
+Pi complete: 41,806 recorded work tokens, 22 calls, 1,096,786 ms. All oracles failed.
+Tests passed turn 1, timed out turn 2 at 180,163 ms (exit null), and failed turns 3-4.
+Help passed turns 1,2,4. Turn 1 completed at 143,023 ms with four writes; README 3,335
+bytes, source 3,022 bytes, tests 1,114 bytes. Turn 2 completed model work at 219,961 ms
+with read/three edits/ls; tests 7,230 bytes, source/README sizes unchanged. Turn 3 outer
+timeout at 600,303 ms with two reads/five edits; source 19,777 bytes. Permitted help
+stderr reports an unterminated triple-quoted string preventing import, not an oracle
+diagnosis. Turn 4 completed at 133,499 ms with four reads/two edits; help passed, source
+19,587 bytes, test/README sizes unchanged. Pi failure/Unknown metrics are null.
+Runner exit 0; runner/wrapper/direct children gone. No strict winner. Rupi recorded
+46,848 more work tokens and took 573,295 ms more; unrecorded inference remains unknown.
+Baseline low Pi remains last resolved oracle winner. CI passed all jobs at 3ef04a4.
+Parent usage 56% five-hour and 58% weekly; next reset 06:16 PM ET. Case 07 stays active.
+
+## Next experiment: a shared numeric thinking budget
+
+Installed server help separates effort from numeric thinking budget. Live CLI declares
+reasoning on, effort low, preserve enabled, and no explicit budget. The documented default
+is -1; actual historical token composition and environment overrides remain unknown.
+Pinned build b10909-a2878d30d defaults chat extraction to DeepSeek/native. Its /props
+generation fields come from a fresh task_params object and do not establish actual chat
+response format. Sources:
+
+- [defaults](https://github.com/ggml-org/llama.cpp/blob/a2878d30d/common/common.h#L586)
+- [props][p]
+- [budget][b]
+
+[p]: https://github.com/ggml-org/llama.cpp/blob/a2878d30d/tools/server/server-context.cpp#L4184
+[b]: https://github.com/ggml-org/llama.cpp/blob/a2878d30d/tools/server/server-common.cpp#L1272
+
+Automatic approval review blocked preparation of a server restart script, stating only
+"blocked by policy". No script ran or was created, and the shared server remains unchanged.
+The safer implementation is bench/case07-thinking-budget-relay.py: fixed loopback upstream,
+low/model validation, one added reasoning_budget_tokens field, raw streaming forwarding,
+bounded transport, upstream closure on disconnect, no retries, and no content logging.
+JSON is reserialized and connections close per request; both agents use the same relay.
+This introduces a transport hop; no claim of identical latency or sole budget causation.
+Budget enforcement depends on template thinking end tags, not the configured field alone.
+
+Optional Case07ReasoningBudgetTokens defaults to zero (no harness override). A positive
+value routes only Case 07 through port 8001; both generated configurations and per-turn
+metadata use that route. Preflight verifies relay configuration and requires low effort.
+Other cases/defaults retain their routes. Core/binary, provenance, request/Unknown semantics,
+prompts, file policies, and turn limits remain. Source review found no blocking invariant
+issues. Python syntax, existing all-case off/default and low/2048 DryRun checks pass.
+Live transport is pending a fresh pair; this is a hypothesis, not oracle evidence.

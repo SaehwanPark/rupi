@@ -16,6 +16,8 @@ param(
   [int]$MaxModelRequestsPerTurn = 24,
   [ValidateSet("off", "low")]
   [string]$ThinkingLevel = "low",
+  [ValidateRange(0, 16384)]
+  [int]$Case07ReasoningBudgetTokens = 0,
   [switch]$DryRun
 )
 
@@ -1728,6 +1730,13 @@ function Invoke-External {
   }
 }
 
+function Get-BenchmarkEndpoint([hashtable]$case) {
+  if ($case.Id -eq "07-lease-cascade" -and $Case07ReasoningBudgetTokens -gt 0) {
+    return "http://127.0.0.1:8001/v1"
+  }
+  return "http://127.0.0.1:8000/v1"
+}
+
 function Get-BenchmarkTools([hashtable]$case, [string]$agent) {
   if ($case.Id -eq "07-lease-cascade") {
     if ($agent -eq "rupi") { return @("read", "write", "edit", "grep") }
@@ -1805,6 +1814,9 @@ function New-BenchmarkWorkspace([hashtable]$case, [string]$agentRoot, [string]$t
     }
     if ($config.endpoints -and $config.endpoints.Count -gt 0) {
       Set-BenchmarkReasoningCompatibility $case $config.endpoints[0]
+      if ($case.Id -eq "07-lease-cascade" -and $Case07ReasoningBudgetTokens -gt 0) {
+        $config.endpoints[0].base_url = Get-BenchmarkEndpoint $case
+      }
       if ($config.endpoints[0].capabilities) {
         $config.endpoints[0].capabilities.max_output_tokens = 16384
       }
@@ -1821,13 +1833,13 @@ function New-BenchmarkWorkspace([hashtable]$case, [string]$agentRoot, [string]$t
   [pscustomobject]@{ project = $project; config = $configPath; acceptance = (Join-Path $agentRoot "acceptance") }
 }
 
-function New-PiConfig([string]$agentRoot) {
+function New-PiConfig([string]$agentRoot, [hashtable]$case) {
   $piConfig = Join-Path $agentRoot "pi-config"
   New-Item -ItemType Directory -Force -Path $piConfig | Out-Null
   $models = [ordered]@{
     providers = [ordered]@{
       unsloth = [ordered]@{
-        baseUrl = "http://127.0.0.1:8000/v1"
+        baseUrl = Get-BenchmarkEndpoint $case
         api = "openai-completions"
         apiKey = "local"
         models = @([ordered]@{
@@ -2008,7 +2020,7 @@ function Invoke-AgentCase([hashtable]$case, [string]$agent, [string]$root, [stri
   $agentRoot = Join-Path $root $agent
   New-Item -ItemType Directory -Force -Path $agentRoot | Out-Null
   $workspace = New-BenchmarkWorkspace $case $agentRoot $thinkingLevel
-  $piConfig = New-PiConfig $agentRoot
+  $piConfig = New-PiConfig $agentRoot $case
   $benchmarkEnvironment = Get-BenchmarkEnvironment $case $agent $agentRoot
   if ($benchmarkEnvironment.ContainsKey("USERPROFILE")) {
     New-Item -ItemType Directory -Path $benchmarkEnvironment.USERPROFILE -Force | Out-Null
@@ -2079,6 +2091,10 @@ function Invoke-AgentCase([hashtable]$case, [string]$agent, [string]$root, [stri
         dialect = "reasoning_effort"
         off_value = "none"
       }
+      $turnRecord["configured_model_endpoint"] = Get-BenchmarkEndpoint $case
+      $turnRecord["configured_reasoning_budget_tokens"] = if ($Case07ReasoningBudgetTokens -gt 0) {
+        $Case07ReasoningBudgetTokens
+      } else { $null }
       $turnRecord["configured_native_reasoning_replay"] = $true
       $turnRecord["configured_skill_discovery"] = if ($agent -eq "rupi") {
         "empty_child_profile"
@@ -2113,6 +2129,13 @@ if ($DryRun) {
   Write-Host "Recovery feedback scope: $recoveryFeedbackScope"
   $cases | ForEach-Object {
     [void](Get-InitialPrompt $_)
+    $expectedEndpoint = if ($_.Id -eq "07-lease-cascade" -and
+        $Case07ReasoningBudgetTokens -gt 0) {
+      "http://127.0.0.1:8001/v1"
+    } else { "http://127.0.0.1:8000/v1" }
+    if ((Get-BenchmarkEndpoint $_) -cne $expectedEndpoint) {
+      throw "The reasoning relay must only change Case 07's configured endpoint."
+    }
     $environmentRoot = Join-Path ([IO.Path]::GetTempPath()) "rupi-case07-environment"
     $rupiEnvironment = Get-BenchmarkEnvironment $_ "rupi" $environmentRoot
     $piEnvironment = Get-BenchmarkEnvironment $_ "pi" $environmentRoot
@@ -2439,6 +2462,16 @@ if ($DryRun) {
   }
   exit 0
 }
+if ($Case07ReasoningBudgetTokens -gt 0 -and
+    @($cases | Where-Object Id -eq "07-lease-cascade").Count -gt 0) {
+  $relay = Invoke-RestMethod "http://127.0.0.1:8001/healthz" -TimeoutSec 5
+  if ($ThinkingLevel -ne "low" -or
+      $relay.reasoning_budget_tokens -ne $Case07ReasoningBudgetTokens -or
+      $relay.upstream -cne "http://127.0.0.1:8000/v1" -or
+      $relay.content_logging -ne $false) {
+    throw "Case 07 relay configuration differs from the requested low-budget experiment."
+  }
+}
 if ($Agent -ne "rupi") {
   $piLauncher = if ([string]::IsNullOrWhiteSpace($PiExecutable)) {
     (Get-Command pi -ErrorAction Stop).Source
@@ -2485,7 +2518,12 @@ $summary = [ordered]@{
   model = "qwen3.8-flash-next"
   thinking_level = $ThinkingLevel
   recovery_feedback_scope = $recoveryFeedbackScope
-  endpoint = "http://127.0.0.1:8000/v1"
+  endpoint = if ($cases.Count -eq 1) {
+    Get-BenchmarkEndpoint $cases[0]
+  } else { "http://127.0.0.1:8000/v1" }
+  case07_reasoning_budget_tokens = if ($Case07ReasoningBudgetTokens -gt 0) {
+    $Case07ReasoningBudgetTokens
+  } else { $null }
   max_turns = $MaxTurns
   turn_timeout_seconds = $TurnTimeoutSeconds
   provider_timeout_grace_seconds = $script:providerTimeoutGraceSeconds
