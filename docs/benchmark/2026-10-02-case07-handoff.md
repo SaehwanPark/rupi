@@ -193,5 +193,10 @@ Pre-run usage: 3% five-hour and 21% weekly. Standard matched settings, existing 
 and native file tools unchanged. Rupi turn 1 finished in 208,058 ms with 13,740 work tokens
 and four tools: tests and all help passed; oracle failed. Turn 2 ended after 538,470 ms
 with 31,527 work tokens and seven tools; tests/help passed, oracle failed. Turn 3 is running.
+Turn 3 ended in 493,556 ms with 39,667 work tokens and seven tools; tests/help passed,
+oracle failed. Turn 4 reported runtime timeout at 549,232 ms with zero work/tools.
+Rupi totals: 84,934 work tokens, 18 tools, 1,789,316 ms. Tests/help passed every turn;
+oracle failed every turn. Pi turn 1 is running; the matched comparison is incomplete.
+Post-Rupi usage: 14% five-hour and 23% weekly. Runner PID: 31568; tool session: 47775.
 Runner output remains unread in
 `.benchmark/retry18-runner-unread.log`. Artifacts are under `.benchmark/runs/` and this run ID.

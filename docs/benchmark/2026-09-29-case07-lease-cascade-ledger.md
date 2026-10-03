@@ -874,3 +874,16 @@ native file-tool allowlist. Turn 2 is running; no matched outcome yet.
 Turn 2 ended after 538,470 ms without outer timeout: 31,527 work tokens, seven tools,
 tests exit 0, all help checks exit 0, and oracle exit 1. Turn 3 is running. This turn has
 recorded work, unlike the zero-work workflow timeouts in retry 17; a strict win is still absent.
+
+## Eighteenth retry progress: Rupi complete, Pi running
+
+Turn 2 completed seven successful edits and exhausted the eight-request budget, growing the
+entry point from 4,707 to 16,971 bytes. Turn 3 ended after 493,556 ms with 39,667 work
+tokens and seven successful tools (one read, one grep, five edits), again exhausting the
+request budget. Its entry point grew to 22,414 bytes. Tests/help passed; oracle failed.
+
+Turn 4 reported runtime timeout after 549,232 ms with zero work/tools and unchanged files.
+Rupi totals: 84,934 work tokens, 18 tools, 1,789,316 ms. Tests/help passed every turn;
+oracle failed every turn. Test files stayed unchanged after turn 1. No timeout cause or
+workflow correctness is inferred from source size. Pi turn 1 is running; no matched outcome.
+Post-Rupi parent usage: 14% five-hour and 23% weekly.
