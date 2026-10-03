@@ -1566,3 +1566,13 @@ entrypoint, completion, priority, and guards agree on four writes; public test b
 are guarded. Model, binary, low/replay controls, tools/native budgets remain. No Rust/core
 changes, standalone tests, or acceptance details read. Fresh retry 27 is needed; simultaneous
 changes do not support attributing an outcome solely to any one change.
+
+## Twenty-seventh fresh comparison launched
+
+Run: `bench-20261003-case07-isolated-public-low-retry27-matched4-600s`, source `33e8996`.
+Started 2026-10-03 02:48 PM ET. Existing binary/model, low for both, native replay, skill
+discovery isolation, public-interface workflow tests, README as fourth foundation write.
+Native tools/request policies, four turns, 600-second outer limits, six-second grace remain.
+Rupi turn 1 active; runner 24136, wrapper 38908, session 14217. Unread runner log retained.
+Generated discovery profile exists/empty; actual model context remains uninspected. Last
+usage 32% five-hour and 55% weekly; next reset 06:16 PM ET. No new oracle result yet.

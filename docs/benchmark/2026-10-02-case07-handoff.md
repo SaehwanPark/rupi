@@ -22,6 +22,7 @@ pinned Pi 0.86.1 on the oracle.
   The latest revision isolates Rupi's global skill discovery, requests a compact README
   as the fourth foundation write, and uses public interfaces in workflow tests.
   Recovery from known edit failures and protection for Unknown mutations remain.
+  Retry 27 is running with that revision; Rupi turn 1 is active.
 - Case 07 remains active. No retry after the baseline produced a strict oracle winner;
   the baseline Pi strict oracle win remains the last resolved result.
 - Request-budget clarification: the eight-request parameter caps Rupi. Pi retains its
@@ -603,3 +604,15 @@ invariant/scope review pass. Existing guards cover README and public test bounda
 No Rust/binary changes, core tool weakening, standalone tests, or acceptance details read.
 Low/replay controls, model, native tools/request policies, and turn/time budgets remain.
 Evaluate a fresh retry 27; do not attribute an outcome solely to one simultaneous change.
+
+## Retry 27: active
+
+Run: `bench-20261003-case07-isolated-public-low-retry27-matched4-600s`, source `33e8996`.
+Started 2026-10-03 02:48 PM ET. Existing binary/model, low for both, explicit thinking
+control/native replay, skill discovery isolation, four turns, 600-second outer limits,
+six-second provider grace, and native file tools/request policies. README is requested
+as fourth foundation write; workflow tests use public interfaces. Rupi turn 1 running.
+Runner 24136, wrapper 38908, tool session 14217. Output remains unread in
+`.benchmark/retry27-runner-unread.log`. Generated discovery profile exists and is empty;
+this is configuration/filesystem evidence, not inspected model context. Last parent usage
+32% five-hour and 55% weekly; next reset 06:16 PM ET. No new oracle evidence yet.
