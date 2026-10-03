@@ -1180,3 +1180,28 @@ Pi turn 1 completed three writes in 528,043 ms with 16,794 work tokens. Entry po
 25,566 bytes; test module is 14,803 bytes; both test files are present. All help passed.
 Project tests timed out at 180,149 ms with null exit code; oracle failed. Generated test
 coverage and timeout cause are unknown. Pi turn 2 is running; only permitted evidence read.
+
+## Twenty-first retry interrupted for wire-control correction
+
+Stopped only the verified owned runner/process tree during Pi turn 2. Wrapper exit -1;
+owned processes gone, shared llama process retained, all artifacts preserved. Pi turn 2
+has no summary; turns 3-4 were not run. Rupi's four summaries and Pi's turn 1 summary
+remain the complete permitted evidence. This is an incomplete comparison with no winner.
+Do not reuse the interrupted session or combine its turns with the next fresh pair.
+
+Plan changed after the source audit established different off-mode wire controls. Correct
+that configuration before another pair while preserving the current prompt and budgets.
+
+## Correction: explicit off control
+
+Case 07 workspace generation now sets thinking_input reasoning_effort and thinking_disable
+reasoning_effort_none on Rupi's endpoint. Existing endpoint fields are preserved; other
+cases are unchanged. Pi already maps off to none. The initial/recovery prompts, native
+tools/request policies, model, thinking label, and outer limits retain their current values.
+
+New summaries record configured_thinking_control (level, dialect, off_value) for both
+agents. These are configuration diagnostics, not observed requests or recovered reasoning.
+Existing DryRun checks absent/null/existing compatibility objects, unrelated field
+preservation, and non-Case 07 configuration preservation. All-case DryRun, diff, CRLF,
+and changed-line 100-column checks pass. Parent invariant-review verdict: pass.
+Fresh oracle evidence is pending for retry 22; previous failure causes remain unknown.

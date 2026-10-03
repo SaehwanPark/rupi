@@ -13,18 +13,18 @@ pinned Pi 0.86.1 on the oracle.
 - Worktree: `C:\Users\saehwan\repos\rupi-case07-lease-cascade`
 - Branch: `fix/case07-lease-cascade`
 - Draft PR: [#139](https://github.com/SaehwanPark/rupi/pull/139)
-- Latest benchmark change requests a compact, connected workflow in the initial source
-  write, then the test module and initializer. Recovery retains bounded edits and the
-  compact entrypoint fallback. Native file tools and request policies remain unchanged.
-  Retry 20 is complete; retry 21 is running at revision `01b0203`.
+- Latest benchmark change explicitly configures Case 07 Rupi off control to match Pi's
+  reasoning_effort none mapping. The connected initial prompt, bounded recovery edits,
+  and compact entrypoint fallback are retained. Native tools/request budgets are unchanged.
+  Retry 20 is complete; retry 21 is incomplete; retry 22 has not started.
 - Case 07 remains active. No retry after the baseline produced a strict oracle winner;
   the baseline Pi strict oracle win remains the last resolved result.
 - Request-budget clarification: the eight-request parameter caps Rupi. Pi retains its
   native request policy; retry 18 Pi turn 3 recorded nine completed model requests.
   Model, configured thinking label, turn count, and outer time limits are shared.
 - Source review during retry 21 found different off-mode wire controls: the Rupi fixture
-  uses the default omission; Pi explicitly sends reasoning_effort none. Correct the
-  Case 07 Rupi endpoint override after the active pair and use a fresh comparison.
+  uses the default omission; Pi explicitly sends reasoning_effort none. The current
+  Case 07 override corrects that configuration. Use a fresh comparison for oracle evidence.
   Actual past reasoning and timeout causes remain unknown. Baseline low is unaffected.
 - The root checkout is detached at `04b229c` and retains an unrelated user change in
   `docs/ai-usage-policy.md`; leave it untouched. The task branch is now attached to the
@@ -149,8 +149,8 @@ then separate test-module and initializer writes. Evaluate the revision as a fre
 
 1. Start in the benchmark worktree and confirm branch `fix/case07-lease-cascade`.
 2. Make a fresh Codex usage check before launching another benchmark.
-3. Retry 21 is running for the connected-initial-write revision; retry 20 is complete
-   without an oracle pass. Treat retry 13 as incomplete; do not combine different runs.
+3. Retry 21 is incomplete after stopping for the off-mode wire correction. Keep its
+   artifacts and use a fresh pair. Retry 20 is complete; never combine different runs.
 4. Use pinned Pi at
    `..\rupi\.benchmark\tools\pi-0.86.1\pi.ps1` and the standard settings:
    Case 07, four turns, 600 seconds per turn, 6-second provider grace, eight requests per
@@ -291,7 +291,7 @@ This is a prompt hypothesis; it does not establish why previous oracle checks fa
 All-case DryRun, diff, changed-line 100-column, CRLF checks, and parent invariant review
 pass. A fresh matched retry 21 is required. No standalone project tests were run.
 
-## Retry 21: running
+## Retry 21: interrupted, incomplete
 
 Run: `bench-20261003-case07-connected-initial-retry21-matched4-600s`, revision `01b0203`.
 Pre-run usage: 81% five-hour and 33% weekly. Existing binary, native file tools/request
@@ -318,14 +318,23 @@ Wait completed at 08:16 AM ET; fresh parent usage is 0% five-hour and 35% weekly
 Pi turn 1 completed in 528,043 ms with 16,794 work tokens and three completed writes.
 Help passed; project tests timed out at 180,149 ms, and oracle failed. Entry point is
 25,566 bytes; test module 14,803 bytes. Pi turn 2 is running; coverage/timeout cause unknown.
+Plan changed after the wire-control audit: the owned runner/process tree was stopped
+during Pi turn 2 and verified gone; the shared llama server was retained. Wrapper exit -1.
+Pi turn 2 has no summary and turns 3-4 did not run. Preserve artifacts and do not resume
+or combine this interrupted session with the next pair. No matched result or winner.
 
-## Pending correction: explicit off control
+## Correction: explicit off control
 
 The Case 07 fixture omits openai_compat; provider defaults use reasoning_effort dialect
 and omit the field for Off. Pi's harness maps off to none and its installed provider emits
 that value. Evidence: rupi-core/src/config.rs defaults, rupi-provider/src/config.rs and
 mapping.rs, New-PiConfig in the benchmark, and pinned Pi's installed provider source.
 The observed llama process declares reasoning effort low. Do not infer actual previous
-request reasoning from this source/process evidence. Keep active retry 21 unchanged;
-after completion, set Case 07 Rupi thinking_disable to reasoning_effort_none, preserve
-other endpoint settings, verify DryRun, and evaluate a fresh pair before further tuning.
+request reasoning from this source/process evidence. Retry 21 was interrupted to correct
+the confounder. Case 07 now sets thinking_input reasoning_effort and thinking_disable
+reasoning_effort_none while preserving other endpoint settings. Per-turn summaries add
+configured_thinking_control for both agents; this records configuration, not observed wire
+requests or reasoning. The existing prompt and native budgets remain unchanged.
+All-case DryRun checks missing/null/existing compatibility objects, field preservation,
+and unchanged non-Case 07 endpoints. Diff, CRLF, changed-line 100-column, and parent
+invariant checks pass. Evaluate a fresh retry 22 before further prompt tuning.

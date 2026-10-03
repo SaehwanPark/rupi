@@ -1683,6 +1683,20 @@ function Get-BenchmarkTools([hashtable]$case, [string]$agent) {
   return @()
 }
 
+function Set-BenchmarkThinkingControl([hashtable]$case, [object]$endpoint) {
+  if ($case.Id -ne "07-lease-cascade") { return }
+  if ($null -eq $endpoint.PSObject.Properties["openai_compat"] -or
+      $null -eq $endpoint.openai_compat) {
+    $endpoint | Add-Member -MemberType NoteProperty -Name openai_compat -Force -Value (
+      [pscustomobject]@{}
+    )
+  }
+  $endpoint.openai_compat | Add-Member -MemberType NoteProperty -Name thinking_input -Force `
+    -Value "reasoning_effort"
+  $endpoint.openai_compat | Add-Member -MemberType NoteProperty -Name thinking_disable -Force `
+    -Value "reasoning_effort_none"
+}
+
 function New-BenchmarkWorkspace([hashtable]$case, [string]$agentRoot, [string]$thinkingLevel) {
   $source = Join-Path $repoRoot $case.Source
   $project = Join-Path $agentRoot $case.ProjectDir
@@ -1720,6 +1734,7 @@ function New-BenchmarkWorkspace([hashtable]$case, [string]$agentRoot, [string]$t
       $config.limits.max_model_requests_per_turn = $MaxModelRequestsPerTurn
     }
     if ($config.endpoints -and $config.endpoints.Count -gt 0) {
+      Set-BenchmarkThinkingControl $case $config.endpoints[0]
       if ($config.endpoints[0].capabilities) {
         $config.endpoints[0].capabilities.max_output_tokens = 16384
       }
@@ -1982,6 +1997,11 @@ function Invoke-AgentCase([hashtable]$case, [string]$agent, [string]$root, [stri
       $turnRecord["harness_model_request_cap"] = if ($agent -eq "rupi") {
         $MaxModelRequestsPerTurn
       } else { $null }
+      $turnRecord["configured_thinking_control"] = [ordered]@{
+        level = $thinkingLevel
+        dialect = "reasoning_effort"
+        off_value = "none"
+      }
     }
     Write-Json (Join-Path $turnRoot "summary.json") $turnRecord
     [void]$turns.Add($turnRecord)
@@ -2018,6 +2038,30 @@ if ($DryRun) {
       }
       if ((@(Get-BenchmarkTools $_ "pi") -join ",") -ne "read,write,edit,grep,find,ls") {
         throw "Case 07 Pi tool allowlist differs from its file-only profile."
+      }
+      $thinkingEndpoints = @(
+        [pscustomobject]@{}
+        [pscustomobject]@{ openai_compat = $null }
+        [pscustomobject]@{
+          openai_compat = [pscustomobject]@{
+            thinking_input = "none"
+            thinking_disable = "omit"
+            stream = $false
+            max_tokens_field = "max_tokens"
+          }
+        }
+      )
+      foreach ($endpoint in $thinkingEndpoints) {
+        Set-BenchmarkThinkingControl $_ $endpoint
+        if ($endpoint.openai_compat.thinking_input -ne "reasoning_effort" -or
+            $endpoint.openai_compat.thinking_disable -ne "reasoning_effort_none") {
+          throw "Case 07 thinking control must explicitly match Pi's off mapping."
+        }
+      }
+      $preservedCompat = $thinkingEndpoints[2].openai_compat
+      if ($preservedCompat.stream -ne $false -or
+          $preservedCompat.max_tokens_field -ne "max_tokens") {
+        throw "Case 07 thinking control must preserve other endpoint compatibility settings."
       }
       $entrypointGuidance = Get-CaseGuidance $_ "entrypoint"
       $entrypointRequirements = @(
@@ -2119,6 +2163,14 @@ if ($DryRun) {
         }
       }
     } else {
+      $unchangedEndpoint = [pscustomobject]@{
+        openai_compat = [pscustomobject]@{ thinking_input = "none" }
+      }
+      $endpointBefore = $unchangedEndpoint | ConvertTo-Json -Depth 4 -Compress
+      Set-BenchmarkThinkingControl $_ $unchangedEndpoint
+      if (($unchangedEndpoint | ConvertTo-Json -Depth 4 -Compress) -ne $endpointBefore) {
+        throw "Non-Case 07 endpoint compatibility settings must remain unchanged."
+      }
       if (@(Get-BenchmarkTools $_ "rupi").Count -ne 0) {
         throw "Non-Case 07 Rupi tools must retain their source configuration."
       }
