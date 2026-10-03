@@ -13,13 +13,14 @@ pinned Pi 0.86.1 on the oracle.
 - Worktree: `C:\Users\saehwan\repos\rupi-case07-lease-cascade`
 - Branch: `fix/case07-lease-cascade`
 - Draft PR: [#139](https://github.com/SaehwanPark/rupi/pull/139)
-- Retry 24 is complete and failed every oracle for both agents; retry 21 is incomplete.
+- Retry 25 is complete and failed every oracle for both agents; retry 21 is incomplete.
   The latest benchmark change limits the foundation turn, requests workflow tests before
   expansion, and includes the complete public specification in every recovery prompt.
-  Explicit off control, native tools/request policies, and outer budgets remain unchanged.
+  Explicit thinking control, native tools/request policies, and outer budgets remain.
   Native reasoning replay is now enabled only for Case 07's explicitly Native endpoint.
   The user selected low for both agents in the next fresh pair and requested no questions.
-  Retry 25 is running with that configuration; Rupi is complete and Pi turn 1 is active.
+  The latest revision adds recovery from explicitly unmodified failed edits, with narrow
+  target reads and exact anchors. Unknown mutations remain protected from replay.
 - Case 07 remains active. No retry after the baseline produced a strict oracle winner;
   the baseline Pi strict oracle win remains the last resolved result.
 - Request-budget clarification: the eight-request parameter caps Rupi. Pi retains its
@@ -35,14 +36,14 @@ pinned Pi 0.86.1 on the oracle.
 - No Rust source changes were made. The benchmark uses the existing
   `target/debug/rupi.exe`; the installed Rust toolchain lacks the Cargo component.
 
-## Latest completed comparison: retry 24
+## Latest completed comparison: retry 25
 
-Run: `bench-20261003-case07-visible-contract-retry24-matched4-600s`.
+Run: `bench-20261003-case07-native-replay-low-retry25-matched4-600s`.
 
 | Agent | Work tokens | Tools | Tests | Help | Oracle |
 | --- | ---: | ---: | ---: | --- | ---: |
-| Rupi | 54,103 | 11 | Passed all turns | Passed all turns | Failed all turns |
-| Pi | 23,947 | 5 | Passed all turns | Passed all turns | Failed all turns |
+| Rupi | 93,075 | 15 | Passed all turns | Passed all turns | Failed all turns |
+| Pi | 50,475 | 21 | Passed all turns | Passed all turns | Failed all turns |
 
 Neither agent resolved the oracle. The per-turn results and timings are in
 [the Case 07 ledger](2026-09-29-case07-lease-cascade-ledger.md).
@@ -475,7 +476,7 @@ The user selected low for both agents after retry 24 and requested autonomous de
 without further questions. Retry 25 uses a fresh pair with the same model and other
 settings. Do not combine off/low runs or attribute an outcome solely to either change.
 
-## Retry 25: active
+## Retry 25: complete
 
 Run: `bench-20261003-case07-native-replay-low-retry25-matched4-600s`, revision `7c653e7`.
 Started 2026-10-03 12:39 PM ET after the reviewed source was committed and pushed.
@@ -497,3 +498,35 @@ Selected generated fields confirm thinking low, Native exposure, and preserve_re
 true. These are configuration evidence, not observed native reasoning contents. Pi turn 1
 is running. Parent usage 89% five-hour and 49% weekly; reset 01:16 PM ET. Latest pushed
 head 2bdc880 passed all three CI jobs. No strict Rupi win; merge remains pending evidence.
+
+Pi complete: 50,475 recorded work tokens, 21 calls, 1,673,550 ms. Tests/help passed every
+turn; every oracle failed. Turn 1 completed at 130,470 ms with four writes, ls, and three
+greps. Turn 2 outer timeout at 600,333 ms with read and five edits; entry point 16,180
+bytes. Turn 3 completed at 342,477 ms with three edits; tests grew to 9,406 bytes. Turn 4
+outer timeout at 600,270 ms with two reads/two edits; entry point 16,290 bytes, tests
+13,373 bytes. Pi failures/Unknown are null metrics; coverage/failure causes remain unknown.
+Runner exit 0; runner/wrapper and direct children gone. No strict winner. Rupi recorded
+42,600 more work tokens and took 82,625 ms less; unrecorded timed-out inference is unknown.
+Baseline low Pi remains the last resolved oracle winner. Case 07 remains active. CI passed
+all three jobs at d2f3c8c. After the scheduled reset, usage is 6% five-hour and 51% weekly;
+next five-hour reset is 2026-10-03 06:16 PM ET. No threshold wait was needed this interval.
+
+## Next revision: recover explicitly unmodified failed edits
+
+Retry 25 Rupi's final turn ended after three edit requests, two failures, with time/request
+headroom. Causes are unknown; no actual tool diagnostics were read. Native edit source
+refuses wrong/ambiguous exact matches without mutation. Native read source adds line-number
+prefixes and bounds output. This supports a possible failure mode, not an observed cause.
+
+Reviewed draft .benchmark/case07-edit-recovery-draft.ps1 was installed by bounded patch
+after the pair finished. Common Case 07 recovery guidance requires using the actual tool
+diagnostic, reading a small current target region after explicit no-change evidence, and
+correcting a unique anchor using the native schema. Exclude display/truncation markers;
+preserve already-applied edits. Unknown mutations defer retries until reconciliation.
+After correcting a known failure, continue public contract repairs within remaining limits.
+
+The existing assembled entrypoint/workflow/local DryRun guards check every instruction.
+Tracked/draft equality, off/low DryRun, CRLF, columns, diff, and parent invariant/scope
+review pass. No Rust/core/tool implementation changes, provenance weakening, or standalone
+tests. Other cases, initial prompts, low thinking, native replay, tools, and budgets remain.
+Retry 26 must be a fresh pair; no oracle success is claimed from source review.

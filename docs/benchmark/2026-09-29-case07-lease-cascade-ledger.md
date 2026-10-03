@@ -1446,3 +1446,45 @@ bytes, test size unchanged. Failure causes and coverage unknown. Tests/help pass
 turn. Selected generated configuration confirms low thinking, Native exposure, and replay
 enabled; actual native contents remain unread. Pi turn 1 running; no complete pair result.
 Parent usage 89% five-hour and 49% weekly. All CI jobs passed at 2bdc880.
+
+## Twenty-fifth fresh comparison result
+
+Source 7c653e7, low for both, explicit thinking control/native replay. Runner exit 0;
+runner/wrapper and direct children gone. Every oracle failed; tests/help passed all turns.
+
+| Agent | Turn | Work tokens | Tool requests | Time | Tests | Help | Oracle |
+| --- | ---: | ---: | ---: | --- | ---: | --- | ---: |
+| Pi | 1 | 8,786 | 8 | 130,470 ms completed | 0 | 0/0/0 | 1 |
+| Pi | 2 | 15,039 | 6 | 600,333 ms timeout | 0 | 0/0/0 | 1 |
+| Pi | 3 | 9,990 | 3 | 342,477 ms completed | 0 | 0/0/0 | 1 |
+| Pi | 4 | 16,660 | 4 | 600,270 ms timeout | 0 | 0/0/0 | 1 |
+
+Pi totals: 50,475 recorded work tokens, 21 calls, 1,673,550 ms. Rupi totals: 93,075 work
+tokens, 15 requests (13 completions/two failures), 1,590,925 ms. No strict winner. Rupi
+recorded 42,600 more work tokens and took 82,625 ms less; timed-out inference is unknown.
+Baseline low Pi remains last resolved oracle winner; Case 07 stays active.
+
+Pi turn 1 recorded four writes, ls, and three greps. Turn 2 read then edited five times;
+entry point 16,180 bytes. Turn 3 edited three times; tests 9,406 bytes, source size unchanged.
+Turn 4 read twice and edited twice; final source 16,290 bytes, tests 13,373 bytes. Coverage
+and failure causes unknown; Pi failure/Unknown metrics are null. Generated source/tests,
+diagnostics, traces, and aggregate results remain unread. CI passed all jobs at d2f3c8c.
+Post-reset usage: 6% five-hour and 51% weekly; next reset 06:16 PM ET. No threshold wait
+needed this interval. Selected generated configuration reads were also used, as permitted.
+
+## Next revision: recover known edit failures using current file text
+
+Rupi final turn: two failed edits, zero Unknown, then stop with time/request headroom.
+Actual causes are unknown. Native source requires exact anchors, refuses bad/ambiguous
+matches without mutation, and displays numbered/bounded reads. The candidate addresses
+a possible failure mode without claiming those source behaviors caused these failures.
+
+Installed reviewed parent draft after retry 25. Common Case 07 recovery instructions use
+actual diagnostics and permit correction only with explicit no-change evidence: read a
+narrow current target region, exclude display/truncation markers, use a unique exact anchor
+and native schema. Preserve already-applied changes; defer Unknown retries until reconciled.
+Continue public contract repair after correcting a known failure within remaining budgets.
+Existing assembled prompt guards cover entrypoint/workflow/local. Tracked/draft equality,
+off/low DryRun, CRLF, columns, whitespace, and parent invariant/scope review pass. Core/tool
+semantics and provenance remain. Initial prompts, other cases, low/replay controls, native
+tools, and budgets remain. Fresh retry 26 is needed; source review is not oracle evidence.

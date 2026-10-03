@@ -1457,9 +1457,21 @@ If anything remains incomplete, state it instead of claiming success.
   if ($case.Id -eq "07-lease-cascade") {
     $case07SpecPath = Join-Path (Join-Path $repoRoot $case.Source) "SPEC.md"
     $case07Spec = [IO.File]::ReadAllText($case07SpecPath)
+    $editRecovery = @(
+      'Use the actual edit diagnostic; an attempted edit is not a completed change.'
+      'If a failed edit explicitly made no change, read its target file before correcting it.'
+      'Read a small target region with offset/limit; narrow it if the response is truncated.'
+      'Use file text in edit anchors, excluding displayed line numbers and truncation markers.'
+      'Then edit the observed current text with a unique anchor and the native tool schema.'
+      'Do not guess another stale anchor or rewrite the whole application after a failed edit.'
+      'If the diagnostic says already applied, inspect the file and preserve the completed change.'
+      'For an Unknown mutation, inspect current state and defer retry until reconciliation.'
+      'After a known failure is corrected, continue public contract repairs within this attempt.'
+      'Do not end an attempt merely because an edit failed while time and requests remain.'
+    ) -join [Environment]::NewLine
     $prompt = 'The complete Case 07 specification for this recovery follows:' +
       [Environment]::NewLine + [Environment]::NewLine + $case07Spec +
-      [Environment]::NewLine + $prompt
+      [Environment]::NewLine + $editRecovery + [Environment]::NewLine + $prompt
   }
   $requiredInstructions = @(
     'use a dedicated process tool only if it is listed in your available'
@@ -2317,6 +2329,28 @@ if ($DryRun) {
         foreach ($instruction in $localPromptRequirements) {
           if (-not $localPrompt.Contains($instruction)) {
             throw "Case 07 assembled local-test prompt is missing: $instruction"
+          }
+        }
+        $editRecoveryRequirements = @(
+          'Use the actual edit diagnostic; an attempted edit is not a completed change.'
+          'If a failed edit explicitly made no change, read its target file before correcting it.'
+          'Read a small target region with offset/limit; narrow it if the response is truncated.'
+          ('Use file text in edit anchors, excluding displayed line numbers ' +
+            'and truncation markers.')
+          'Then edit the observed current text with a unique anchor and the native tool schema.'
+          'Do not guess another stale anchor or rewrite the whole application after a failed edit.'
+          ('If the diagnostic says already applied, inspect the file and ' +
+            'preserve the completed change.')
+          'For an Unknown mutation, inspect current state and defer retry until reconciliation.'
+          ('After a known failure is corrected, continue public contract repairs ' +
+            'within this attempt.')
+          'Do not end an attempt merely because an edit failed while time and requests remain.'
+        )
+        foreach ($assembledPrompt in @($dryRunRecovery, $workflowPrompt, $localPrompt)) {
+          foreach ($instruction in $editRecoveryRequirements) {
+            if (-not $assembledPrompt.Contains($instruction)) {
+              throw "Case 07 assembled recovery prompt is missing: $instruction"
+            }
           }
         }
       } finally {
