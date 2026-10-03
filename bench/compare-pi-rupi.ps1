@@ -427,6 +427,15 @@ function Get-CaseGuidance([hashtable]$case, [string]$phase = "initial") {
           'Do not write validation, storage, server, or worker files until tests and all help pass.'
         ) -join [Environment]::NewLine)
       }
+      if ($phase -eq "local") {
+        return (@(
+          'Repair the first failing project test from harness feedback before adding more features.'
+          'Preserve the public-specification assertions and fix the implementation in small edits.'
+          'Each implementation edit adds at most 80 lines; preserve passing tests and help.'
+          'Use the existing source and test context; read only the relevant file when needed.'
+          'Then yield for harness feedback; do not run checks, service, worker, or oracle.'
+        ) -join [Environment]::NewLine)
+      }
       if ($phase -eq "workflow") {
         return (@(
           'Project tests and all help checks pass, but the independent oracle failed.'
@@ -442,13 +451,22 @@ function Get-CaseGuidance([hashtable]$case, [string]$phase = "initial") {
           'Keep workflow code in that file; do not create __init__.py or helper modules yet.'
           'Then add ordered leased claims, a direct-argv sink, and persisted terminal output.'
           'Use a bounded worker --once; reclaim expired leases without polling.'
+          'When worker delivery is implemented, next edit must extend tests/test_leasecascade.py.'
+          'Keep workflow tests small; exercise your real helpers with temporary SQLite and a sink.'
+          'Test signed admission, persisted retrieval, and worker delivery of declared inputs.'
+          'Test a barrier whose depends_on order reverses the two dependency insertion positions.'
+          'Assert fan_in contains only collect.field values, with job_id/value items in that order.'
+          'Return extra private output fields from dependencies and assert they are excluded.'
+          'Missing collect.field test: no barrier sink call, failed barrier, blocked dependent.'
+          'Use local helper calls or bounded subprocess fixtures; close every resource in tests.'
+          'Then end this attempt for harness feedback; repair implementation if these tests fail.'
           'Preserve all passing project tests and the three help paths.'
           'Then implement declared inputs, ordered selected-field fan-in, and dependency blocking.'
           'Reclaim expired leases; do not run a barrier sink when a selected field is missing.'
           'Build fan-in in depends_on order from only the selected collect.field values.'
           'Fail missing selections without running the sink, block dependents, and reclaim leases.'
           'Do not rewrite the whole application in one call or repeat implemented behavior.'
-          'Continue small edits until the integrated path exists, then add a focused unittest.'
+          'Use later attempts to finish small implementation edits while keeping workflow tests.'
           'Leave README last.'
           'Do not run commands, tests, help checks, service, worker, or oracle.'
         ) -join [Environment]::NewLine)
@@ -1952,6 +1970,9 @@ function Invoke-AgentCase([hashtable]$case, [string]$agent, [string]$root, [stri
     $turnRecord = [ordered]@{ turn = $turn; call = $call; metrics = $metrics; verification = $verification; session_id = $sessionId }
     if ($case.Id -eq "07-lease-cascade") {
       $turnRecord["configured_tool_allowlist"] = @(Get-BenchmarkTools $case $agent)
+      $turnRecord["harness_model_request_cap"] = if ($agent -eq "rupi") {
+        $MaxModelRequestsPerTurn
+      } else { $null }
     }
     Write-Json (Join-Path $turnRoot "summary.json") $turnRecord
     [void]$turns.Add($turnRecord)
@@ -2041,6 +2062,17 @@ if ($DryRun) {
           throw "Case 07 foundation guidance is missing: $instruction"
         }
       }
+      $localGuidance = Get-CaseGuidance $_ "local"
+      $localRequirements = @(
+        'Preserve the public-specification assertions and fix the implementation in small edits.'
+        'Each implementation edit adds at most 80 lines; preserve passing tests and help.'
+        'Then yield for harness feedback; do not run checks, service, worker, or oracle.'
+      )
+      foreach ($instruction in $localRequirements) {
+        if (-not $localGuidance.Contains($instruction)) {
+          throw "Case 07 local-test guidance is missing: $instruction"
+        }
+      }
       $workflowGuidance = Get-CaseGuidance $_ "workflow"
       $workflowRequirements = @(
         'Project tests and all help checks pass, but the independent oracle failed.'
@@ -2056,6 +2088,12 @@ if ($DryRun) {
         'Keep workflow code in that file; do not create __init__.py or helper modules yet.'
         'Then add ordered leased claims, a direct-argv sink, and persisted terminal output.'
         'Use a bounded worker --once; reclaim expired leases without polling.'
+        'When worker delivery is implemented, next edit must extend tests/test_leasecascade.py.'
+        'Test signed admission, persisted retrieval, and worker delivery of declared inputs.'
+        'Test a barrier whose depends_on order reverses the two dependency insertion positions.'
+        'Assert fan_in contains only collect.field values, with job_id/value items in that order.'
+        'Missing collect.field test: no barrier sink call, failed barrier, blocked dependent.'
+        'Then end this attempt for harness feedback; repair implementation if these tests fail.'
         'Preserve all passing project tests and the three help paths.'
         'Then implement declared inputs, ordered selected-field fan-in, and dependency blocking.'
         'Build fan-in in depends_on order from only the selected collect.field values.'

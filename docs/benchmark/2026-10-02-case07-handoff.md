@@ -13,9 +13,9 @@ pinned Pi 0.86.1 on the oracle.
 - Worktree: `C:\Users\saehwan\repos\rupi-case07-lease-cascade`
 - Branch: `fix/case07-lease-cascade`
 - Draft PR: [#139](https://github.com/SaehwanPark/rupi/pull/139)
-- Latest benchmark change requests bounded workflow edits and an explicit foundation handoff
-  in `bench/compare-pi-rupi.ps1`. Native file-tool configuration from `e3fdefa` remains.
-  Retry 17 is complete; retry 18 is running at revision `8cb9a78`.
+- Latest benchmark change requests early workflow tests after worker code exists in
+  `bench/compare-pi-rupi.ps1`. Bounded edits and native file tools remain.
+  Retry 18 is complete; retry 19 has not started.
 - Case 07 remains active. No retry after the baseline produced a strict oracle winner;
   the baseline Pi strict oracle win remains the last resolved result.
 - Request-budget clarification: the eight-request parameter caps Rupi. Pi retains its
@@ -27,14 +27,14 @@ pinned Pi 0.86.1 on the oracle.
 - No Rust source changes were made. The benchmark uses the existing
   `target/debug/rupi.exe`; the installed Rust toolchain lacks the Cargo component.
 
-## Latest completed comparison: retry 17
+## Latest completed comparison: retry 18
 
-Run: `bench-20261003-case07-file-tools-retry17-matched4-600s`.
+Run: `bench-20261003-case07-bounded-edits-retry18-matched4-600s`.
 
 | Agent | Work tokens | Tools | Tests | Help | Oracle |
 | --- | ---: | ---: | ---: | --- | ---: |
-| Rupi | 16,286 | 3 | Passed all turns | Passed all turns | Failed all turns |
-| Pi | 28,969 | 11 | Passed turns 2-4 | Passed turns 2-4 | Failed all turns |
+| Rupi | 84,934 | 18 | Passed all turns | Passed all turns | Failed all turns |
+| Pi | 45,643 | 20 | Passed all turns | Passed all turns | Failed all turns |
 
 Neither agent resolved the oracle. The per-turn results and timings are in
 [the Case 07 ledger](2026-09-29-case07-lease-cascade-ledger.md).
@@ -144,8 +144,8 @@ then separate test-module and initializer writes. Evaluate the revision as a fre
 
 1. Start in the benchmark worktree and confirm branch `fix/case07-lease-cascade`.
 2. Make a fresh Codex usage check before launching another benchmark.
-3. Retry 17 is complete; retry 18 is running. Finish this matched pair for the bounded
-   workflow-edit revision. Treat retry 13 as incomplete; do not combine different runs.
+3. Retry 18 is complete; retry 19 has not started. Use a fresh pair for the early workflow
+   test revision. Treat retry 13 as incomplete; do not combine different runs.
 4. Use pinned Pi at
    `..\rupi\.benchmark\tools\pi-0.86.1\pi.ps1` and the standard settings:
    Case 07, four turns, 600 seconds per turn, 6-second provider grace, eight requests per
@@ -189,7 +189,7 @@ Workflow recovery advances admission, retrieval, worker, and data flow via small
 most 80 new lines. It permits one __main__.py read when an exact edit anchor is unknown.
 This is a measured prompt hypothesis; timeout causes remain unknown from permitted evidence.
 
-## Retry 18: running
+## Retry 18: complete
 
 Run: `bench-20261003-case07-bounded-edits-retry18-matched4-600s`, revision `8cb9a78`.
 Pre-run usage: 3% five-hour and 21% weekly. Standard matched settings, existing binary,
@@ -200,8 +200,19 @@ Turn 3 ended in 493,556 ms with 39,667 work tokens and seven tools; tests/help p
 oracle failed. Turn 4 reported runtime timeout at 549,232 ms with zero work/tools.
 Rupi totals: 84,934 work tokens, 18 tools, 1,789,316 ms. Tests/help passed every turn;
 oracle failed every turn. Pi turns 1-3 passed tests/help but failed the oracle. Its entry
-point grew to 29,469 bytes on turn 3; tests remained unchanged. Pi turn 4 is running.
-The matched comparison is incomplete.
+point grew to 29,469 bytes on turn 3; tests remained unchanged until turn 4.
+Pi turn 4 completed four edits and one read, growing the entry point to 30,819 bytes
+and tests to 11,695 bytes. Tests/help passed; oracle failed.
+Pi totals: 45,643 work tokens, 20 tools, 1,970,888 ms. Every oracle check failed.
+Runner exit 0; process tree gone. No strict winner. Rupi used 39,291 more work tokens and
+took 181,572 ms less. Post-run usage: 27% five-hour and 24% weekly.
 Post-Rupi usage: 14% five-hour and 23% weekly. Runner PID: 31568; tool session: 47775.
 Runner output remains unread in
 `.benchmark/retry18-runner-unread.log`. Artifacts are under `.benchmark/runs/` and this run ID.
+
+Next revision requests small workflow tests as soon as worker code exists, covering signed
+admission/retrieval, declared inputs, reversed dependency fan-in order, exclusion of private
+output fields, and missing-field failure/blocking. These derive from the public specification.
+Then yield for harness feedback and repair implementation. No standalone tests are added or run
+by the parent. New per-turn summaries record `harness_model_request_cap`: eight for Rupi,
+null for Pi, meaning the harness sets no Pi request cap. Existing policies remain unchanged.

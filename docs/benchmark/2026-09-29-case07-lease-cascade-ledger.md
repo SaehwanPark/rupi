@@ -908,3 +908,38 @@ growing it to 29,469 bytes. Both test files remain unchanged. Turn 4 is running.
 Its turn 3 summary records nine completed model requests. Source review confirms that
 the harness's eight-request setting applies to Rupi only; the clarification above makes
 the comparison boundary explicit without changing historical results or active settings.
+
+## Eighteenth matched retry result
+
+Runner exit 0; process tree gone. Revision `8cb9a78`, existing binary, native file tools,
+and standard shared turn/time/model/thinking settings. Rupi's request cap remained eight.
+
+Pi turn 4 timed out after 600,266 ms: 10,763 work tokens, five tools (four edits, one read),
+tests/help exit 0, oracle exit 1. The entry point grew to 30,819 bytes and tests to 11,695
+bytes. Both agents passed tests and all three help commands every turn; oracle failed every turn.
+
+| Agent | Work tokens | Tools | Elapsed | Oracle |
+| --- | ---: | ---: | ---: | --- |
+| Rupi | 84,934 | 18 | 1,789,316 ms | Failed all turns |
+| Pi | 45,643 | 20 | 1,970,888 ms | Failed all turns |
+
+No strict winner. Rupi used 39,291 more work tokens and took 181,572 ms less. The baseline
+Pi win remains the last resolved comparison. Post-run usage: 27% five-hour and 24% weekly.
+Evidence remains per-turn summaries, snapshots, and generated help; other artifacts stay unread.
+
+## Next revision: earlier workflow feedback
+
+Rupi's tests stayed unchanged after turn 1. Pi expanded its tests only in the final turn.
+The next prompt requests small workflow tests immediately after worker code exists, then
+yields for harness feedback. Tests cover the public signed-admission/retrieval and declared
+input contracts, reversed barrier dependency order, selected fields with private extras,
+and missing-field failure/blocking without a barrier sink call. These are public-specification
+fixtures; coverage of the generated tests is unknown from snapshots and is not inferred.
+
+New summaries record `harness_model_request_cap`: eight for Rupi, null for Pi (the harness
+sets no Pi request cap). Native runtime policies and other cases retain their current settings.
+
+Parent invariant-review verdict: pass. Fixtures derive from the public Case 07 specification;
+local recovery preserves those assertions and repairs implementation through bounded edits.
+The metadata exposes the existing request-budget difference. No runtime, provenance, replay,
+failover, startup, or roadmap boundary changes. Fresh matched oracle evidence is pending.
