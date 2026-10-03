@@ -1655,3 +1655,23 @@ route are ready. Health reports one injected request, no content logging; select
 config confirms low/relay/native/replay. Actual content and budget enforcement unknown.
 Runner/relay logs unread. Last usage 56% five-hour/58% weekly; reset 06:16 PM ET. CI
 pending for new revision; no oracle evidence yet. Source/settings stay fixed mid-pair.
+
+## Twenty-eighth comparison progress: Rupi complete
+
+| Turn | Work tokens | Tool requests | Time | Tests | Help | Oracle |
+| ---: | ---: | ---: | --- | ---: | --- | ---: |
+| 1 | 20,767 | 5 | 268,620 ms completed | 0 | 0/0/0 | 1 |
+| 2 | 39,516 | 7 | 529,600 ms request budget | 0 | 0/0/0 | 1 |
+| 3 | 19,329 | 6 | 597,786 ms completed | 0 | 0/0/0 | 1 |
+| 4 | 49,540 | 7 | 448,666 ms request budget | 0 | 0/0/0 | 1 |
+
+Totals: 129,152 recorded work tokens, 25 completed tool requests, zero failures/Unknown,
+1,844,672 ms. All 29 model requests completed. Tests/help passed throughout; all oracles
+failed. Turn 1 read/four writes; source 3,134/tests 1,424/README 4,390 bytes. Turn 2
+five edits/two reads; source 12,302 bytes. Turn 3 six edits; source 15,553 bytes. Turn 4
+three reads/three edits/grep; source 22,391 bytes. Test/README sizes unchanged after turn 1;
+contents/coverage and oracle causes unknown. Summaries record budget2,048/relay/native
+replay/isolated discovery. Selected Pi configuration uses same relay/model/low mapping.
+Health counter31 includes early Pi requests, not proof of template enforcement. Pi turn 1
+active; source/settings fixed. CI passed all jobs at 9a086ae. Parent usage70% five-hour/
+61% weekly; reset06:16 PM ET. No strict Rupi win is possible; finish the pair.

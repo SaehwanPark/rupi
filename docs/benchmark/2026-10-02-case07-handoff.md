@@ -22,7 +22,8 @@ pinned Pi 0.86.1 on the oracle.
   The latest revision isolates Rupi's global skill discovery, requests a compact README
   as the fourth foundation write, and uses public interfaces in workflow tests.
   Recovery from known edit failures and protection for Unknown mutations remain.
-  Retry 28 is active with a shared 2,048-token thinking budget through a local relay.
+  Retry 28 Rupi is complete without an oracle pass; Pi turn 1 is active.
+  Both use a shared 2,048-token thinking budget through a local relay.
   Low effort, model, prompts, native policies, and turn/time limits remain.
 - Case 07 remains active. No retry after the baseline produced a strict oracle winner;
   the baseline Pi strict oracle win remains the last resolved result.
@@ -695,3 +696,16 @@ Shared server PID 27356 remains. Relay/runner logs stay unread. No actual reques
 content inspected; numeric injection metadata does not prove template enforcement.
 Last parent usage 56% five-hour/58% weekly; next reset 06:16 PM ET. CI for this revision
 is pending. Keep source/settings fixed until the pair completes; no oracle result yet.
+
+Rupi complete: 129,152 recorded work tokens, 25 completed tool requests, zero failures
+or Unknown, 1,844,672 ms. Tests/help passed throughout; every oracle failed. Turn 1
+completed at 268,620 ms with read/four writes; source 3,134 bytes, tests 1,424, README
+4,390. Turn 2 request budget at 529,600 ms with five edits/two reads; source 12,302 bytes.
+Turn 3 completed at 597,786 ms with six edits; source 15,553 bytes. Turn 4 request budget
+at 448,666 ms with three reads/three edits/grep; source 22,391 bytes. Test/README sizes
+unchanged after turn 1; contents/coverage and oracle causes remain unknown. All tool
+operations completed; all 29 model requests completed. Per-turn metadata records relay,
+budget 2,048, native replay, and isolated discovery. Selected Pi configuration confirms
+the same relay/model/low mapping. Health counter 31 includes early Pi requests; payloads
+uninspected. Pi turn 1 active. CI passed all jobs at 9a086ae. Usage 70% five-hour/61%
+weekly; next reset 06:16 PM ET. No strict Rupi win is possible from this pair.
