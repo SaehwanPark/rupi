@@ -191,6 +191,7 @@ This is a measured prompt hypothesis; timeout causes remain unknown from permitt
 Run: `bench-20261003-case07-bounded-edits-retry18-matched4-600s`, revision `8cb9a78`.
 Pre-run usage: 3% five-hour and 21% weekly. Standard matched settings, existing binary,
 and native file tools unchanged. Rupi turn 1 finished in 208,058 ms with 13,740 work tokens
-and four tools: tests and all help passed; oracle failed. Rupi turn 2 is running.
+and four tools: tests and all help passed; oracle failed. Turn 2 ended after 538,470 ms
+with 31,527 work tokens and seven tools; tests/help passed, oracle failed. Turn 3 is running.
 Runner output remains unread in
 `.benchmark/retry18-runner-unread.log`. Artifacts are under `.benchmark/runs/` and this run ID.

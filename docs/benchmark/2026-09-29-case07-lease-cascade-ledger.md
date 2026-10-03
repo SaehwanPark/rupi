@@ -868,3 +868,9 @@ and existing Rupi binary unchanged. Rupi turn 1 is running; no matched outcome y
 Rupi turn 1 finished without outer timeout in 208,058 ms: 13,740 work tokens, four tools,
 project tests exit 0, all help checks exit 0, and oracle exit 1. Its summary records the
 native file-tool allowlist. Turn 2 is running; no matched outcome yet.
+
+## Eighteenth retry progress: Rupi turn 2
+
+Turn 2 ended after 538,470 ms without outer timeout: 31,527 work tokens, seven tools,
+tests exit 0, all help checks exit 0, and oracle exit 1. Turn 3 is running. This turn has
+recorded work, unlike the zero-work workflow timeouts in retry 17; a strict win is still absent.
