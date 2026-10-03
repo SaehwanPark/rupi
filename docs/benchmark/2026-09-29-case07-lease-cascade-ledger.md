@@ -1709,3 +1709,16 @@ oracle winner. Runner exit0; runner/wrapper/direct children gone. Relay counter6
 forwarded requests, not completions or total inference. Shared server/relay retained.
 CI passed all jobs at05daddc. Usage84% five-hour/63% weekly; reset06:16 PM ET. Case07
 stays active. Next control raises only Rupi's cap to12; same low/budget/model/turn limits.
+
+## Twenty-ninth fresh comparison launched
+
+Run: `bench-20261003-case07-budget2048-low-retry29-rupi12-matched4-600s`.
+Started 2026-10-03 04:52 PM ET. Source c4980be remains; launch head c9d30e1. Only
+Rupi cap8 becomes12. Same shared low/budget2,048/model/four turns/600-second limits/
+six-second grace, prompts, replay, discovery isolation, native tools/Pi policy.
+Rupi turn1 active; runner13084, wrapper38116, session15440; relay24436/server27356
+remain. Selected Rupi config confirms cap12/low/relay/replay. Cumulative relay counter65
+includes early new traffic; prior pair ended at64. Counters are not completion/total-
+inference or template-enforcement evidence. Existing Case07 low/budget2,048/cap12 DryRun
+passed. Logs unread; source/settings fixed. Last usage84% five-hour/63% weekly; reset
+06:16 PM ET. CI passed at05daddc, docs CI pending. No oracle evidence yet.

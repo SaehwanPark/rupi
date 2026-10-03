@@ -24,7 +24,7 @@ pinned Pi 0.86.1 on the oracle.
   The latest revision isolates Rupi's global skill discovery, requests a compact README
   as the fourth foundation write, and uses public interfaces in workflow tests.
   Recovery from known edit failures and protection for Unknown mutations remain.
-  The next fresh pair raises only Rupi's request cap from 8 to 12.
+  Retry 29 is active, raising only Rupi's request cap from 8 to 12; Rupi turn 1 is running.
   Both use a shared 2,048-token thinking budget through a local relay.
   Low effort, model, prompts, native policies, and turn/time limits remain.
 - Case 07 remains active. No retry after the baseline produced a strict oracle winner;
@@ -734,3 +734,19 @@ No strict winner. Rupi recorded 62,142 more work tokens and took 192,792 ms less
 time; verification excluded and unrecorded inference unknown. Baseline low Pi remains
 last resolved oracle winner. CI passed all jobs at 05daddc. Usage 84% five-hour/63%
 weekly; next reset 06:16 PM ET. Case 07 stays active; next fresh pair uses Rupi cap12.
+
+## Retry 29: active
+
+Run: `bench-20261003-case07-budget2048-low-retry29-rupi12-matched4-600s`.
+Harness source remains c4980be; launched from results head c9d30e1 with the existing CLI
+parameter. Started 2026-10-03 04:52 PM ET. Only Rupi's request cap changes, 8 to12.
+Same shared model/low effort/budget2,048/four turns/600-second outer limits/six-second
+grace, prompts, native tools, replay, isolated discovery, and Pi native request policy.
+Rupi turn 1 active; runner13084, wrapper38116, tool session15440. Existing relay24436
+and shared server27356 remain. Selected generated Rupi config confirms cap12/low/relay/
+replay. Relay cumulative counter65 includes the first new request; prior pair ended at64.
+Counter is forwarding metadata, not completed-request or token-enforcement evidence.
+Output stays unread in .benchmark/retry29-runner-unread.log; relay logs remain unread.
+Existing Case07 low/budget2,048/cap12 DryRun passed. Last usage84% five-hour/63% weekly;
+reset06:16 PM ET. CI passed at05daddc; new docs CI pending. Keep settings/source fixed
+until the pair finishes. No new oracle evidence yet; do not merge without a strict win.
