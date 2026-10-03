@@ -686,4 +686,15 @@ workflow directive. Post-run Codex usage: 50% five-hour and 13% weekly, below th
 stop thresholds. Check usage again before launching the fresh matched comparison.
 
 Evidence is limited to per-turn summaries and file snapshots. Acceptance source, runner
-or agent output, session traces, and aggregate results remain unread; no standalone tests ran.
+or agent output, session traces, and aggregate results remain unread. The parent did not
+run standalone tests.
+
+## Sixteenth matched retry started
+
+- Run: `bench-20261003-case07-foundation-repair-retry16-matched4-600s`.
+- Prompt unchanged at `26dcff1`; fresh usage: 51% five-hour and 13% weekly.
+- Pinned Pi 0.86.1, four turns, 600 seconds per turn, 6-second provider grace,
+  eight requests per turn, thinking off, and the existing Rupi binary.
+- Rupi turn 1 is active. Retry 15 ended with zero work and tools in both final turns,
+  so repeat before tuning the unexercised workflow write directive.
+- Keep evidence restricted to per-turn summaries, snapshots, and generated help.

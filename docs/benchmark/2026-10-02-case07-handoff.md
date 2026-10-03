@@ -107,12 +107,22 @@ Run: `bench-20261002-case07-foundation-repair-retry15-matched4-600s`.
 - Post-run usage: 50% five-hour and 13% weekly.
 - Artifacts are under `.benchmark/runs/` followed by the run ID above.
 
+## Retry 16: running
+
+Run: `bench-20261003-case07-foundation-repair-retry16-matched4-600s`.
+
+- Prompt unchanged at `26dcff1`; usage before launch: 51% five-hour and 13% weekly.
+- Uses the standard matched settings and existing binary, with pinned Pi 0.86.1.
+- At this checkpoint, Rupi turn 1 is running. Runner PID at launch: 9840.
+- Runner output remains unread in `.benchmark/retry16-runner-unread.log`.
+- Artifacts are under `.benchmark/runs/` followed by the run ID above.
+
 ## Resume steps
 
 1. Start in the benchmark worktree and confirm branch `fix/case07-lease-cascade`.
 2. Make a fresh Codex usage check before launching another benchmark.
-3. Retry 15 is complete. Start a fresh retry 16 with the current prompt after a usage check.
-   Treat retry 13 as incomplete; do not combine turns from different runs.
+3. Retry 15 is complete. Retry 16 started; check whether it is still active and finish it
+   if running. Treat retry 13 as incomplete; do not combine turns from different runs.
 4. Use pinned Pi at
    `..\rupi\.benchmark\tools\pi-0.86.1\pi.ps1` and the standard settings:
    Case 07, four turns, 600 seconds per turn, 6-second provider grace, eight requests per
