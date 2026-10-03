@@ -634,3 +634,19 @@ files. It does not establish a prompt effect. Turn 2 made one completed `write` 
 2,511-byte entry point, with no test files or other application modules. All help checks passed;
 tests and oracle failed. Turn 3 is running. The matched comparison has no outcome yet.
 Evidence uses only per-turn `summary.json` and `files.json`.
+
+## Fifteenth retry progress: Rupi complete, Pi running
+
+Rupi turn 3 timed out after 600,246 ms with 7,860 work tokens and three completed writes.
+It added both test files and the package initializer; the 2,511-byte entry point remained
+unchanged. Project tests and all help checks passed, but the oracle failed.
+
+Turn 4 ended after 598,010 ms with timeout status, one started/completed request, no usage
+records, no work tokens, and no tools. The final snapshot is unchanged from turn 3. Tests
+and help stayed passing; the oracle failed. Workflow recovery was not exercised by a source
+write in this turn, so do not infer its effectiveness from that zero-work timeout.
+
+Rupi totals: 10,263 work tokens, four writes, and 2,318,078 ms across four turns. Turns 1
+and 4 recorded no metered work. Help passed from turn 2; tests passed from turn 3; the
+oracle failed on every turn. Pi turn 1 is running, so the matched run has no outcome yet.
+Evidence remains per-turn `summary.json` and `files.json` only.

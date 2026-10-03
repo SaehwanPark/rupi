@@ -93,7 +93,11 @@ Run: `bench-20261002-case07-foundation-repair-retry15-matched4-600s`.
 - Rupi turn 1 had zero work or tools and no application files; all checks failed.
   Turn 2 used 2,403 work tokens and one write, creating a 2,511-byte entry point.
   Help passed all three checks; tests and oracle failed. No test files exist in its snapshot.
-- At this checkpoint, Rupi turn 3 is running. Runner output remains unread in
+- Rupi turn 3 added both tests and the package initializer with 7,860 work tokens and
+  three writes; tests and help passed, but the oracle failed. Turn 4 had zero work and
+  tools, timeout status, and an unchanged snapshot. Tests/help passed; oracle failed.
+- Rupi totals: 10,263 work tokens, four writes, and 2,318,078 ms. No oracle resolution.
+- At this checkpoint, Pi turn 1 is running. Runner output remains unread in
   `.benchmark/retry15-runner-unread.log`.
 - Runner PID at launch: 34400. Check liveness and per-turn artifacts before restarting.
 - Artifacts are under `.benchmark/runs/` followed by the run ID above.
