@@ -1060,3 +1060,10 @@ Rupi totals: 78,598 work tokens, 19 completed tools, 2,162,900 ms. All tests/hel
 every oracle check failed. Turn 4 completed six edits, growing the entry point to 29,723
 bytes. Test module remains 2,497 bytes; coverage is unknown from permitted evidence.
 Pi turn 1 is running. Parent usage: 71% five-hour and 31% weekly. No matched result yet.
+
+## Twentieth retry progress: Pi turn 1
+
+Pi turn 1 finished in 238,635 ms: 11,252 work tokens and six completed calls (four writes,
+one edit, one read). Tests and all help passed; oracle failed. Application and test files
+are beneath the actual project root. Entry point is 4,089 bytes; test module 4,321 bytes.
+Pi turn 2 is running. Its summary records no harness request cap, as configured.

@@ -261,3 +261,6 @@ Rupi is complete: 78,598 work tokens, 19 completed tools, 2,162,900 ms. Tests/he
 every turn; oracle failed every turn. Turn 4 timed out at 600,294 ms with 11,700 work
 tokens and six completed edits. Final entry point is 29,723 bytes; test module stays
 2,497 bytes. Pi turn 1 is running. Parent usage: 71% five-hour and 31% weekly.
+Pi turn 1 finished in 238,635 ms with 11,252 work tokens and six completed calls.
+Tests/help passed; oracle failed. Application/tests are at the correct root paths.
+Pi turn 2 is running.
