@@ -13,11 +13,12 @@ pinned Pi 0.86.1 on the oracle.
 - Worktree: `C:\Users\saehwan\repos\rupi-case07-lease-cascade`
 - Branch: `fix/case07-lease-cascade`
 - Draft PR: [#139](https://github.com/SaehwanPark/rupi/pull/139)
-- Prompt revision commit before this handoff: `3cabcde`.
+- Current prompt revision: `3cabcde`; retry 14 uses it unchanged.
 - Case 07 remains active. No retry after the baseline produced a strict oracle winner;
   the baseline Pi strict oracle win remains the last resolved result.
-- The root checkout has an unrelated user change in `docs/ai-usage-policy.md`; leave it
-  untouched. The benchmark worktree is separate.
+- The root checkout is detached at `04b229c` and retains an unrelated user change in
+  `docs/ai-usage-policy.md`; leave it untouched. The task branch is now attached to the
+  benchmark worktree, which started clean at the same commit.
 - No Rust source changes were made. The benchmark uses the existing
   `target/debug/rupi.exe`; the installed Rust toolchain lacks the Cargo component.
 
@@ -27,7 +28,7 @@ Run: `bench-20261002-case07-workflow-write-retry12-matched4-600s`.
 
 | Agent | Work tokens | Tools | Tests | Help | Oracle |
 | --- | ---: | ---: | ---: | --- | ---: |
-| Rupi | 26,511 | 8 | Failed all turns | Passed all turns | Failed all turns |
+| Rupi | 26,511 | 8 | Passed all turns | Passed all turns | Failed all turns |
 | Pi | 40,175 | 5 | Failed all turns | Passed all turns | Failed all turns |
 
 Neither agent resolved the oracle. The per-turn results and timings are in
@@ -54,12 +55,26 @@ source, runner or agent output, session traces, or aggregate `results.json`.
 
 Usage after stopping retry 13: 14% five-hour and 2% weekly. Before retry 13: 12% and 2%.
 
+## Retry 14: running
+
+Run: `bench-20261002-case07-integrated-workflow-write-retry14-matched4-600s`.
+
+- Started a fresh matched comparison with the current prompt after checking usage:
+  19% five-hour and 3% weekly.
+- Settings: pinned Pi 0.86.1, four turns, 600 seconds per turn, 6-second provider grace,
+  eight requests per turn, thinking off, and the existing Rupi binary.
+- At this checkpoint, Rupi turn 1 is running; no completed per-turn summary exists yet.
+- Runner output is redirected to `.benchmark/retry14-runner-unread.log` and stays unread.
+- Artifacts are under `.benchmark/runs/` followed by the run ID above.
+- Corrected the retry 12 table above: the verified ledger records Rupi tests exit 0 on
+  every turn, while the prior handoff incorrectly labeled them failed.
+
 ## Resume steps
 
 1. Start in the benchmark worktree and confirm branch `fix/case07-lease-cascade`.
 2. Make a fresh Codex usage check before launching another benchmark.
-3. Treat retry 13 as incomplete; do not combine its partial Rupi turns with later Pi turns.
-   For the next comparison, start a fresh matched run (retry 14) with the current prompt.
+3. Check whether retry 14 is still active before starting another run. Finish it if active.
+   Treat retry 13 as incomplete; do not combine partial turns from different runs.
 4. Use pinned Pi at
    `..\rupi\.benchmark\tools\pi-0.86.1\pi.ps1` and the standard settings:
    Case 07, four turns, 600 seconds per turn, 6-second provider grace, eight requests per
