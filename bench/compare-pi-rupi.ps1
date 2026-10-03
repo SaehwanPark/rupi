@@ -374,11 +374,13 @@ function Get-CaseGuidance([hashtable]$case, [string]$phase = "initial") {
           'Do not call exec or add persistence or worker code before both test files exist.'
           'After the entry point, write the test module and initializer in consecutive calls.'
           'Do not write validation, storage, server, or worker files until tests and help pass.'
-          'Fourth write: complete the signed-submission-to-worker path in existing __main__.py.'
-          'Connect documented HTTP routes, durable ordered jobs, and worker --once end to end.'
+          'After the three foundation writes, end this attempt and wait for harness feedback.'
+          'Start workflow edits only after the harness reports tests and all help checks passed.'
+          'Fourth mutation: edit existing __main__.py to add the first missing workflow behavior.'
+          'Add admission, retrieval, then worker execution in edits of at most 80 new lines.'
           'Invoke the sink with direct argv and persist output and terminal status.'
           'Expose the result through the documented pipeline/job retrieval route.'
-          'Do not stop after CLI/tests or leave storage, server, and worker modules unconnected.'
+          'Use later attempts to complete workflow; connect storage, server, and worker.'
           'Use helper modules for later behavior; keep each source write narrowly scoped.'
           'Use standard-library imports and a main guard; do not import absent local modules.'
           'Implement signed pipeline admission and durable ordered job state.'
@@ -406,6 +408,7 @@ function Get-CaseGuidance([hashtable]$case, [string]$phase = "initial") {
           'Second write call: create tests/test_leasecascade.py with a real unittest.'
           'Third write call: create tests/__init__.py after the test module exists.'
           'Cover the three help paths with subprocess checks using sys.executable.'
+          'After the three foundation writes, end this attempt and wait for harness feedback.'
           'Do not write validation, storage, server, or worker files until tests and help pass.'
           'Do not run commands, tests, help checks, service, worker, or oracle.'
         ) -join [Environment]::NewLine)
@@ -429,18 +432,24 @@ function Get-CaseGuidance([hashtable]$case, [string]$phase = "initial") {
           'Project tests and all help checks pass, but the independent oracle failed.'
           'Keep the passing tests and help paths intact.'
           'Do not repeat CLI, health-route, or test-discovery scaffolding.'
-          'The next workspace write must update existing leasecascade/__main__.py.'
-          'Use prior turn context; do not inspect files before that write.'
-          'Implement POST /pipelines with raw-body HMAC and atomic SQLite admission.'
+          'The next source mutation must be a small edit to existing leasecascade/__main__.py.'
+          'Use prior context; if the exact edit anchor is unknown, read only __main__.py once.'
+          'After that read, the next tool call must edit source rather than inspect more files.'
+          'Each edit adds at most 80 lines; apply the first edit before designing later slices.'
+          'Choose the first missing behavior: signed admission, retrieval, worker, then data flow.'
+          'If admission is missing, first add raw-body HMAC and atomic SQLite pipeline/job state.'
+          'Then connect POST /pipelines and GET /pipelines/<pipeline_id> in small separate edits.'
           'Keep workflow code in that file; do not create __init__.py or helper modules yet.'
-          'Persist ordered jobs, then run worker --once through a direct-argv sink.'
-          'Implement GET /pipelines/<pipeline_id> for persisted pipeline and job state.'
+          'Then add ordered leased claims, a direct-argv sink, and persisted terminal output.'
+          'Use a bounded worker --once; reclaim expired leases without polling.'
           'Preserve all passing project tests and the three help paths.'
           'Then implement declared inputs, ordered selected-field fan-in, and dependency blocking.'
           'Reclaim expired leases; do not run a barrier sink when a selected field is missing.'
           'Build fan-in in depends_on order from only the selected collect.field values.'
           'Fail missing selections without running the sink, block dependents, and reclaim leases.'
-          'Add a focused unittest after the integrated path exists; leave README last.'
+          'Do not rewrite the whole application in one call or repeat implemented behavior.'
+          'Continue small edits until the integrated path exists, then add a focused unittest.'
+          'Leave README last.'
           'Do not run commands, tests, help checks, service, worker, or oracle.'
         ) -join [Environment]::NewLine)
       }
@@ -656,6 +665,7 @@ directories to its extended Windows path with `cd` or `cd /d`.
       'Do not call exec or add persistence or worker code before both test files exist.'
       'After the entry point, write the test module and initializer in consecutive calls.'
       'Do not write validation, storage, server, or worker files until tests and help pass.'
+      'After the three foundation writes, end this attempt and wait for harness feedback.'
       'Use helper modules for later behavior; keep each source write narrowly scoped.'
       'Use standard-library imports and a main guard; do not import absent local modules.'
       'Implement signed pipeline admission and durable ordered job state.'
@@ -908,6 +918,7 @@ directories to its extended Windows path with `cd` or `cd /d`.
       'Do not call exec or add persistence or worker code before both test files exist.'
       'After the entry point, write the test module and initializer in consecutive calls.'
       'Do not write validation, storage, server, or worker files until tests and help pass.'
+      'After the three foundation writes, end this attempt and wait for harness feedback.'
       'Use helper modules for later behavior; keep each source write narrowly scoped.'
       'Implement signed pipeline admission and durable ordered job state.'
       'Then add worker --once with bounded leases, direct argv, and no polling.'
@@ -1190,8 +1201,9 @@ function Get-RecoveryPrompt(
         'Use oracle pass/fail only; work in this workspace and do not inspect or run the oracle.'
     } elseif ($case07Phase -eq "workflow") {
       'The complete Case 07 specification was embedded initially; do not reread it. ' +
-        'Tests and all three help commands pass. Use prior turn context and make an ' +
-        'implementation write before any file inspection or audit. Use oracle pass/fail only; ' +
+        'Tests and all three help commands pass. Use prior turn context for small source edits. ' +
+        'Read only __main__.py once if an exact edit anchor is unknown. ' +
+        'Use oracle pass/fail only; ' +
         'work in this workspace and do not inspect or run the oracle.'
     } else {
       'The complete Case 07 specification was embedded initially; do not reread it. ' +
@@ -1261,7 +1273,7 @@ unittest suite, the project-specific help commands, and a smoke sequence.
       }
       "local" { 'Repair the first failing project test before expanding behavior.' }
       "passed" { 'The oracle passed; preserve behavior and finish only missing spec items.' }
-      default { 'Complete the integrated workflow in __main__.py; preserve tests and help.' }
+      default { 'Advance the integrated workflow through small edits; preserve tests and help.' }
     }
   } else {
     'Finish every missing implementation, README section, and focused test required by the spec.'
@@ -1306,8 +1318,8 @@ unittest suite, the project-specific help commands, and a smoke sequence.
         'Preserve the oracle-passing workflow; finish any missing README or spec requirements.'
       }
       default {
-        ('Update existing __main__.py first with the integrated signed-submit-to-worker ' +
-          'path; add no package initializer or helper module yet.')
+        ('Edit the first missing workflow behavior in __main__.py with at most 80 new lines; ' +
+          'continue admission, retrieval, worker, and data flow in separate edits.')
       }
     }
   } else {
@@ -1542,7 +1554,7 @@ If anything remains incomplete, state it instead of claiming success.
     $recoveryHeaderRequirement = if ($case07Phase -eq "entrypoint") {
       'No runnable entrypoint exists. Write `leasecascade/__main__.py` before inspection.'
     } elseif ($case07Phase -eq "workflow") {
-      'implementation write before any file inspection or audit.'
+      'Read only __main__.py once if an exact edit anchor is unknown.'
     } else {
       'Inspect existing files, preserve working behavior, and use oracle pass/fail only.'
     }
@@ -1985,6 +1997,7 @@ if ($DryRun) {
         'Define needed constants in __main__.py; do not import __version__ from the package.'
         'Second write call: create tests/test_leasecascade.py with a real unittest.'
         'Third write call: create tests/__init__.py after the test module exists.'
+        'After the three foundation writes, end this attempt and wait for harness feedback.'
       )
       foreach ($instruction in $entrypointRequirements) {
         if (-not $entrypointGuidance.Contains($instruction)) {
@@ -1999,11 +2012,12 @@ if ($DryRun) {
         'Each write call creates one file; write the test module before its initializer.'
         'After the entry point, write the test module and initializer in consecutive calls.'
         'Do not write validation, storage, server, or worker files until tests and help pass.'
-        'Fourth write: complete the signed-submission-to-worker path in existing __main__.py.'
-        'Connect documented HTTP routes, durable ordered jobs, and worker --once end to end.'
+        'After the three foundation writes, end this attempt and wait for harness feedback.'
+        'Fourth mutation: edit existing __main__.py to add the first missing workflow behavior.'
+        'Add admission, retrieval, then worker execution in edits of at most 80 new lines.'
         'Invoke the sink with direct argv and persist output and terminal status.'
         'Expose the result through the documented pipeline/job retrieval route.'
-        'Do not stop after CLI/tests or leave storage, server, and worker modules unconnected.'
+        'Use later attempts to complete workflow; connect storage, server, and worker.'
       )
       foreach ($instruction in $initialRequirements) {
         if (-not $initialGuidance.Contains($instruction)) {
@@ -2032,12 +2046,16 @@ if ($DryRun) {
         'Project tests and all help checks pass, but the independent oracle failed.'
         'Keep the passing tests and help paths intact.'
         'Do not repeat CLI, health-route, or test-discovery scaffolding.'
-        'The next workspace write must update existing leasecascade/__main__.py.'
-        'Use prior turn context; do not inspect files before that write.'
-        'Implement POST /pipelines with raw-body HMAC and atomic SQLite admission.'
+        'The next source mutation must be a small edit to existing leasecascade/__main__.py.'
+        'Use prior context; if the exact edit anchor is unknown, read only __main__.py once.'
+        'After that read, the next tool call must edit source rather than inspect more files.'
+        'Each edit adds at most 80 lines; apply the first edit before designing later slices.'
+        'Choose the first missing behavior: signed admission, retrieval, worker, then data flow.'
+        'If admission is missing, first add raw-body HMAC and atomic SQLite pipeline/job state.'
+        'Then connect POST /pipelines and GET /pipelines/<pipeline_id> in small separate edits.'
         'Keep workflow code in that file; do not create __init__.py or helper modules yet.'
-        'Persist ordered jobs, then run worker --once through a direct-argv sink.'
-        'Implement GET /pipelines/<pipeline_id> for persisted pipeline and job state.'
+        'Then add ordered leased claims, a direct-argv sink, and persisted terminal output.'
+        'Use a bounded worker --once; reclaim expired leases without polling.'
         'Preserve all passing project tests and the three help paths.'
         'Then implement declared inputs, ordered selected-field fan-in, and dependency blocking.'
         'Build fan-in in depends_on order from only the selected collect.field values.'

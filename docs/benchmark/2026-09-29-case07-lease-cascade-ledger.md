@@ -820,3 +820,39 @@ Pi turn 1 is running; no matched outcome yet.
 Parent usage is 96% five-hour and 20% weekly. The user-edited root usage policy requires
 waiting until the 2026-10-03 03:12 AM ET reset plus two minutes. Agent work resumes at
 03:14 AM ET without checking usage during the wait. The bounded benchmark runner continues.
+
+## Seventeenth matched retry result
+
+Runner exit 0; its process tree is gone. Pi completed independently during the subscription
+wait. Resumed at 03:14 AM ET with 0% five-hour and 20% weekly usage.
+
+| Agent | Turn | Work tokens | Tools | Time | Tests | Help | Oracle |
+| --- | ---: | ---: | ---: | --- | ---: | --- | ---: |
+| Pi | 1 | 17,184 | 5 | 600,250 ms timeout | 1 | 1/0/0 | 1 |
+| Pi | 2 | 11,785 | 6 | 374,843 ms | 0 | 0/0/0 | 1 |
+| Pi | 3 | 0 | 0 | 600,228 ms timeout | 0 | 0/0/0 | 1 |
+| Pi | 4 | 0 | 0 | 600,228 ms timeout | 0 | 0/0/0 | 1 |
+
+Pi totals: 28,969 work tokens, 11 tools, 2,175,549 ms. Rupi totals: 16,286 work tokens,
+three writes, 2,256,391 ms. Rupi passed tests/help every turn; Pi passed both from turn 2.
+Every oracle check failed, so no strict winner. Rupi used 12,683 fewer work tokens and
+took 80,842 ms longer. The baseline Pi oracle win remains the last resolved result.
+
+Pi turn 1 used five writes; its snapshot has the entry point, initializer, validation, and
+both tests. Top-level help failed with an argparse metavar formatting error. Turn 2 used
+four reads, one edit, and one write; entry point and tests grew, and all foundation checks
+passed. Turns 3-4 recorded no work/tools and retained that snapshot without workflow writes.
+Configured native file-tool allowlists are recorded in every turn summary. Evidence stays
+restricted to per-turn summaries, file snapshots, and generated help.
+
+## Next revision: bounded workflow edits
+
+The first attempt now ends after three foundation writes and waits for harness verification.
+Workflow recovery asks for the earliest missing behavior in small edits adding at most 80
+lines: admission, retrieval, worker, then declared inputs and barriers. It permits a single
+entrypoint read when an exact edit anchor is unknown, followed immediately by a source edit.
+Native file tools, full specification, and standard matched budgets remain unchanged.
+
+Both agents recorded zero workflow work in their final turns; permitted evidence does not
+establish the timeout cause. Smaller edits are a prompt hypothesis, requiring a fresh pair.
+Parent review confirms the harness feedback boundary and unchanged runtime invariants.

@@ -13,8 +13,9 @@ pinned Pi 0.86.1 on the oracle.
 - Worktree: `C:\Users\saehwan\repos\rupi-case07-lease-cascade`
 - Branch: `fix/case07-lease-cascade`
 - Draft PR: [#139](https://github.com/SaehwanPark/rupi/pull/139)
-- Latest benchmark change restricts Case 07 to native file tools and strengthens entrypoint
-  recovery in `bench/compare-pi-rupi.ps1` at `e3fdefa`. Retry 17 is running.
+- Latest benchmark change requests bounded workflow edits and an explicit foundation handoff
+  in `bench/compare-pi-rupi.ps1`. Native file-tool configuration from `e3fdefa` remains.
+  Retry 17 is complete; retry 18 has not started.
 - Case 07 remains active. No retry after the baseline produced a strict oracle winner;
   the baseline Pi strict oracle win remains the last resolved result.
 - The root checkout is detached at `04b229c` and retains an unrelated user change in
@@ -23,14 +24,14 @@ pinned Pi 0.86.1 on the oracle.
 - No Rust source changes were made. The benchmark uses the existing
   `target/debug/rupi.exe`; the installed Rust toolchain lacks the Cargo component.
 
-## Latest completed comparison: retry 16
+## Latest completed comparison: retry 17
 
-Run: `bench-20261003-case07-foundation-repair-retry16-matched4-600s`.
+Run: `bench-20261003-case07-file-tools-retry17-matched4-600s`.
 
 | Agent | Work tokens | Tools | Tests | Help | Oracle |
 | --- | ---: | ---: | ---: | --- | ---: |
-| Rupi | 13,485 | 2 | Failed all turns | Failed all turns | Failed all turns |
-| Pi | 16,524 | 13 | Failed all turns | Failed all turns | Failed all turns |
+| Rupi | 16,286 | 3 | Passed all turns | Passed all turns | Failed all turns |
+| Pi | 28,969 | 11 | Passed turns 2-4 | Passed turns 2-4 | Failed all turns |
 
 Neither agent resolved the oracle. The per-turn results and timings are in
 [the Case 07 ledger](2026-09-29-case07-lease-cascade-ledger.md).
@@ -140,8 +141,8 @@ then separate test-module and initializer writes. Evaluate the revision as a fre
 
 1. Start in the benchmark worktree and confirm branch `fix/case07-lease-cascade`.
 2. Make a fresh Codex usage check before launching another benchmark.
-3. Retry 16 is complete; retry 17 is running. Finish that matched pair under the new
-   tool configuration. Treat retry 13 as incomplete; do not combine different runs.
+3. Retry 17 is complete; retry 18 has not started. Use a fresh matched pair for the bounded
+   workflow-edit revision. Treat retry 13 as incomplete; do not combine different runs.
 4. Use pinned Pi at
    `..\rupi\.benchmark\tools\pi-0.86.1\pi.ps1` and the standard settings:
    Case 07, four turns, 600 seconds per turn, 6-second provider grace, eight requests per
@@ -156,7 +157,7 @@ The current prompt revision is in `bench/compare-pi-rupi.ps1`. Its all-case `-Dr
 `git diff --check`, changed-line 100-column, and CRLF checks pass. Runs use the existing
 Rupi binary because this machine's installed Rust toolchain lacks the Cargo component.
 
-## Retry 17: running
+## Retry 17: complete
 
 Run: `bench-20261003-case07-file-tools-retry17-matched4-600s`.
 
@@ -165,11 +166,22 @@ Run: `bench-20261003-case07-file-tools-retry17-matched4-600s`.
 - Rupi turn 1 timed out after 600,296 ms with 16,286 work tokens and three writes.
   Turns 2-4 reported runtime timeout with zero recorded work/tools and unchanged snapshots.
 - Rupi totals: 16,286 work tokens, three writes, 2,256,391 ms. Tests and help passed every
-  turn; oracle failed every turn. Pi turn 1 is running; no matched outcome yet.
-- Configured Rupi allowlist in its summary: `read,write,edit,grep`. No comparison outcome yet.
+  turn; oracle failed every turn.
+- Pi totals: 28,969 work tokens, 11 tools, 2,175,549 ms. Tests and all help passed from
+  turn 2; oracle failed every turn. Turns 3-4 recorded zero work/tools and unchanged snapshots.
+- Configured allowlists match the native file-tool profiles in every summary.
+- Runner exit 0; process tree gone. No strict winner. Rupi used 12,683 fewer work tokens
+  and took 80,842 ms longer. The baseline Pi win remains the last resolved comparison.
 - Runner output is redirected to `.benchmark/retry17-runner-unread.log` and stays unread.
 - Artifacts are under `.benchmark/runs/` followed by the run ID above.
 - Parent usage reached 96% five-hour and 20% weekly at the Rupi checkpoint. Per the root
   checkout's user-edited usage policy, wait through the 03:12 AM ET reset plus two minutes
   (2026-10-03 03:14 AM ET) before resuming. Do not poll usage during the wait. The bounded
   Pi runner continues independently. Runner PID: 27524; tool session: 98191.
+- Wait completed at 03:14 AM ET; fresh usage: 0% five-hour and 20% weekly. Pi completed
+  independently during the wait. Acceptance source, runner/agent output, and traces stay unread.
+
+Next revision ends the foundation attempt after three writes and waits for harness feedback.
+Workflow recovery advances admission, retrieval, worker, and data flow via small edits of at
+most 80 new lines. It permits one __main__.py read when an exact edit anchor is unknown.
+This is a measured prompt hypothesis; timeout causes remain unknown from permitted evidence.
