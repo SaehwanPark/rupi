@@ -565,3 +565,50 @@ Turn 4 metrics include an `exec` request despite the prompt prohibiting commands
 was not read; do not infer what it ran. The other turn 4 tools were two writes, three edits,
 and one read. Generated help passed all three commands. Pi turn 1 has started; the matched
 comparison has no outcome yet. Evidence remains per-turn summaries, snapshots, and help only.
+
+## Fourteenth matched retry result
+
+Run: `bench-20261002-case07-integrated-workflow-write-retry14-matched4-600s`.
+
+The matched run completed with runner exit 0. It retained the current prompt, pinned Pi
+0.86.1, four turns, 600-second limits, 6-second provider grace, eight requests per turn,
+thinking off, and the existing Rupi binary.
+
+Rupi's four-turn table appears immediately above. Pi's completed results:
+
+| Agent | Turn | Work tokens | Tools | Time | Tests | Help | Oracle |
+| --- | ---: | ---: | ---: | --- | ---: | --- | ---: |
+| Pi | 1 | 0 | 0 | 600,212 ms timeout | 1 | 1/1/1 | 1 |
+| Pi | 2 | 7,140 | 7 | 600,302 ms timeout | 1 | 1/1/1 | 1 |
+| Pi | 3 | 10,639 | 2 | 600,352 ms timeout | 1 | 0/0/0 | 1 |
+| Pi | 4 | 8,539 | 3 | 264,214 ms | 0 | 0/0/0 | 1 |
+
+Pi used 26,318 work tokens and 12 tools over 2,065,080 ms. Turn 1 had no application files.
+Turn 2 added a 585-byte entry point; generated help showed an import of the missing `cli`
+module. Turn 3 expanded the entry point to 13,834 bytes and added the package initializer.
+Turn 4 added both test files, leaving the entry point unchanged. Its final ten-file snapshot
+has no separate workflow modules. Turn 2 metrics include one `bash` request despite the
+prompt prohibition; its output was not inspected.
+
+Both agents passed tests and help by turn 4, but failed the oracle on every turn. There is
+no strict winner. Pi used 22,866 fewer work tokens and finished 333,792 ms faster than Rupi;
+these differences do not satisfy the oracle gate. The baseline Pi win remains the last
+resolved comparison. Case 07 remains active.
+
+Evidence uses per-turn `summary.json`, `files.json`, and generated help only. Acceptance
+source, runner/agent output, session traces, and aggregate results were not inspected.
+Post-run Codex usage: 12% five-hour and 7% weekly.
+
+## Fifteenth foundation prompt revision
+
+The actual write tool accepts one file per call. Initial guidance now writes the real test
+module second and its initializer third, then updates the entry point with the workflow.
+The first entry point must use standard-library imports and a main guard without importing
+absent local modules. Foundation recovery now explicitly permits repairing `__main__.py`
+when help fails, followed by separate test-file writes. Helpers remain deferred until tests
+and help pass. This resolves contradictory and impossible instructions identified in retry 14;
+its effect on the oracle remains unverified until another matched comparison completes.
+
+Validation: all-case `bench/compare-pi-rupi.ps1 -DryRun`, `git diff --check`, changed-line
+100-column checks, and CRLF checks pass. No Rust source changed and no standalone tests
+were run. Start retry 15 with the standard matched settings after a fresh usage check.
