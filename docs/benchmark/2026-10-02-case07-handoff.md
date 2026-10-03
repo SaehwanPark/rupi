@@ -145,7 +145,7 @@ then separate test-module and initializer writes. Evaluate the revision as a fre
 
 1. Start in the benchmark worktree and confirm branch `fix/case07-lease-cascade`.
 2. Make a fresh Codex usage check before launching another benchmark.
-3. Retry 19 is complete; retry 20 is running for the aligned recovery and relative-path
+3. Retry 20 is complete without an oracle pass. Use a fresh pair for any next prompt
    revision. Treat retry 13 as incomplete; do not combine different runs.
 4. Use pinned Pi at
    `..\rupi\.benchmark\tools\pi-0.86.1\pi.ps1` and the standard settings:
@@ -242,7 +242,7 @@ editing. Initial and entrypoint recovery clarify that leasecascade/ and tests/ a
 to the current directory containing SPEC.md. DryRun now checks the assembled workflow
 prompt using temporary file markers, which are removed without recursive deletion.
 
-## Retry 20: running
+## Retry 20: complete
 
 Run: `bench-20261003-case07-coherent-recovery-retry20-matched4-600s`, revision `46fa839`.
 Pre-run usage: 63% five-hour and 30% weekly. Existing binary, native file tools/request
@@ -269,3 +269,9 @@ paths/sizes. Tests/help passed; oracle failed. Pi turn 3 is running.
 Pi turn 3 timed out at 600,233 ms with 12,704 work tokens and three completed calls.
 It added storage and validation modules; entry-point/test-file sizes are unchanged.
 Tests/help passed; oracle failed. Pi turn 4 is running.
+Pi is complete: 35,800 work tokens, 15 tools, 2,039,326 ms. Turn 4 timed out at 600,224
+ms with 11,844 work tokens and six completed calls. Entry-point/test-file sizes stayed
+unchanged through all four turns; storage grew and server/worker modules were added.
+Both agents passed tests/help every turn and failed every oracle check. No strict winner.
+Rupi used 42,798 more work tokens and took 123,574 ms longer. Runner exit 0; process tree
+gone. Post-run parent usage: 80% five-hour and 33% weekly. Retry 21 has not started.

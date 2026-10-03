@@ -1080,3 +1080,25 @@ Pi turn 3 timed out at 600,233 ms: 12,704 work tokens and three completed calls 
 writes, one edit). It added storage.py at 5,402 bytes and validation.py at 6,459 bytes.
 Entry-point and test-file sizes are unchanged. Tests/help passed; oracle failed.
 Pi turn 4 is running. Module contents and coverage were not inspected.
+
+## Twentieth matched retry result
+
+Runner exit 0; process tree gone. Revision `46fa839`, existing binary, native file tools
+and request policies, standard shared turn/time/model/thinking settings unchanged.
+
+| Agent | Turn | Work tokens | Tools | Time | Tests | Help | Oracle |
+| --- | ---: | ---: | ---: | --- | ---: | --- | ---: |
+| Pi | 1 | 11,252 | 6 | 238,635 ms | 0 | 0/0/0 | 1 |
+| Pi | 2 | 0 | 0 | 600,234 ms timeout | 0 | 0/0/0 | 1 |
+| Pi | 3 | 12,704 | 3 | 600,233 ms timeout | 0 | 0/0/0 | 1 |
+| Pi | 4 | 11,844 | 6 | 600,224 ms timeout | 0 | 0/0/0 | 1 |
+
+Pi totals: 35,800 work tokens, 15 tools, 2,039,326 ms. Rupi totals: 78,598 work tokens,
+19 tools, 2,162,900 ms. Both passed tests/help every turn; every oracle check failed.
+Rupi used 42,798 more work tokens and took 123,574 ms longer. No strict winner;
+baseline Pi remains the last resolved oracle winner. Case 07 stays active.
+
+Pi's final turn completed four edits and two writes, growing storage.py to 11,531 bytes
+and adding server.py and worker.py. Entry-point/test-file sizes stayed unchanged through
+all four turns. Rupi's test-file sizes also remained unchanged; coverage is unknown.
+Post-run parent usage: 80% five-hour and 33% weekly. Only permitted evidence was inspected.
