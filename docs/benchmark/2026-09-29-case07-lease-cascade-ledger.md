@@ -3,6 +3,8 @@
 This ledger records the matched `07-lease-cascade` run with local `qwen3.8-flash-next` and
 Pi 0.86.1.
 
+Timing totals sum agent call.elapsed_ms; verification/harness time is separate and excluded.
+
 Request-budget clarification: `MaxModelRequestsPerTurn=8` configures Rupi's runtime.
 The harness leaves Pi's native request behavior intact. Historical references to eight
 requests per turn in this ledger mean the Rupi cap. These comparisons share model,
@@ -1675,3 +1677,9 @@ replay/isolated discovery. Selected Pi configuration uses same relay/model/low m
 Health counter31 includes early Pi requests, not proof of template enforcement. Pi turn 1
 active; source/settings fixed. CI passed all jobs at 9a086ae. Parent usage70% five-hour/
 61% weekly; reset06:16 PM ET. No strict Rupi win is possible; finish the pair.
+
+Next fresh pair, after completion: keep low/shared budget2,048/model/prompts/turn limits;
+raise only Rupi's cap from8 to12 via the existing CLI. Turns2/4 exhausted the current cap;
+turn4 left151,334 ms of its outer call window. Pi retains its native request policy.
+This targets an observed limit, not a known oracle cause. Source/settings stay fixed during
+retry28. Results pushed at b6fc672; CI pending, prior9a086ae passed all three jobs.

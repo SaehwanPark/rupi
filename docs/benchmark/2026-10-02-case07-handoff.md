@@ -2,6 +2,8 @@
 
 Updated: 2026-10-03
 
+Timing totals sum agent call.elapsed_ms; verification/harness time is separate and excluded.
+
 ## Goal
 
 Continue the authorized Case 07 effort in
@@ -709,3 +711,11 @@ budget 2,048, native replay, and isolated discovery. Selected Pi configuration c
 the same relay/model/low mapping. Health counter 31 includes early Pi requests; payloads
 uninspected. Pi turn 1 active. CI passed all jobs at 9a086ae. Usage 70% five-hour/61%
 weekly; next reset 06:16 PM ET. No strict Rupi win is possible from this pair.
+
+Next bounded decision after the full pair: keep low effort, shared budget2,048, model,
+prompts, four turns/600-second outer limits, and raise only Rupi's request cap from 8 to 12.
+Turns 2 and 4 hit the current cap; turn 4 left 151,334 ms in its outer call window.
+Pi keeps its native request policy. This addresses an observed limit, not an established
+oracle failure cause. Do not change the active pair. Latest pushed results head b6fc672;
+its CI is pending. Prior head 9a086ae passed all jobs. No new source revision is needed
+for the existing request-cap CLI parameter.
