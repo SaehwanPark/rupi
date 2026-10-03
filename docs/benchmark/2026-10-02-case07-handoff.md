@@ -15,7 +15,7 @@ pinned Pi 0.86.1 on the oracle.
 - Draft PR: [#139](https://github.com/SaehwanPark/rupi/pull/139)
 - Latest benchmark change requests bounded workflow edits and an explicit foundation handoff
   in `bench/compare-pi-rupi.ps1`. Native file-tool configuration from `e3fdefa` remains.
-  Retry 17 is complete; retry 18 has not started.
+  Retry 17 is complete; retry 18 is running at revision `8cb9a78`.
 - Case 07 remains active. No retry after the baseline produced a strict oracle winner;
   the baseline Pi strict oracle win remains the last resolved result.
 - The root checkout is detached at `04b229c` and retains an unrelated user change in
@@ -141,7 +141,7 @@ then separate test-module and initializer writes. Evaluate the revision as a fre
 
 1. Start in the benchmark worktree and confirm branch `fix/case07-lease-cascade`.
 2. Make a fresh Codex usage check before launching another benchmark.
-3. Retry 17 is complete; retry 18 has not started. Use a fresh matched pair for the bounded
+3. Retry 17 is complete; retry 18 is running. Finish this matched pair for the bounded
    workflow-edit revision. Treat retry 13 as incomplete; do not combine different runs.
 4. Use pinned Pi at
    `..\rupi\.benchmark\tools\pi-0.86.1\pi.ps1` and the standard settings:
@@ -185,3 +185,10 @@ Next revision ends the foundation attempt after three writes and waits for harne
 Workflow recovery advances admission, retrieval, worker, and data flow via small edits of at
 most 80 new lines. It permits one __main__.py read when an exact edit anchor is unknown.
 This is a measured prompt hypothesis; timeout causes remain unknown from permitted evidence.
+
+## Retry 18: running
+
+Run: `bench-20261003-case07-bounded-edits-retry18-matched4-600s`, revision `8cb9a78`.
+Pre-run usage: 3% five-hour and 21% weekly. Standard matched settings, existing binary,
+and native file tools unchanged. Rupi turn 1 is running. Runner output remains unread in
+`.benchmark/retry18-runner-unread.log`. Artifacts are under `.benchmark/runs/` and this run ID.

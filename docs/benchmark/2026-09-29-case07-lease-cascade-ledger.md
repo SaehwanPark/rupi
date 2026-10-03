@@ -856,3 +856,9 @@ Native file tools, full specification, and standard matched budgets remain uncha
 Both agents recorded zero workflow work in their final turns; permitted evidence does not
 establish the timeout cause. Smaller edits are a prompt hypothesis, requiring a fresh pair.
 Parent review confirms the harness feedback boundary and unchanged runtime invariants.
+
+## Eighteenth matched retry started
+
+Run: `bench-20261003-case07-bounded-edits-retry18-matched4-600s`, revision `8cb9a78`.
+Pre-run usage: 3% five-hour and 21% weekly. Standard matched budgets, native file tools,
+and existing Rupi binary unchanged. Rupi turn 1 is running; no matched outcome yet.
