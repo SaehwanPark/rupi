@@ -369,3 +369,12 @@ Each edit adds at most 80 lines. Entrypoint recovery, completion, priority, and 
 agree on that sequence. Explicit off control, native policies, and shared budgets remain.
 All-case DryRun, assembled entrypoint/workflow checks, CRLF, changed-line 100-column,
 and parent invariant review pass. Fresh oracle evidence is pending for retry 23.
+
+## Retry 23: active
+
+Run: `bench-20261003-case07-continuous-initial-retry23-matched4-600s`, revision `df8dd67`.
+Pre-run usage: 35% five-hour and 41% weekly. Existing binary, explicit off configuration,
+native file tools/request policies, and standard shared budgets. Rupi turn 1 is running.
+Runner PID: 28608; tool session: 54474. Output stays unread in
+`.benchmark/retry23-runner-unread.log`. Inspect only per-turn summary/files/help.
+No oracle result yet. Merge still requires a strict Rupi oracle win.

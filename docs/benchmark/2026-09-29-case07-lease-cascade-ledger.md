@@ -1276,3 +1276,10 @@ cases are unchanged. Workflow fixtures and local/foundation recovery remain. All
 DryRun checks the assembled entrypoint and workflow prompts; CRLF and 100-column checks
 pass. Parent invariant-review verdict: pass; fresh oracle evidence is pending for retry 23.
 The draft does not establish why earlier requests timed out or why oracle checks failed.
+
+## Twenty-third fresh comparison launched
+
+Run: `bench-20261003-case07-continuous-initial-retry23-matched4-600s`, revision `df8dd67`.
+Pre-run parent usage: 35% five-hour and 41% weekly. Existing binary, explicit off control,
+native file tools/request policies, and the same four-turn/600-second outer budgets.
+Rupi turn 1 is running. Runner PID 28608; tool session 54474. No oracle outcome yet.
