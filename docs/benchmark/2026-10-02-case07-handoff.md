@@ -305,6 +305,9 @@ the compact entrypoint fallback. Actual inference activity and timeout cause are
 Rupi turn 2 completed in 385,086 ms with 11,164 work tokens and three completed writes.
 Entry point and both test files are present; tests/help passed, oracle failed.
 Rupi turn 3 is running. Entry point: 5,003 bytes; test module: 2,053 bytes.
+Rupi turn 3 ended at the request budget after 543,157 ms with 36,892 work tokens and
+seven completed tools. Tests/help passed; oracle failed. Entry point is 19,637 bytes;
+test-file sizes stayed unchanged. Rupi turn 4 is running.
 
 ## Pending correction: explicit off control
 

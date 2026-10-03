@@ -1148,3 +1148,9 @@ Turn 2 completed in 385,086 ms with 11,164 work tokens and three completed write
 Entrypoint fallback created __main__.py at 5,003 bytes, tests/test_leasecascade.py at
 2,053 bytes, and the initializer at 37 bytes. Tests/help passed; oracle failed.
 Turn 3 is running. This verifies recovery of the foundation, not the full workflow.
+
+## Twenty-first retry progress: Rupi turn 3
+
+Turn 3 ended at the eight-request budget after 543,157 ms: 36,892 work tokens, six
+completed edits and one read. Entry point grew to 19,637 bytes; test-file sizes stayed
+unchanged. Tests/help passed; oracle failed. The final Rupi turn is running.
