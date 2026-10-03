@@ -145,8 +145,8 @@ then separate test-module and initializer writes. Evaluate the revision as a fre
 
 1. Start in the benchmark worktree and confirm branch `fix/case07-lease-cascade`.
 2. Make a fresh Codex usage check before launching another benchmark.
-3. Retry 19 is complete; retry 20 has not started. Use a fresh pair for the aligned recovery
-   and relative-path revision. Treat retry 13 as incomplete; do not combine different runs.
+3. Retry 19 is complete; retry 20 is running for the aligned recovery and relative-path
+   revision. Treat retry 13 as incomplete; do not combine different runs.
 4. Use pinned Pi at
    `..\rupi\.benchmark\tools\pi-0.86.1\pi.ps1` and the standard settings:
    Case 07, four turns, 600 seconds per turn, 6-second provider grace, eight requests per
@@ -241,3 +241,11 @@ delivery is implemented. A single read may target the intended source or test fi
 editing. Initial and entrypoint recovery clarify that leasecascade/ and tests/ are relative
 to the current directory containing SPEC.md. DryRun now checks the assembled workflow
 prompt using temporary file markers, which are removed without recursive deletion.
+
+## Retry 20: running
+
+Run: `bench-20261003-case07-coherent-recovery-retry20-matched4-600s`, revision `46fa839`.
+Pre-run usage: 63% five-hour and 30% weekly. Existing binary, native file tools/request
+policies, and standard shared turn/time/model/thinking settings. Rupi turn 1 is running.
+Runner PID: 19252; tool session: 93754. Runner output stays unread in
+`.benchmark/retry20-runner-unread.log`. Inspect only the permitted per-turn evidence.

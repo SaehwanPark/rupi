@@ -1020,3 +1020,10 @@ tests already exist, continue remaining implementation edits; yield after adding
 tests. Guidance, priority, completion, and the one-file read allowance agree on that choice.
 All-case DryRun now exercises the assembled workflow prompt; diff, CRLF, and changed-line
 100-column checks pass. No standalone project tests were run by the parent.
+
+## Twentieth matched retry started
+
+Run: `bench-20261003-case07-coherent-recovery-retry20-matched4-600s`, revision `46fa839`.
+Pre-run usage: 63% five-hour and 30% weekly. Existing binary, native file tools/request
+policies, and standard shared turn/time/model/thinking settings. Rupi turn 1 is running.
+No oracle outcome yet; runner and agent output remain unread.
