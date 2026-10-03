@@ -650,3 +650,40 @@ Rupi totals: 10,263 work tokens, four writes, and 2,318,078 ms across four turns
 and 4 recorded no metered work. Help passed from turn 2; tests passed from turn 3; the
 oracle failed on every turn. Pi turn 1 is running, so the matched run has no outcome yet.
 Evidence remains per-turn `summary.json` and `files.json` only.
+
+## Fifteenth matched retry result
+
+Run: `bench-20261002-case07-foundation-repair-retry15-matched4-600s`.
+
+Runner exit 0. Settings remained pinned Pi 0.86.1, four turns, 600-second limits,
+6-second provider grace, eight requests per turn, thinking off, and the existing Rupi binary.
+
+| Agent | Turn | Work tokens | Tools | Time | Tests | Help | Oracle |
+| --- | ---: | ---: | ---: | --- | ---: | --- | ---: |
+| Rupi | 1 | 0 | 0 | 519,493 ms; timeout status | 1 | 1/1/1 | 1 |
+| Rupi | 2 | 2,403 | 1 | 600,329 ms timeout | 1 | 0/0/0 | 1 |
+| Rupi | 3 | 7,860 | 3 | 600,246 ms timeout | 0 | 0/0/0 | 1 |
+| Rupi | 4 | 0 | 0 | 598,010 ms; timeout status | 0 | 0/0/0 | 1 |
+| Pi | 1 | 0 | 0 | 600,219 ms timeout | 1 | 1/1/1 | 1 |
+| Pi | 2 | 17,402 | 9 | 600,245 ms timeout | 1 | 0/0/0 | 1 |
+| Pi | 3 | 8,660 | 5 | 382,381 ms | 0 | 0/0/0 | 1 |
+| Pi | 4 | 0 | 0 | 600,234 ms timeout | 0 | 0/0/0 | 1 |
+
+Rupi used 10,263 work tokens and four writes over 2,318,078 ms. Pi used 26,062 work
+tokens and 14 tools over 2,183,079 ms. Both passed help from turn 2 and tests from turn 3.
+Both final snapshots have the entry point, package initializer, and both tests, with no
+separate workflow modules. Pi's entry point expanded to 7,715 bytes on turn 3. Turn 4
+recorded zero work and tools and left both snapshots unchanged. Pi turn 2 included one
+`bash` request despite the prompt prohibition; its output was not inspected.
+
+The oracle failed every turn for both agents. There is no strict winner. Rupi used 15,799
+fewer work tokens but took 134,999 ms longer. The baseline Pi oracle win remains the last
+resolved comparison. Case 07 remains active.
+
+Both agents passed the foundation gates, but neither made a workflow recovery write in
+turn 4. Repeat the current revision in retry 16 before drawing a conclusion about that
+workflow directive. Post-run Codex usage: 50% five-hour and 13% weekly, below the current
+stop thresholds. Check usage again before launching the fresh matched comparison.
+
+Evidence is limited to per-turn summaries and file snapshots. Acceptance source, runner
+or agent output, session traces, and aggregate results remain unread; no standalone tests ran.

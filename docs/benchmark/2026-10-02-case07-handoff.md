@@ -1,6 +1,6 @@
 # Case 07 Lease Cascade Handoff
 
-Updated: 2026-10-02
+Updated: 2026-10-03
 
 ## Goal
 
@@ -14,7 +14,7 @@ pinned Pi 0.86.1 on the oracle.
 - Branch: `fix/case07-lease-cascade`
 - Draft PR: [#139](https://github.com/SaehwanPark/rupi/pull/139)
 - Current prompt revision: `26dcff1`, retry 15 foundation repair in `bench/compare-pi-rupi.ps1`.
-  Retry 14 used `3cabcde` unchanged; its matched comparison is complete.
+  Retry 15 used this revision; its matched comparison is complete.
 - Case 07 remains active. No retry after the baseline produced a strict oracle winner;
   the baseline Pi strict oracle win remains the last resolved result.
 - The root checkout is detached at `04b229c` and retains an unrelated user change in
@@ -23,14 +23,14 @@ pinned Pi 0.86.1 on the oracle.
 - No Rust source changes were made. The benchmark uses the existing
   `target/debug/rupi.exe`; the installed Rust toolchain lacks the Cargo component.
 
-## Latest completed comparison: retry 14
+## Latest completed comparison: retry 15
 
-Run: `bench-20261002-case07-integrated-workflow-write-retry14-matched4-600s`.
+Run: `bench-20261002-case07-foundation-repair-retry15-matched4-600s`.
 
 | Agent | Work tokens | Tools | Tests | Help | Oracle |
 | --- | ---: | ---: | ---: | --- | ---: |
-| Rupi | 49,184 | 12 | Passed turn 4 | Passed turn 4 | Failed all turns |
-| Pi | 26,318 | 12 | Passed turn 4 | Passed turns 3-4 | Failed all turns |
+| Rupi | 10,263 | 4 | Passed turns 3-4 | Passed turns 2-4 | Failed all turns |
+| Pi | 26,062 | 14 | Passed turns 3-4 | Passed turns 2-4 | Failed all turns |
 
 Neither agent resolved the oracle. The per-turn results and timings are in
 [the Case 07 ledger](2026-09-29-case07-lease-cascade-ledger.md).
@@ -84,7 +84,7 @@ Run: `bench-20261002-case07-integrated-workflow-write-retry14-matched4-600s`.
   every turn, while the prior handoff incorrectly labeled them failed.
 - Post-run usage: 12% five-hour and 7% weekly.
 
-## Retry 15: running
+## Retry 15: complete
 
 Run: `bench-20261002-case07-foundation-repair-retry15-matched4-600s`.
 
@@ -97,17 +97,22 @@ Run: `bench-20261002-case07-foundation-repair-retry15-matched4-600s`.
   three writes; tests and help passed, but the oracle failed. Turn 4 had zero work and
   tools, timeout status, and an unchanged snapshot. Tests/help passed; oracle failed.
 - Rupi totals: 10,263 work tokens, four writes, and 2,318,078 ms. No oracle resolution.
-- At this checkpoint, Pi turn 1 is running. Runner output remains unread in
+- Pi totals: 26,062 work tokens, 14 tools, and 2,183,079 ms. Help passed from turn 2 and
+  tests from turn 3, but the oracle failed every turn. Turn 4 had zero work/tools and an
+  unchanged snapshot. Its turn 2 metrics include one `bash`; output was not inspected.
+- Runner exit 0; the runner tree is gone. Output remains unread in
   `.benchmark/retry15-runner-unread.log`.
-- Runner PID at launch: 34400. Check liveness and per-turn artifacts before restarting.
+- Both agents passed foundations but made no workflow write in turn 4. Repeat the current
+  revision in retry 16 before inferring the workflow directive's effectiveness.
+- Post-run usage: 50% five-hour and 13% weekly.
 - Artifacts are under `.benchmark/runs/` followed by the run ID above.
 
 ## Resume steps
 
 1. Start in the benchmark worktree and confirm branch `fix/case07-lease-cascade`.
 2. Make a fresh Codex usage check before launching another benchmark.
-3. Retry 14 is complete. Retry 15 started; check whether it is still active and finish it if
-   running. Treat retry 13 as incomplete; do not combine turns from different runs.
+3. Retry 15 is complete. Start a fresh retry 16 with the current prompt after a usage check.
+   Treat retry 13 as incomplete; do not combine turns from different runs.
 4. Use pinned Pi at
    `..\rupi\.benchmark\tools\pi-0.86.1\pi.ps1` and the standard settings:
    Case 07, four turns, 600 seconds per turn, 6-second provider grace, eight requests per
