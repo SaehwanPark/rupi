@@ -1237,3 +1237,42 @@ messages on resume. No source evidence of lost initial specification was found; 
 traces were not inspected. Relevant source dates precede the existing binary timestamp,
 which is not proof of its build revision. No prompt or binary changes during this run.
 Parent usage: 17% five-hour and 38% weekly. PR CI passed on macOS, Ubuntu, and Windows.
+
+## Twenty-second fresh comparison result
+
+Revision `8ddbadd`; runner exit 0 and process tree gone. Existing binary, current prompt,
+native tool/request policies, standard shared budgets. Both agents' summaries record
+configured off/reasoning_effort/none. Actual wire requests/reasoning were not inspected.
+
+| Agent | Turn | Work tokens | Tools | Time | Tests | Help | Oracle |
+| --- | ---: | ---: | ---: | --- | --- | --- | ---: |
+| Pi | 1 | 13,965 | 1 | 600,273 ms timeout | 1 | 0/0/0 | 1 |
+| Pi | 2 | 8,868 | 4 | 600,237 ms timeout | Timeout | 0/0/0 | 1 |
+| Pi | 3 | 12,352 | 9 | 600,258 ms timeout | 1 | 0/0/0 | 1 |
+| Pi | 4 | 12,710 | 10 | 501,728 ms | 1 | 0/0/0 | 1 |
+
+Pi totals: 47,895 work tokens, 24 tools, 2,302,496 ms. Rupi totals: 59,786 work tokens,
+16 requests (15 completions, one failure), 1,983,746 ms. Every oracle failed. No strict
+winner; baseline low-thinking Pi remains the last resolved oracle winner. Rupi used
+11,891 more recorded work tokens and took 318,750 ms less. Case 07 stays active.
+
+Pi turn 1 wrote the entry point at 22,570 bytes but no tests. Turn 2 created tests and a
+sink fixture; project tests timed out at 180,155 ms. Turn 3 made seven edits, one read,
+and one write; it added README.md and changed application/tests. Turn 4 completed six
+edits and four reads. Final entry point: 24,984 bytes; tests: 21,471 bytes. Tests failed
+on turns 3-4; help passed every turn. Coverage and failure causes remain unknown.
+Post-run parent usage: 33% five-hour and 41% weekly. Only permitted evidence was read.
+
+## Next revision: bounded writes and continued initial work
+
+A separately prepared draft returns to a first CLI/health write under 150 lines, then
+the real test module and initializer. After those three writes, advance admission,
+retrieval, and worker through edits of at most 80 new lines in the same attempt. Initial
+guidance, entrypoint recovery, completion, and priority agree on that sequence. This
+combines a small first mutation with continued progress before the first harness feedback.
+
+The explicit off configuration, native tool/request policies, outer budgets, and other
+cases are unchanged. Workflow fixtures and local/foundation recovery remain. All-case
+DryRun checks the assembled entrypoint and workflow prompts; CRLF and 100-column checks
+pass. Parent invariant-review verdict: pass; fresh oracle evidence is pending for retry 23.
+The draft does not establish why earlier requests timed out or why oracle checks failed.

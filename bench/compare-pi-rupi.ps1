@@ -362,12 +362,13 @@ function Get-CaseGuidance([hashtable]$case, [string]$phase = "initial") {
           'The complete Case 07 specification is embedded; do not reread SPEC.md.'
           'The current directory contains SPEC.md and is already the project root.'
           'Use leasecascade/ and tests/ paths directly relative to this current directory.'
-          'First tool call: write the connected Case 07 application in leasecascade/__main__.py.'
+          'First tool call: write a compact, runnable CLI in leasecascade/__main__.py.'
           'Do not inspect files or run commands before this first source write.'
           'Use the workspace write tool; this first write must create __main__.py.'
-          'Keep the first module compact: target 350-450 lines with connected public-spec behavior.'
+          'Keep the first CLI write under 150 lines with top-level, serve, and worker help.'
+          'Make this CLI write immediately; decide each subsequent edit when you reach it.'
           'Implement serve with a standard-library GET /healthz route and valid options.'
-          'Include signed admission, SQLite state, retrieval, and worker execution in this write.'
+          'Defer SQLite, HMAC, pipeline state, and worker execution until the test files exist.'
           'Second write call: create tests/test_leasecascade.py with a real unittest.'
           'Third write call: create tests/__init__.py after the test module exists.'
           'Each write call creates one file; write the test module before its initializer.'
@@ -376,12 +377,12 @@ function Get-CaseGuidance([hashtable]$case, [string]$phase = "initial") {
           'Use native file tools and delegate all execution and verification to the harness.'
           'After the entry point, write the test module and initializer in consecutive calls.'
           'Keep all workflow code in __main__.py; do not create helper modules.'
-          'After the three application/test writes, end this attempt for harness feedback.'
-          'Use recovery attempts to correct or complete behavior with small source edits.'
-          'Apply recovery edits of at most 80 new lines while preserving passing behavior.'
+          'After the three foundation writes, continue workflow edits within this attempt.'
+          'Use harness feedback after this attempt to correct failures and continue the workflow.'
+          'Apply subsequent source edits of at most 80 new lines while preserving passing behavior.'
           'Invoke the sink with direct argv and persist output and terminal status.'
           'Expose the result through the documented pipeline/job retrieval route.'
-          'Connect admission, retrieval, and worker delivery in the initial application write.'
+          'Advance admission, retrieval, then worker within this attempt through small edits.'
           'Use standard-library imports and a main guard; do not import absent local modules.'
           'Implement signed pipeline admission and durable ordered job state.'
           'Then add worker --once with bounded leases, direct argv, and no polling.'
@@ -402,16 +403,19 @@ function Get-CaseGuidance([hashtable]$case, [string]$phase = "initial") {
           'Use leasecascade/ and tests/ paths directly relative to this current directory.'
           'First tool call: write a compact, runnable CLI in leasecascade/__main__.py.'
           'Do not inspect files or run commands before this first source write.'
-          'Keep the entry point under 150 lines with top-level, serve, and worker help.'
+          'Keep the first CLI write under 150 lines with top-level, serve, and worker help.'
+          'Make this CLI write immediately; decide each subsequent edit when you reach it.'
           'Implement serve with a standard-library GET /healthz route and valid options.'
           'Use standard-library imports and a main guard; do not import absent local modules.'
           'Define needed constants in __main__.py; do not import __version__ from the package.'
-          'Defer SQLite, HMAC, pipeline state, and worker execution to later writes.'
+          'Defer SQLite, HMAC, pipeline state, and worker execution until the test files exist.'
           'Second write call: create tests/test_leasecascade.py with a real unittest.'
           'Third write call: create tests/__init__.py after the test module exists.'
           'Cover the three help paths with subprocess checks using sys.executable.'
-          'After the three foundation writes, end this attempt and wait for harness feedback.'
-          'Do not write validation, storage, server, or worker files until tests and help pass.'
+          'After the three foundation writes, continue workflow edits within this attempt.'
+          'Keep all workflow code in __main__.py; do not create helper modules.'
+          'Apply subsequent source edits of at most 80 new lines while preserving passing behavior.'
+          'Advance admission, retrieval, then worker within this attempt through small edits.'
           'Do not run commands, tests, help checks, service, worker, or oracle.'
         ) -join [Environment]::NewLine)
       }
@@ -673,12 +677,12 @@ directories to its extended Windows path with `cd` or `cd /d`.
     $requiredInstructions += @(
       'Implement Case 07 from the complete embedded specification.'
       'The complete Case 07 specification follows:'
-      'First tool call: write the connected Case 07 application in leasecascade/__main__.py.'
+      'First tool call: write a compact, runnable CLI in leasecascade/__main__.py.'
       'Do not inspect files or run commands before this first source write.'
       'Use the workspace write tool; this first write must create __main__.py.'
-      'Keep the first module compact: target 350-450 lines with connected public-spec behavior.'
+      'Keep the first CLI write under 150 lines with top-level, serve, and worker help.'
       'Implement serve with a standard-library GET /healthz route and valid options.'
-      'Include signed admission, SQLite state, retrieval, and worker execution in this write.'
+      'Defer SQLite, HMAC, pipeline state, and worker execution until the test files exist.'
       'Second write call: create tests/test_leasecascade.py with a real unittest.'
       'Third write call: create tests/__init__.py after the test module exists.'
       'Each write call creates one file; write the test module before its initializer.'
@@ -687,8 +691,8 @@ directories to its extended Windows path with `cd` or `cd /d`.
       'Use native file tools and delegate all execution and verification to the harness.'
       'After the entry point, write the test module and initializer in consecutive calls.'
       'Keep all workflow code in __main__.py; do not create helper modules.'
-      'After the three application/test writes, end this attempt for harness feedback.'
-      'Connect admission, retrieval, and worker delivery in the initial application write.'
+      'After the three foundation writes, continue workflow edits within this attempt.'
+      'Advance admission, retrieval, then worker within this attempt through small edits.'
       'Use standard-library imports and a main guard; do not import absent local modules.'
       'Implement signed pipeline admission and durable ordered job state.'
       'Then add worker --once with bounded leases, direct argv, and no polling.'
@@ -926,12 +930,12 @@ directories to its extended Windows path with `cd` or `cd /d`.
   } elseif ($case.Id -eq "07-lease-cascade") {
     $caseSpecificInstructions = @(
       'The complete Case 07 specification is embedded; do not reread SPEC.md.'
-      'First tool call: write the connected Case 07 application in leasecascade/__main__.py.'
+      'First tool call: write a compact, runnable CLI in leasecascade/__main__.py.'
       'Do not inspect files or run commands before this first source write.'
       'Use the workspace write tool; this first write must create __main__.py.'
-      'Keep the first module compact: target 350-450 lines with connected public-spec behavior.'
+      'Keep the first CLI write under 150 lines with top-level, serve, and worker help.'
       'Implement serve with a standard-library GET /healthz route and valid options.'
-      'Include signed admission, SQLite state, retrieval, and worker execution in this write.'
+      'Defer SQLite, HMAC, pipeline state, and worker execution until the test files exist.'
       'Second write call: create tests/test_leasecascade.py with a real unittest.'
       'Third write call: create tests/__init__.py after the test module exists.'
       'Each write call creates one file; write the test module before its initializer.'
@@ -940,8 +944,8 @@ directories to its extended Windows path with `cd` or `cd /d`.
       'Use native file tools and delegate all execution and verification to the harness.'
       'After the entry point, write the test module and initializer in consecutive calls.'
       'Keep all workflow code in __main__.py; do not create helper modules.'
-      'After the three application/test writes, end this attempt for harness feedback.'
-      'Connect admission, retrieval, and worker delivery in the initial application write.'
+      'After the three foundation writes, continue workflow edits within this attempt.'
+      'Advance admission, retrieval, then worker within this attempt through small edits.'
       'Implement signed pipeline admission and durable ordered job state.'
       'Then add worker --once with bounded leases, direct argv, and no polling.'
       'Claim runnable jobs in pipeline and job insertion order.'
@@ -1289,7 +1293,10 @@ unittest suite, the project-specific help commands, and a smoke sequence.
     'Complete this slice; advance after project tests and help pass.'
   } elseif ($case.Id -eq "07-lease-cascade") {
     switch ($case07Phase) {
-      "entrypoint" { 'Create a compact runnable entry point with all help paths and /healthz.' }
+      "entrypoint" {
+        ('Create a compact entry point and test files first, then continue workflow edits ' +
+          'within this attempt.')
+      }
       "foundation" {
         'Fix failed help paths and ensure unittest discovery works before worker expansion.'
       }
@@ -1330,8 +1337,8 @@ unittest suite, the project-specific help commands, and a smoke sequence.
   } elseif ($case.Id -eq "07-lease-cascade") {
     switch ($case07Phase) {
       "entrypoint" {
-        ('Write a compact leasecascade/__main__.py with all help paths and /healthz; ' +
-          'defer persistence, signing, and worker execution to later writes.')
+        ('Write CLI/health in __main__.py, then the test module and initializer; ' +
+          'advance admission, retrieval, and worker through edits of at most 80 new lines.')
       }
       "foundation" {
         ('Fix failed help paths and create tests/__init__.py plus ' +
@@ -2073,7 +2080,11 @@ if ($DryRun) {
         'Define needed constants in __main__.py; do not import __version__ from the package.'
         'Second write call: create tests/test_leasecascade.py with a real unittest.'
         'Third write call: create tests/__init__.py after the test module exists.'
-        'After the three foundation writes, end this attempt and wait for harness feedback.'
+        'Make this CLI write immediately; decide each subsequent edit when you reach it.'
+        'After the three foundation writes, continue workflow edits within this attempt.'
+        'Keep all workflow code in __main__.py; do not create helper modules.'
+        'Apply subsequent source edits of at most 80 new lines while preserving passing behavior.'
+        'Advance admission, retrieval, then worker within this attempt through small edits.'
       )
       foreach ($instruction in $entrypointRequirements) {
         if (-not $entrypointGuidance.Contains($instruction)) {
@@ -2090,12 +2101,12 @@ if ($DryRun) {
         'Each write call creates one file; write the test module before its initializer.'
         'After the entry point, write the test module and initializer in consecutive calls.'
         'Keep all workflow code in __main__.py; do not create helper modules.'
-        'After the three application/test writes, end this attempt for harness feedback.'
-        'Use recovery attempts to correct or complete behavior with small source edits.'
-        'Apply recovery edits of at most 80 new lines while preserving passing behavior.'
+        'After the three foundation writes, continue workflow edits within this attempt.'
+        'Use harness feedback after this attempt to correct failures and continue the workflow.'
+        'Apply subsequent source edits of at most 80 new lines while preserving passing behavior.'
         'Invoke the sink with direct argv and persist output and terminal status.'
         'Expose the result through the documented pipeline/job retrieval route.'
-        'Connect admission, retrieval, and worker delivery in the initial application write.'
+        'Advance admission, retrieval, then worker within this attempt through small edits.'
       )
       foreach ($instruction in $initialRequirements) {
         if (-not $initialGuidance.Contains($instruction)) {
@@ -2202,8 +2213,19 @@ if ($DryRun) {
       }
       help = $dryRunHelp
     }
-    [void](Get-RecoveryPrompt $_ $dryRunVerification)
+    $dryRunRecovery = Get-RecoveryPrompt $_ $dryRunVerification
     if ($_.Id -eq "07-lease-cascade") {
+      $entrypointPromptRequirements = @(
+        ('Create a compact entry point and test files first, then continue workflow edits ' +
+          'within this attempt.')
+        ('Write CLI/health in __main__.py, then the test module and initializer; ' +
+          'advance admission, retrieval, and worker through edits of at most 80 new lines.')
+      )
+      foreach ($instruction in $entrypointPromptRequirements) {
+        if (-not $dryRunRecovery.Contains($instruction)) {
+          throw "Case 07 assembled entrypoint prompt is missing: $instruction"
+        }
+      }
       $dryRunProject = Join-Path ([IO.Path]::GetTempPath()) (
         "rupi-case07-dryrun-" + [Guid]::NewGuid().ToString("N")
       )

@@ -13,10 +13,10 @@ pinned Pi 0.86.1 on the oracle.
 - Worktree: `C:\Users\saehwan\repos\rupi-case07-lease-cascade`
 - Branch: `fix/case07-lease-cascade`
 - Draft PR: [#139](https://github.com/SaehwanPark/rupi/pull/139)
-- Latest benchmark change explicitly configures Case 07 Rupi off control to match Pi's
-  reasoning_effort none mapping. The connected initial prompt, bounded recovery edits,
-  and compact entrypoint fallback are retained. Native tools/request budgets are unchanged.
-  Retry 20 is complete; retry 21 is incomplete; retry 22 is running at `8ddbadd`.
+- Latest benchmark change requests a small first CLI write, then both test files, then
+  continued workflow edits within the same attempt. Explicit off control, bounded edits,
+  native tools/request policies, and outer budgets remain unchanged. Retry 22 is complete;
+  retry 21 is incomplete; retry 23 has not started.
 - Case 07 remains active. No retry after the baseline produced a strict oracle winner;
   the baseline Pi strict oracle win remains the last resolved result.
 - Request-budget clarification: the eight-request parameter caps Rupi. Pi retains its
@@ -32,14 +32,14 @@ pinned Pi 0.86.1 on the oracle.
 - No Rust source changes were made. The benchmark uses the existing
   `target/debug/rupi.exe`; the installed Rust toolchain lacks the Cargo component.
 
-## Latest completed comparison: retry 20
+## Latest completed comparison: retry 22
 
-Run: `bench-20261003-case07-coherent-recovery-retry20-matched4-600s`.
+Run: `bench-20261003-case07-explicit-off-retry22-matched4-600s`.
 
 | Agent | Work tokens | Tools | Tests | Help | Oracle |
 | --- | ---: | ---: | ---: | --- | ---: |
-| Rupi | 78,598 | 19 | Passed all turns | Passed all turns | Failed all turns |
-| Pi | 35,800 | 15 | Passed all turns | Passed all turns | Failed all turns |
+| Rupi | 59,786 | 16 | Passed turns 3-4 | Passed turns 2-4 | Failed all turns |
+| Pi | 47,895 | 24 | Failed all turns | Passed all turns | Failed all turns |
 
 Neither agent resolved the oracle. The per-turn results and timings are in
 [the Case 07 ledger](2026-09-29-case07-lease-cascade-ledger.md).
@@ -149,8 +149,8 @@ then separate test-module and initializer writes. Evaluate the revision as a fre
 
 1. Start in the benchmark worktree and confirm branch `fix/case07-lease-cascade`.
 2. Make a fresh Codex usage check before launching another benchmark.
-3. Retry 22 is running with explicit off control; retry 21 is incomplete. Preserve
-   artifacts and never combine turns from different runs. Retry 20 is the last complete pair.
+3. Retry 22 is complete without an oracle pass; retry 21 is incomplete. Use a fresh
+   retry 23 for continued initial work. Preserve artifacts and never combine different runs.
 4. Use pinned Pi at
    `..\rupi\.benchmark\tools\pi-0.86.1\pi.ps1` and the standard settings:
    Case 07, four turns, 600 seconds per turn, 6-second provider grace, eight requests per
@@ -339,7 +339,7 @@ All-case DryRun checks missing/null/existing compatibility objects, field preser
 and unchanged non-Case 07 endpoints. Diff, CRLF, changed-line 100-column, and parent
 invariant checks pass. Evaluate a fresh retry 22 before further prompt tuning.
 
-## Retry 22: running
+## Retry 22: complete
 
 Run: `bench-20261003-case07-explicit-off-retry22-matched4-600s`, revision `8ddbadd`.
 Pre-run usage: 4% five-hour and 36% weekly. Current connected initial/recovery prompts,
@@ -355,3 +355,17 @@ test module: 4,591 bytes. All summaries record configured off/reasoning_effort/n
 Pi turn 1 is running. Parent usage: 17% five-hour and 38% weekly. PR CI passed on all
 three OS jobs. Source audit found no evidence that the initial specification was dropped
 on provider failure; no session traces were inspected and recovery remains unchanged.
+Pi is complete: 47,895 work tokens, 24 tools, 2,302,496 ms. Help passed every turn;
+project tests timed out on turn 2 and failed on other turns. Every oracle failed.
+Final entry point: 24,984 bytes; tests: 21,471 bytes. Runner exit 0; process tree gone.
+No strict winner. Rupi used 11,891 more recorded work tokens and took 318,750 ms less.
+Post-run parent usage: 33% five-hour and 41% weekly. Coverage/failure causes remain unknown.
+
+## Next revision: bounded writes with continued initial work
+
+The initial write is a CLI/health foundation under 150 lines. Write the test module and
+initializer next, then continue admission, retrieval, and worker edits within that attempt.
+Each edit adds at most 80 lines. Entrypoint recovery, completion, priority, and guidance
+agree on that sequence. Explicit off control, native policies, and shared budgets remain.
+All-case DryRun, assembled entrypoint/workflow checks, CRLF, changed-line 100-column,
+and parent invariant review pass. Fresh oracle evidence is pending for retry 23.
