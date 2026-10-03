@@ -21,7 +21,11 @@ pinned Pi 0.86.1 on the oracle.
   the baseline Pi strict oracle win remains the last resolved result.
 - Request-budget clarification: the eight-request parameter caps Rupi. Pi retains its
   native request policy; retry 18 Pi turn 3 recorded nine completed model requests.
-  Model, thinking, turn count, and outer time limits are shared across each pair.
+  Model, configured thinking label, turn count, and outer time limits are shared.
+- Source review during retry 21 found different off-mode wire controls: the Rupi fixture
+  uses the default omission; Pi explicitly sends reasoning_effort none. Correct the
+  Case 07 Rupi endpoint override after the active pair and use a fresh comparison.
+  Actual past reasoning and timeout causes remain unknown. Baseline low is unaffected.
 - The root checkout is detached at `04b229c` and retains an unrelated user change in
   `docs/ai-usage-policy.md`; leave it untouched. The task branch is now attached to the
   benchmark worktree, which started clean at the same commit.
@@ -301,3 +305,14 @@ the compact entrypoint fallback. Actual inference activity and timeout cause are
 Rupi turn 2 completed in 385,086 ms with 11,164 work tokens and three completed writes.
 Entry point and both test files are present; tests/help passed, oracle failed.
 Rupi turn 3 is running. Entry point: 5,003 bytes; test module: 2,053 bytes.
+
+## Pending correction: explicit off control
+
+The Case 07 fixture omits openai_compat; provider defaults use reasoning_effort dialect
+and omit the field for Off. Pi's harness maps off to none and its installed provider emits
+that value. Evidence: rupi-core/src/config.rs defaults, rupi-provider/src/config.rs and
+mapping.rs, New-PiConfig in the benchmark, and pinned Pi's installed provider source.
+The observed llama process declares reasoning effort low. Do not infer actual previous
+request reasoning from this source/process evidence. Keep active retry 21 unchanged;
+after completion, set Case 07 Rupi thinking_disable to reasoning_effort_none, preserve
+other endpoint settings, verify DryRun, and evaluate a fresh pair before further tuning.

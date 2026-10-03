@@ -6,8 +6,16 @@ Pi 0.86.1.
 Request-budget clarification: `MaxModelRequestsPerTurn=8` configures Rupi's runtime.
 The harness leaves Pi's native request behavior intact. Historical references to eight
 requests per turn in this ledger mean the Rupi cap. These comparisons share model,
-thinking, turn count, and outer time limits while retaining different request policies.
+configured thinking level, turn count, and outer time limits with different request policies.
 Retry 18 Pi turn 3 recorded nine completed model requests; baseline Pi also exceeded eight.
+
+Thinking-control clarification from source review during retry 21: at configured `off`,
+Rupi's source fixture has no openai_compat override. Provider defaults omit the control
+field. Pi's harness thinkingLevelMap maps off to none; its provider sends
+`reasoning_effort: "none"`. Historical off runs therefore share the configured label,
+not equivalent wire controls. The observed llama process declares default effort low;
+past request behavior and timeout causes are not established. Low-thinking baseline
+results are not reclassified by this off-mode finding. A fresh pair must follow correction.
 
 ## Matched baseline
 
