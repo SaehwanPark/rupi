@@ -1304,3 +1304,46 @@ and the benchmark prompt, without evidence that it caused these timeouts. Select
 slot counters were also observed read-only; no request prompts/content or logs were read,
 and counters were not attributed to benchmark requests. Parent usage: 47% five-hour,
 43% weekly. Latest pushed-head CI passed all three OS jobs. Running source stays unchanged.
+
+## Twenty-third fresh comparison result
+
+Revision `df8dd67`; runner exit 0 and process tree gone. Existing binary, explicit off
+configuration, native tools/request policies, and standard shared budgets. Every summary
+records configured off/reasoning_effort/none; actual wire requests were not inspected.
+
+| Agent | Turn | Work tokens | Tools | Time | Tests | Help | Oracle |
+| --- | ---: | ---: | ---: | --- | ---: | --- | ---: |
+| Pi | 1 | 17,562 | 5 | 600,221 ms timeout | 1 | 0/0/0 | 1 |
+| Pi | 2 | 12,909 | 8 | 600,273 ms timeout | 1 | 0/0/0 | 1 |
+| Pi | 3 | 9,132 | 5 | 600,210 ms timeout | 1 | 0/0/0 | 1 |
+| Pi | 4 | 8,231 | 4 | 600,239 ms timeout | 1 | 0/0/0 | 1 |
+
+Pi totals: 47,834 work tokens, 22 calls, 2,400,943 ms. Rupi totals: 14,537 recorded work
+tokens, three completed writes, 2,388,041 ms. Every oracle failed. No strict winner;
+baseline low-thinking Pi remains the last resolved oracle winner. Rupi recorded 33,297
+fewer work tokens and took 12,902 ms less; timeouts omit unknown inference, so these are
+not exact total-consumption comparisons. Case 07 stays active.
+
+Pi turn 1 wrote application/tests; help passed, tests failed. Turn 2 completed five edits,
+two reads, and ls; entry point reached 31,311 bytes. Turn 3 added a package initializer
+and grew tests to 15,659 bytes; tests still failed. Turn 4 recorded grep and three reads,
+with unchanged snapshot paths/sizes. Help passed every turn. Coverage/failure causes remain
+unknown. Post-run parent usage: 61% five-hour and 45% weekly. Only permitted artifact
+evidence was read. PR CI passed all OS jobs at the prior pushed head.
+
+## Next revision: bounded foundation and complete recovery contract
+
+A separate parent-authored draft limits the first CLI write to 90 lines and initial help/
+import tests to 60 lines, then yields after three foundation writes. Workflow recovery
+requests small public CLI/HTTP tests before implementation expansion. Local recovery targets
+the diagnostic actually shown by the existing tail excerpt and preserves public assertions.
+
+Persistence alone does not establish model visibility: the runtime's L0 reduction path can
+evict older complete turns while canonical history remains; resume restores the live window.
+Actual eviction is unknown. The draft therefore includes the complete public specification
+before every recovery's phase guidance, retaining core context policy and provenance.
+All-case DryRun verifies exact specification content and assembled entrypoint, workflow,
+and local-test directives. CRLF, changed-line columns, and parent invariant review pass.
+An unintended Case 06 replacement in the draft was restored. Native controls/budgets and
+other cases remain. Installed by bounded patch after retry 23; tracked source matches the
+reviewed draft and passes the same checks. Fresh retry 24 is required; no oracle claim yet.

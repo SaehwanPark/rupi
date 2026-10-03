@@ -363,13 +363,14 @@ function Get-CaseGuidance([hashtable]$case, [string]$phase = "initial") {
           'The current directory contains SPEC.md and is already the project root.'
           'Use leasecascade/ and tests/ paths directly relative to this current directory.'
           'First tool call: write a compact, runnable CLI in leasecascade/__main__.py.'
-          'Do not inspect files or run commands before this first source write.'
+          'Review the embedded specification as file inspection before this first source write.'
           'Use the workspace write tool; this first write must create __main__.py.'
-          'Keep the first CLI write under 150 lines with top-level, serve, and worker help.'
-          'Make this CLI write immediately; decide each subsequent edit when you reach it.'
+          'Keep the first CLI write under 90 lines with top-level, serve, and worker help.'
+          'This attempt covers only CLI/health and help tests; do not plan workflow code yet.'
           'Implement serve with a standard-library GET /healthz route and valid options.'
           'Defer SQLite, HMAC, pipeline state, and worker execution until the test files exist.'
           'Second write call: create tests/test_leasecascade.py with a real unittest.'
+          'Keep initial tests under 60 lines; cover only imports and the three help paths.'
           'Third write call: create tests/__init__.py after the test module exists.'
           'Each write call creates one file; write the test module before its initializer.'
           'Include an importable unittest.TestCase with at least one test_ method.'
@@ -377,12 +378,12 @@ function Get-CaseGuidance([hashtable]$case, [string]$phase = "initial") {
           'Use native file tools and delegate all execution and verification to the harness.'
           'After the entry point, write the test module and initializer in consecutive calls.'
           'Keep all workflow code in __main__.py; do not create helper modules.'
-          'After the three foundation writes, continue workflow edits within this attempt.'
-          'Use harness feedback after this attempt to correct failures and continue the workflow.'
+          'Complete only CLI/health and help tests in this attempt; yield after the three writes.'
+          'Use the next harness feedback to begin workflow tests and implementation.'
           'Apply subsequent source edits of at most 80 new lines while preserving passing behavior.'
           'Invoke the sink with direct argv and persist output and terminal status.'
           'Expose the result through the documented pipeline/job retrieval route.'
-          'Advance admission, retrieval, then worker within this attempt through small edits.'
+          'Complete workflow behavior in later attempts using public-spec tests and small edits.'
           'Use standard-library imports and a main guard; do not import absent local modules.'
           'Implement signed pipeline admission and durable ordered job state.'
           'Then add worker --once with bounded leases, direct argv, and no polling.'
@@ -402,20 +403,21 @@ function Get-CaseGuidance([hashtable]$case, [string]$phase = "initial") {
           'The current directory contains SPEC.md and is already the project root.'
           'Use leasecascade/ and tests/ paths directly relative to this current directory.'
           'First tool call: write a compact, runnable CLI in leasecascade/__main__.py.'
-          'Do not inspect files or run commands before this first source write.'
-          'Keep the first CLI write under 150 lines with top-level, serve, and worker help.'
-          'Make this CLI write immediately; decide each subsequent edit when you reach it.'
+          'Review the embedded specification as file inspection before this first source write.'
+          'Keep the first CLI write under 90 lines with top-level, serve, and worker help.'
+          'This attempt covers only CLI/health and help tests; do not plan workflow code yet.'
           'Implement serve with a standard-library GET /healthz route and valid options.'
           'Use standard-library imports and a main guard; do not import absent local modules.'
           'Define needed constants in __main__.py; do not import __version__ from the package.'
           'Defer SQLite, HMAC, pipeline state, and worker execution until the test files exist.'
           'Second write call: create tests/test_leasecascade.py with a real unittest.'
+          'Keep initial tests under 60 lines; cover only imports and the three help paths.'
           'Third write call: create tests/__init__.py after the test module exists.'
           'Cover the three help paths with subprocess checks using sys.executable.'
-          'After the three foundation writes, continue workflow edits within this attempt.'
+          'Complete only CLI/health and help tests in this attempt; yield after the three writes.'
           'Keep all workflow code in __main__.py; do not create helper modules.'
           'Apply subsequent source edits of at most 80 new lines while preserving passing behavior.'
-          'Advance admission, retrieval, then worker within this attempt through small edits.'
+          'Complete workflow behavior in later attempts using public-spec tests and small edits.'
           'Do not run commands, tests, help checks, service, worker, or oracle.'
         ) -join [Environment]::NewLine)
       }
@@ -435,10 +437,11 @@ function Get-CaseGuidance([hashtable]$case, [string]$phase = "initial") {
       }
       if ($phase -eq "local") {
         return (@(
-          'Repair the first failing project test from harness feedback before adding more features.'
+          'Repair the project-test failure shown in the diagnostic excerpt before adding features.'
           'Preserve the public-specification assertions and fix the implementation in small edits.'
           'Each implementation edit adds at most 80 lines; preserve passing tests and help.'
           'Use the existing source and test context; read only the relevant file when needed.'
+          'Repair other failures from the same feedback while the request budget remains.'
           'Then yield for harness feedback; do not run checks, service, worker, or oracle.'
         ) -join [Environment]::NewLine)
       }
@@ -447,19 +450,20 @@ function Get-CaseGuidance([hashtable]$case, [string]$phase = "initial") {
           'Project tests and all help checks pass, but the independent oracle failed.'
           'Keep the passing tests and help paths intact.'
           'Do not repeat CLI, health-route, or test-discovery scaffolding.'
-          'When worker delivery is missing, advance leasecascade/__main__.py through small edits.'
+          'After workflow tests exist, advance leasecascade/__main__.py through small edits.'
           'Use prior context; read the intended source or test file once if its anchor is unknown.'
-          'After that read, the next tool call must edit source rather than inspect more files.'
+          'After that read, the next tool call must edit the intended file, not inspect more files.'
           'Each edit adds at most 80 lines; apply the first edit before designing later slices.'
-          'Before worker delivery, advance signed admission, retrieval, then worker in small edits.'
-          'If admission is missing, first add raw-body HMAC and atomic SQLite pipeline/job state.'
+          'After workflow tests exist, add signed admission, retrieval, then worker in small edits.'
+          'With tests present, add missing raw-body HMAC and atomic SQLite pipeline/job state.'
           'Then connect POST /pipelines and GET /pipelines/<pipeline_id> in small separate edits.'
           'Keep workflow code in that file; do not create __init__.py or helper modules yet.'
           'Then add ordered leased claims, a direct-argv sink, and persisted terminal output.'
           'Use a bounded worker --once; reclaim expired leases without polling.'
-          ('If worker delivery is implemented and workflow tests are missing, edit ' +
+          ('If workflow tests are missing, edit ' +
             'tests/test_leasecascade.py next.')
-          'Keep workflow tests small; exercise your real helpers with temporary SQLite and a sink.'
+          'Keep workflow tests small; use the real CLI and HTTP contract before implementation.'
+          'Use finite HTTP/process timeouts and terminate/wait for the server in finally.'
           'Test signed admission, persisted retrieval, and worker delivery of declared inputs.'
           'Test a barrier whose depends_on order reverses the two dependency insertion positions.'
           'Assert fan_in contains only collect.field values, with job_id/value items in that order.'
@@ -678,12 +682,13 @@ directories to its extended Windows path with `cd` or `cd /d`.
       'Implement Case 07 from the complete embedded specification.'
       'The complete Case 07 specification follows:'
       'First tool call: write a compact, runnable CLI in leasecascade/__main__.py.'
-      'Do not inspect files or run commands before this first source write.'
+      'Review the embedded specification as file inspection before this first source write.'
       'Use the workspace write tool; this first write must create __main__.py.'
-      'Keep the first CLI write under 150 lines with top-level, serve, and worker help.'
+      'Keep the first CLI write under 90 lines with top-level, serve, and worker help.'
       'Implement serve with a standard-library GET /healthz route and valid options.'
       'Defer SQLite, HMAC, pipeline state, and worker execution until the test files exist.'
       'Second write call: create tests/test_leasecascade.py with a real unittest.'
+      'Keep initial tests under 60 lines; cover only imports and the three help paths.'
       'Third write call: create tests/__init__.py after the test module exists.'
       'Each write call creates one file; write the test module before its initializer.'
       'Include an importable unittest.TestCase with at least one test_ method.'
@@ -691,8 +696,8 @@ directories to its extended Windows path with `cd` or `cd /d`.
       'Use native file tools and delegate all execution and verification to the harness.'
       'After the entry point, write the test module and initializer in consecutive calls.'
       'Keep all workflow code in __main__.py; do not create helper modules.'
-      'After the three foundation writes, continue workflow edits within this attempt.'
-      'Advance admission, retrieval, then worker within this attempt through small edits.'
+      'Complete only CLI/health and help tests in this attempt; yield after the three writes.'
+      'Complete workflow behavior in later attempts using public-spec tests and small edits.'
       'Use standard-library imports and a main guard; do not import absent local modules.'
       'Implement signed pipeline admission and durable ordered job state.'
       'Then add worker --once with bounded leases, direct argv, and no polling.'
@@ -931,12 +936,13 @@ directories to its extended Windows path with `cd` or `cd /d`.
     $caseSpecificInstructions = @(
       'The complete Case 07 specification is embedded; do not reread SPEC.md.'
       'First tool call: write a compact, runnable CLI in leasecascade/__main__.py.'
-      'Do not inspect files or run commands before this first source write.'
+      'Review the embedded specification as file inspection before this first source write.'
       'Use the workspace write tool; this first write must create __main__.py.'
-      'Keep the first CLI write under 150 lines with top-level, serve, and worker help.'
+      'Keep the first CLI write under 90 lines with top-level, serve, and worker help.'
       'Implement serve with a standard-library GET /healthz route and valid options.'
       'Defer SQLite, HMAC, pipeline state, and worker execution until the test files exist.'
       'Second write call: create tests/test_leasecascade.py with a real unittest.'
+      'Keep initial tests under 60 lines; cover only imports and the three help paths.'
       'Third write call: create tests/__init__.py after the test module exists.'
       'Each write call creates one file; write the test module before its initializer.'
       'Include an importable unittest.TestCase with at least one test_ method.'
@@ -944,8 +950,8 @@ directories to its extended Windows path with `cd` or `cd /d`.
       'Use native file tools and delegate all execution and verification to the harness.'
       'After the entry point, write the test module and initializer in consecutive calls.'
       'Keep all workflow code in __main__.py; do not create helper modules.'
-      'After the three foundation writes, continue workflow edits within this attempt.'
-      'Advance admission, retrieval, then worker within this attempt through small edits.'
+      'Complete only CLI/health and help tests in this attempt; yield after the three writes.'
+      'Complete workflow behavior in later attempts using public-spec tests and small edits.'
       'Implement signed pipeline admission and durable ordered job state.'
       'Then add worker --once with bounded leases, direct argv, and no polling.'
       'Claim runnable jobs in pipeline and job insertion order.'
@@ -1294,16 +1300,16 @@ unittest suite, the project-specific help commands, and a smoke sequence.
   } elseif ($case.Id -eq "07-lease-cascade") {
     switch ($case07Phase) {
       "entrypoint" {
-        ('Create a compact entry point and test files first, then continue workflow edits ' +
-          'within this attempt.')
+        ('Complete only a compact entry point and its help tests in this attempt; ' +
+          'yield after the three foundation writes.')
       }
       "foundation" {
         'Fix failed help paths and ensure unittest discovery works before worker expansion.'
       }
-      "local" { 'Repair the first failing project test before expanding behavior.' }
+      "local" { 'Repair the shown project-test failure before expanding behavior.' }
       "passed" { 'The oracle passed; preserve behavior and finish only missing spec items.' }
       default {
-        ('If worker delivery is implemented and workflow tests are missing, add tests and ' +
+        ('If workflow tests are missing, add tests and ' +
           'yield for harness feedback. Otherwise continue small implementation edits; ' +
           'preserve passing tests and help.')
       }
@@ -1338,20 +1344,20 @@ unittest suite, the project-specific help commands, and a smoke sequence.
     switch ($case07Phase) {
       "entrypoint" {
         ('Write CLI/health in __main__.py, then the test module and initializer; ' +
-          'advance admission, retrieval, and worker through edits of at most 80 new lines.')
+          'stop after those three writes and wait for harness feedback.')
       }
       "foundation" {
         ('Fix failed help paths and create tests/__init__.py plus ' +
           'tests/test_leasecascade.py with a discoverable unittest.')
       }
       "local" {
-        'Use the first failing project test to make the smallest repair.'
+        'Use the shown project-test diagnostic to make the smallest repair.'
       }
       "passed" {
         'Preserve the oracle-passing workflow; finish any missing README or spec requirements.'
       }
       default {
-        ('If worker delivery is implemented and workflow tests are missing, edit ' +
+        ('If workflow tests are missing, edit ' +
           'tests/test_leasecascade.py next. Otherwise add the next missing behavior in ' +
           '__main__.py with at most 80 new lines.')
       }
@@ -1448,6 +1454,13 @@ $continuationDirective
 $verificationGuidance
 If anything remains incomplete, state it instead of claiming success.
 "@
+  if ($case.Id -eq "07-lease-cascade") {
+    $case07SpecPath = Join-Path (Join-Path $repoRoot $case.Source) "SPEC.md"
+    $case07Spec = [IO.File]::ReadAllText($case07SpecPath)
+    $prompt = 'The complete Case 07 specification for this recovery follows:' +
+      [Environment]::NewLine + [Environment]::NewLine + $case07Spec +
+      [Environment]::NewLine + $prompt
+  }
   $requiredInstructions = @(
     'use a dedicated process tool only if it is listed in your available'
     '`process` as command prefixes in a shell'
@@ -2075,16 +2088,17 @@ if ($DryRun) {
         'First tool call: write a compact, runnable CLI in leasecascade/__main__.py.'
         'The current directory contains SPEC.md and is already the project root.'
         'Use leasecascade/ and tests/ paths directly relative to this current directory.'
-        'Do not inspect files or run commands before this first source write.'
+        'Review the embedded specification as file inspection before this first source write.'
         'Use standard-library imports and a main guard; do not import absent local modules.'
         'Define needed constants in __main__.py; do not import __version__ from the package.'
         'Second write call: create tests/test_leasecascade.py with a real unittest.'
+        'Keep initial tests under 60 lines; cover only imports and the three help paths.'
         'Third write call: create tests/__init__.py after the test module exists.'
-        'Make this CLI write immediately; decide each subsequent edit when you reach it.'
-        'After the three foundation writes, continue workflow edits within this attempt.'
+        'This attempt covers only CLI/health and help tests; do not plan workflow code yet.'
+        'Complete only CLI/health and help tests in this attempt; yield after the three writes.'
         'Keep all workflow code in __main__.py; do not create helper modules.'
         'Apply subsequent source edits of at most 80 new lines while preserving passing behavior.'
-        'Advance admission, retrieval, then worker within this attempt through small edits.'
+        'Complete workflow behavior in later attempts using public-spec tests and small edits.'
       )
       foreach ($instruction in $entrypointRequirements) {
         if (-not $entrypointGuidance.Contains($instruction)) {
@@ -2096,17 +2110,18 @@ if ($DryRun) {
         'The current directory contains SPEC.md and is already the project root.'
         'Use leasecascade/ and tests/ paths directly relative to this current directory.'
         'Second write call: create tests/test_leasecascade.py with a real unittest.'
+        'Keep initial tests under 60 lines; cover only imports and the three help paths.'
         'Third write call: create tests/__init__.py after the test module exists.'
         'Use standard-library imports and a main guard; do not import absent local modules.'
         'Each write call creates one file; write the test module before its initializer.'
         'After the entry point, write the test module and initializer in consecutive calls.'
         'Keep all workflow code in __main__.py; do not create helper modules.'
-        'After the three foundation writes, continue workflow edits within this attempt.'
-        'Use harness feedback after this attempt to correct failures and continue the workflow.'
+        'Complete only CLI/health and help tests in this attempt; yield after the three writes.'
+        'Use the next harness feedback to begin workflow tests and implementation.'
         'Apply subsequent source edits of at most 80 new lines while preserving passing behavior.'
         'Invoke the sink with direct argv and persist output and terminal status.'
         'Expose the result through the documented pipeline/job retrieval route.'
-        'Advance admission, retrieval, then worker within this attempt through small edits.'
+        'Complete workflow behavior in later attempts using public-spec tests and small edits.'
       )
       foreach ($instruction in $initialRequirements) {
         if (-not $initialGuidance.Contains($instruction)) {
@@ -2134,6 +2149,7 @@ if ($DryRun) {
       $localRequirements = @(
         'Preserve the public-specification assertions and fix the implementation in small edits.'
         'Each implementation edit adds at most 80 lines; preserve passing tests and help.'
+        'Repair other failures from the same feedback while the request budget remains.'
         'Then yield for harness feedback; do not run checks, service, worker, or oracle.'
       )
       foreach ($instruction in $localRequirements) {
@@ -2146,18 +2162,19 @@ if ($DryRun) {
         'Project tests and all help checks pass, but the independent oracle failed.'
         'Keep the passing tests and help paths intact.'
         'Do not repeat CLI, health-route, or test-discovery scaffolding.'
-        'When worker delivery is missing, advance leasecascade/__main__.py through small edits.'
+        'After workflow tests exist, advance leasecascade/__main__.py through small edits.'
         'Use prior context; read the intended source or test file once if its anchor is unknown.'
-        'After that read, the next tool call must edit source rather than inspect more files.'
+        'After that read, the next tool call must edit the intended file, not inspect more files.'
         'Each edit adds at most 80 lines; apply the first edit before designing later slices.'
-        'Before worker delivery, advance signed admission, retrieval, then worker in small edits.'
-        'If admission is missing, first add raw-body HMAC and atomic SQLite pipeline/job state.'
+        'After workflow tests exist, add signed admission, retrieval, then worker in small edits.'
+        'With tests present, add missing raw-body HMAC and atomic SQLite pipeline/job state.'
         'Then connect POST /pipelines and GET /pipelines/<pipeline_id> in small separate edits.'
         'Keep workflow code in that file; do not create __init__.py or helper modules yet.'
         'Then add ordered leased claims, a direct-argv sink, and persisted terminal output.'
         'Use a bounded worker --once; reclaim expired leases without polling.'
-        ('If worker delivery is implemented and workflow tests are missing, edit ' +
+        ('If workflow tests are missing, edit ' +
           'tests/test_leasecascade.py next.')
+        'Use finite HTTP/process timeouts and terminate/wait for the server in finally.'
         'Test signed admission, persisted retrieval, and worker delivery of declared inputs.'
         'Test a barrier whose depends_on order reverses the two dependency insertion positions.'
         'Assert fan_in contains only collect.field values, with job_id/value items in that order.'
@@ -2215,11 +2232,15 @@ if ($DryRun) {
     }
     $dryRunRecovery = Get-RecoveryPrompt $_ $dryRunVerification
     if ($_.Id -eq "07-lease-cascade") {
+      $case07SpecPath = Join-Path (Join-Path $repoRoot $_.Source) "SPEC.md"
+      $case07Spec = [IO.File]::ReadAllText($case07SpecPath)
       $entrypointPromptRequirements = @(
-        ('Create a compact entry point and test files first, then continue workflow edits ' +
-          'within this attempt.')
+        'The complete Case 07 specification for this recovery follows:'
+        $case07Spec
+        ('Complete only a compact entry point and its help tests in this attempt; ' +
+          'yield after the three foundation writes.')
         ('Write CLI/health in __main__.py, then the test module and initializer; ' +
-          'advance admission, retrieval, and worker through edits of at most 80 new lines.')
+          'stop after those three writes and wait for harness feedback.')
       )
       foreach ($instruction in $entrypointPromptRequirements) {
         if (-not $dryRunRecovery.Contains($instruction)) {
@@ -2242,14 +2263,29 @@ if ($DryRun) {
         $dryRunVerification.oracle.exit_code = 1
         $workflowPrompt = Get-RecoveryPrompt $_ $dryRunVerification $dryRunProject
         $workflowPromptRequirements = @(
-          ('If worker delivery is implemented and workflow tests are missing, edit ' +
+          'The complete Case 07 specification for this recovery follows:'
+          $case07Spec
+          ('If workflow tests are missing, edit ' +
             'tests/test_leasecascade.py next. Otherwise add the next missing behavior')
-          ('If worker delivery is implemented and workflow tests are missing, add tests and ' +
+          ('If workflow tests are missing, add tests and ' +
             'yield for harness feedback. Otherwise continue small implementation edits')
         )
         foreach ($instruction in $workflowPromptRequirements) {
           if (-not $workflowPrompt.Contains($instruction)) {
             throw "Case 07 assembled workflow prompt is missing: $instruction"
+          }
+        }
+        $dryRunVerification.project_tests.exit_code = 1
+        $localPrompt = Get-RecoveryPrompt $_ $dryRunVerification $dryRunProject
+        $localPromptRequirements = @(
+          $case07Spec
+          'Repair the shown project-test failure before expanding behavior.'
+          'Use the shown project-test diagnostic to make the smallest repair.'
+          'Repair other failures from the same feedback while the request budget remains.'
+        )
+        foreach ($instruction in $localPromptRequirements) {
+          if (-not $localPrompt.Contains($instruction)) {
+            throw "Case 07 assembled local-test prompt is missing: $instruction"
           }
         }
       } finally {

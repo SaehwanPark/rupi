@@ -13,10 +13,10 @@ pinned Pi 0.86.1 on the oracle.
 - Worktree: `C:\Users\saehwan\repos\rupi-case07-lease-cascade`
 - Branch: `fix/case07-lease-cascade`
 - Draft PR: [#139](https://github.com/SaehwanPark/rupi/pull/139)
-- Latest benchmark change requests a small first CLI write, then both test files, then
-  continued workflow edits within the same attempt. Explicit off control, bounded edits,
-  native tools/request policies, and outer budgets remain unchanged. Retry 22 is complete;
-  retry 21 is incomplete; retry 23 Rupi is complete and Pi is running.
+- Retry 23 is complete and failed every oracle for both agents; retry 21 is incomplete.
+  The latest benchmark change limits the foundation turn, requests workflow tests before
+  expansion, and includes the complete public specification in every recovery prompt.
+  Explicit off control, native tools/request policies, and outer budgets remain unchanged.
 - Case 07 remains active. No retry after the baseline produced a strict oracle winner;
   the baseline Pi strict oracle win remains the last resolved result.
 - Request-budget clarification: the eight-request parameter caps Rupi. Pi retains its
@@ -32,14 +32,14 @@ pinned Pi 0.86.1 on the oracle.
 - No Rust source changes were made. The benchmark uses the existing
   `target/debug/rupi.exe`; the installed Rust toolchain lacks the Cargo component.
 
-## Latest completed comparison: retry 22
+## Latest completed comparison: retry 23
 
-Run: `bench-20261003-case07-explicit-off-retry22-matched4-600s`.
+Run: `bench-20261003-case07-continuous-initial-retry23-matched4-600s`.
 
 | Agent | Work tokens | Tools | Tests | Help | Oracle |
 | --- | ---: | ---: | ---: | --- | ---: |
-| Rupi | 59,786 | 16 | Passed turns 3-4 | Passed turns 2-4 | Failed all turns |
-| Pi | 47,895 | 24 | Failed all turns | Passed all turns | Failed all turns |
+| Rupi | 14,537 | 3 | Failed all turns | Passed turn 4 | Failed all turns |
+| Pi | 47,834 | 22 | Failed all turns | Passed all turns | Failed all turns |
 
 Neither agent resolved the oracle. The per-turn results and timings are in
 [the Case 07 ledger](2026-09-29-case07-lease-cascade-ledger.md).
@@ -370,7 +370,7 @@ agree on that sequence. Explicit off control, native policies, and shared budget
 All-case DryRun, assembled entrypoint/workflow checks, CRLF, changed-line 100-column,
 and parent invariant review pass. Fresh oracle evidence is pending for retry 23.
 
-## Retry 23: active
+## Retry 23: complete
 
 Run: `bench-20261003-case07-continuous-initial-retry23-matched4-600s`, revision `df8dd67`.
 Pre-run usage: 35% five-hour and 41% weekly. Existing binary, explicit off configuration,
@@ -391,3 +391,31 @@ Source review found apparent ordering tension between src/run.rs, which requests
 inspection before editing, and the benchmark's first-tool-write instruction. This does
 not establish a timeout cause. Selected read-only server slot counters were observed;
 no prompts, generated content, server logs, or session traces were read or attributed.
+
+Pi is complete: 47,834 work tokens, 22 calls, 2,400,943 ms. Every turn hit the outer
+timeout. Help passed; tests and oracle failed every turn. Final entry point: 31,311
+bytes; tests: 15,659 bytes. Turn 4 recorded one grep and three reads; snapshot paths/sizes
+were unchanged. Runner exit 0 and process tree gone. No strict winner. Rupi recorded
+33,297 fewer work tokens and took 12,902 ms less, but zero-work timeouts omit unknown
+inference. These metrics do not establish exact total consumption or an oracle win.
+Post-run parent usage: 61% five-hour and 45% weekly. Case 07 remains active.
+
+## Next revision: bounded foundation and explicit recovery specification
+
+Parent-authored draft: `.benchmark/case07-retry24-draft.ps1`; installed by bounded source
+patch after retry 23 completed. The first CLI write is under 90 lines; tests under 60 lines
+cover only imports/help. Yield after three foundation writes. Then request bounded public
+CLI/HTTP workflow tests even before worker implementation; preserve their assertions while
+repairing the failure shown in the diagnostic excerpt. Existing feedback selects its tail,
+so the earlier instruction to fix the first failing test did not match excerpt selection.
+
+Source review also distinguishes persistence from model visibility: context policy may
+evict older complete turns (rupi-runtime/src/turn.rs, ReducePayload/evict_oldest), while
+canonical history remains intact and resume restores the live projection (src/run.rs).
+This supersedes reliance on persistence alone; actual eviction in these runs is unknown.
+The draft includes the full public specification before recovery phase guidance, without
+changing context policy. All-case DryRun verifies exact content in assembled entrypoint,
+workflow, and local-test prompts. CRLF, 100-column, and parent invariant/scope review pass.
+An unintended Case 06 draft replacement was restored. No standalone project tests were run.
+The tracked harness matches the reviewed draft and passes the same checks. Fresh retry 24
+is required for oracle evidence; no runtime, provider, or native budget changes were made.
