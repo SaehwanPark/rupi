@@ -16,7 +16,7 @@ pinned Pi 0.86.1 on the oracle.
 - Latest benchmark change explicitly configures Case 07 Rupi off control to match Pi's
   reasoning_effort none mapping. The connected initial prompt, bounded recovery edits,
   and compact entrypoint fallback are retained. Native tools/request budgets are unchanged.
-  Retry 20 is complete; retry 21 is incomplete; retry 22 has not started.
+  Retry 20 is complete; retry 21 is incomplete; retry 22 is running at `8ddbadd`.
 - Case 07 remains active. No retry after the baseline produced a strict oracle winner;
   the baseline Pi strict oracle win remains the last resolved result.
 - Request-budget clarification: the eight-request parameter caps Rupi. Pi retains its
@@ -149,8 +149,8 @@ then separate test-module and initializer writes. Evaluate the revision as a fre
 
 1. Start in the benchmark worktree and confirm branch `fix/case07-lease-cascade`.
 2. Make a fresh Codex usage check before launching another benchmark.
-3. Retry 21 is incomplete after stopping for the off-mode wire correction. Keep its
-   artifacts and use a fresh pair. Retry 20 is complete; never combine different runs.
+3. Retry 22 is running with explicit off control; retry 21 is incomplete. Preserve
+   artifacts and never combine turns from different runs. Retry 20 is the last complete pair.
 4. Use pinned Pi at
    `..\rupi\.benchmark\tools\pi-0.86.1\pi.ps1` and the standard settings:
    Case 07, four turns, 600 seconds per turn, 6-second provider grace, eight requests per
@@ -338,3 +338,12 @@ requests or reasoning. The existing prompt and native budgets remain unchanged.
 All-case DryRun checks missing/null/existing compatibility objects, field preservation,
 and unchanged non-Case 07 endpoints. Diff, CRLF, changed-line 100-column, and parent
 invariant checks pass. Evaluate a fresh retry 22 before further prompt tuning.
+
+## Retry 22: running
+
+Run: `bench-20261003-case07-explicit-off-retry22-matched4-600s`, revision `8ddbadd`.
+Pre-run usage: 4% five-hour and 36% weekly. Current connected initial/recovery prompts,
+existing binary, native file tools/request policies, and standard shared budgets. Rupi
+turn 1 is running. Runner PID: 27812; tool session: 18505. Output remains unread in
+`.benchmark/retry22-runner-unread.log`. Inspect only permitted per-turn metadata/help;
+configured_thinking_control describes the configuration, not observed requests/reasoning.

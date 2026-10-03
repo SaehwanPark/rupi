@@ -1205,3 +1205,11 @@ Existing DryRun checks absent/null/existing compatibility objects, unrelated fie
 preservation, and non-Case 07 configuration preservation. All-case DryRun, diff, CRLF,
 and changed-line 100-column checks pass. Parent invariant-review verdict: pass.
 Fresh oracle evidence is pending for retry 22; previous failure causes remain unknown.
+
+## Twenty-second fresh comparison started
+
+Run: `bench-20261003-case07-explicit-off-retry22-matched4-600s`, revision `8ddbadd`.
+Pre-run usage: 4% five-hour and 36% weekly. Both configurations explicitly map off to
+reasoning_effort none. Current prompt, existing binary, native file tools/request policies,
+and standard shared turn/time/model/thinking settings. Rupi turn 1 is running.
+No oracle outcome yet. Configured-control metadata is not an observed wire trace.
