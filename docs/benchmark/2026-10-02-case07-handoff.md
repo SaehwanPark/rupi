@@ -162,8 +162,14 @@ Run: `bench-20261003-case07-file-tools-retry17-matched4-600s`.
 
 - Revision `e3fdefa`; pre-run usage: 86% five-hour and 19% weekly.
 - New native file-tool configuration for both agents; standard matched budgets unchanged.
-- Rupi turn 1 timed out after 600,296 ms with 16,286 work tokens and three tools.
-  Project tests and all help checks passed; oracle failed. Rupi turn 2 is running.
+- Rupi turn 1 timed out after 600,296 ms with 16,286 work tokens and three writes.
+  Turns 2-4 reported runtime timeout with zero recorded work/tools and unchanged snapshots.
+- Rupi totals: 16,286 work tokens, three writes, 2,256,391 ms. Tests and help passed every
+  turn; oracle failed every turn. Pi turn 1 is running; no matched outcome yet.
 - Configured Rupi allowlist in its summary: `read,write,edit,grep`. No comparison outcome yet.
 - Runner output is redirected to `.benchmark/retry17-runner-unread.log` and stays unread.
 - Artifacts are under `.benchmark/runs/` followed by the run ID above.
+- Parent usage reached 96% five-hour and 20% weekly at the Rupi checkpoint. Per the root
+  checkout's user-edited usage policy, wait through the 03:12 AM ET reset plus two minutes
+  (2026-10-03 03:14 AM ET) before resuming. Do not poll usage during the wait. The bounded
+  Pi runner continues independently. Runner PID: 27524; tool session: 98191.

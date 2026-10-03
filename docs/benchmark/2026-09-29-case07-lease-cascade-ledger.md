@@ -801,3 +801,22 @@ Rupi turn 1 is running. The run needs its own complete matched outcome.
 Turn 1 timed out after 600,296 ms: 16,286 work tokens, three tools, project tests exit 0,
 all three help checks exit 0, and oracle exit 1. Its summary records the configured native
 allowlist `read,write,edit,grep`. Rupi turn 2 is running; the matched comparison is incomplete.
+
+## Seventeenth retry progress: Rupi complete, subscription wait
+
+| Turn | Work tokens | Tools | Time | Tests | Help | Oracle |
+| ---: | ---: | ---: | --- | ---: | --- | ---: |
+| 1 | 16,286 | 3 | 600,296 ms timeout | 0 | 0/0/0 | 1 |
+| 2 | 0 | 0 | 595,603 ms; timeout status | 0 | 0/0/0 | 1 |
+| 3 | 0 | 0 | 463,520 ms; timeout status | 0 | 0/0/0 | 1 |
+| 4 | 0 | 0 | 596,972 ms; timeout status | 0 | 0/0/0 | 1 |
+
+Rupi totals: 16,286 work tokens, three completed writes, 2,256,391 ms. The first snapshot
+has a 3,913-byte entry point and both test files; turns 2-4 retain it without new source.
+Tests and help pass every turn; oracle fails every turn. Every summary records the native
+configured allowlist `read,write,edit,grep`. No workflow recovery write was completed.
+Pi turn 1 is running; no matched outcome yet.
+
+Parent usage is 96% five-hour and 20% weekly. The user-edited root usage policy requires
+waiting until the 2026-10-03 03:12 AM ET reset plus two minutes. Agent work resumes at
+03:14 AM ET without checking usage during the wait. The bounded benchmark runner continues.
