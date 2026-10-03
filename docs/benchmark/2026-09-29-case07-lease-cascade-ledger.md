@@ -943,3 +943,9 @@ Parent invariant-review verdict: pass. Fixtures derive from the public Case 07 s
 local recovery preserves those assertions and repairs implementation through bounded edits.
 The metadata exposes the existing request-budget difference. No runtime, provenance, replay,
 failover, startup, or roadmap boundary changes. Fresh matched oracle evidence is pending.
+
+## Nineteenth matched retry started
+
+Run: `bench-20261003-case07-workflow-fixtures-retry19-matched4-600s`, revision `34ff2cf`.
+Pre-run usage: 29% five-hour and 25% weekly. Existing binary, native file tools and request
+policies, standard shared turn/time/model/thinking settings. Rupi turn 1 is running.

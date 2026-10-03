@@ -15,7 +15,7 @@ pinned Pi 0.86.1 on the oracle.
 - Draft PR: [#139](https://github.com/SaehwanPark/rupi/pull/139)
 - Latest benchmark change requests early workflow tests after worker code exists in
   `bench/compare-pi-rupi.ps1`. Bounded edits and native file tools remain.
-  Retry 18 is complete; retry 19 has not started.
+  Retry 18 is complete; retry 19 is running at revision `34ff2cf`.
 - Case 07 remains active. No retry after the baseline produced a strict oracle winner;
   the baseline Pi strict oracle win remains the last resolved result.
 - Request-budget clarification: the eight-request parameter caps Rupi. Pi retains its
@@ -144,7 +144,7 @@ then separate test-module and initializer writes. Evaluate the revision as a fre
 
 1. Start in the benchmark worktree and confirm branch `fix/case07-lease-cascade`.
 2. Make a fresh Codex usage check before launching another benchmark.
-3. Retry 18 is complete; retry 19 has not started. Use a fresh pair for the early workflow
+3. Retry 18 is complete; retry 19 is running. Finish this pair for the early workflow
    test revision. Treat retry 13 as incomplete; do not combine different runs.
 4. Use pinned Pi at
    `..\rupi\.benchmark\tools\pi-0.86.1\pi.ps1` and the standard settings:
@@ -216,3 +216,10 @@ output fields, and missing-field failure/blocking. These derive from the public 
 Then yield for harness feedback and repair implementation. No standalone tests are added or run
 by the parent. New per-turn summaries record `harness_model_request_cap`: eight for Rupi,
 null for Pi, meaning the harness sets no Pi request cap. Existing policies remain unchanged.
+
+## Retry 19: running
+
+Run: `bench-20261003-case07-workflow-fixtures-retry19-matched4-600s`, revision `34ff2cf`.
+Pre-run usage: 29% five-hour and 25% weekly. Standard shared settings and native request
+policies unchanged. Rupi turn 1 is running. Runner output stays unread in
+`.benchmark/retry19-runner-unread.log`; artifacts are under `.benchmark/runs/` and this run ID.
