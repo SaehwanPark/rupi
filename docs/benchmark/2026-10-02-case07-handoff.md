@@ -249,3 +249,6 @@ Pre-run usage: 63% five-hour and 30% weekly. Existing binary, native file tools/
 policies, and standard shared turn/time/model/thinking settings. Rupi turn 1 is running.
 Runner PID: 19252; tool session: 93754. Runner output stays unread in
 `.benchmark/retry20-runner-unread.log`. Inspect only the permitted per-turn evidence.
+Rupi turn 1 finished in 535,635 ms with 20,744 work tokens and four completed writes.
+Tests and all help passed; oracle failed. Files are at the correct root paths.
+Turn 2 is running; no matched outcome yet.

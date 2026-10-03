@@ -1027,3 +1027,10 @@ Run: `bench-20261003-case07-coherent-recovery-retry20-matched4-600s`, revision `
 Pre-run usage: 63% five-hour and 30% weekly. Existing binary, native file tools/request
 policies, and standard shared turn/time/model/thinking settings. Rupi turn 1 is running.
 No oracle outcome yet; runner and agent output remain unread.
+
+## Twentieth retry progress: Rupi turn 1
+
+Turn 1 finished without outer timeout in 535,635 ms: 20,744 work tokens, four completed
+writes, tests exit 0, all help exit 0, oracle exit 1. The entry point is 5,068 bytes;
+test module 2,497 bytes and initializer 71 bytes, directly beneath the project root.
+Turn 2 is running. No matched result yet; only permitted metadata was inspected.
