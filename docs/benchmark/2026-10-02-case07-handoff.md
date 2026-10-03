@@ -254,3 +254,6 @@ Tests and all help passed; oracle failed. Files are at the correct root paths.
 Turn 2 is running; no matched outcome yet.
 Turn 2 timed out at 600,204 ms with 13,998 work tokens and two completed edits.
 Tests/help passed; oracle failed. Turn 3 is running; entry point is now 9,417 bytes.
+Turn 3 ended at its request budget in 426,767 ms with 32,156 work tokens and seven
+completed tools. Tests/help passed; oracle failed. Turn 4 is running; entry point is
+25,257 bytes and test-file sizes remain unchanged.

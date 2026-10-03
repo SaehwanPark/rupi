@@ -1040,3 +1040,9 @@ Turn 2 is running. No matched result yet; only permitted metadata was inspected.
 Turn 2 hit the outer timeout at 600,204 ms: 13,998 work tokens and two completed edits.
 Tests and all help passed; oracle failed. Entry point grew to 9,417 bytes; test-file sizes
 are unchanged. Turn 3 is running. No timeout cause is inferred from these observations.
+
+## Twentieth retry progress: Rupi turn 3
+
+Turn 3 ended at the request budget after 426,767 ms: 32,156 work tokens, six completed
+edits and one completed read. Tests and all help passed; oracle failed. Entry point is
+25,257 bytes; test-file sizes remain unchanged. Turn 4 is running; coverage is unknown.
