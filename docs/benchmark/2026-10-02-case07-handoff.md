@@ -10,12 +10,15 @@ Continue the authorized Case 07 effort in
 `C:\Users\saehwan\repos\rupi-case07-lease-cascade` until Rupi strictly beats
 pinned Pi 0.86.1 on the oracle.
 
+Achieved by retry29: Rupi passed on turn 3; Pi failed all four oracle checks.
+PR #139 merge handoff is now authorized; no Case 08 expansion is part of this task.
+
 ## Current state
 
 - Worktree: `C:\Users\saehwan\repos\rupi-case07-lease-cascade`
 - Branch: `fix/case07-lease-cascade`
-- Draft PR: [#139](https://github.com/SaehwanPark/rupi/pull/139)
-- Retry 28 is complete and failed every oracle for both agents; retry 21 is incomplete.
+- PR: [#139](https://github.com/SaehwanPark/rupi/pull/139); GitHub records merge status.
+- Retry 29 is complete with a strict Rupi oracle win; retry 21 remains incomplete.
   The latest benchmark change limits the foundation turn, requests workflow tests before
   expansion, and includes the complete public specification in every recovery prompt.
   Explicit thinking control, native tools/request policies, and outer budgets remain.
@@ -24,11 +27,11 @@ pinned Pi 0.86.1 on the oracle.
   The latest revision isolates Rupi's global skill discovery, requests a compact README
   as the fourth foundation write, and uses public interfaces in workflow tests.
   Recovery from known edit failures and protection for Unknown mutations remain.
-  Retry 29 is active, raising only Rupi's request cap from 8 to 12; Rupi turn 1 is running.
+  Retry 29 raised only Rupi's request cap from 8 to 12 and resolved on turn 3.
   Both use a shared 2,048-token thinking budget through a local relay.
   Low effort, model, prompts, native policies, and turn/time limits remain.
-- Case 07 remains active. No retry after the baseline produced a strict oracle winner;
-  the baseline Pi strict oracle win remains the last resolved result.
+- The Case 07 comparison objective is achieved by retry29. Broader series/runtime gates
+  remain active; this result is one comparison under the recorded configuration.
 - Request-budget clarification: the eight-request parameter caps Rupi. Pi retains its
   native request policy; retry 18 Pi turn 3 recorded nine completed model requests.
   Model, configured thinking label, turn count, and outer time limits are shared.
@@ -42,16 +45,16 @@ pinned Pi 0.86.1 on the oracle.
 - No Rust source changes were made. The benchmark uses the existing
   `target/debug/rupi.exe`; the installed Rust toolchain lacks the Cargo component.
 
-## Latest completed comparison: retry 28
+## Latest completed comparison: retry 29
 
-Run: `bench-20261003-case07-budget2048-low-retry28-matched4-600s`.
+Run: `bench-20261003-case07-budget2048-low-retry29-rupi12-matched4-600s`.
 
 | Agent | Work tokens | Tools | Tests | Help | Oracle |
 | --- | ---: | ---: | ---: | --- | ---: |
-| Rupi | 129,152 | 25 | Passed all turns | Passed all turns | Failed all turns |
-| Pi | 67,010 | 31 | Passed all turns | Passed all turns | Failed all turns |
+| Rupi | 89,208 | 22 | Passed all 3 turns | Passed all 3 turns | Passed turn 3 |
+| Pi | 61,382 | 21 | Passed all 4 turns | Passed all 4 turns | Failed all 4 turns |
 
-Neither agent resolved the oracle. The per-turn results and timings are in
+Rupi resolved on turn 3 after its outer timeout; Pi did not resolve. Details are in
 [the Case 07 ledger](2026-09-29-case07-lease-cascade-ledger.md).
 
 ## Retry 13: interrupted, incomplete
@@ -159,13 +162,13 @@ then separate test-module and initializer writes. Evaluate the revision as a fre
 
 1. Start in the benchmark worktree and confirm branch `fix/case07-lease-cascade`.
 2. Make a fresh Codex usage check before launching another benchmark.
-3. Retry 28 is complete without an oracle pass; retry 21 is incomplete. Continue the
-   latest active pair, keeping its source fixed, or launch a fresh pair after completion.
-   Preserve artifacts and never combine runs. Make decisions without further questions.
+3. Retry29 is complete with a strict Rupi oracle win. Preserve artifacts and never combine
+   runs. Check PR139's GitHub state: if open, finish merge after final CI; if merged, this
+   task is complete. Do not launch another case.
 4. Use pinned Pi at
    `..\rupi\.benchmark\tools\pi-0.86.1\pi.ps1` and the standard settings:
    Case 07, four turns, 600 seconds per turn, 6-second provider grace, thinking low for both.
-   The next control uses `-MaxModelRequestsPerTurn 12`; Pi keeps its native request policy.
+   Winning retry29 used `-MaxModelRequestsPerTurn 12`; Pi kept its native request policy.
    Case 07 explicitly configures native reasoning replay and skill discovery isolation.
    For the budget experiment, start `bench/case07-thinking-budget-relay.py --budget 2048`
    hidden on loopback port 8001, then pass `-Case07ReasoningBudgetTokens 2048` to the runner.
@@ -735,7 +738,7 @@ time; verification excluded and unrecorded inference unknown. Baseline low Pi re
 last resolved oracle winner. CI passed all jobs at 05daddc. Usage 84% five-hour/63%
 weekly; next reset 06:16 PM ET. Case 07 stays active; next fresh pair uses Rupi cap12.
 
-## Retry 29: active
+## Retry 29: complete, strict Rupi oracle win
 
 Run: `bench-20261003-case07-budget2048-low-retry29-rupi12-matched4-600s`.
 Harness source remains c4980be; launched from results head c9d30e1 with the existing CLI
@@ -763,3 +766,36 @@ requests started/five completed. Contents/coverage and unrecorded inference unkn
 PR records current progress; latest pushed launch head91d2c7c passed all three CI jobs.
 Resume automatically after the scheduled wait, inspecting permitted metadata only. Do not
 interrupt/relaunch the pair or ask questions. No new slice while waiting; goal remains unmet.
+
+Capacity wait completed at 06:18 PM ET without quota polling during the interval. Refreshed
+usage: 0% five-hour/65% weekly; next five-hour reset11:18 PM ET. The pair finished during
+the wait. All permitted summaries were inspected; runner exit0 and runner/wrapper/direct
+children are gone. CI passed all three OS jobs at5d16ed7. Relay counter113 is cumulative
+forwarding metadata only. Shared server/relay remained; payloads/logs stayed unread.
+
+Rupi turn3 outer timeout600,193 ms: 42,348 recorded work tokens, ten completed tools
+(seven reads/two edits/write), zero failures/Unknown. Project tests and three help checks
+passed; oracle exit0, not timed out, resolved true. Entry point20,206 bytes, tests9,860,
+README4,437, application initializer74, test initializer37. Model completion counters
+include an abandoned prior-turn request; do not label it a successful current request.
+Rupi stopped after resolution: three turns, 89,208 recorded work tokens, 22 completed tools,
+zero failures/Unknown, 1,494,500 ms call time. No turn4 ran.
+
+Pi: four turns, 61,382 recorded work tokens, 21 calls, 1,795,363 ms call time. Tests/help
+passed throughout; every oracle failed. Turn1 completed163,842 ms with five writes;
+source2,613/tests1,048/README3,380 bytes. Turn2 outer timeout600,242 ms with read/four
+edits; source12,141 bytes, tests unchanged in size. Turn3 outer timeout600,303 ms with
+four reads/three edits; source17,942 bytes. Turn4 completed430,976 ms with two reads/
+two edits; tests7,051 bytes, other paths/sizes unchanged. Final initializers64/42 bytes.
+Pi failure/Unknown metrics null; content/coverage and failure causes unknown.
+
+This fresh pair meets the strict criterion: Rupi oracle pass and Pi failure in four turns.
+Rupi recorded27,826 more work tokens and took300,863 ms less call time; verification is
+excluded and unrecorded inference remains unknown. Shared low/model/budget2,048/turn/time
+settings, Rupi cap12/Pi native policy, source c4980be, and existing binary are explicit.
+Do not claim default-runtime superiority or attribute the result solely to one setting.
+The oracle does not establish every public requirement beyond its scope. ROADMAP records
+only the verified Case07 comparison objective; broader series/live-project gates stay active.
+No forbidden artifacts or standalone tests were read/run. Final syntax, all-case off/default
+and low/budget2,048/cap12 DryRun, CRLF, columns, whitespace, and parent invariant review
+passed. GitHub records final CI and merge status; no further benchmark is needed for this task.

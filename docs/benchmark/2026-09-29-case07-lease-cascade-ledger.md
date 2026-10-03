@@ -1722,3 +1722,49 @@ includes early new traffic; prior pair ended at64. Counters are not completion/t
 inference or template-enforcement evidence. Existing Case07 low/budget2,048/cap12 DryRun
 passed. Logs unread; source/settings fixed. Last usage84% five-hour/63% weekly; reset
 06:16 PM ET. CI passed at05daddc, docs CI pending. No oracle evidence yet.
+
+## Twenty-ninth fresh comparison result: strict Rupi oracle win
+
+Run `bench-20261003-case07-budget2048-low-retry29-rupi12-matched4-600s`, source c4980be.
+Only Rupi's cap changed from8 to12 relative to retry28. Same shared low/model/budget2,048/
+four turns/600-second limits/six-second grace, prompts, native tools, replay, and discovery
+controls. Pi retained native request policy. Existing binary; no Rust changes.
+
+| Agent | Turn | Work tokens | Tool requests | Call time | Tests | Help | Oracle |
+| --- | ---: | ---: | ---: | --- | ---: | --- | ---: |
+| Rupi | 1 | 20,977 | 7 | 294,045 ms completed | 0 | 0/0/0 | 1 |
+| Rupi | 2 | 25,883 | 5 | 600,262 ms timeout | 0 | 0/0/0 | 1 |
+| Rupi | 3 | 42,348 | 10 | 600,193 ms timeout | 0 | 0/0/0 | 0 |
+| Pi | 1 | 9,132 | 5 | 163,842 ms completed | 0 | 0/0/0 | 1 |
+| Pi | 2 | 21,019 | 5 | 600,242 ms timeout | 0 | 0/0/0 | 1 |
+| Pi | 3 | 19,524 | 7 | 600,303 ms timeout | 0 | 0/0/0 | 1 |
+| Pi | 4 | 11,707 | 4 | 430,976 ms completed | 0 | 0/0/0 | 1 |
+
+Rupi passed the independent oracle on turn3 after the outer timeout; it stopped with no
+turn4. Tests/help passed all three turns. Totals89,208 recorded work tokens, 22 completed
+tools, zero failures/Unknown, 1,494,500 ms call time. Turn1 read/six writes; source3,044/
+tests953/README4,437 bytes, new application initializer74. Turn2 read/four edits;
+source20,181 bytes. Turn3 seven reads/two edits/write; source20,206/tests9,860 bytes,
+other paths/sizes unchanged. Model completion counters include an abandoned prior request.
+Its completion must not be counted as a successful current-turn request.
+
+Pi failed every oracle; tests/help passed all four turns. Totals61,382 recorded work
+tokens, 21 calls, 1,795,363 ms call time. Turn1 five writes; source2,613/tests1,048/
+README3,380 bytes, application/test initializers64/42. Turn2 read/four edits; source12,141.
+Turn3 four reads/three edits; source17,942. Turn4 two reads/two edits; tests7,051 bytes,
+other paths/sizes unchanged. Failure/Unknown metrics null. Contents/coverage/causes unknown.
+
+Strict Rupi win: oracle pass while pinned Pi0.86.1 failed in four turns. Rupi recorded
+27,826 more work tokens and took300,863 ms less call time. Verification is excluded;
+unrecorded inference unknown. One configured comparison does not establish default-runtime
+superiority or single-setting causation. Oracle scope does not prove every public requirement.
+
+Parent followed the95% capacity policy, waiting through06:18 PM ET without quota polling;
+the fixed pair continued locally. Usage after reset0% five-hour/65% weekly, next reset
+11:18 PM ET. Runner exit0; runner/wrapper/direct children gone. Cumulative relay counter113
+is forwarding metadata, not completion/total-inference evidence. CI passed all jobs at
+5d16ed7. All permitted per-turn summaries/files and selected configuration were checked;
+winning help stdout also inspected. Logs, payloads, acceptance source, oracle/project-test
+diagnostics, generated code/tests, and aggregate results stayed unread. No standalone tests.
+ROADMAP records the verified Case07 objective only. Final CI/PR139 merge handoff remains;
+no Case08 expansion is authorized by this slice.
