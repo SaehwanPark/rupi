@@ -264,3 +264,5 @@ tokens and six completed edits. Final entry point is 29,723 bytes; test module s
 Pi turn 1 finished in 238,635 ms with 11,252 work tokens and six completed calls.
 Tests/help passed; oracle failed. Application/tests are at the correct root paths.
 Pi turn 2 is running.
+Pi turn 2 timed out at 600,234 ms with zero recorded work/tools and unchanged snapshot
+paths/sizes. Tests/help passed; oracle failed. Pi turn 3 is running.

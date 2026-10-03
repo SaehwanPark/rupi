@@ -1067,3 +1067,9 @@ Pi turn 1 finished in 238,635 ms: 11,252 work tokens and six completed calls (fo
 one edit, one read). Tests and all help passed; oracle failed. Application and test files
 are beneath the actual project root. Entry point is 4,089 bytes; test module 4,321 bytes.
 Pi turn 2 is running. Its summary records no harness request cap, as configured.
+
+## Twentieth retry progress: Pi turn 2
+
+Pi turn 2 hit the outer timeout at 600,234 ms with zero recorded work/tools. Snapshot
+paths and sizes are unchanged. Tests and all help passed; oracle failed. Turn 3 is running.
+Actual inference activity and timeout cause cannot be established from permitted evidence.
