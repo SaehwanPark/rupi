@@ -612,3 +612,12 @@ its effect on the oracle remains unverified until another matched comparison com
 Validation: all-case `bench/compare-pi-rupi.ps1 -DryRun`, `git diff --check`, changed-line
 100-column checks, and CRLF checks pass. No Rust source changed and no standalone tests
 were run. Start retry 15 with the standard matched settings after a fresh usage check.
+
+## Fifteenth matched retry started
+
+- Run: `bench-20261002-case07-foundation-repair-retry15-matched4-600s`.
+- Prompt revision: `26dcff1`; fresh usage was 14% five-hour and 7% weekly.
+- Pinned Pi 0.86.1, four turns, 600 seconds per turn, 6-second provider grace,
+  eight requests per turn, thinking off, and the existing binary.
+- Rupi turn 1 is active. Inspect only per-turn summaries, file snapshots, and help output.
+  Record the completed matched result before deciding on another revision or merge.
