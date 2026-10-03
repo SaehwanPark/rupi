@@ -16,7 +16,7 @@ pinned Pi 0.86.1 on the oracle.
 - Latest benchmark change requests a small first CLI write, then both test files, then
   continued workflow edits within the same attempt. Explicit off control, bounded edits,
   native tools/request policies, and outer budgets remain unchanged. Retry 22 is complete;
-  retry 21 is incomplete; retry 23 has not started.
+  retry 21 is incomplete; retry 23 Rupi is complete and Pi is running.
 - Case 07 remains active. No retry after the baseline produced a strict oracle winner;
   the baseline Pi strict oracle win remains the last resolved result.
 - Request-budget clarification: the eight-request parameter caps Rupi. Pi retains its
@@ -378,3 +378,16 @@ native file tools/request policies, and standard shared budgets. Rupi turn 1 is 
 Runner PID: 28608; tool session: 54474. Output stays unread in
 `.benchmark/retry23-runner-unread.log`. Inspect only per-turn summary/files/help.
 No oracle result yet. Merge still requires a strict Rupi oracle win.
+
+Rupi is complete: 14,537 recorded work tokens, three completed writes, 2,388,041 ms.
+Turns 1-3 report runtime timeouts at 594,561, 595,760, and 597,490 ms, each with zero
+recorded work/tools and no application/test files. Tests/help/oracle failed each time.
+Turn 4 hit the outer timeout at 600,230 ms and wrote the entry point plus both test files.
+Entry point: 5,791 bytes; test module: 6,264 bytes. Help passed; tests and oracle failed.
+Every summary records configured off/reasoning_effort/none. Coverage and timeout causes
+remain unknown. Pi turn 1 is running. Parent usage: 47% five-hour and 43% weekly.
+
+Source review found apparent ordering tension between src/run.rs, which requests file
+inspection before editing, and the benchmark's first-tool-write instruction. This does
+not establish a timeout cause. Selected read-only server slot counters were observed;
+no prompts, generated content, server logs, or session traces were read or attributed.

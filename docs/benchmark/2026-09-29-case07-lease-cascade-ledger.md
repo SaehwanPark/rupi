@@ -1283,3 +1283,24 @@ Run: `bench-20261003-case07-continuous-initial-retry23-matched4-600s`, revision 
 Pre-run parent usage: 35% five-hour and 41% weekly. Existing binary, explicit off control,
 native file tools/request policies, and the same four-turn/600-second outer budgets.
 Rupi turn 1 is running. Runner PID 28608; tool session 54474. No oracle outcome yet.
+
+## Twenty-third comparison progress: Rupi complete
+
+| Turn | Work tokens | Tools | Time | Tests | Help | Oracle |
+| ---: | ---: | ---: | --- | ---: | --- | ---: |
+| 1 | 0 | 0 | 594,561 ms runtime timeout | 1 | 1/1/1 | 1 |
+| 2 | 0 | 0 | 595,760 ms runtime timeout | 1 | 1/1/1 | 1 |
+| 3 | 0 | 0 | 597,490 ms runtime timeout | 1 | 1/1/1 | 1 |
+| 4 | 14,537 | 3 | 600,230 ms outer timeout | 1 | 0/0/0 | 1 |
+
+Rupi totals: 14,537 recorded work tokens, three completed writes, 2,388,041 ms. No app or
+test files existed through turn 3. Turn 4 created the entry point at 5,791 bytes and test
+module at 6,264 bytes, plus its initializer. Help passed; tests and oracle failed. Every
+summary records configured off/reasoning_effort/none. Actual unrecorded inference, timeout
+causes, and test coverage remain unknown. Pi turn 1 is running; no complete pair result.
+
+Source review found apparent inspection/first-write ordering tension between src/run.rs
+and the benchmark prompt, without evidence that it caused these timeouts. Selected server
+slot counters were also observed read-only; no request prompts/content or logs were read,
+and counters were not attributed to benchmark requests. Parent usage: 47% five-hour,
+43% weekly. Latest pushed-head CI passed all three OS jobs. Running source stays unchanged.
