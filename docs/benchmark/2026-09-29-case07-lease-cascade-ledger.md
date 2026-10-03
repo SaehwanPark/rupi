@@ -1488,3 +1488,12 @@ Existing assembled prompt guards cover entrypoint/workflow/local. Tracked/draft 
 off/low DryRun, CRLF, columns, whitespace, and parent invariant/scope review pass. Core/tool
 semantics and provenance remain. Initial prompts, other cases, low/replay controls, native
 tools, and budgets remain. Fresh retry 26 is needed; source review is not oracle evidence.
+
+## Twenty-sixth fresh comparison launched
+
+Run: `bench-20261003-case07-edit-recovery-low-retry26-matched4-600s`, source `a17c429`.
+Started 2026-10-03 01:38 PM ET. Existing binary/model, low for both, explicit control and
+native replay, native file tools/request policies, four turns, 600-second outer limits,
+six-second provider grace. Rupi turn 1 running. Runner 35264, wrapper 19660, session 38972.
+Runner output stays unread; permitted metadata only. Last usage 6% five-hour and 51%
+weekly; next reset 06:16 PM ET. No new result; Case 07 remains active.

@@ -21,6 +21,7 @@ pinned Pi 0.86.1 on the oracle.
   The user selected low for both agents in the next fresh pair and requested no questions.
   The latest revision adds recovery from explicitly unmodified failed edits, with narrow
   target reads and exact anchors. Unknown mutations remain protected from replay.
+  Retry 26 is running with that revision; Rupi turn 1 is active.
 - Case 07 remains active. No retry after the baseline produced a strict oracle winner;
   the baseline Pi strict oracle win remains the last resolved result.
 - Request-budget clarification: the eight-request parameter caps Rupi. Pi retains its
@@ -530,3 +531,14 @@ Tracked/draft equality, off/low DryRun, CRLF, columns, diff, and parent invarian
 review pass. No Rust/core/tool implementation changes, provenance weakening, or standalone
 tests. Other cases, initial prompts, low thinking, native replay, tools, and budgets remain.
 Retry 26 must be a fresh pair; no oracle success is claimed from source review.
+
+## Retry 26: active
+
+Run: `bench-20261003-case07-edit-recovery-low-retry26-matched4-600s`, revision `a17c429`.
+Started 2026-10-03 01:38 PM ET. Same model/existing binary, user-selected low for both,
+explicit control/native replay, native tools/request policies, four turns, 600-second outer
+limits, and six-second provider grace. Rupi turn 1 is running; source remains fixed mid-pair.
+Runner PID 35264; wrapper PID 19660; tool session 38972. Output stays unread in
+`.benchmark/retry26-runner-unread.log`. Inspect only permitted per-turn metadata/help
+and selected configuration fields. Last usage 6% five-hour and 51% weekly; next reset
+06:16 PM ET. No new oracle evidence; merge still requires a strict Rupi oracle win.
