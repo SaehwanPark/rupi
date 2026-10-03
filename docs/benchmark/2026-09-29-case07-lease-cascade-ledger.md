@@ -743,3 +743,48 @@ Turn 1 recorded zero work/tools. Turn 2 used 3,622 work tokens and seven complet
 inspection calls (`ls`, `find`, five `read`), with no writes. Both snapshots contain only
 the six configuration/specification files. Generated help reports no `leasecascade` module.
 Pi turn 3 is running. Latest parent usage: 79% five-hour and 18% weekly.
+
+## Sixteenth matched retry result
+
+Runner exit 0; the runner process tree is gone. Prompt revision was `26dcff1` with
+the standard matched settings and existing Rupi binary. No oracle pass or strict winner.
+
+| Agent | Turn | Work tokens | Tools | Time | Tests | Help | Oracle |
+| --- | ---: | ---: | ---: | --- | ---: | --- | ---: |
+| Rupi | 1 | 0 | 0 | 358,940 ms; timeout status | 1 | 1/1/1 | 1 |
+| Rupi | 2 | 0 | 0 | 594,222 ms; timeout status | 1 | 1/1/1 | 1 |
+| Rupi | 3 | 1,246 | 1 | 600,277 ms timeout | 1 | 1/1/1 | 1 |
+| Rupi | 4 | 12,239 | 1 | 600,188 ms timeout | 1 | 1/1/1 | 1 |
+| Pi | 1 | 0 | 0 | 600,242 ms timeout | 1 | 1/1/1 | 1 |
+| Pi | 2 | 3,622 | 7 | 600,234 ms timeout | 1 | 1/1/1 | 1 |
+| Pi | 3 | 0 | 0 | 600,175 ms timeout | 1 | 1/1/1 | 1 |
+| Pi | 4 | 12,902 | 6 | 600,214 ms timeout | 1 | 1/1/1 | 1 |
+
+Rupi totals: 13,485 work tokens, two tools, 2,153,627 ms. Pi totals: 16,524 work tokens,
+13 tools, 2,400,865 ms. All checks failed every turn. Rupi used 3,039 fewer work tokens
+and took 247,238 ms less; this does not establish an oracle win.
+
+Pi turn 3 recorded no work/tools and retained the six-file snapshot. Turn 4 completed four
+writes and two edits, producing a 5,093-byte entry point, initializer, storage, and validation.
+No test files exist. Generated help reports an import of missing `leasecascade.worker`.
+Evidence remains per-turn summaries, snapshots, and generated help. Other outputs stay unread.
+Post-run usage: 84% five-hour and 18% weekly. Baseline Pi remains the last resolved winner.
+
+## Next revision: native file tools and entrypoint recovery
+
+Case 07 uses Rupi `read,write,edit,grep` and Pi `read,write,edit,grep,find,ls` through
+existing native configuration. Review corrected the earlier proposed `glob` name: Rupi
+has filename search via `grep` with `glob=true`, without a separate registered `glob` tool.
+Configured allowlists are recorded in each turn's `summary.json`; offered-tool observation
+is not claimed. Other cases keep their source Rupi policy and existing Pi tools.
+
+Entrypoint recovery now explicitly requests a compact self-contained CLI/health entry point,
+standard-library imports, a main guard, local constants, and separate test writes. This fixes
+the generic fallback seen in retry 16. The change needs a fresh matched comparison.
+
+Parent invariant-review verdict: pass after correcting the unregistered tool name. Checked
+native allowlist filtering of offered definitions and calls, Pi's pinned `--tools` boundary,
+Case 07 isolation, unchanged budgets, and honest configured-versus-observed provenance.
+No runtime, replay, failover, startup, or roadmap contract changes. All-case `-DryRun`,
+`git diff --check`, CRLF, and changed-line 100-column checks pass. No standalone tests or
+Rust checks were run; matched performance and oracle evidence are pending.

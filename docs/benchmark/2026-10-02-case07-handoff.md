@@ -13,8 +13,8 @@ pinned Pi 0.86.1 on the oracle.
 - Worktree: `C:\Users\saehwan\repos\rupi-case07-lease-cascade`
 - Branch: `fix/case07-lease-cascade`
 - Draft PR: [#139](https://github.com/SaehwanPark/rupi/pull/139)
-- Current prompt revision: `26dcff1`, retry 15 foundation repair in `bench/compare-pi-rupi.ps1`.
-  Retry 15 used this revision; its matched comparison is complete.
+- Latest benchmark change restricts Case 07 to native file tools and strengthens entrypoint
+  recovery in `bench/compare-pi-rupi.ps1`. Retry 17 has not started.
 - Case 07 remains active. No retry after the baseline produced a strict oracle winner;
   the baseline Pi strict oracle win remains the last resolved result.
 - The root checkout is detached at `04b229c` and retains an unrelated user change in
@@ -23,14 +23,14 @@ pinned Pi 0.86.1 on the oracle.
 - No Rust source changes were made. The benchmark uses the existing
   `target/debug/rupi.exe`; the installed Rust toolchain lacks the Cargo component.
 
-## Latest completed comparison: retry 15
+## Latest completed comparison: retry 16
 
-Run: `bench-20261002-case07-foundation-repair-retry15-matched4-600s`.
+Run: `bench-20261003-case07-foundation-repair-retry16-matched4-600s`.
 
 | Agent | Work tokens | Tools | Tests | Help | Oracle |
 | --- | ---: | ---: | ---: | --- | ---: |
-| Rupi | 10,263 | 4 | Passed turns 3-4 | Passed turns 2-4 | Failed all turns |
-| Pi | 26,062 | 14 | Passed turns 3-4 | Passed turns 2-4 | Failed all turns |
+| Rupi | 13,485 | 2 | Failed all turns | Failed all turns | Failed all turns |
+| Pi | 16,524 | 13 | Failed all turns | Failed all turns | Failed all turns |
 
 Neither agent resolved the oracle. The per-turn results and timings are in
 [the Case 07 ledger](2026-09-29-case07-lease-cascade-ledger.md).
@@ -107,7 +107,7 @@ Run: `bench-20261002-case07-foundation-repair-retry15-matched4-600s`.
 - Post-run usage: 50% five-hour and 13% weekly.
 - Artifacts are under `.benchmark/runs/` followed by the run ID above.
 
-## Retry 16: running
+## Retry 16: complete
 
 Run: `bench-20261003-case07-foundation-repair-retry16-matched4-600s`.
 
@@ -118,26 +118,30 @@ Run: `bench-20261003-case07-foundation-repair-retry16-matched4-600s`.
 - Rupi turn 4 wrote a 5,013-byte entry point with 12,239 work tokens, but help failed on
   its import of the absent `__version__` symbol from the package. No test files exist.
 - Rupi totals: 13,485 work tokens, two tools, and 2,153,627 ms. All checks failed every turn.
-- Pi turns 1-2 timed out; both failed all checks. Turn 2 used 3,622 work tokens and
-  seven inspection tools, with no application files in its snapshot. Pi turn 3 is running.
-- Runner PID at launch: 9840. Latest usage: 79% five-hour and 18% weekly.
+- Pi turns 1-3 timed out without application files; turns 1 and 3 recorded zero work/tools.
+  Turn 2 used 3,622 work tokens and seven inspection tools. All checks failed.
+- Pi turn 4 used 12,902 work tokens and six file tools. Its snapshot has an entry point,
+  initializer, storage, and validation, but no tests. Help reports a missing worker module.
+- Pi totals: 16,524 work tokens, 13 tools, and 2,400,865 ms. All checks failed every turn.
+- Runner exit 0; its process tree is gone. No strict winner. Rupi used 3,039 fewer work
+  tokens and took 247,238 ms less. Post-run usage: 84% five-hour and 18% weekly.
 - Runner output remains unread in `.benchmark/retry16-runner-unread.log`.
 - Artifacts are under `.benchmark/runs/` followed by the run ID above.
 
-Next slice after retry 16: enforce the existing no-command instruction through Case 07
-tool allowlists for both agents. Native Rupi policy and pinned Pi CLI support this without
-Rust changes. Use Rupi `read,write,edit,glob,grep` and Pi `read,write,edit,grep,find,ls`,
-record configured allowlists in per-turn summaries, and keep all standard matched budgets.
-Do not change the active retry 16 or mix its turns into the next comparison.
-Also give entrypoint recovery explicit self-contained CLI/health guidance: it currently uses
-generic fallback guidance and omits the initial phase's warning against absent local imports.
+The next revision enforces the no-command instruction through Case 07 tool allowlists.
+Use Rupi `read,write,edit,grep` and Pi `read,write,edit,grep,find,ls`. Rupi filename search
+is `grep` with `glob=true`, not a separate `glob` tool; source review corrected the proposal.
+Per-turn summaries record `configured_tool_allowlist`; this is configuration evidence, not
+an observation of offered tools. Other cases and matched budgets retain their existing settings.
+Entrypoint recovery now requests compact, self-contained CLI/health code and local constants,
+then separate test-module and initializer writes. Evaluate the revision as a fresh matched pair.
 
 ## Resume steps
 
 1. Start in the benchmark worktree and confirm branch `fix/case07-lease-cascade`.
 2. Make a fresh Codex usage check before launching another benchmark.
-3. Retry 15 is complete. Retry 16 started; check whether it is still active and finish it
-   if running. Treat retry 13 as incomplete; do not combine turns from different runs.
+3. Retry 16 is complete; retry 17 has not started. Use a fresh matched run for the new
+   tool configuration. Treat retry 13 as incomplete; do not combine different runs.
 4. Use pinned Pi at
    `..\rupi\.benchmark\tools\pi-0.86.1\pi.ps1` and the standard settings:
    Case 07, four turns, 600 seconds per turn, 6-second provider grace, eight requests per

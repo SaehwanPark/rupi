@@ -394,6 +394,22 @@ function Get-CaseGuidance([hashtable]$case, [string]$phase = "initial") {
           'Finish README after the executable workflow; rely on harness feedback.'
         ) -join [Environment]::NewLine)
       }
+      if ($phase -eq "entrypoint") {
+        return (@(
+          'First tool call: write a compact, runnable CLI in leasecascade/__main__.py.'
+          'Do not inspect files or run commands before this first source write.'
+          'Keep the entry point under 150 lines with top-level, serve, and worker help.'
+          'Implement serve with a standard-library GET /healthz route and valid options.'
+          'Use standard-library imports and a main guard; do not import absent local modules.'
+          'Define needed constants in __main__.py; do not import __version__ from the package.'
+          'Defer SQLite, HMAC, pipeline state, and worker execution to later writes.'
+          'Second write call: create tests/test_leasecascade.py with a real unittest.'
+          'Third write call: create tests/__init__.py after the test module exists.'
+          'Cover the three help paths with subprocess checks using sys.executable.'
+          'Do not write validation, storage, server, or worker files until tests and help pass.'
+          'Do not run commands, tests, help checks, service, worker, or oracle.'
+        ) -join [Environment]::NewLine)
+      }
       if ($phase -eq "foundation") {
         return (@(
           'Project tests or help checks still fail; fix both foundation gates before workflow code.'
@@ -1617,6 +1633,17 @@ function Invoke-External {
   }
 }
 
+function Get-BenchmarkTools([hashtable]$case, [string]$agent) {
+  if ($case.Id -eq "07-lease-cascade") {
+    if ($agent -eq "rupi") { return @("read", "write", "edit", "grep") }
+    return @("read", "write", "edit", "grep", "find", "ls")
+  }
+  if ($agent -eq "pi") {
+    return @("read", "write", "edit", "bash", "powershell", "grep", "find", "ls")
+  }
+  return @()
+}
+
 function New-BenchmarkWorkspace([hashtable]$case, [string]$agentRoot, [string]$thinkingLevel) {
   $source = Join-Path $repoRoot $case.Source
   $project = Join-Path $agentRoot $case.ProjectDir
@@ -1637,6 +1664,14 @@ function New-BenchmarkWorkspace([hashtable]$case, [string]$agentRoot, [string]$t
     $config = Get-Content -Raw $configSourcePath | ConvertFrom-Json
     $config.thinking = $thinkingLevel
     $config.state_dir = ".rupi-state"
+    if ($case.Id -eq "07-lease-cascade") {
+      if ($null -eq $config.tools) {
+        $config | Add-Member -MemberType NoteProperty -Name tools -Value ([pscustomobject]@{})
+      }
+      $config.tools | Add-Member -MemberType NoteProperty -Name allow -Force -Value @(
+        Get-BenchmarkTools $case "rupi"
+      )
+    }
     if ($null -eq $config.limits) {
       $config | Add-Member -MemberType NoteProperty -Name limits -Value ([pscustomobject]@{})
     }
@@ -1878,7 +1913,7 @@ function Invoke-AgentCase([hashtable]$case, [string]$agent, [string]$root, [stri
       $args.Add("--thinking"); $args.Add($thinkingLevel)
       $args.Add("--mode"); $args.Add("json"); $args.Add("--print"); $args.Add("--offline"); $args.Add("--session-dir"); $args.Add($sessionDir)
       $args.Add("--no-context-files"); $args.Add("--no-extensions"); $args.Add("--no-skills"); $args.Add("--no-prompt-templates"); $args.Add("--no-themes")
-      $args.Add("--tools"); $args.Add("read,write,edit,bash,powershell,grep,find,ls")
+      $args.Add("--tools"); $args.Add((@(Get-BenchmarkTools $case "pi") -join ","))
       if ($turn -gt 1) { $args.Add("--continue") }
       $args.Add("--"); $args.Add($prompt)
       $env["PI_CODING_AGENT_DIR"] = $piConfig; $env["PI_OFFLINE"] = "1"
@@ -1903,6 +1938,9 @@ function Invoke-AgentCase([hashtable]$case, [string]$agent, [string]$root, [stri
     $verification = Invoke-Verification $case $agentRoot $workspace.project $turn
     $lastVerification = $verification
     $turnRecord = [ordered]@{ turn = $turn; call = $call; metrics = $metrics; verification = $verification; session_id = $sessionId }
+    if ($case.Id -eq "07-lease-cascade") {
+      $turnRecord["configured_tool_allowlist"] = @(Get-BenchmarkTools $case $agent)
+    }
     Write-Json (Join-Path $turnRoot "summary.json") $turnRecord
     [void]$turns.Add($turnRecord)
     $resolved = $verification.resolved
@@ -1933,6 +1971,26 @@ if ($DryRun) {
   $cases | ForEach-Object {
     [void](Get-InitialPrompt $_)
     if ($_.Id -eq "07-lease-cascade") {
+      if ((@(Get-BenchmarkTools $_ "rupi") -join ",") -ne "read,write,edit,grep") {
+        throw "Case 07 Rupi tool allowlist differs from its file-only profile."
+      }
+      if ((@(Get-BenchmarkTools $_ "pi") -join ",") -ne "read,write,edit,grep,find,ls") {
+        throw "Case 07 Pi tool allowlist differs from its file-only profile."
+      }
+      $entrypointGuidance = Get-CaseGuidance $_ "entrypoint"
+      $entrypointRequirements = @(
+        'First tool call: write a compact, runnable CLI in leasecascade/__main__.py.'
+        'Do not inspect files or run commands before this first source write.'
+        'Use standard-library imports and a main guard; do not import absent local modules.'
+        'Define needed constants in __main__.py; do not import __version__ from the package.'
+        'Second write call: create tests/test_leasecascade.py with a real unittest.'
+        'Third write call: create tests/__init__.py after the test module exists.'
+      )
+      foreach ($instruction in $entrypointRequirements) {
+        if (-not $entrypointGuidance.Contains($instruction)) {
+          throw "Case 07 entrypoint guidance is missing: $instruction"
+        }
+      }
       $initialGuidance = Get-CaseGuidance $_
       $initialRequirements = @(
         'Second write call: create tests/test_leasecascade.py with a real unittest.'
@@ -1989,6 +2047,14 @@ if ($DryRun) {
         if (-not $workflowGuidance.Contains($instruction)) {
           throw "Case 07 workflow guidance is missing: $instruction"
         }
+      }
+    } else {
+      if (@(Get-BenchmarkTools $_ "rupi").Count -ne 0) {
+        throw "Non-Case 07 Rupi tools must retain their source configuration."
+      }
+      $piTools = @(Get-BenchmarkTools $_ "pi") -join ","
+      if ($piTools -ne "read,write,edit,bash,powershell,grep,find,ls") {
+        throw "Non-Case 07 Pi tools must retain the existing profile."
       }
     }
     $dryRunHelp = @($_.Help | ForEach-Object {
