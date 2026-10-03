@@ -1468,6 +1468,16 @@ TUI rendering passed all budgets (3.31–3.90 µs/unit); checkpointed restore me
   2,401,022 ms; Rupi used 69,765 over 2,288,759 ms. Pi took 112,263 ms longer but used 7,477
   fewer work tokens, a strict oracle win. See the
   [Case 07 ledger](docs/benchmark/2026-09-29-case07-lease-cascade-ledger.md).
+  The Oct 3 retry29 produced a strict Rupi oracle win:
+  `bench-20261003-case07-budget2048-low-retry29-rupi12-matched4-600s`.
+  Rupi resolved on turn 3 after its outer timeout; Pi failed all four oracle checks.
+  Both passed project tests and all help checks throughout. Rupi recorded 89,208 work
+  tokens, 22 completed tools, zero failures/Unknown, and 1,494,500 ms call time; Pi
+  recorded 61,382 tokens, 21 calls, and 1,795,363 ms. Call time excludes verification;
+  unrecorded inference remains unknown. Shared low effort, a 2,048-token thinking budget
+  through a local relay, and four 600-second turns were used. Rupi's cap was 12; Pi kept
+  its native request policy. This closes the Case 07 comparison objective for PR #139;
+  the remaining comparison series and broader live-project gates remain active.
 
   Case 10 used the pinned Pi 0.86.1 run `bench-20260929-case10-pi0861-low-matched4-600s`.
   Neither agent resolved in four turns. Rupi used 89,125 work tokens over 2,337,401 ms; Pi used

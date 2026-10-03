@@ -16,6 +16,8 @@ param(
   [int]$MaxModelRequestsPerTurn = 24,
   [ValidateSet("off", "low")]
   [string]$ThinkingLevel = "low",
+  [ValidateRange(0, 16384)]
+  [int]$Case07ReasoningBudgetTokens = 0,
   [switch]$DryRun
 )
 
@@ -356,6 +358,160 @@ function Get-CaseGuidance([hashtable]$case, [string]$phase = "initial") {
         'Use standard-library modules; finish README after executable behavior.'
       ) -join [Environment]::NewLine)
     }
+    "07-lease-cascade" {
+      if ($phase -eq "initial") {
+        return (@(
+          'The complete Case 07 specification is embedded; do not reread SPEC.md.'
+          'The current directory contains SPEC.md and is already the project root.'
+          'Use leasecascade/ and tests/ paths directly relative to this current directory.'
+          'First tool call: write a compact, runnable CLI in leasecascade/__main__.py.'
+          'Review the embedded specification as file inspection before this first source write.'
+          'Use the workspace write tool; this first write must create __main__.py.'
+          'Keep the first CLI write under 90 lines with top-level, serve, and worker help.'
+          'This attempt covers CLI/health, help tests, and README; do not plan workflow code yet.'
+          'Implement serve with a standard-library GET /healthz route and valid options.'
+          'Defer SQLite, HMAC, pipeline state, and worker execution until the test files exist.'
+          'Second write call: create tests/test_leasecascade.py with a real unittest.'
+          'Keep initial tests under 60 lines; cover only imports and the three help paths.'
+          'Third write call: create tests/__init__.py after the test module exists.'
+          'Fourth write: create README.md under 80 lines with the public contract and exact checks.'
+          'Cover commands, HMAC, routes, states, collect/fan_in, leases, sink, and persistence.'
+          'Document implemented behavior honestly; keep command examples aligned with code.'
+          'Each write call creates one file; write the test module before its initializer.'
+          'Include an importable unittest.TestCase with at least one test_ method.'
+          'Cover the three help paths with subprocess checks using sys.executable.'
+          'Use native file tools and delegate all execution and verification to the harness.'
+          'After the entry point, write the test module and initializer in consecutive calls.'
+          'Keep all workflow code in __main__.py; do not create helper modules.'
+          'Complete CLI/health, help tests, and README in this attempt; yield after four writes.'
+          'Use the next harness feedback to begin workflow tests and implementation.'
+          'Apply subsequent source edits of at most 80 new lines while preserving passing behavior.'
+          'Invoke the sink with direct argv and persist output and terminal status.'
+          'Expose the result through the documented pipeline/job retrieval route.'
+          'Complete workflow behavior in later attempts using public-spec tests and small edits.'
+          'Use standard-library imports and a main guard; do not import absent local modules.'
+          'Implement signed pipeline admission and durable ordered job state.'
+          'Then add worker --once with bounded leases, direct argv, and no polling.'
+          'Claim runnable jobs in pipeline and job insertion order.'
+          'Resolve only declared input_refs from successful dependency outputs.'
+          'Build barrier fan_in in declared dependency order and include only collect.field.'
+          'Use depends_on order and omit all other dependency output fields.'
+          'Missing selected output fails the barrier without invoking its sink.'
+          'Failed or blocked dependencies block dependents; expired leases are reclaimable.'
+          'The harness runs tests, three help commands, and oracle after every attempt.'
+          'Do not run commands, tests, help checks, service, worker, or oracle.'
+          'Keep README commands and implemented behavior aligned during later repairs.'
+        ) -join [Environment]::NewLine)
+      }
+      if ($phase -eq "entrypoint") {
+        return (@(
+          'The current directory contains SPEC.md and is already the project root.'
+          'Use leasecascade/ and tests/ paths directly relative to this current directory.'
+          'First tool call: write a compact, runnable CLI in leasecascade/__main__.py.'
+          'Review the embedded specification as file inspection before this first source write.'
+          'Keep the first CLI write under 90 lines with top-level, serve, and worker help.'
+          'This attempt covers CLI/health, help tests, and README; do not plan workflow code yet.'
+          'Implement serve with a standard-library GET /healthz route and valid options.'
+          'Use standard-library imports and a main guard; do not import absent local modules.'
+          'Define needed constants in __main__.py; do not import __version__ from the package.'
+          'Defer SQLite, HMAC, pipeline state, and worker execution until the test files exist.'
+          'Second write call: create tests/test_leasecascade.py with a real unittest.'
+          'Keep initial tests under 60 lines; cover only imports and the three help paths.'
+          'Third write call: create tests/__init__.py after the test module exists.'
+          'Fourth write: create README.md under 80 lines with the public contract and exact checks.'
+          'Cover commands, HMAC, routes, states, collect/fan_in, leases, sink, and persistence.'
+          'Document implemented behavior honestly; keep command examples aligned with code.'
+          'Cover the three help paths with subprocess checks using sys.executable.'
+          'Complete CLI/health, help tests, and README in this attempt; yield after four writes.'
+          'Keep all workflow code in __main__.py; do not create helper modules.'
+          'Apply subsequent source edits of at most 80 new lines while preserving passing behavior.'
+          'Complete workflow behavior in later attempts using public-spec tests and small edits.'
+          'Do not run commands, tests, help checks, service, worker, or oracle.'
+        ) -join [Environment]::NewLine)
+      }
+      if ($phase -eq "foundation") {
+        return (@(
+          'Project tests or help checks still fail; fix both foundation gates before workflow code.'
+          'If help fails, repair leasecascade/__main__.py before writing more tests.'
+          'Remove imports of missing local modules; keep the foundation self-contained.'
+          'Each write call creates one file; write the test module before its initializer.'
+          'Missing tests: write tests/test_leasecascade.py then tests/__init__.py separately.'
+          'While either gate fails, repair only __main__.py or the two test files.'
+          'Define an importable unittest.TestCase with at least one test_ method.'
+          'Cover the three help paths with subprocess checks using sys.executable.'
+          'Use workspace write tools only; no exec or running checks, services, workers, or oracle.'
+          'Do not write validation, storage, server, or worker files until tests and all help pass.'
+        ) -join [Environment]::NewLine)
+      }
+      if ($phase -eq "local") {
+        return (@(
+          'Repair the project-test failure shown in the diagnostic excerpt before adding features.'
+          'Preserve the public-specification assertions and fix the implementation in small edits.'
+          'If tests assume an undocumented private API, replace that coupling with public checks.'
+          'Preserve every public-spec assertion; never weaken expectations to make tests pass.'
+          'Keep application repairs in __main__.py; test helpers belong inside the test module.'
+          'Each implementation edit adds at most 80 lines; preserve passing tests and help.'
+          'Use the existing source and test context; read only the relevant file when needed.'
+          'Repair other failures from the same feedback while the request budget remains.'
+          'Then yield for harness feedback; do not run checks, service, worker, or oracle.'
+        ) -join [Environment]::NewLine)
+      }
+      if ($phase -eq "workflow") {
+        return (@(
+          'Project tests and all help checks pass, but the independent oracle failed.'
+          'Keep the passing tests and help paths intact.'
+          'Do not repeat CLI, health-route, or test-discovery scaffolding.'
+          'After workflow tests exist, advance leasecascade/__main__.py through small edits.'
+          'Use prior context; read the intended source or test file once if its anchor is unknown.'
+          'After that read, the next tool call must edit the intended file, not inspect more files.'
+          'Each edit adds at most 80 lines; apply the first edit before designing later slices.'
+          'After workflow tests exist, add signed admission, retrieval, then worker in small edits.'
+          'With tests present, add missing raw-body HMAC and atomic SQLite pipeline/job state.'
+          'Then connect POST /pipelines and GET /pipelines/<pipeline_id> in small separate edits.'
+          'Keep workflow code in that file; do not create __init__.py or helper modules yet.'
+          'Then add ordered leased claims, a direct-argv sink, and persisted terminal output.'
+          'Use a bounded worker --once; reclaim expired leases without polling.'
+          ('If workflow tests are missing, edit ' +
+            'tests/test_leasecascade.py next.')
+          'Keep workflow tests small; use the real CLI and HTTP contract before implementation.'
+          'Use finite HTTP/process timeouts and terminate/wait for the server in finally.'
+          'Test signed admission, persisted retrieval, and worker delivery of declared inputs.'
+          'Exercise workflow behavior only through documented CLI, HTTP, and sink interfaces.'
+          'Use sys.executable -m leasecascade, raw HTTP requests, and bounded sink fixtures.'
+          'Keep test helpers in tests/test_leasecascade.py; use only standard-library imports.'
+          'Do not import private application modules or assume undocumented function/class names.'
+          'Do not create application helper modules just to satisfy test-specific internal imports.'
+          'Test a barrier whose depends_on order reverses the two dependency insertion positions.'
+          'Assert fan_in contains only collect.field values, with job_id/value items in that order.'
+          'Return extra private output fields from dependencies and assert they are excluded.'
+          'Missing collect.field test: no barrier sink call, failed barrier, blocked dependent.'
+          'Use bounded subprocess fixtures and close every resource in tests.'
+          'After adding missing workflow tests, end this attempt for harness feedback.'
+          'If those tests fail, repair the implementation using the next harness feedback.'
+          'Preserve all passing project tests and the three help paths.'
+          'Then implement declared inputs, ordered selected-field fan-in, and dependency blocking.'
+          'Reclaim expired leases; do not run a barrier sink when a selected field is missing.'
+          'Build fan-in in depends_on order from only the selected collect.field values.'
+          'Fail missing selections without running the sink, block dependents, and reclaim leases.'
+          'Do not rewrite the whole application in one call or repeat implemented behavior.'
+          'Use later attempts to finish small implementation edits while keeping workflow tests.'
+          'If README is missing, write it before ending this attempt; retain the public checks.'
+          'Do not run commands, tests, help checks, service, worker, or oracle.'
+        ) -join [Environment]::NewLine)
+      }
+      return (@(
+        'Use the embedded Case 07 specification, local tests/help, and oracle pass/fail only.'
+        'Fix the earliest failing local gate before expanding the worker workflow.'
+        'Preserve the existing CLI, HTTP, and durable state behavior.'
+        '__main__.py is the application entry point; __init__.py alone is not runnable.'
+        'Keep worker --once bounded and invoke the sink with direct argv, never a shell.'
+        'Claim only runnable jobs in pipeline/job insertion order; reclaim expired leases.'
+        'Use only declared input_refs and successful dependency outputs.'
+        'Build barrier fan_in in depends_on order with only the selected collect.field.'
+        'Fail a barrier locally if a dependency lacks that field, then block dependents.'
+        'Do not run commands, tests, help checks, service, worker, or oracle.'
+      ) -join [Environment]::NewLine)
+    }
     default {
       return (@(
         "Prioritize the complete $($case.Focus) workflow described in SPEC.md."
@@ -395,16 +551,22 @@ function Get-InitialPrompt([hashtable]$case) {
     'Implement the complete service and worker from the embedded Case 03 specification.'
   } elseif ($case.Id -eq "06-artifact-pipeline") {
     'Implement Case 06 from the complete embedded specification.'
+  } elseif ($case.Id -eq "07-lease-cascade") {
+    'Implement Case 07 from the complete embedded specification.'
   } else {
     'Read SPEC.md completely before acting.'
   }
-  if ($case.Id -in @("03-event-outbox", "04-webhook-inbox", "06-artifact-pipeline")) {
+  if ($case.Id -in @(
+      "03-event-outbox", "04-webhook-inbox", "06-artifact-pipeline", "07-lease-cascade"
+    )) {
     $specPath = Join-Path (Join-Path $repoRoot $case.Source) "SPEC.md"
     $embeddedSpec = [IO.File]::ReadAllText($specPath)
     $caseName = if ($case.Id -eq "04-webhook-inbox") {
       "Case 04"
     } elseif ($case.Id -eq "06-artifact-pipeline") {
       "Case 06"
+    } elseif ($case.Id -eq "07-lease-cascade") {
+      "Case 07"
     } else {
       "Case 03"
     }
@@ -456,6 +618,13 @@ state any incomplete requirement explicitly.
       'The harness runs tests, three help commands, and the oracle after every attempt.'
       'Oracle diagnostics stay hidden; recovery receives only pass or fail.'
       'Do not run commands, tests, help checks, the service, worker, or oracle.'
+      'Use workspace read/write tools and the harness results.'
+    ) -join [Environment]::NewLine
+  } elseif ($case.Id -eq "07-lease-cascade") {
+    $verificationGuidance = @(
+      'The harness runs tests, three help commands, and the oracle after every attempt.'
+      'Recovery receives only oracle pass/fail status; oracle diagnostics stay hidden.'
+      'Do not run commands, tests, help checks, service, worker, or oracle.'
       'Use workspace read/write tools and the harness results.'
     ) -join [Environment]::NewLine
   }
@@ -524,6 +693,39 @@ directories to its extended Windows path with `cd` or `cd /d`.
       'The complete Case 06 specification follows:'
       'First tool call: write a runnable vertical slice in artifactpipe/__main__.py.'
     )
+  } elseif ($case.Id -eq "07-lease-cascade") {
+    $requiredInstructions += @(
+      'Implement Case 07 from the complete embedded specification.'
+      'The complete Case 07 specification follows:'
+      'First tool call: write a compact, runnable CLI in leasecascade/__main__.py.'
+      'Review the embedded specification as file inspection before this first source write.'
+      'Use the workspace write tool; this first write must create __main__.py.'
+      'Keep the first CLI write under 90 lines with top-level, serve, and worker help.'
+      'Implement serve with a standard-library GET /healthz route and valid options.'
+      'Defer SQLite, HMAC, pipeline state, and worker execution until the test files exist.'
+      'Second write call: create tests/test_leasecascade.py with a real unittest.'
+      'Keep initial tests under 60 lines; cover only imports and the three help paths.'
+      'Third write call: create tests/__init__.py after the test module exists.'
+      'Fourth write: create README.md under 80 lines with the public contract and exact checks.'
+      'Cover commands, HMAC, routes, states, collect/fan_in, leases, sink, and persistence.'
+      'Document implemented behavior honestly; keep command examples aligned with code.'
+      'Each write call creates one file; write the test module before its initializer.'
+      'Include an importable unittest.TestCase with at least one test_ method.'
+      'Cover the three help paths with subprocess checks using sys.executable.'
+      'Use native file tools and delegate all execution and verification to the harness.'
+      'After the entry point, write the test module and initializer in consecutive calls.'
+      'Keep all workflow code in __main__.py; do not create helper modules.'
+      'Complete CLI/health, help tests, and README in this attempt; yield after four writes.'
+      'Complete workflow behavior in later attempts using public-spec tests and small edits.'
+      'Use standard-library imports and a main guard; do not import absent local modules.'
+      'Implement signed pipeline admission and durable ordered job state.'
+      'Then add worker --once with bounded leases, direct argv, and no polling.'
+      'Claim runnable jobs in pipeline and job insertion order.'
+      'Build barrier fan_in in declared dependency order and include only collect.field.'
+      'The harness runs tests, three help commands, and the oracle after every attempt.'
+      'Recovery receives only oracle pass/fail status; oracle diagnostics stay hidden.'
+      'Do not run commands, tests, help checks, service, worker, or oracle.'
+    )
   } else {
     $requiredInstructions += 'Read SPEC.md completely before acting'
   }
@@ -566,6 +768,12 @@ directories to its extended Windows path with `cd` or `cd /d`.
       'Oracle diagnostics stay hidden; recovery receives only pass or fail.'
       'Do not run commands, tests, help checks, the service, worker, or oracle.'
     )
+  } elseif ($case.Id -eq "07-lease-cascade") {
+    $requiredInstructions += @(
+      'The harness runs tests, three help commands, and the oracle after every attempt.'
+      'Recovery receives only oracle pass/fail status; oracle diagnostics stay hidden.'
+      'Do not run commands, tests, help checks, service, worker, or oracle.'
+    )
   } else {
     $requiredInstructions += @(
       'Run the project unittest suite'
@@ -586,7 +794,9 @@ directories to its extended Windows path with `cd` or `cd /d`.
   if (-not $prompt.Contains($guidance)) {
     throw "Initial benchmark prompt is missing case guidance for $($case.Id)."
   }
-  if ($case.Id -in @("03-event-outbox", "04-webhook-inbox", "06-artifact-pipeline") -and
+  if ($case.Id -in @(
+      "03-event-outbox", "04-webhook-inbox", "06-artifact-pipeline", "07-lease-cascade"
+    ) -and
       -not $prompt.Contains($embeddedSpec)) {
     throw "$caseName initial prompt is missing the complete project specification."
   }
@@ -741,6 +951,36 @@ directories to its extended Windows path with `cd` or `cd /d`.
       'The harness runs project tests, three help commands, and oracle after every attempt.'
       'Do not run commands, tests, help checks, service, worker, or oracle.'
     )
+  } elseif ($case.Id -eq "07-lease-cascade") {
+    $caseSpecificInstructions = @(
+      'The complete Case 07 specification is embedded; do not reread SPEC.md.'
+      'First tool call: write a compact, runnable CLI in leasecascade/__main__.py.'
+      'Review the embedded specification as file inspection before this first source write.'
+      'Use the workspace write tool; this first write must create __main__.py.'
+      'Keep the first CLI write under 90 lines with top-level, serve, and worker help.'
+      'Implement serve with a standard-library GET /healthz route and valid options.'
+      'Defer SQLite, HMAC, pipeline state, and worker execution until the test files exist.'
+      'Second write call: create tests/test_leasecascade.py with a real unittest.'
+      'Keep initial tests under 60 lines; cover only imports and the three help paths.'
+      'Third write call: create tests/__init__.py after the test module exists.'
+      'Fourth write: create README.md under 80 lines with the public contract and exact checks.'
+      'Cover commands, HMAC, routes, states, collect/fan_in, leases, sink, and persistence.'
+      'Document implemented behavior honestly; keep command examples aligned with code.'
+      'Each write call creates one file; write the test module before its initializer.'
+      'Include an importable unittest.TestCase with at least one test_ method.'
+      'Cover the three help paths with subprocess checks using sys.executable.'
+      'Use native file tools and delegate all execution and verification to the harness.'
+      'After the entry point, write the test module and initializer in consecutive calls.'
+      'Keep all workflow code in __main__.py; do not create helper modules.'
+      'Complete CLI/health, help tests, and README in this attempt; yield after four writes.'
+      'Complete workflow behavior in later attempts using public-spec tests and small edits.'
+      'Implement signed pipeline admission and durable ordered job state.'
+      'Then add worker --once with bounded leases, direct argv, and no polling.'
+      'Claim runnable jobs in pipeline and job insertion order.'
+      'Build barrier fan_in in declared dependency order and include only collect.field.'
+      'The harness runs tests, three help commands, and oracle after every attempt.'
+      'Do not run commands, tests, help checks, service, worker, or oracle.'
+    )
   }
   foreach ($instruction in $caseSpecificInstructions) {
     if (-not $prompt.Contains($instruction)) {
@@ -748,7 +988,9 @@ directories to its extended Windows path with `cd` or `cd /d`.
     }
   }
   if (
-    $case.Id -in @("03-event-outbox", "04-webhook-inbox", "06-artifact-pipeline") -and
+    $case.Id -in @(
+      "03-event-outbox", "04-webhook-inbox", "06-artifact-pipeline", "07-lease-cascade"
+    ) -and
     $prompt.Contains('Read SPEC.md completely before acting')
   ) {
     throw 'Embedded-spec prompts must not request a SPEC.md reread before the first write.'
@@ -807,6 +1049,7 @@ function Get-RecoveryPrompt(
   $feedback = Get-RecoveryFeedback $verification
   $case04Phase = $null
   $case05Phase = $null
+  $case07Phase = $null
   if ($case.Id -eq "04-webhook-inbox") {
     $projectTestsPassed = $false
     if ($verification.project_tests) {
@@ -910,17 +1153,69 @@ function Get-RecoveryPrompt(
     } else {
       $case05Phase = "finish"
     }
+  } elseif ($case.Id -eq "07-lease-cascade") {
+    $oracleStatus = if ($verification.oracle.timed_out) {
+      "timed out"
+    } elseif ($verification.oracle.exit_code -eq 0) {
+      "passed"
+    } else {
+      "failed"
+    }
+    $feedback = "Independent acceptance oracle: $oracleStatus (diagnostic details hidden)." +
+      [Environment]::NewLine + $feedback
+
+    $projectTestsPassed = $verification.project_tests -and
+      -not $verification.project_tests.timed_out -and
+      $verification.project_tests.exit_code -eq 0
+    $helpChecksPassed = @($verification.help).Count -eq 3
+    foreach ($helpCheck in @($verification.help)) {
+      if ($helpCheck.timed_out -or $helpCheck.exit_code -ne 0) {
+        $helpChecksPassed = $false
+      }
+    }
+    $entrypointPresent = $false
+    $testPackagePresent = $false
+    $testModulePresent = $false
+    $noTestsDiscovered = $false
+    if (-not [string]::IsNullOrWhiteSpace($ProjectPath)) {
+      $entrypointPresent = Test-Path -LiteralPath (
+        Join-Path (Join-Path $ProjectPath "leasecascade") "__main__.py"
+      )
+      $testsPath = Join-Path $ProjectPath "tests"
+      $testPackagePresent = Test-Path -LiteralPath (Join-Path $testsPath "__init__.py")
+      $testModulePresent = Test-Path -LiteralPath (Join-Path $testsPath "test_leasecascade.py")
+    }
+    if ($verification.project_tests -and -not $verification.project_tests.timed_out) {
+      $noTestsDiscovered = $verification.project_tests.exit_code -eq 5
+    }
+
+    if (-not $entrypointPresent) {
+      $case07Phase = "entrypoint"
+    } elseif (-not $testPackagePresent -or -not $testModulePresent -or
+        $noTestsDiscovered -or -not $helpChecksPassed) {
+      $case07Phase = "foundation"
+    } elseif (-not $projectTestsPassed) {
+      $case07Phase = "local"
+    } elseif ($oracleStatus -eq "passed") {
+      $case07Phase = "passed"
+    } else {
+      $case07Phase = "workflow"
+    }
   }
   $toolingGuidance = Get-WindowsToolGuidance
   $caseGuidance = if ($case.Id -eq "04-webhook-inbox") {
     Get-CaseGuidance $case $case04Phase
   } elseif ($case.Id -eq "05-batch-relay") {
     Get-CaseGuidance $case $case05Phase
+  } elseif ($case.Id -eq "07-lease-cascade") {
+    Get-CaseGuidance $case $case07Phase
   } else {
     Get-CaseGuidance $case
   }
   $verificationResultLabel = if ($case.Id -eq "05-batch-relay") {
     'Previous harness results (oracle status, project tests, and help commands):'
+  } elseif ($case.Id -eq "07-lease-cascade") {
+    'Previous harness results (oracle status, project tests, and three help commands):'
   } else {
     'Previous local verification results (project tests and help commands):'
   }
@@ -953,6 +1248,22 @@ function Get-RecoveryPrompt(
       'Inspect existing files and preserve passing behavior. ' +
       $phaseHeader + ' ' +
       'Work only in this workspace; do not edit the specification, config, or oracle.'
+  } elseif ($case.Id -eq "07-lease-cascade") {
+    if ($case07Phase -eq "entrypoint") {
+      'The complete Case 07 specification was embedded initially; do not reread it. ' +
+        'No runnable entrypoint exists. Write `leasecascade/__main__.py` before inspection. ' +
+        'Use oracle pass/fail only; work in this workspace and do not inspect or run the oracle.'
+    } elseif ($case07Phase -eq "workflow") {
+      'The complete Case 07 specification was embedded initially; do not reread it. ' +
+        'Tests and all three help commands pass. Use prior turn context for small source edits. ' +
+        'Read the intended source or test file once if an exact edit anchor is unknown. ' +
+        'Use oracle pass/fail only; ' +
+        'work in this workspace and do not inspect or run the oracle.'
+    } else {
+      'The complete Case 07 specification was embedded initially; do not reread it. ' +
+        'Inspect existing files, preserve working behavior, and use oracle pass/fail only. ' +
+        'Work only in this workspace; do not inspect or run the oracle.'
+    }
   } else {
     "Read SPEC.md and inspect the files already present. Work only inside this" +
       [Environment]::NewLine +
@@ -990,6 +1301,14 @@ harness for verification.
       'Do not call `exec` or run shell commands; rely on the harness for verification.'
       'Never inspect or run the oracle. Use workspace read/write tools and harness results.'
     ) -join [Environment]::NewLine)
+  } elseif ($case.Id -eq "07-lease-cascade") {
+    (@(
+      'The harness reruns tests, all three help commands, and the independent oracle after each'
+      'attempt. Recovery receives only oracle pass/fail status; diagnostics stay hidden.'
+      'Use the local test/help diagnostics and initial embedded specification.'
+      'Do not run commands, tests, help checks, service, worker, or oracle.'
+      'Use workspace read/write tools and rely on harness feedback for verification.'
+    ) -join [Environment]::NewLine)
   } else {
 @'
 Continue working through the missing items in SPEC.md, then run the complete project
@@ -1000,6 +1319,23 @@ unittest suite, the project-specific help commands, and a smoke sequence.
     'Complete this phase while preserving working admission and CLI behavior.'
   } elseif ($case.Id -eq "05-batch-relay") {
     'Complete this slice; advance after project tests and help pass.'
+  } elseif ($case.Id -eq "07-lease-cascade") {
+    switch ($case07Phase) {
+      "entrypoint" {
+        ('Complete a compact entry point, help tests, and README in this attempt; ' +
+          'yield after the four foundation writes.')
+      }
+      "foundation" {
+        'Fix failed help paths and ensure unittest discovery works before worker expansion.'
+      }
+      "local" { 'Repair the shown project-test failure before expanding behavior.' }
+      "passed" { 'The oracle passed; preserve behavior and finish only missing spec items.' }
+      default {
+        ('If workflow tests are missing, add tests and ' +
+          'yield for harness feedback. Otherwise continue small implementation edits; ' +
+          'preserve passing tests and help.')
+      }
+    }
   } else {
     'Finish every missing implementation, README section, and focused test required by the spec.'
   }
@@ -1007,6 +1343,8 @@ unittest suite, the project-specific help commands, and a smoke sequence.
     'Continue from local test and help feedback; oracle results remain hidden.'
   } elseif ($case.Id -eq "05-batch-relay") {
     'Use failing local checks to repair this slice. Oracle status only; do not inspect or run it.'
+  } elseif ($case.Id -eq "07-lease-cascade") {
+    'Use local test/help feedback and oracle pass/fail only; never inspect or run the oracle.'
   } else {
     'Continue working through the missing items in SPEC.md.'
   }
@@ -1024,6 +1362,28 @@ unittest suite, the project-specific help commands, and a smoke sequence.
     }
   } elseif ($case.Id -eq "05-batch-relay") {
     'Prioritize the current gated phase.'
+  } elseif ($case.Id -eq "07-lease-cascade") {
+    switch ($case07Phase) {
+      "entrypoint" {
+        ('Write CLI/health in __main__.py, then both test files and README; ' +
+          'stop after those four writes and wait for harness feedback.')
+      }
+      "foundation" {
+        ('Fix failed help paths and create tests/__init__.py plus ' +
+          'tests/test_leasecascade.py with a discoverable unittest.')
+      }
+      "local" {
+        'Use the shown project-test diagnostic to make the smallest repair.'
+      }
+      "passed" {
+        'Preserve the oracle-passing workflow; finish any missing README or spec requirements.'
+      }
+      default {
+        ('If workflow tests are missing, edit ' +
+          'tests/test_leasecascade.py next. Otherwise add the next missing behavior in ' +
+          '__main__.py with at most 80 new lines.')
+      }
+    }
   } else {
     "Prioritize the full reliability contract: $($case.Focus)."
   }
@@ -1116,6 +1476,25 @@ $continuationDirective
 $verificationGuidance
 If anything remains incomplete, state it instead of claiming success.
 "@
+  if ($case.Id -eq "07-lease-cascade") {
+    $case07SpecPath = Join-Path (Join-Path $repoRoot $case.Source) "SPEC.md"
+    $case07Spec = [IO.File]::ReadAllText($case07SpecPath)
+    $editRecovery = @(
+      'Use the actual edit diagnostic; an attempted edit is not a completed change.'
+      'If a failed edit explicitly made no change, read its target file before correcting it.'
+      'Read a small target region with offset/limit; narrow it if the response is truncated.'
+      'Use file text in edit anchors, excluding displayed line numbers and truncation markers.'
+      'Then edit the observed current text with a unique anchor and the native tool schema.'
+      'Do not guess another stale anchor or rewrite the whole application after a failed edit.'
+      'If the diagnostic says already applied, inspect the file and preserve the completed change.'
+      'For an Unknown mutation, inspect current state and defer retry until reconciliation.'
+      'After a known failure is corrected, continue public contract repairs within this attempt.'
+      'Do not end an attempt merely because an edit failed while time and requests remain.'
+    ) -join [Environment]::NewLine
+    $prompt = 'The complete Case 07 specification for this recovery follows:' +
+      [Environment]::NewLine + [Environment]::NewLine + $case07Spec +
+      [Environment]::NewLine + $editRecovery + [Environment]::NewLine + $prompt
+  }
   $requiredInstructions = @(
     'use a dedicated process tool only if it is listed in your available'
     '`process` as command prefixes in a shell'
@@ -1252,6 +1631,34 @@ If anything remains incomplete, state it instead of claiming success.
       }
     }
   }
+  if ($case.Id -eq "07-lease-cascade") {
+    $recoveryHeaderRequirement = if ($case07Phase -eq "entrypoint") {
+      'No runnable entrypoint exists. Write `leasecascade/__main__.py` before inspection.'
+    } elseif ($case07Phase -eq "workflow") {
+      'Read the intended source or test file once if an exact edit anchor is unknown.'
+    } else {
+      'Inspect existing files, preserve working behavior, and use oracle pass/fail only.'
+    }
+    $recoveryRequirements = @(
+      'Independent acceptance oracle: '
+      '(diagnostic details hidden).'
+      'The complete Case 07 specification was embedded initially; do not reread it.'
+      $recoveryHeaderRequirement
+      'Recovery receives only oracle pass/fail status; diagnostics stay hidden.'
+      'Use local test/help feedback and oracle pass/fail only; never inspect or run the oracle.'
+      'Do not run commands, tests, help checks, service, worker, or oracle.'
+      $completionDirective
+      $priorityDirective
+    )
+    foreach ($requirement in $recoveryRequirements) {
+      if (-not $prompt.Contains($requirement)) {
+        throw "Case 07 recovery prompt is missing: $requirement"
+      }
+    }
+    if ($prompt.Contains('Read SPEC.md and inspect the files already present.')) {
+      throw 'Case 07 recovery prompt must use the embedded spec and phase guidance.'
+    }
+  }
   return $prompt
 }
 
@@ -1288,7 +1695,11 @@ function Invoke-External {
     [void]$psi.ArgumentList.Add($argument)
   }
   foreach ($entry in $Environment.GetEnumerator()) {
-    $psi.Environment[$entry.Key] = [string]$entry.Value
+    if ($null -eq $entry.Value) {
+      [void]$psi.Environment.Remove($entry.Key)
+    } else {
+      $psi.Environment[$entry.Key] = [string]$entry.Value
+    }
   }
 
   $process = [Diagnostics.Process]::new()
@@ -1319,6 +1730,52 @@ function Invoke-External {
   }
 }
 
+function Get-BenchmarkEndpoint([hashtable]$case) {
+  if ($case.Id -eq "07-lease-cascade" -and $Case07ReasoningBudgetTokens -gt 0) {
+    return "http://127.0.0.1:8001/v1"
+  }
+  return "http://127.0.0.1:8000/v1"
+}
+
+function Get-BenchmarkTools([hashtable]$case, [string]$agent) {
+  if ($case.Id -eq "07-lease-cascade") {
+    if ($agent -eq "rupi") { return @("read", "write", "edit", "grep") }
+    return @("read", "write", "edit", "grep", "find", "ls")
+  }
+  if ($agent -eq "pi") {
+    return @("read", "write", "edit", "bash", "powershell", "grep", "find", "ls")
+  }
+  return @()
+}
+
+function Get-BenchmarkEnvironment([hashtable]$case, [string]$agent, [string]$agentRoot) {
+  if ($case.Id -ne "07-lease-cascade" -or $agent -ne "rupi") { return @{} }
+  return @{
+    HOME = $null
+    USERPROFILE = (Join-Path $agentRoot "discovery-profile")
+  }
+}
+
+function Set-BenchmarkReasoningCompatibility([hashtable]$case, [object]$endpoint) {
+  if ($case.Id -ne "07-lease-cascade") { return }
+  if ($null -eq $endpoint.capabilities -or
+      $endpoint.capabilities.exposed_reasoning -cne "native") {
+    throw "Case 07 reasoning replay requires an explicit native exposure claim."
+  }
+  if ($null -eq $endpoint.PSObject.Properties["openai_compat"] -or
+      $null -eq $endpoint.openai_compat) {
+    $endpoint | Add-Member -MemberType NoteProperty -Name openai_compat -Force -Value (
+      [pscustomobject]@{}
+    )
+  }
+  $endpoint.openai_compat | Add-Member -MemberType NoteProperty -Name thinking_input -Force `
+    -Value "reasoning_effort"
+  $endpoint.openai_compat | Add-Member -MemberType NoteProperty -Name thinking_disable -Force `
+    -Value "reasoning_effort_none"
+  $endpoint.openai_compat | Add-Member -MemberType NoteProperty -Name preserve_reasoning -Force `
+    -Value $true
+}
+
 function New-BenchmarkWorkspace([hashtable]$case, [string]$agentRoot, [string]$thinkingLevel) {
   $source = Join-Path $repoRoot $case.Source
   $project = Join-Path $agentRoot $case.ProjectDir
@@ -1339,6 +1796,14 @@ function New-BenchmarkWorkspace([hashtable]$case, [string]$agentRoot, [string]$t
     $config = Get-Content -Raw $configSourcePath | ConvertFrom-Json
     $config.thinking = $thinkingLevel
     $config.state_dir = ".rupi-state"
+    if ($case.Id -eq "07-lease-cascade") {
+      if ($null -eq $config.tools) {
+        $config | Add-Member -MemberType NoteProperty -Name tools -Value ([pscustomobject]@{})
+      }
+      $config.tools | Add-Member -MemberType NoteProperty -Name allow -Force -Value @(
+        Get-BenchmarkTools $case "rupi"
+      )
+    }
     if ($null -eq $config.limits) {
       $config | Add-Member -MemberType NoteProperty -Name limits -Value ([pscustomobject]@{})
     }
@@ -1348,6 +1813,10 @@ function New-BenchmarkWorkspace([hashtable]$case, [string]$agentRoot, [string]$t
       $config.limits.max_model_requests_per_turn = $MaxModelRequestsPerTurn
     }
     if ($config.endpoints -and $config.endpoints.Count -gt 0) {
+      Set-BenchmarkReasoningCompatibility $case $config.endpoints[0]
+      if ($case.Id -eq "07-lease-cascade" -and $Case07ReasoningBudgetTokens -gt 0) {
+        $config.endpoints[0].base_url = Get-BenchmarkEndpoint $case
+      }
       if ($config.endpoints[0].capabilities) {
         $config.endpoints[0].capabilities.max_output_tokens = 16384
       }
@@ -1364,13 +1833,13 @@ function New-BenchmarkWorkspace([hashtable]$case, [string]$agentRoot, [string]$t
   [pscustomobject]@{ project = $project; config = $configPath; acceptance = (Join-Path $agentRoot "acceptance") }
 }
 
-function New-PiConfig([string]$agentRoot) {
+function New-PiConfig([string]$agentRoot, [hashtable]$case) {
   $piConfig = Join-Path $agentRoot "pi-config"
   New-Item -ItemType Directory -Force -Path $piConfig | Out-Null
   $models = [ordered]@{
     providers = [ordered]@{
       unsloth = [ordered]@{
-        baseUrl = "http://127.0.0.1:8000/v1"
+        baseUrl = Get-BenchmarkEndpoint $case
         api = "openai-completions"
         apiKey = "local"
         models = @([ordered]@{
@@ -1551,7 +2020,11 @@ function Invoke-AgentCase([hashtable]$case, [string]$agent, [string]$root, [stri
   $agentRoot = Join-Path $root $agent
   New-Item -ItemType Directory -Force -Path $agentRoot | Out-Null
   $workspace = New-BenchmarkWorkspace $case $agentRoot $thinkingLevel
-  $piConfig = New-PiConfig $agentRoot
+  $piConfig = New-PiConfig $agentRoot $case
+  $benchmarkEnvironment = Get-BenchmarkEnvironment $case $agent $agentRoot
+  if ($benchmarkEnvironment.ContainsKey("USERPROFILE")) {
+    New-Item -ItemType Directory -Path $benchmarkEnvironment.USERPROFILE -Force | Out-Null
+  }
   $turns = [Collections.Generic.List[object]]::new()
   $resolved = $false; $sessionId = $null; $lastVerification = $null
   for ($turn = 1; $turn -le $MaxTurns; $turn++) {
@@ -1569,7 +2042,10 @@ function Invoke-AgentCase([hashtable]$case, [string]$agent, [string]$root, [stri
       $args.Add("run"); $args.Add("--config"); $args.Add($workspace.config); $args.Add("--cwd"); $args.Add(".")
       if ($sessionId) { $args.Add("--resume"); $args.Add($sessionId) }
       $args.Add("--prompt"); $args.Add($prompt); $args.Add("--no-color"); $args.Add("--no-reasoning"); $args.Add("--verbose")
-      $call = Invoke-External -FileName $rupiBinary -Arguments @($args) -WorkingDirectory $workspace.project -StdoutPath (Join-Path $turnRoot "stdout.txt") -StderrPath (Join-Path $turnRoot "stderr.txt") -TimeoutSeconds $TurnTimeoutSeconds
+      $call = Invoke-External -FileName $rupiBinary -Arguments @($args) `
+        -WorkingDirectory $workspace.project -StdoutPath (Join-Path $turnRoot "stdout.txt") `
+        -StderrPath (Join-Path $turnRoot "stderr.txt") -TimeoutSeconds $TurnTimeoutSeconds `
+        -Environment $benchmarkEnvironment
       $metrics = Read-RupiMetrics $workspace.project $traceLinesBefore
       $sessionId = Get-RupiSessionId $workspace.project
     } else {
@@ -1580,7 +2056,7 @@ function Invoke-AgentCase([hashtable]$case, [string]$agent, [string]$root, [stri
       $args.Add("--thinking"); $args.Add($thinkingLevel)
       $args.Add("--mode"); $args.Add("json"); $args.Add("--print"); $args.Add("--offline"); $args.Add("--session-dir"); $args.Add($sessionDir)
       $args.Add("--no-context-files"); $args.Add("--no-extensions"); $args.Add("--no-skills"); $args.Add("--no-prompt-templates"); $args.Add("--no-themes")
-      $args.Add("--tools"); $args.Add("read,write,edit,bash,powershell,grep,find,ls")
+      $args.Add("--tools"); $args.Add((@(Get-BenchmarkTools $case "pi") -join ","))
       if ($turn -gt 1) { $args.Add("--continue") }
       $args.Add("--"); $args.Add($prompt)
       $env["PI_CODING_AGENT_DIR"] = $piConfig; $env["PI_OFFLINE"] = "1"
@@ -1605,6 +2081,25 @@ function Invoke-AgentCase([hashtable]$case, [string]$agent, [string]$root, [stri
     $verification = Invoke-Verification $case $agentRoot $workspace.project $turn
     $lastVerification = $verification
     $turnRecord = [ordered]@{ turn = $turn; call = $call; metrics = $metrics; verification = $verification; session_id = $sessionId }
+    if ($case.Id -eq "07-lease-cascade") {
+      $turnRecord["configured_tool_allowlist"] = @(Get-BenchmarkTools $case $agent)
+      $turnRecord["harness_model_request_cap"] = if ($agent -eq "rupi") {
+        $MaxModelRequestsPerTurn
+      } else { $null }
+      $turnRecord["configured_thinking_control"] = [ordered]@{
+        level = $thinkingLevel
+        dialect = "reasoning_effort"
+        off_value = "none"
+      }
+      $turnRecord["configured_model_endpoint"] = Get-BenchmarkEndpoint $case
+      $turnRecord["configured_reasoning_budget_tokens"] = if ($Case07ReasoningBudgetTokens -gt 0) {
+        $Case07ReasoningBudgetTokens
+      } else { $null }
+      $turnRecord["configured_native_reasoning_replay"] = $true
+      $turnRecord["configured_skill_discovery"] = if ($agent -eq "rupi") {
+        "empty_child_profile"
+      } else { "disabled_flags" }
+    }
     Write-Json (Join-Path $turnRoot "summary.json") $turnRecord
     [void]$turns.Add($turnRecord)
     $resolved = $verification.resolved
@@ -1622,11 +2117,230 @@ if ($CaseId.Count -gt 0) {
   $cases = @($cases | Where-Object { $requestedIds -contains $_.Id })
   if ($cases.Count -eq 0) { throw "No matching cases: $($requestedIds -join ', ')" }
 }
+$recoveryFeedbackScope = "project_tests_and_help"
+if (@($cases | Where-Object { $_.Id -eq "05-batch-relay" }).Count -gt 0) {
+  $recoveryFeedbackScope += ";case05_oracle_status_only"
+}
+if (@($cases | Where-Object { $_.Id -eq "07-lease-cascade" }).Count -gt 0) {
+  $recoveryFeedbackScope += ";case07_oracle_status_only"
+}
 if ($DryRun) {
   Write-Host "Thinking level: $ThinkingLevel"
-  Write-Host "Recovery feedback: project tests and help; Case 05 oracle status only"
+  Write-Host "Recovery feedback scope: $recoveryFeedbackScope"
   $cases | ForEach-Object {
     [void](Get-InitialPrompt $_)
+    $expectedEndpoint = if ($_.Id -eq "07-lease-cascade" -and
+        $Case07ReasoningBudgetTokens -gt 0) {
+      "http://127.0.0.1:8001/v1"
+    } else { "http://127.0.0.1:8000/v1" }
+    if ((Get-BenchmarkEndpoint $_) -cne $expectedEndpoint) {
+      throw "The reasoning relay must only change Case 07's configured endpoint."
+    }
+    $environmentRoot = Join-Path ([IO.Path]::GetTempPath()) "rupi-case07-environment"
+    $rupiEnvironment = Get-BenchmarkEnvironment $_ "rupi" $environmentRoot
+    $piEnvironment = Get-BenchmarkEnvironment $_ "pi" $environmentRoot
+    if ($piEnvironment.Count -ne 0 -or
+        ($_.Id -ne "07-lease-cascade" -and $rupiEnvironment.Count -ne 0)) {
+      throw "Only Case 07 Rupi may receive an isolated discovery profile."
+    }
+    if ($_.Id -eq "07-lease-cascade") {
+      if ($rupiEnvironment.Count -ne 2 -or -not $rupiEnvironment.ContainsKey("HOME") -or
+          $null -ne $rupiEnvironment.HOME -or
+          $rupiEnvironment.USERPROFILE -ne (Join-Path $environmentRoot "discovery-profile")) {
+        throw "Case 07 Rupi must remove inherited HOME and use an isolated USERPROFILE."
+      }
+      if ((@(Get-BenchmarkTools $_ "rupi") -join ",") -ne "read,write,edit,grep") {
+        throw "Case 07 Rupi tool allowlist differs from its file-only profile."
+      }
+      if ((@(Get-BenchmarkTools $_ "pi") -join ",") -ne "read,write,edit,grep,find,ls") {
+        throw "Case 07 Pi tool allowlist differs from its file-only profile."
+      }
+      $reasoningEndpoints = @(
+        [pscustomobject]@{
+          capabilities = [pscustomobject]@{ exposed_reasoning = "native" }
+        }
+        [pscustomobject]@{
+          capabilities = [pscustomobject]@{ exposed_reasoning = "native" }
+          openai_compat = $null
+        }
+        [pscustomobject]@{
+          capabilities = [pscustomobject]@{ exposed_reasoning = "native" }
+          openai_compat = [pscustomobject]@{
+            thinking_input = "none"
+            thinking_disable = "omit"
+            preserve_reasoning = $false
+            stream = $false
+            max_tokens_field = "max_tokens"
+          }
+        }
+      )
+      foreach ($endpoint in $reasoningEndpoints) {
+        Set-BenchmarkReasoningCompatibility $_ $endpoint
+        if ($endpoint.openai_compat.thinking_input -ne "reasoning_effort" -or
+            $endpoint.openai_compat.thinking_disable -ne "reasoning_effort_none" -or
+            $endpoint.openai_compat.preserve_reasoning -ne $true) {
+          throw "Case 07 must configure explicit thinking control and native reasoning replay."
+        }
+      }
+      foreach ($exposure in @($null, "none", "provider_summary", "declared")) {
+        $invalidEndpoint = [pscustomobject]@{
+          capabilities = [pscustomobject]@{ exposed_reasoning = $exposure }
+        }
+        $endpointBefore = $invalidEndpoint | ConvertTo-Json -Depth 4 -Compress
+        $rejected = $false
+        try { Set-BenchmarkReasoningCompatibility $_ $invalidEndpoint } catch {
+          if ($_.Exception.Message -ne
+              "Case 07 reasoning replay requires an explicit native exposure claim.") { throw }
+          $rejected = $true
+        }
+        if (-not $rejected -or
+            ($invalidEndpoint | ConvertTo-Json -Depth 4 -Compress) -ne $endpointBefore) {
+          throw "Case 07 must reject non-native exposure before mutating endpoint compatibility."
+        }
+      }
+      $preservedCompat = $reasoningEndpoints[2].openai_compat
+      if ($preservedCompat.stream -ne $false -or
+          $preservedCompat.max_tokens_field -ne "max_tokens") {
+        throw "Case 07 reasoning compatibility must preserve other endpoint settings."
+      }
+      $entrypointGuidance = Get-CaseGuidance $_ "entrypoint"
+      $entrypointRequirements = @(
+        'First tool call: write a compact, runnable CLI in leasecascade/__main__.py.'
+        'The current directory contains SPEC.md and is already the project root.'
+        'Use leasecascade/ and tests/ paths directly relative to this current directory.'
+        'Review the embedded specification as file inspection before this first source write.'
+        'Use standard-library imports and a main guard; do not import absent local modules.'
+        'Define needed constants in __main__.py; do not import __version__ from the package.'
+        'Second write call: create tests/test_leasecascade.py with a real unittest.'
+        'Keep initial tests under 60 lines; cover only imports and the three help paths.'
+        'Third write call: create tests/__init__.py after the test module exists.'
+        'Fourth write: create README.md under 80 lines with the public contract and exact checks.'
+        'Cover commands, HMAC, routes, states, collect/fan_in, leases, sink, and persistence.'
+        'Document implemented behavior honestly; keep command examples aligned with code.'
+        'This attempt covers CLI/health, help tests, and README; do not plan workflow code yet.'
+        'Complete CLI/health, help tests, and README in this attempt; yield after four writes.'
+        'Keep all workflow code in __main__.py; do not create helper modules.'
+        'Apply subsequent source edits of at most 80 new lines while preserving passing behavior.'
+        'Complete workflow behavior in later attempts using public-spec tests and small edits.'
+      )
+      foreach ($instruction in $entrypointRequirements) {
+        if (-not $entrypointGuidance.Contains($instruction)) {
+          throw "Case 07 entrypoint guidance is missing: $instruction"
+        }
+      }
+      $initialGuidance = Get-CaseGuidance $_
+      $initialRequirements = @(
+        'The current directory contains SPEC.md and is already the project root.'
+        'Use leasecascade/ and tests/ paths directly relative to this current directory.'
+        'Second write call: create tests/test_leasecascade.py with a real unittest.'
+        'Keep initial tests under 60 lines; cover only imports and the three help paths.'
+        'Third write call: create tests/__init__.py after the test module exists.'
+        'Fourth write: create README.md under 80 lines with the public contract and exact checks.'
+        'Cover commands, HMAC, routes, states, collect/fan_in, leases, sink, and persistence.'
+        'Document implemented behavior honestly; keep command examples aligned with code.'
+        'Use standard-library imports and a main guard; do not import absent local modules.'
+        'Each write call creates one file; write the test module before its initializer.'
+        'After the entry point, write the test module and initializer in consecutive calls.'
+        'Keep all workflow code in __main__.py; do not create helper modules.'
+        'Complete CLI/health, help tests, and README in this attempt; yield after four writes.'
+        'Use the next harness feedback to begin workflow tests and implementation.'
+        'Apply subsequent source edits of at most 80 new lines while preserving passing behavior.'
+        'Invoke the sink with direct argv and persist output and terminal status.'
+        'Expose the result through the documented pipeline/job retrieval route.'
+        'Complete workflow behavior in later attempts using public-spec tests and small edits.'
+      )
+      foreach ($instruction in $initialRequirements) {
+        if (-not $initialGuidance.Contains($instruction)) {
+          throw "Case 07 initial guidance is missing: $instruction"
+        }
+      }
+      $foundationGuidance = Get-CaseGuidance $_ "foundation"
+      $foundationRequirements = @(
+        'Project tests or help checks still fail; fix both foundation gates before workflow code.'
+        'If help fails, repair leasecascade/__main__.py before writing more tests.'
+        'Remove imports of missing local modules; keep the foundation self-contained.'
+        'Each write call creates one file; write the test module before its initializer.'
+        'Missing tests: write tests/test_leasecascade.py then tests/__init__.py separately.'
+        'While either gate fails, repair only __main__.py or the two test files.'
+        'Cover the three help paths with subprocess checks using sys.executable.'
+        'Use workspace write tools only; no exec or running checks, services, workers, or oracle.'
+        'Do not write validation, storage, server, or worker files until tests and all help pass.'
+      )
+      foreach ($instruction in $foundationRequirements) {
+        if (-not $foundationGuidance.Contains($instruction)) {
+          throw "Case 07 foundation guidance is missing: $instruction"
+        }
+      }
+      $localGuidance = Get-CaseGuidance $_ "local"
+      $localRequirements = @(
+        'Preserve the public-specification assertions and fix the implementation in small edits.'
+        'If tests assume an undocumented private API, replace that coupling with public checks.'
+        'Preserve every public-spec assertion; never weaken expectations to make tests pass.'
+        'Keep application repairs in __main__.py; test helpers belong inside the test module.'
+        'Each implementation edit adds at most 80 lines; preserve passing tests and help.'
+        'Repair other failures from the same feedback while the request budget remains.'
+        'Then yield for harness feedback; do not run checks, service, worker, or oracle.'
+      )
+      foreach ($instruction in $localRequirements) {
+        if (-not $localGuidance.Contains($instruction)) {
+          throw "Case 07 local-test guidance is missing: $instruction"
+        }
+      }
+      $workflowGuidance = Get-CaseGuidance $_ "workflow"
+      $workflowRequirements = @(
+        'Project tests and all help checks pass, but the independent oracle failed.'
+        'Keep the passing tests and help paths intact.'
+        'Do not repeat CLI, health-route, or test-discovery scaffolding.'
+        'After workflow tests exist, advance leasecascade/__main__.py through small edits.'
+        'Use prior context; read the intended source or test file once if its anchor is unknown.'
+        'After that read, the next tool call must edit the intended file, not inspect more files.'
+        'Each edit adds at most 80 lines; apply the first edit before designing later slices.'
+        'After workflow tests exist, add signed admission, retrieval, then worker in small edits.'
+        'With tests present, add missing raw-body HMAC and atomic SQLite pipeline/job state.'
+        'Then connect POST /pipelines and GET /pipelines/<pipeline_id> in small separate edits.'
+        'Keep workflow code in that file; do not create __init__.py or helper modules yet.'
+        'Then add ordered leased claims, a direct-argv sink, and persisted terminal output.'
+        'Use a bounded worker --once; reclaim expired leases without polling.'
+        ('If workflow tests are missing, edit ' +
+          'tests/test_leasecascade.py next.')
+        'Use finite HTTP/process timeouts and terminate/wait for the server in finally.'
+        'Test signed admission, persisted retrieval, and worker delivery of declared inputs.'
+        'Exercise workflow behavior only through documented CLI, HTTP, and sink interfaces.'
+        'Use sys.executable -m leasecascade, raw HTTP requests, and bounded sink fixtures.'
+        'Keep test helpers in tests/test_leasecascade.py; use only standard-library imports.'
+        'Do not import private application modules or assume undocumented function/class names.'
+        'Do not create application helper modules just to satisfy test-specific internal imports.'
+        'Test a barrier whose depends_on order reverses the two dependency insertion positions.'
+        'Assert fan_in contains only collect.field values, with job_id/value items in that order.'
+        'Missing collect.field test: no barrier sink call, failed barrier, blocked dependent.'
+        'After adding missing workflow tests, end this attempt for harness feedback.'
+        'Preserve all passing project tests and the three help paths.'
+        'Then implement declared inputs, ordered selected-field fan-in, and dependency blocking.'
+        'Build fan-in in depends_on order from only the selected collect.field values.'
+        'Fail missing selections without running the sink, block dependents, and reclaim leases.'
+      )
+      foreach ($instruction in $workflowRequirements) {
+        if (-not $workflowGuidance.Contains($instruction)) {
+          throw "Case 07 workflow guidance is missing: $instruction"
+        }
+      }
+    } else {
+      $unchangedEndpoint = [pscustomobject]@{
+        openai_compat = [pscustomobject]@{ thinking_input = "none" }
+      }
+      $endpointBefore = $unchangedEndpoint | ConvertTo-Json -Depth 4 -Compress
+      Set-BenchmarkReasoningCompatibility $_ $unchangedEndpoint
+      if (($unchangedEndpoint | ConvertTo-Json -Depth 4 -Compress) -ne $endpointBefore) {
+        throw "Non-Case 07 endpoint compatibility settings must remain unchanged."
+      }
+      if (@(Get-BenchmarkTools $_ "rupi").Count -ne 0) {
+        throw "Non-Case 07 Rupi tools must retain their source configuration."
+      }
+      $piTools = @(Get-BenchmarkTools $_ "pi") -join ","
+      if ($piTools -ne "read,write,edit,bash,powershell,grep,find,ls") {
+        throw "Non-Case 07 Pi tools must retain the existing profile."
+      }
+    }
     $dryRunHelp = @($_.Help | ForEach-Object {
         [pscustomobject]@{
           timed_out = $false
@@ -1650,10 +2364,113 @@ if ($DryRun) {
       }
       help = $dryRunHelp
     }
-    [void](Get-RecoveryPrompt $_ $dryRunVerification)
+    $dryRunRecovery = Get-RecoveryPrompt $_ $dryRunVerification
+    if ($_.Id -eq "07-lease-cascade") {
+      $case07SpecPath = Join-Path (Join-Path $repoRoot $_.Source) "SPEC.md"
+      $case07Spec = [IO.File]::ReadAllText($case07SpecPath)
+      $entrypointPromptRequirements = @(
+        'The complete Case 07 specification for this recovery follows:'
+        $case07Spec
+        ('Complete a compact entry point, help tests, and README in this attempt; ' +
+          'yield after the four foundation writes.')
+        ('Write CLI/health in __main__.py, then both test files and README; ' +
+          'stop after those four writes and wait for harness feedback.')
+      )
+      foreach ($instruction in $entrypointPromptRequirements) {
+        if (-not $dryRunRecovery.Contains($instruction)) {
+          throw "Case 07 assembled entrypoint prompt is missing: $instruction"
+        }
+      }
+      $dryRunProject = Join-Path ([IO.Path]::GetTempPath()) (
+        "rupi-case07-dryrun-" + [Guid]::NewGuid().ToString("N")
+      )
+      $dryRunPackage = Join-Path $dryRunProject "leasecascade"
+      $dryRunTests = Join-Path $dryRunProject "tests"
+      $dryRunFiles = @(
+        (Join-Path $dryRunPackage "__main__.py")
+        (Join-Path $dryRunTests "__init__.py")
+        (Join-Path $dryRunTests "test_leasecascade.py")
+      )
+      try {
+        New-Item -ItemType Directory -Path $dryRunPackage, $dryRunTests | Out-Null
+        foreach ($file in $dryRunFiles) { [IO.File]::WriteAllText($file, "") }
+        $dryRunVerification.oracle.exit_code = 1
+        $workflowPrompt = Get-RecoveryPrompt $_ $dryRunVerification $dryRunProject
+        $workflowPromptRequirements = @(
+          'The complete Case 07 specification for this recovery follows:'
+          $case07Spec
+          ('If workflow tests are missing, edit ' +
+            'tests/test_leasecascade.py next. Otherwise add the next missing behavior')
+          ('If workflow tests are missing, add tests and ' +
+            'yield for harness feedback. Otherwise continue small implementation edits')
+        )
+        foreach ($instruction in $workflowPromptRequirements) {
+          if (-not $workflowPrompt.Contains($instruction)) {
+            throw "Case 07 assembled workflow prompt is missing: $instruction"
+          }
+        }
+        $dryRunVerification.project_tests.exit_code = 1
+        $localPrompt = Get-RecoveryPrompt $_ $dryRunVerification $dryRunProject
+        $localPromptRequirements = @(
+          $case07Spec
+          'Repair the shown project-test failure before expanding behavior.'
+          'Use the shown project-test diagnostic to make the smallest repair.'
+          'Repair other failures from the same feedback while the request budget remains.'
+        )
+        foreach ($instruction in $localPromptRequirements) {
+          if (-not $localPrompt.Contains($instruction)) {
+            throw "Case 07 assembled local-test prompt is missing: $instruction"
+          }
+        }
+        $editRecoveryRequirements = @(
+          'Use the actual edit diagnostic; an attempted edit is not a completed change.'
+          'If a failed edit explicitly made no change, read its target file before correcting it.'
+          'Read a small target region with offset/limit; narrow it if the response is truncated.'
+          ('Use file text in edit anchors, excluding displayed line numbers ' +
+            'and truncation markers.')
+          'Then edit the observed current text with a unique anchor and the native tool schema.'
+          'Do not guess another stale anchor or rewrite the whole application after a failed edit.'
+          ('If the diagnostic says already applied, inspect the file and ' +
+            'preserve the completed change.')
+          'For an Unknown mutation, inspect current state and defer retry until reconciliation.'
+          ('After a known failure is corrected, continue public contract repairs ' +
+            'within this attempt.')
+          'Do not end an attempt merely because an edit failed while time and requests remain.'
+        )
+        foreach ($assembledPrompt in @($dryRunRecovery, $workflowPrompt, $localPrompt)) {
+          foreach ($instruction in $editRecoveryRequirements) {
+            if (-not $assembledPrompt.Contains($instruction)) {
+              throw "Case 07 assembled recovery prompt is missing: $instruction"
+            }
+          }
+        }
+      } finally {
+        foreach ($file in $dryRunFiles) {
+          if (Test-Path -LiteralPath $file) { Remove-Item -LiteralPath $file -Force }
+        }
+        foreach ($directory in @($dryRunPackage, $dryRunTests, $dryRunProject)) {
+          if (Test-Path -LiteralPath $directory) {
+            if (@(Get-ChildItem -LiteralPath $directory -Force).Count -ne 0) {
+              throw "Dry-run directory contains unexpected files: $directory"
+            }
+            Remove-Item -LiteralPath $directory -Force
+          }
+        }
+      }
+    }
     "{0}: package={1}; focus={2}" -f $_.Id, $_.Package, $_.Focus
   }
   exit 0
+}
+if ($Case07ReasoningBudgetTokens -gt 0 -and
+    @($cases | Where-Object Id -eq "07-lease-cascade").Count -gt 0) {
+  $relay = Invoke-RestMethod "http://127.0.0.1:8001/healthz" -TimeoutSec 5
+  if ($ThinkingLevel -ne "low" -or
+      $relay.reasoning_budget_tokens -ne $Case07ReasoningBudgetTokens -or
+      $relay.upstream -cne "http://127.0.0.1:8000/v1" -or
+      $relay.content_logging -ne $false) {
+    throw "Case 07 relay configuration differs from the requested low-budget experiment."
+  }
 }
 if ($Agent -ne "rupi") {
   $piLauncher = if ([string]::IsNullOrWhiteSpace($PiExecutable)) {
@@ -1679,11 +2496,6 @@ if ($Agent -ne "rupi") {
 if (-not (Test-Path $rupiBinary)) { throw "Missing $rupiBinary; run cargo build --bin rupi first." }
 New-Item -ItemType Directory -Force -Path $runRoot | Out-Null
 $selectedAgents = if ($Agent -eq "all") { @("rupi", "pi") } else { @($Agent) }
-$recoveryFeedbackScope = if (@($cases | Where-Object { $_.Id -eq "05-batch-relay" }).Count -gt 0) {
-  "project_tests_and_help;case05_oracle_status_only"
-} else {
-  "project_tests_and_help"
-}
 $results = [Collections.Generic.List[object]]::new()
 foreach ($case in $cases) {
   foreach ($selectedAgent in $selectedAgents) {
@@ -1706,7 +2518,12 @@ $summary = [ordered]@{
   model = "qwen3.8-flash-next"
   thinking_level = $ThinkingLevel
   recovery_feedback_scope = $recoveryFeedbackScope
-  endpoint = "http://127.0.0.1:8000/v1"
+  endpoint = if ($cases.Count -eq 1) {
+    Get-BenchmarkEndpoint $cases[0]
+  } else { "http://127.0.0.1:8000/v1" }
+  case07_reasoning_budget_tokens = if ($Case07ReasoningBudgetTokens -gt 0) {
+    $Case07ReasoningBudgetTokens
+  } else { $null }
   max_turns = $MaxTurns
   turn_timeout_seconds = $TurnTimeoutSeconds
   provider_timeout_grace_seconds = $script:providerTimeoutGraceSeconds
