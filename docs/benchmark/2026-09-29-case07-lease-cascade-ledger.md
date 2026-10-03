@@ -1034,3 +1034,9 @@ Turn 1 finished without outer timeout in 535,635 ms: 20,744 work tokens, four co
 writes, tests exit 0, all help exit 0, oracle exit 1. The entry point is 5,068 bytes;
 test module 2,497 bytes and initializer 71 bytes, directly beneath the project root.
 Turn 2 is running. No matched result yet; only permitted metadata was inspected.
+
+## Twentieth retry progress: Rupi turn 2
+
+Turn 2 hit the outer timeout at 600,204 ms: 13,998 work tokens and two completed edits.
+Tests and all help passed; oracle failed. Entry point grew to 9,417 bytes; test-file sizes
+are unchanged. Turn 3 is running. No timeout cause is inferred from these observations.
