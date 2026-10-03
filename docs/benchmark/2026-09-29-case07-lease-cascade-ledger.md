@@ -1133,3 +1133,10 @@ contains only the six scaffold/configuration files; no application or tests were
 Tests/help/oracle all exited 1; generated help reports no leasecascade module. The initial
 connected-write hypothesis has no positive evidence yet. Turn 2 uses entrypoint recovery.
 Actual inference activity and timeout cause remain unknown from permitted evidence.
+
+## Twenty-first retry progress: Rupi turn 2
+
+Turn 2 completed in 385,086 ms with 11,164 work tokens and three completed writes.
+Entrypoint fallback created __main__.py at 5,003 bytes, tests/test_leasecascade.py at
+2,053 bytes, and the initializer at 37 bytes. Tests/help passed; oracle failed.
+Turn 3 is running. This verifies recovery of the foundation, not the full workflow.

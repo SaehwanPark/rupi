@@ -298,3 +298,6 @@ At 95% usage, follow the root policy and wait through reset plus two minutes.
 Rupi turn 1 reported runtime timeout at 594,149 ms with zero recorded work/tools. No
 application or test files were created; tests/help/oracle failed. Turn 2 is running with
 the compact entrypoint fallback. Actual inference activity and timeout cause are unknown.
+Rupi turn 2 completed in 385,086 ms with 11,164 work tokens and three completed writes.
+Entry point and both test files are present; tests/help passed, oracle failed.
+Rupi turn 3 is running. Entry point: 5,003 bytes; test module: 2,053 bytes.
