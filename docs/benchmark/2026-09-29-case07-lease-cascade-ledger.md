@@ -3,6 +3,12 @@
 This ledger records the matched `07-lease-cascade` run with local `qwen3.8-flash-next` and
 Pi 0.86.1.
 
+Request-budget clarification: `MaxModelRequestsPerTurn=8` configures Rupi's runtime.
+The harness leaves Pi's native request behavior intact. Historical references to eight
+requests per turn in this ledger mean the Rupi cap. These comparisons share model,
+thinking, turn count, and outer time limits while retaining different request policies.
+Retry 18 Pi turn 3 recorded nine completed model requests; baseline Pi also exceeded eight.
+
 ## Matched baseline
 
 Run: `bench-20260929-case07-pi0861-low-matched4-600s`.
@@ -887,3 +893,18 @@ Rupi totals: 84,934 work tokens, 18 tools, 1,789,316 ms. Tests/help passed every
 oracle failed every turn. Test files stayed unchanged after turn 1. No timeout cause or
 workflow correctness is inferred from source size. Pi turn 1 is running; no matched outcome.
 Post-Rupi parent usage: 14% five-hour and 23% weekly.
+
+## Eighteenth retry progress: Pi turn 3 complete
+
+| Turn | Work tokens | Tools | Time | Tests | Help | Oracle |
+| ---: | ---: | ---: | --- | ---: | --- | ---: |
+| 1 | 9,387 | 5 | 170,035 ms | 0 | 0/0/0 | 1 |
+| 2 | 12,384 | 1 | 600,224 ms timeout | 0 | 0/0/0 | 1 |
+| 3 | 13,109 | 9 | 600,363 ms timeout | 0 | 0/0/0 | 1 |
+
+Pi turn 1 has the entry point and both tests. Turn 2 completed one edit and grew the
+entry point from 4,398 to 8,179 bytes. Turn 3 completed seven edits and two reads,
+growing it to 29,469 bytes. Both test files remain unchanged. Turn 4 is running.
+Its turn 3 summary records nine completed model requests. Source review confirms that
+the harness's eight-request setting applies to Rupi only; the clarification above makes
+the comparison boundary explicit without changing historical results or active settings.

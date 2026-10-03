@@ -18,6 +18,9 @@ pinned Pi 0.86.1 on the oracle.
   Retry 17 is complete; retry 18 is running at revision `8cb9a78`.
 - Case 07 remains active. No retry after the baseline produced a strict oracle winner;
   the baseline Pi strict oracle win remains the last resolved result.
+- Request-budget clarification: the eight-request parameter caps Rupi. Pi retains its
+  native request policy; retry 18 Pi turn 3 recorded nine completed model requests.
+  Model, thinking, turn count, and outer time limits are shared across each pair.
 - The root checkout is detached at `04b229c` and retains an unrelated user change in
   `docs/ai-usage-policy.md`; leave it untouched. The task branch is now attached to the
   benchmark worktree, which started clean at the same commit.
@@ -146,7 +149,7 @@ then separate test-module and initializer writes. Evaluate the revision as a fre
 4. Use pinned Pi at
    `..\rupi\.benchmark\tools\pi-0.86.1\pi.ps1` and the standard settings:
    Case 07, four turns, 600 seconds per turn, 6-second provider grace, eight requests per
-   turn, thinking off.
+   Rupi turn, thinking off. Pi uses its native request policy under the same outer limits.
 5. Inspect only per-turn `summary.json` and `files.json`, plus generated help output.
    Do not read acceptance-test source, runner stdout/stderr, agent logs, session traces, or
    aggregate `results.json`. Do not run standalone tests.
@@ -192,11 +195,13 @@ Run: `bench-20261003-case07-bounded-edits-retry18-matched4-600s`, revision `8cb9
 Pre-run usage: 3% five-hour and 21% weekly. Standard matched settings, existing binary,
 and native file tools unchanged. Rupi turn 1 finished in 208,058 ms with 13,740 work tokens
 and four tools: tests and all help passed; oracle failed. Turn 2 ended after 538,470 ms
-with 31,527 work tokens and seven tools; tests/help passed, oracle failed. Turn 3 is running.
+with 31,527 work tokens and seven tools; tests/help passed, oracle failed.
 Turn 3 ended in 493,556 ms with 39,667 work tokens and seven tools; tests/help passed,
 oracle failed. Turn 4 reported runtime timeout at 549,232 ms with zero work/tools.
 Rupi totals: 84,934 work tokens, 18 tools, 1,789,316 ms. Tests/help passed every turn;
-oracle failed every turn. Pi turn 1 is running; the matched comparison is incomplete.
+oracle failed every turn. Pi turns 1-3 passed tests/help but failed the oracle. Its entry
+point grew to 29,469 bytes on turn 3; tests remained unchanged. Pi turn 4 is running.
+The matched comparison is incomplete.
 Post-Rupi usage: 14% five-hour and 23% weekly. Runner PID: 31568; tool session: 47775.
 Runner output remains unread in
 `.benchmark/retry18-runner-unread.log`. Artifacts are under `.benchmark/runs/` and this run ID.
