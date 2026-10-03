@@ -1073,3 +1073,10 @@ Pi turn 2 is running. Its summary records no harness request cap, as configured.
 Pi turn 2 hit the outer timeout at 600,234 ms with zero recorded work/tools. Snapshot
 paths and sizes are unchanged. Tests and all help passed; oracle failed. Turn 3 is running.
 Actual inference activity and timeout cause cannot be established from permitted evidence.
+
+## Twentieth retry progress: Pi turn 3
+
+Pi turn 3 timed out at 600,233 ms: 12,704 work tokens and three completed calls (two
+writes, one edit). It added storage.py at 5,402 bytes and validation.py at 6,459 bytes.
+Entry-point and test-file sizes are unchanged. Tests/help passed; oracle failed.
+Pi turn 4 is running. Module contents and coverage were not inspected.

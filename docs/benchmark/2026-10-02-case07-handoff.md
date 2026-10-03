@@ -266,3 +266,6 @@ Tests/help passed; oracle failed. Application/tests are at the correct root path
 Pi turn 2 is running.
 Pi turn 2 timed out at 600,234 ms with zero recorded work/tools and unchanged snapshot
 paths/sizes. Tests/help passed; oracle failed. Pi turn 3 is running.
+Pi turn 3 timed out at 600,233 ms with 12,704 work tokens and three completed calls.
+It added storage and validation modules; entry-point/test-file sizes are unchanged.
+Tests/help passed; oracle failed. Pi turn 4 is running.
