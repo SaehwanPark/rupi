@@ -63,8 +63,12 @@ Run: `bench-20261002-case07-integrated-workflow-write-retry14-matched4-600s`.
   19% five-hour and 3% weekly.
 - Settings: pinned Pi 0.86.1, four turns, 600 seconds per turn, 6-second provider grace,
   eight requests per turn, thinking off, and the existing Rupi binary.
-- Rupi turn 1 timed out after 600,744 ms: 9,155 work tokens, two writes, tests exit 5,
-  help exits 1/1/1, and oracle exit 1. Turn 2 is running at this checkpoint.
+- Rupi completed all four turns: 49,184 work tokens, 12 tools, and 2,398,872 ms.
+  Tests and all help checks passed only on turn 4; the oracle failed every turn.
+- Pi turn 1 is running at this checkpoint. The matched run has no outcome yet.
+- Rupi's final snapshot has the entry point, package initializer, and both test files,
+  without separate storage, server, or worker modules. Turn 4 metrics show one `exec`
+  request despite the prompt prohibition; its output was not inspected.
 - Turn 1 has the entry point and test initializer but no test module. Generated help output
   reports an import of the missing `server` module.
 - Candidate next revision, pending the completed run: the current foundation prompt forbids

@@ -545,3 +545,23 @@ of the entry point. It also requires two files in one workspace `write`, whereas
 tool schema in `crates/rupi-tools/src/write.rs` accepts one path and contents per call.
 Use a self-contained entry point, permit its repair when help fails, and request consecutive
 single-file writes with the real test module before the initializer. Retry 14 stays unchanged.
+
+## Fourteenth retry progress: Rupi complete, Pi running
+
+| Agent | Turn | Work tokens | Tools | Time | Tests | Help | Oracle |
+| --- | ---: | ---: | ---: | --- | ---: | --- | ---: |
+| Rupi | 1 | 9,155 | 2 | 600,744 ms timeout | 5 | 1/1/1 | 1 |
+| Rupi | 2 | 2,350 | 1 | 597,458 ms; timeout status | 5 | 1/1/1 | 1 |
+| Rupi | 3 | 11,915 | 2 | 600,278 ms timeout | 5 | 1/1/1 | 1 |
+| Rupi | 4 | 25,764 | 7 | 600,392 ms timeout | 0 | 0/0/0 | 1 |
+
+Rupi used 49,184 work tokens and 12 tools over 2,398,872 ms. Tests and help passed only
+on turn 4; the oracle failed every turn. Turn 2 added only the package initializer. Turn 3
+changed the two initializers, leaving the entry point unchanged and the test module absent.
+Turn 4 added `tests/test_leasecascade.py` and changed the entry point by nine bytes. No
+separate storage, server, or worker source appeared in the final ten-file snapshot.
+
+Turn 4 metrics include an `exec` request despite the prompt prohibiting commands. Its output
+was not read; do not infer what it ran. The other turn 4 tools were two writes, three edits,
+and one read. Generated help passed all three commands. Pi turn 1 has started; the matched
+comparison has no outcome yet. Evidence remains per-turn summaries, snapshots, and help only.
