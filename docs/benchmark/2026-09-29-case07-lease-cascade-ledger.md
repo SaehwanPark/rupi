@@ -1125,3 +1125,11 @@ Run: `bench-20261003-case07-connected-initial-retry21-matched4-600s`, revision `
 Pre-run usage: 81% five-hour and 33% weekly. Existing binary, native file tools/request
 policies, and standard shared turn/time/model/thinking settings. Rupi turn 1 is running.
 No oracle outcome yet; output stays unread. Next five-hour reset: 08:14 AM ET.
+
+## Twenty-first retry progress: Rupi turn 1
+
+Turn 1 reported runtime timeout at 594,149 ms with zero recorded work/tools. Snapshot
+contains only the six scaffold/configuration files; no application or tests were created.
+Tests/help/oracle all exited 1; generated help reports no leasecascade module. The initial
+connected-write hypothesis has no positive evidence yet. Turn 2 uses entrypoint recovery.
+Actual inference activity and timeout cause remain unknown from permitted evidence.

@@ -295,3 +295,6 @@ policies, and standard shared turn/time/model/thinking settings. Rupi turn 1 is 
 Runner PID: 24236; tool session: 71986. Output stays unread in
 `.benchmark/retry21-runner-unread.log`. Next five-hour reset is 2026-10-03 08:14 AM ET.
 At 95% usage, follow the root policy and wait through reset plus two minutes.
+Rupi turn 1 reported runtime timeout at 594,149 ms with zero recorded work/tools. No
+application or test files were created; tests/help/oracle failed. Turn 2 is running with
+the compact entrypoint fallback. Actual inference activity and timeout cause are unknown.
