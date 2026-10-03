@@ -750,3 +750,16 @@ Output stays unread in .benchmark/retry29-runner-unread.log; relay logs remain u
 Existing Case07 low/budget2,048/cap12 DryRun passed. Last usage84% five-hour/63% weekly;
 reset06:16 PM ET. CI passed at05daddc; new docs CI pending. Keep settings/source fixed
 until the pair finishes. No new oracle evidence yet; do not merge without a strict win.
+
+Capacity wait at 2026-10-03 05:12 PM ET: parent usage95% five-hour/65% weekly. The
+authoritative root docs/ai-usage-policy.md requires waiting through reset plus two minutes,
+until06:18 PM ET (22:18 UTC), without quota polling during the wait. Retry29 continues
+locally under fixed settings; last observed Rupi turn3 active. Turn1 completed294,045 ms,
+20,977 recorded work/seven completed tools, tests/help passed, oracle failed; snapshot
+source3,044/tests953/README4,437 bytes and new application initializer74 bytes. Turn2
+outer timeout600,262 ms, 25,883 work/five completed tools, zero failures/Unknown; tests/
+help passed, oracle failed. Source20,181 bytes; other paths/sizes unchanged. Six model
+requests started/five completed. Contents/coverage and unrecorded inference unknown.
+PR records current progress; latest pushed launch head91d2c7c passed all three CI jobs.
+Resume automatically after the scheduled wait, inspecting permitted metadata only. Do not
+interrupt/relaunch the pair or ask questions. No new slice while waiting; goal remains unmet.
