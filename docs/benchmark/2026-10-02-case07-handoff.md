@@ -63,7 +63,14 @@ Run: `bench-20261002-case07-integrated-workflow-write-retry14-matched4-600s`.
   19% five-hour and 3% weekly.
 - Settings: pinned Pi 0.86.1, four turns, 600 seconds per turn, 6-second provider grace,
   eight requests per turn, thinking off, and the existing Rupi binary.
-- At this checkpoint, Rupi turn 1 is running; no completed per-turn summary exists yet.
+- Rupi turn 1 timed out after 600,744 ms: 9,155 work tokens, two writes, tests exit 5,
+  help exits 1/1/1, and oracle exit 1. Turn 2 is running at this checkpoint.
+- Turn 1 has the entry point and test initializer but no test module. Generated help output
+  reports an import of the missing `server` module.
+- Candidate next revision, pending the completed run: the current foundation prompt forbids
+  entry-point writes even when help fails. It also requests two files in one `write` call,
+  although `crates/rupi-tools/src/write.rs` defines one path and contents per call. Permit
+  entry-point repairs and use separate consecutive writes for the test module and initializer.
 - Runner output is redirected to `.benchmark/retry14-runner-unread.log` and stays unread.
 - Artifacts are under `.benchmark/runs/` followed by the run ID above.
 - Corrected the retry 12 table above: the verified ledger records Rupi tests exit 0 on

@@ -538,3 +538,10 @@ integrated workflow path. Keep Case 07 active; no strict Rupi oracle win has bee
   This is a concrete runnable-entry-point failure; no application source was inspected.
 - Turn 2 started. The comparison is still active and has no outcome yet.
 - Evidence: per-turn `summary.json`, `files.json`, and generated help output only.
+
+Prompt review during retry 14 found two actionable issues for the next revision, if needed:
+the foundation phase requires help repair but restricts all writes to tests, preventing repair
+of the entry point. It also requires two files in one workspace `write`, whereas the actual
+tool schema in `crates/rupi-tools/src/write.rs` accepts one path and contents per call.
+Use a self-contained entry point, permit its repair when help fails, and request consecutive
+single-file writes with the real test module before the initializer. Retry 14 stays unchanged.
