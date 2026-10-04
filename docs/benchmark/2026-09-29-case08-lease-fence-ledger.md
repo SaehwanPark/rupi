@@ -143,9 +143,9 @@ resolution counts, not assertions of complete public-spec coverage.
 | 01 | turn 4 | none in 4 | 13,590 / 9,631 | [ledger](2026-09-28-case01-task-ledger.md) |
 | 02 | turn 1 | turn 2 | 22,020 / 30,974 | [ledger](2026-09-29-case02-reading-queue-ledger.md) |
 | 03 | turn 2 | none in 4 | 25,140 / 59,136 | [ledger](2026-09-29-case03-event-outbox-ledger.md) |
-| 04 | turn 2 | none in first 2 | 24,126 / 5,366 | [ledger](2026-09-29-case04-webhook-inbox-ledger.md) |
+| 04 | turn 2 | none in 2 | 24,126 / 5,366 | [run](2026-09-29-case04-webhook-inbox-ledger.md) |
 | 05 | turn 4 | none in 4 | 87,534 / 48,570 | [ledger](2026-09-29-case05-batch-relay-ledger.md) |
-| 06 | turn 2 | none in 4 | 31,406 / 25,848 | [ledger](2026-09-29-case06-artifact-pipeline-ledger.md) |
+| 06 | turn 2 | none in 4 | 31,406 / 25,848 | [run](2026-09-29-case06-artifact-pipeline-ledger.md) |
 | 07 | turn 3 | none in 4 | 89,208 / 61,382 | [ledger](2026-09-29-case07-lease-cascade-ledger.md) |
 
 Cases 01, 02, 03, and 06 have failing final Rupi project-test checks despite
