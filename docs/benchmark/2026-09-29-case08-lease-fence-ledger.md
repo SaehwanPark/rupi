@@ -1698,3 +1698,39 @@ verification and 24 completed tools. Selected controls persist. Turn 6 is live u
 node PID 25188, runner 36808/exec session 79760. Its saved prompt retains full SPEC,
 repair/fencing/assertion guidance and no prescribed module stage. Rupi's six-turn half
 is unresolved; matched result remains pending and Cases08 through 10 remain open.
+
+## Retry08 matched pair terminal and inconclusive (2026-10-04)
+
+Pi turn 6 reached the 600,265 ms watchdog with 11,494 recorded work tokens (6,089
+uncached input, 5,405 output), six requests/completions/usage records and six
+completed tools: five reads and one edit. Failed/Unknown counts are unavailable,
+not zero; unfinished unrecorded inference remains unknown. Tests and oracle fail
+without verification timeouts; all help checks pass. Manifest lists the test module
+at 26,435 bytes; other sizes match turn 5. Generated contents and diagnostics remain
+unread, including the listed README; sizes do not prove unchanged content or correctness.
+
+Neither agent resolves the oracle within six turns; this pair is inconclusive.
+Rupi totals 176,102 recorded work tokens, 3,601,594 ms call time excluding verification,
+42 completed tools, one failed and zero Unknown. Pi totals 75,531 recorded work tokens,
+3,601,656 ms call time and 30 completed tools; failed/Unknown counts are unavailable.
+Both reach the watchdog on all six authoring turns and fail final tests/oracle while
+passing help. Unrecorded unfinished inference remains unknown for both agents.
+
+Exec session 79760 exits zero; runner 36808, wrapper 29776 and final Pi child 25188
+are absent. All twelve saved prompts retain full SPEC; recovery prompts retain repair,
+fencing and assertion guidance. Initial prompts are byte-equal. Both copied SPEC and
+the two acceptance-file hashes match references, with no extra non-cache acceptance
+files. Selected per-turn model/tool/runtime controls pass the audit. Copied Rupi config
+confirms recurring/progress1/cap12/low/native replay, endpoint8001 and 594,000 ms deadline.
+Binary SHA256 remains 39829D0D62129F4138C449EC4FC913DE4EF81B028527B649EEDFEA1D3EE3D1C9.
+The same singular model alias, server PID27356 and budget2,048 relay PID33028 persist.
+No concurrent model comparison or local build ran during this pair. The CPU-only
+synthetic formatting/tokenization probe overlapped Rupi turns 5/6; this is not an
+isolated performance experiment or proof of actual cache hits or speedup.
+
+Baseline/retries01 through 06 remain inconclusive; retry07 remains a configured Pi
+turn-2 win, not inconclusive. Retry08 does not improve the accepted comparison result.
+PR141 stays draft and Cases08 through 10 stay open. Next bounded candidate: expose
+a Case08-only progress-window selector with default1 and test3 using the existing
+recurring runtime contract. Keep shared guidance, gates, model, binary and other
+controls unchanged; measure the fresh matched result rather than infer a cache cause.
