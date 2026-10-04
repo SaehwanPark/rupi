@@ -715,3 +715,23 @@ No model trace, generated code or acceptance diagnostics were inspected. The
 relay, model process, configured budget and active pair remain unchanged.
 
 [budget]: https://github.com/ggml-org/llama.cpp/blob/a2878d30d/tools/server/server-common.cpp
+
+## Retry04 Rupi workflow-test delivery verified (2026-10-04 04:25 UTC)
+
+Turn 2 reached the 600,302 ms outer timeout after one completed write. It recorded
+13,452 work tokens (3,386 input, 10,066 output), two started requests and one
+completion/usage record. Inference on the unfinished request remains unknown,
+not zero. No failed or Unknown tools were recorded. The workflow-test module is
+30,573 bytes; prior application, foundation tests and README sizes are unchanged.
+Contents remain unread, and module presence does not prove complete coverage.
+Project tests and oracle fail without verification timeouts; all help checks pass.
+
+Across two turns, Rupi recorded 30,450 work tokens, 940,085 ms call time excluding
+verification and 14 completed tools. No comparison result exists; Pi has not started.
+
+Turn 3 is live (PID 30516 under runner 35136; exec session 54053). The saved prompt
+selects repair and confirms the candidate's one focused application edit per
+response, at most 100 new lines. It retains the full specification, CLI/workflow
+test preservation and the instruction against large replacement/helper modules.
+The bound is now verified as active. Model, binary, relay and controls remain fixed.
+Parent usage is 23% five-hour and 82% weekly, below both soft stops.
