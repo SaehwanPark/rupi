@@ -2058,3 +2058,22 @@ Pi turn1 is live under node PID19392, runner16344/exec28157. Its saved initial
 prompt retains full SPEC and is byte-equal to Rupi's. Matched outcome is pending;
 PR141 stays draft and Cases08 through10 remain open. The conditional write-only
 candidate stays unimplemented while this comparison proceeds.
+
+## Retry10 Pi first attempt verified (2026-10-04)
+
+Turn1 reaches the 600,306 ms watchdog with 14,748 recorded work tokens (5,891
+uncached input, 8,857 output), six requests/completions/usage records and seven
+completed native write events. Failed/Unknown counts are unavailable, not zero;
+completed native events do not establish successful effects. Unfinished unrecorded
+inference remains unknown. Project tests exit5, oracle exits1 and all help checks
+pass without verification timeouts. Manifest lists initializer26 bytes, entry point
+1,761, models6,062, server4,624, store14,222, worker6,171 and test initializer0.
+No test module or README is listed. Contents and diagnostics remain unread;
+presence/sizes do not establish complete workflow behavior or the test failure cause.
+
+Selected controls verify native Pi uncapped/six-tool policy, null Rupi mode/window,
+low effort, budget2,048, endpoint8001 and native replay. Copied Rupi config is unused
+by Pi. Turn2 is live under node PID28328, runner16344/exec28157. Its saved prompt
+retains full SPEC, repair/fencing/assertion guidance and no prescribed module stage.
+Rupi resolved acceptance on turn4; matched outcome is still pending. PR141 stays
+draft, conditional candidate unimplemented and Cases08 through10 open.
