@@ -1867,3 +1867,26 @@ persist. Final Rupi turn6 is live under PID29652, runner12644/exec84321. Its sav
 prompt retains full SPEC, repair/fencing/assertion guidance and no prescribed module
 stage. The pair is not terminal; do not restart it after an observation timeout.
 No oracle resolution or matched result yet; PR141 stays draft and Cases08 through10 stay open.
+
+## Retry09 Rupi half terminal; Pi first attempt live (2026-10-04)
+
+Turn6 reaches the 600,315 ms watchdog with 42,407 recorded work tokens (36,843
+uncached input, 5,564 output), nine completion/usage records and nine completed
+tools: six reads and three edits. Failed/Unknown counts are zero; unfinished
+unrecorded inference remains unknown. Project tests and help pass; oracle fails.
+No verification times out. Manifest lists server 5,446 and store 15,539 bytes;
+other sizes match turn5. Generated contents and diagnostics remain unread, including
+README completeness; matching sizes do not establish unchanged contents or exact edits.
+
+All six Rupi attempts remain oracle-unresolved. Totals: 219,122 recorded work tokens,
+3,406,936 ms call time excluding verification, 52 completed tools, three failed
+and zero Unknown. Five authoring turns hit the watchdog; turn5 instead exits with
+an earlier runtime timeout. Lower recorded work on that failure is not a speedup.
+Final project-test success does not establish full public requirements or a Rupi win.
+Selected controls persist; binary SHA256 remains
+39829D0D62129F4138C449EC4FC913DE4EF81B028527B649EEDFEA1D3EE3D1C9.
+
+Pi turn1 is live under node PID20672, runner12644/exec84321. Its saved prompt retains
+full SPEC and is byte-equal to Rupi's initial prompt. The matched result is pending;
+Pi keeps its native uncapped/six-tool policy, with no Rupi progress window assigned.
+The pair remains live; PR141 stays draft and Cases08 through10 stay open.
