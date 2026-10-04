@@ -104,3 +104,17 @@ alias isqwen3.8-flash-next. No rupi inference process is active before launch.
 Author source/consumer review finds no blocking invariant violation; final review/checks
 remain pending after comparison. No Rust, startup-path or acceptance changes. Diff check
 and added harness100-column check pass. Fresh pair launch is the next action.
+
+### Fresh retry01: active
+
+Run: `bench-20261004-case10-audit-receipt-budget2048-low-retry01-rupi12-window3-matched6-600s`.
+Source head: `4246538d584d3d64445d1c412bd09fc0e4707d15`; exec61233/runner33224/wrapper5700.
+Actual saved Rupi initial prompt matches the own harness hash; actual selected config passes.
+
+Rupi turn1 reaches its watchdog at600,300ms and remains unresolved:20,105 recorded work
+(10,070 uncached input +10,035 output), six usage records, seven request starts/six completions.
+Six tool requests: three completed/three failed/zero Unknown; names edit/write/edit/read/read/grep.
+Project tests1/all four help1/oracle1; no verification timeouts. Snapshot lists only one
+application file, receiptledger/__main__.py27,606 bytes, with no tests or README. Contents
+are unread; file presence does not establish complete behavior. Unfinished inference unknown.
+Turn2 is active with unchanged harness/shared repair guidance. Pi has not started; no win claim.
