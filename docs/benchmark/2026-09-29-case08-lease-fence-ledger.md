@@ -1592,3 +1592,24 @@ Turn 6 is live under Rupi PID 32176, runner 36808/exec session 79760. Its saved
 prompt retains full SPEC, repair/fencing/assertion guidance and no prescribed module
 stage. This is Rupi's last attempt in the six-turn pair; Pi has not started.
 No oracle resolution or matched win yet; Cases08 through 10 remain open.
+
+## Retry08 Rupi six-turn half terminal; Pi live (2026-10-04)
+
+Turn 6 reached the 600,245 ms watchdog with 41,325 recorded work tokens (35,667
+uncached input, 5,658 output), seven usage records and nine completed tools: five
+reads, two edits and two writes. Failed/Unknown counts are zero. Completion counters
+include an earlier abandoned request; unfinished unrecorded inference remains unknown.
+Tests and oracle fail without verification timeouts; all help checks pass.
+Manifest lists test support 6,904 bytes, workflow tests 18,195, and two sink fixtures
+1,208/609. Other sizes match turn 5; no README is listed. Contents remain unread;
+sizes do not establish unchanged contents or exact edit targets.
+
+All six Rupi authoring turns reached the watchdog and remain unresolved. Totals:
+176,102 recorded work tokens, 3,601,594 ms call time excluding verification,
+42 completed tools, one failed and zero Unknown. Selected controls persist and
+binary SHA256 is unchanged. This does not establish a Rupi win or actual speedup.
+
+Pi turn 1 is live under node PID 26732, runner 36808/exec session 79760. Its saved
+initial prompt retains full SPEC and is byte-equal to Rupi's. Model/runtime controls
+and required gates are unchanged. The matched outcome remains pending; PR141 stays
+draft and Cases08 through 10 remain open.
