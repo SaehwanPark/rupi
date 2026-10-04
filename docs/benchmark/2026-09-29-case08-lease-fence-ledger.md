@@ -778,3 +778,23 @@ initial prompt retains the full specification and matches Rupi byte-for-byte.
 The selected model config names qwen3.8-flash-next and endpoint 8001. No comparison
 result exists until Pi finishes; verify its later saved repair guidance and final
 reference hashes. The candidate remains active only in this fresh interpreter.
+
+## Retry04 Pi foundation verified (2026-10-04 04:43 UTC)
+
+Pi turn 1 completed in 158,246 ms with 8,420 recorded work tokens (5,444 input,
+2,976 output), three requests/completions/usage records and seven completed writes.
+Failed/Unknown counters are unavailable. Project tests and all help checks pass;
+oracle fails. Manifest sizes are entry point 2,114 bytes, server 1,408, worker 393,
+foundation tests 1,176 and README 2,048. Contents remain unread; foundation validation
+does not establish full workflow or README completeness.
+
+Turn 2 is live (node PID 16668 under runner 35136; exec session 54053). The saved
+workflow-test-first prompt retains the full specification and matches Rupi's turn-2
+prompt byte-for-byte. Recheck the shared bound when Pi enters repair. Rupi remains
+unresolved in four turns; the matched result is pending.
+
+Separate draft PR #143 prepares an opt-in recurring progress-boundary contract from
+main 4174c1e in an isolated checkout. Its default stays one-shot; implementation,
+fixtures and verification are pending. Local builds are deferred until this pair is
+terminal. No runtime mode, model, relay, fixture or binary changes during retry04.
+The design is a future candidate, not proof of a Case08 win or an existing runtime bug.
