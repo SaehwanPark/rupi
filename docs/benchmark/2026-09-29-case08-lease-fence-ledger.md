@@ -933,3 +933,18 @@ The workflow-test module is 21,145 bytes; prior application, foundation tests an
 README sizes are unchanged. Contents remain unread. Turn 3's saved prompt retains
 the full specification, shared 100-line focused-edit bound and instruction to preserve
 both CLI and workflow tests. Literal test paths are not required by that instruction.
+
+## Retry05 Rupi first repair verified (2026-10-04)
+
+Turn 3 completed in 302,050 ms with 11,309 recorded work tokens (6,212 uncached
+input, 5,097 output), three requests/completions/usage records and two successful
+edits. Failed/Unknown tool counts are zero. Tests and the oracle fail without
+verification timeouts; all help checks pass. The workflow-test module changed to
+21,484 bytes; application, foundation tests and README sizes remain unchanged.
+Generated contents remain unread. This is test-file repair, not verified application
+implementation progress. Across three turns, Rupi recorded 40,896 work tokens and
+1,020,964 ms call time excluding verification.
+
+Turn 4 is live under Rupi PID 18940, runner 14912/session 85505. Its saved prompt
+retains the full specification, shared focused-edit bound and preservation of both
+test sets. The oracle remains unresolved and the paired result is pending.
