@@ -233,3 +233,17 @@ spec preservation, and oracle-diagnostic exclusion. Diff/column checks passed.
 File presence selects a phase; it does not prove test coverage or case completion.
 The oracle remains unchanged and no acceptance diagnostics were used to design
 this revision. Launch a fresh pair only after retry01 is terminal and usage is checked.
+
+## Retry01 control integrity and Pi turn 1
+
+Pi turn 1 completed in 135,906 ms with 7,789 recorded work tokens, five model
+requests, and four tools. Project tests and all three help commands passed;
+the oracle failed. Pi turn 2 is live (node PID 36868 under runner 2844).
+Its summary confirms budget 2,048 and the shared loopback relay endpoint.
+
+The saved initial prompts are byte-identical, as are the two turn-2 recovery
+prompts (SHA-256 `A528CF27D2F65734CC9CCC7AEAFD67688382406DDB5DB28C07C09D2CC93E23B0`).
+Pi's turn-2 prompt retains the original complete-workflow guidance, excludes the
+new test-module-first candidate, and preserves the full specification. Thus the
+on-disk next-retry revision did not change this live control's recovery behavior.
+Recheck later saved prompts when the pair finishes; no matched winner exists yet.
