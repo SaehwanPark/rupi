@@ -271,3 +271,11 @@ Binary8159F875...77F24 unchanged; same model27356/relay33028/low2048/window3/cap
 Root usage44% five-hour/37% weekly, below95/99 soft stops. Fresh Rupi-first screen next;
 Pi remains conditional on Rupi acceptance with frozen guidance/binary/controls. Final paired
 win evidence, required Rust checks/startup/review and exact-head CI are still pending.
+
+### Retry03 screen: launched
+
+Run: `bench-20261004-case10-monolith-testcase-budget2048-low-retry03-rupi12-window3-screen6-600s`.
+Source `92d2b269f2ace551e38fd1346c8c2115d1cfba8b`; exec41676/runner33728/wrapper36344.
+Fresh Rupi-only single-module/discoverable-TestCase screen active. Same controls/model/relay/
+binary; all model slots idle before launch. Saved initial prompt matches own current harness.
+No builds or parallel inference during the screen. Pi conditional on acceptance; outcome pending.
