@@ -42,3 +42,695 @@ The result is inconclusive because neither agent resolved the oracle. Pi used 24
 tokens and finished 405 ms sooner, while making more model requests and tool calls. Rupi's
 service could not initialize its SQLite schema; Pi's oracle requests ended in remote
 disconnects. Case 10 is next.
+
+## Active improvement slice (2026-10-04)
+
+Cases01 through08 already have configured comparison wins and are skipped. Case09's
+baseline per-turn summaries confirm neither agent resolved in four turns. This new
+slice starts from mainf150e39, after Case08 PR141's exact-head three-platform CI/merge.
+The completed Case08 branch is removed locally/remotely; its detached artifacts remain.
+
+Boundary: benchmark adapter in `bench/compare-pi-rupi.ps1`, this ledger and ROADMAP.
+Generate all application/tests/README only through the same local Qwen model in fresh
+workspaces. Preserve the actual public SPEC and untouched acceptance files. The parent
+does not inspect generated source/model output/oracle diagnostics/aggregate results.
+Historical diagnostic descriptions above are not supplied to the new authoring prompts.
+
+Plan:
+
+1. Add Case09 shared initial/repair prompts embedding the complete public SPEC. Request
+   complete authenticated graph/worker behavior from the first source write, including
+   stable `pipeline_id + ":" + job_id` delivery keys, distinct private claim tokens,
+   matching receipts and lost-ack retry/recovery. Preserve public assertions and cleanup.
+2. Add optional Case09 reasoning-budget/progress-mode/request-window selectors with
+   defaults0/one_shot/1. Reuse existing endpoint/progress/tool/discovery adapters, isolated
+   to Case09. Record actual selected controls; Pi cap/mode/window remain null.
+3. Add guards for full SPEC, receipt/fencing requirements and hidden-oracle sentinel
+   isolation on initial/repair/help failure paths. Verify all non-Case09 profiles/prompts
+   retain their behavior. Run default/off and selected all-case dry runs and diff checks.
+4. Author invariant review, then push before a fresh matched six-turn-maximum pair:
+   local `qwen3.8-flash-next`, Pi0.86.1, low/configured budget2,048/native replay,
+   600s turns/grace6s, Rupi Recurring/window12/cap12/four file tools versus native
+   uncapped Pi/six file tools. Reuse verified binary39829D0D...D1C9; no parallel inference/build.
+5. Audit saved prompts, selected controls, copied SPEC/acceptance hashes and model/binary
+   identity. Win requires acceptance in fewer turns or fewer recorded work tokens at the
+   same resolution turn. Report tests/help/docs, unavailable metrics and unknown inference
+   separately. Both unresolved is inconclusive; no default/full-task/causal speedup claim.
+6. Merge only after a verified Rupi win, required local checks/performance budgets,
+   author review and exact-final-head three-platform CI. Keep draft until then; then
+   remove the completed branch and proceed to Case10.
+
+No runtime/schema/provider changes, new dependencies, manual solution, hidden-oracle
+prompt feedback, weakened tests or speculative orchestration are part of this slice.
+Plan and WIP handoff are prepared; implementation and comparison remain pending.
+
+## First candidate prepared and verified (2026-10-04)
+
+Draft PR144 is opened before implementation on `fix/case09-receipt-recovery`. The
+harness now supplies shared Case09 initial/repair prompts with full public SPEC and
+receipt/fencing/lost-ack requirements. New Case09 selectors default to budget0,
+one_shot mode/window1; the candidate explicitly selects low/budget2,048/Recurring12.
+Existing benchmark adapters provide file tools, isolated Rupi discovery, native
+reasoning replay and nullable Pi progress/cap metadata. Core/runtime defaults stay intact.
+
+Verified before launch:
+
+- All ten cases pass default/off and selected low/budget2,048/Recurring/window12,
+  six-turn/600s/grace6/cap12 dry-run guards. Case09 guards cover full SPEC, receipt/
+  fencing assertions, initial/repair/help failures and oracle diagnostic sentinel isolation.
+- Distinct Case08 recurring/window3 versus Case09 one_shot/window12 guards pass;
+  Case09 window0 is rejected. All18 non-Case09 initial/recovery prompt hashes remain
+  equal to pre-edit snapshots, including already-winning Case08 guidance.
+- A synthetic fresh workspace verifies Qwen/low/native replay, cap12/window12,
+  four tools, endpoint8001/deadline594,000 ms/output16,384 and untouched copied
+  SPEC/two acceptance-file hashes. No inference or oracle execution occurs in this probe.
+- Diff/100-column checks pass after wrapping two long helper declarations. Author
+  invariant review passes: case isolation, public-spec-only guidance, native exposure
+  validation before mutation, hidden oracle diagnostics and unknown/null measurements.
+  No independent-agent review is claimed. Rust/source/acceptance fixtures are unchanged.
+- Shared debug binary SHA256 is
+  39829D0D62129F4138C449EC4FC913DE4EF81B028527B649EEDFEA1D3EE3D1C9.
+  Singular Qwen server27356 and content-free budget relay33028 remain live.
+
+Push the candidate before inference. No comparison win is claimed; the matched pair,
+per-turn/terminal audits and final required checks/CI remain pending.
+
+## Retry01 launched (2026-10-04)
+
+Run: `bench-20261004-case09-receipt-guidance-budget2048-low-retry01-rupi12-matched6-600s`.
+Launch source5637c80 is pushed before inference. Exec47054, runner19500/wrapper22280
+and Rupi turn1 PID24748 are confirmed live. No observation timeout triggers a restart.
+Six-turn maximum,600s/grace6s, low/configured budget2,048/native replay, Rupi
+Recurring/window12/cap12/four file tools versus native uncapped Pi/six file tools.
+
+The actual Rupi workspace config verifies selected mode/window/cap, four tools, low,
+endpoint8001/deadline594,000 ms and native replay. Saved initial prompt retains the
+complete public SPEC, stable delivery identity, private fencing, lost-ack retry,
+public assertions and no external-oracle access. Binary/model/relay checks pass before
+launch. Runtime source remains unchanged; no local builds or parallel comparisons run.
+Pi has not started and no per-turn verification is available yet. Keep PR144 draft;
+the Case09 comparison result remains pending and Case10 has not begun.
+
+## Retry01 Rupi first attempt verified (2026-10-04)
+
+Turn1 reaches the600,510 ms watchdog with27,928 recorded work tokens (18,111 uncached
+input,9,817 output), seven requests started/six completions and six usage records.
+Eight tools complete: two greps/two reads/four writes; recorded failed/Unknown are zero.
+Unfinished unrecorded inference remains unknown. Project tests, independent acceptance
+and all three help checks fail without verification timeouts. This is not a resolution.
+
+Manifest lists initializer264 bytes, entry point356, store22,419 and validation7,652.
+No server/worker files, tests or README are listed. Generated contents/diagnostics
+remain unread; file presence/sizes do not establish workflow behavior or the failure cause.
+Selected per-turn controls remain low/budget2,048/native replay/endpoint8001 and
+Recurring/window12/cap12/four tools/isolated discovery. Harness source SHA256 remains
+F2F6A528F3203EAB21D4CFA926812BB99D7CD0BFC0445007C5B7A57D48B54AD0.
+
+Rupi turn2 is live under PID22716, runner19500/exec47054. Its saved repair prompt
+retains full SPEC, assertions, stable delivery key, private fencing, lost-ack retry
+and no external-oracle access. Let the same six-turn-maximum pair continue without
+source/configuration changes, local builds or parallel inference. Pi has not started;
+no matched outcome is available. PR144 stays draft and Cases09 through10 remain open.
+
+## Retry01 Rupi second attempt exhausts its request budget (2026-10-04)
+
+Turn2 exits0 after508,238 ms with recorded status `budget_exhausted`; the outer watchdog
+does not expire. Work43,517 tokens (37,687 uncached input,5,830 output), twelve usage
+records, twelve requests started and thirteen completion events including an earlier
+abandoned request. Thirteen tools complete: twelve reads and one write; recorded
+failed/Unknown are zero. Unfinished unrecorded inference remains unknown. Acceptance
+and project tests fail without verification timeouts; all help checks now pass. Exit0
+and lower call time do not establish successful task completion.
+
+Manifest adds cli3,296 bytes; other sizes match turn1. No tests or README are listed.
+Generated contents/diagnostics remain unread; sizes do not establish unchanged content,
+edit targets or complete service/worker behavior. Cumulative through two turns:
+71,445 recorded work tokens,1,108,748 ms call time excluding verification,21 completed
+tools, zero recorded failed/Unknown. One watchdog expiry and one budget-exhausted attempt.
+
+Selected controls persist. Rupi turn3 is live under PID20016, runner19500/exec47054.
+Its saved repair prompt retains full SPEC/assertions/stable key/private fencing/lost-ack
+retry/oracle isolation. No code/config changes or builds/concurrent inference during
+the original pair. Pi has not started; no matched outcome yet. PR144 stays draft;
+Cases09 through10 remain open.
+
+## Retry01 Rupi third attempt verified (2026-10-04)
+
+Turn3 reaches the600,302 ms watchdog with27,502 recorded work tokens (18,500 uncached
+input,9,002 output), eight starts/seven completions and seven usage records. Ten tools
+are requested: four greps/five reads/one write; nine complete, one fails and zero are
+Unknown. The individual failed target/cause remains unread. Unfinished unrecorded
+inference remains unknown. Acceptance and tests fail, all help checks pass, with no
+verification timeouts. No acceptance resolution is established.
+
+Manifest adds server5,954 bytes; other sizes match turn2. No worker file, tests or
+README are listed. Generated contents/diagnostics remain unread; presence/sizes do
+not establish complete behavior, unchanged content or the failure cause. Cumulative
+through three turns:98,947 recorded work tokens,1,709,050 ms call time excluding
+verification,30 completed tools, one failed/zero Unknown. Two watchdog expiries and
+one request-budget-exhausted attempt.
+
+Selected controls persist. Turn4 is live under Rupi PID31072, runner19500/exec47054;
+saved full-SPEC/assertion/stable-key/private-fencing/lost-ack repair requirements pass.
+No source/config changes, local builds or concurrent inference during this original
+pair. Pi has not started; no matched result yet. PR144 stays draft and Cases09/10 open.
+Before this evidence update, headc90dfcd passes Linux/macOS/Windows CI; this proves
+repository checks rather than a model-comparison win. Fetch/prune confirms only main
+and the active Case09 branch locally/remotely; detached prior artifacts are preserved.
+
+## Retry01 Rupi fourth attempt exhausts budget without recorded mutation (2026-10-04)
+
+Turn4 exits0 after198,008 ms with status `budget_exhausted`, no outer watchdog expiry.
+Recorded work16,768 tokens (15,284 uncached input,1,484 output), eleven usage records,
+eleven requests started and twelve completion events including an earlier abandoned
+request. Eleven tools complete: nine greps/two reads, no recorded mutating tool;
+failed/Unknown are zero. Unfinished unrecorded inference remains unknown. Tests and
+acceptance fail, all help checks pass, with no verification timeouts. Shorter call
+time/lower recorded work and exit0 are not task completion or a comparison improvement.
+
+Manifest sizes match turn3; no worker file, tests or README are listed. Generated
+contents/diagnostics remain unread; sizes do not prove unchanged content or complete
+behavior. Cumulative through four turns:115,715 recorded work tokens,1,907,058 ms
+call time excluding verification,41 completed tools, one failed/zero Unknown. Two
+authoring watchdog expiries and two request-budget-exhausted attempts.
+
+Selected controls persist. Rupi turn5 is live under PID23972, runner19500/exec47054.
+Its saved prompt retains full SPEC/assertions/stable key/private fencing/lost-ack
+retry/oracle isolation. Continue the original matched pair without source/config
+changes, local builds or parallel inference. Pi has not started; matched outcome
+remains pending, PR144 draft and Cases09 through10 open.
+
+## Retry01 Rupi fifth attempt ends without acceptance resolution (2026-10-04)
+
+Turn5 exits0 after508,913 ms with runtime status `completed`, not budget exhaustion
+or outer watchdog expiry. Recorded work25,986 tokens (18,751 uncached input,7,235
+output), eight starts/completions/usage records. Seven tools complete: write/three
+edits/three reads, zero failed/Unknown. Tests and acceptance fail, all help checks
+pass, without verification timeouts. A completed runtime turn is not project-task
+completion; unfinished inference from prior attempts remains unknown.
+
+Manifest adds worker6,896 bytes and lists store22,752. Other sizes match turn4;
+no tests or README are listed. Contents/diagnostics remain unread; presence/sizes
+do not establish complete behavior, exact edit targets or unchanged content.
+Cumulative through five turns:141,701 recorded work tokens,2,415,971 ms call time
+excluding verification,48 completed tools, one failed/zero Unknown. Two watchdog
+expiries, two budget-exhausted attempts and one completed runtime turn.
+
+Selected controls persist. Rupi turn6 is live under PID14644, runner19500/exec47054.
+Saved full-SPEC/assertion/stable-key/private-fencing/lost-ack repair requirements pass.
+No source/config changes, local builds or concurrent inference during this original
+pair. Pi has not started; matched result remains pending and PR144 stays draft.
+Before this update, headf0d8c90 passes Linux/macOS/Windows CI. Cases09/10 remain open.
+
+## Retry01 Rupi unresolved after six; Pi first attempt verified (2026-10-04)
+
+Rupi6 exits0 after280,870 ms with status `completed`, seven requests/completions/
+usage records and24,663 recorded work tokens (21,599 uncached input,3,064 output).
+Nine tools complete: grep/seven reads/edit, zero failed/Unknown. Acceptance and tests
+fail, all help checks pass, without verification timeouts. Manifest lists store23,130
+bytes; other sizes match turn5 and no tests/README are listed. Contents/diagnostics
+remain unread; sizes do not establish exact edits, unchanged content or full behavior.
+
+Rupi's half is terminal and unresolved after all six attempts:166,364 recorded work
+tokens,2,696,841 ms call time excluding verification,57 completed tools, one failed/
+zero Unknown. Two watchdog expiries, two budget-exhausted attempts and two completed
+runtime turns. Unfinished unrecorded inference remains unknown. This candidate cannot
+meet the Rupi win criterion; the final Pi outcome is still pending.
+
+Pi1 exits0 after196,736 ms with status `stop`, six requests/completions/usage records,
+12,221 recorded work tokens (9,311 uncached input,2,910 output) and five completed
+native events: two writes/three reads. Failed/Unknown counts remain unavailable, not
+zero; completed events do not establish successful effects. Tests, acceptance and all
+help checks fail without verification timeouts. Manifest lists only initializer70
+bytes among application files; no entry point/tests/README are listed. Contents and
+diagnostics remain unread; presence/sizes do not establish behavior or the failure cause.
+
+Pi2 is observed live under node PID26392, runner19500/exec47054. Its saved repair
+prompt preserves full SPEC/assertions/stable key/private fencing/lost-ack/oracle
+isolation. Interim audit passes all seven completed-turn controls/prompts, copied
+SPEC/two acceptance-file hashes/no extra non-cache files and initial prompt equality.
+Binary/model/relay remain unchanged. The audit helper initially retained Case08's
+lowercase repair check; it now checks the exact Case09 instruction and passes. No
+benchmark prompt, configuration, gate or reference file was changed by that correction.
+
+Next candidate selects existing Recurring/window3/cap12 after retry01 is terminal.
+Window12 permitted a complete read-only budget-exhausted attempt; the smaller window
+narrows available tools earlier under the already-verified runtime contract. All other
+controls, shared full-spec prompts and complete gates stay unchanged. All-case selected
+window3 dry-run guards and actual fresh-workspace configuration/reference-hash probe
+pass. No inference or source change occurs in these probes, and no benefit is proven.
+Do not launch this candidate concurrently or change the active window12 pair.
+PR144 stays draft; Case09 remains unresolved and Case10 has not begun.
+
+## Retry01 Pi second attempt verified (2026-10-04)
+
+Pi2 reaches the600,228 ms watchdog with15,749 recorded work tokens (4,634 uncached
+input,11,115 output), five requests/completions/usage records and five completed
+native events: two writes/three edits. Failed/Unknown remain unavailable, not zero;
+completed events do not establish successful effects. Unrecorded unfinished inference
+remains unknown. Tests exit5, acceptance exits1 and all help checks pass without
+verification timeouts. Manifest adds entry point27,226 bytes/test initializer16;
+no test module or README is listed. Generated contents/diagnostics remain unread;
+sizes do not establish unchanged content, complete behavior or the test failure cause.
+
+Pi cumulative through two turns:27,970 recorded work tokens,796,964 ms call time
+excluding verification,10 completed native events and one watchdog expiry; failed/
+Unknown unavailable. All eight completed-turn prompt/control/reference audits pass;
+initial equality and binary/model/relay remain unchanged. Selected Pi controls remain
+native uncapped/six tools/null progress mode/window, low/budget2,048/native replay.
+
+Pi3 is observed live under node PID38056, runner19500/exec47054; saved full-SPEC/
+assertion/stable-key/private-fencing/lost-ack repair requirements pass. Let retry01
+finish unchanged. Rupi remains unresolved after six; this candidate cannot win, but
+the final Pi classification is pending. Validated window3 trial waits until terminal;
+no source/config changes, local builds or concurrent inference. PR144 stays draft.
+## Retry01 Pi third and fourth attempts verified (2026-10-04)
+
+Pi3 exits0 after193,752 ms with status `stop`, six requests/completions/usage records
+and8,487 recorded work tokens (5,971 uncached input,2,516 output). Five native events
+complete: ls/three reads/edit. Tests exit5 and acceptance exits1; all help checks pass
+without verification timeouts. Manifest lists entry point27,178 bytes/test initializer16;
+no test module or README is listed. Generated contents and diagnostics remain unread.
+
+Pi4 exits0 after239,960 ms with status `stop`, six requests/completions/usage records
+and7,584 recorded work tokens (4,369 uncached input,3,215 output). Six native events
+complete: two ls/two reads/grep/write. Tests and all help checks pass; acceptance fails,
+without verification timeouts. Manifest adds tests/test_http.py7,235 bytes; other sizes
+match turn3 and no README is listed. Sizes/presence do not establish unchanged contents,
+complete behavior, exact edit targets or the acceptance failure cause. Native completion
+events do not establish successful effects; failed/Unknown remain unavailable, not zero.
+Unrecorded unfinished inference remains unknown.
+
+Pi cumulative through four turns:44,041 recorded work tokens,1,230,676 ms call time
+excluding verification,21 completed native events and one watchdog expiry. Rupi remains
+unresolved after six and this candidate cannot win; the final Pi classification is pending.
+Pi5 is observed live under node PID26784, original runner19500/exec47054. Its saved
+full-SPEC/assertion/stable-key/private-fencing/lost-ack repair requirements pass. Keep
+retry01 unchanged until terminal; validated window3 waits. No local builds or concurrent
+inference. PR144 remains draft and Cases09/10 open. Branch inventory remains main plus
+this active Case09 branch locally/remotely; detached earlier artifacts are preserved.
+## Retry01 Pi fifth attempt verified (2026-10-04)
+
+Pi5 exits0 after265,352 ms with status `stop`, six requests/completions/usage records
+and11,279 recorded work tokens (8,337 uncached input,2,942 output). Five native read
+events complete; no recorded mutation. Tests and help checks pass; acceptance fails,
+without verification timeouts. Manifest sizes match turn4, with no README listed;
+contents/diagnostics remain unread and sizes do not prove unchanged content. Failed/
+Unknown remain unavailable, not zero; events do not establish successful effects and
+unrecorded unfinished inference remains unknown. Pi cumulative through five turns:
+55,320 recorded work tokens,1,496,028 ms call time excluding verification,26 completed
+native events and one watchdog expiry. Neither agent has resolved acceptance.
+
+Pi6 is observed live under node PID18332, original runner19500/exec47054. Saved full
+SPEC/assertion/stable-key/private-fencing/lost-ack repair requirements pass. Preserve
+this pair unchanged until terminal, then consider the already-validated window3 profile.
+Rupi's six attempts remain unresolved; final matched classification is pending. PR144
+stays draft, Cases09/10 open, no source/config changes, builds or parallel inference.
+## Retry01 terminal: neither resolves acceptance in six turns (2026-10-04)
+
+Pi6 exits0 after469,771 ms with status `stop`, eight requests/completions/usage records
+and19,051 recorded work tokens (14,264 uncached input,4,787 output). Seven native events
+complete: six reads/ls, no recorded mutation. Tests and help pass; acceptance fails,
+without verification timeouts. Manifest sizes match turn5, no README listed. Contents/
+diagnostics remain unread; sizes do not establish unchanged contents or failure cause.
+Failed/Unknown remain unavailable, not zero; completion events do not establish effects.
+Unrecorded unfinished inference remains unknown.
+
+Both halves are terminal with no acceptance resolution after six attempts. Classification:
+**inconclusive**, not a Rupi win or token/speed improvement. Rupi records166,364 work
+tokens,2,696,841 ms authoring time,57 completed tools/one failed/zero Unknown; two
+watchdogs/two budget-exhausted/two completed runtime turns. Pi records74,371 work tokens,
+1,965,799 ms authoring time,33 native completion events/failed and Unknown unavailable;
+one watchdog. Authoring time excludes verification. Final Rupi tests fail/help passes;
+Pi tests/help pass. Neither manifest lists README; Rupi lists no tests. Full public-task
+completion and default-runtime superiority are not established.
+
+Exec47054 exits0; runner19500/wrapper22280/final Pi18332 are gone. Terminal audit passes
+all twelve saved prompts/selected controls, initial prompt equality, copied SPEC/two
+acceptance-file hashes/no extra non-cache files, actual Rupi configuration and unchanged
+binary/model/relay. Source harness SHA F2F6A528...B54AD0 remains unchanged throughout.
+No local builds or parallel model inference occurred in this pair.
+
+Proceed with existing Recurring/window3/cap12 in a fresh sequential matched pair:
+`bench-20261004-case09-window3-budget2048-low-retry02-rupi12-matched6-600s`.
+All other settings and full shared prompts/gates remain unchanged. All-case selected3
+guards and actual workspace/reference-hash probe already pass; this trial changes only
+the existing Rupi progress window and establishes no causal benefit in advance.
+PR144 stays draft; Cases09/10 remain open. Cases01 through08 configured wins are skipped.
+## Retry02 window3 matched pair launched (2026-10-04)
+
+Fresh run `bench-20261004-case09-window3-budget2048-low-retry02-rupi12-matched6-600s`
+starts from pushed head36841a3, same source5637c80/harness F2F6A528...B54AD0 and debug
+binary39829D0D...D1C9. Exec25019/wrapper36544/runner23092 are live; Rupi turn1 PID20020.
+Pi follows sequentially on the same model27356/relay33028, no concurrent inference or
+local builds. The old pair is terminal, not restarted. A launch preflight used `/health`
+by mistake and stopped before creating any run or inference; corrected `/healthz` passes.
+Only one fresh comparison is launched.
+
+Actual configuration confirms Recurring/window3/cap12, low/native reasoning replay,
+four file tools, endpoint8001,594,000 ms provider deadline and16,384 max output tokens.
+Reasoning budget remains configured/injected2,048; its actual reasoning length is not
+claimed. Six attempts maximum per agent,600s watchdog/grace6; native Pi stays uncapped
+with six tools/null progress mode/window. Complete shared prompts/gates stay unchanged.
+Copied public SPEC/two acceptance hashes pass; initial prompt hash equals retry01 and
+full-SPEC/stable-key/private-fencing/lost-ack prompt booleans pass. Pi initial equality
+and terminal all-turn audits remain pending until its workspace/finished turns exist.
+No resolution/work totals yet; unfinished inference is unknown. PR144 stays draft and
+Cases09/10 open. Only main and the active Case09 branch remain locally/remotely.
+## Retry02 Rupi first attempt reaches watchdog without recorded mutation (2026-10-04)
+
+Turn1 reaches600,259 ms watchdog; runtime status is unavailable. Three requests start,
+two complete/two usage records,8,351 recorded work tokens (7,902 uncached input,449
+output). Four tool requests name two greps/two reads; three complete/one fails/zero
+Unknown. No mutating tool is recorded. Individual failure target/cause is unread;
+request composition is not attributed solely to completed tools. The unfinished third
+request is unmeasured, not zero; low recorded work does not establish low actual work.
+Tests, acceptance and all help checks fail without verification timeouts. Manifest
+lists only SPEC/four harness configurations; no application/tests/README are listed.
+Contents/model output/diagnostics remain unread; no failure cause is inferred.
+
+Selected turn controls retain Recurring/window3/cap12,four tools,low/configured2,048/
+endpoint8001/native replay/empty discovery. Rupi2 PID36036 is live under original
+exec25019/runner23092/wrapper36544. Saved repair full-SPEC/assertion/stable-key/private-
+fencing/lost-ack requirements pass. Continue this original pair unchanged; Pi has not
+started and no matched outcome exists. No builds or concurrent inference. PR144 stays
+draft; Cases09/10 remain open. This result establishes no window/cache/token speedup.
+## Retry02 Rupi second attempt reaches watchdog; partial files listed (2026-10-04)
+
+Turn2 reaches600,266 ms watchdog; runtime status is unavailable. Three request starts/
+completion events, two usage records and18,859 recorded work tokens (11,132 uncached
+input,7,727 output). Completion events include an abandoned request; unfinished
+unrecorded inference remains unknown. Three writes complete,zero failed/Unknown.
+Tests, acceptance and all help checks fail without verification timeouts. Manifest
+adds initializer78 bytes/server4,019/store19,052; no entry point,worker,tests or README
+are listed. Generated contents/model output/diagnostics remain unread; file presence/
+sizes do not establish full behavior or the failure cause.
+
+Cumulative through two turns:27,210 recorded work tokens,1,200,525 ms call time
+excluding verification,six completed tools,one failed/zero Unknown,two watchdogs.
+Interim audit passes both saved prompts/selected controls,copied SPEC/two acceptance
+hashes/no extra non-cache reference files. Actual window3/cap12/low/native replay and
+binary/model/relay remain unchanged. No matched win or token/window/cache improvement
+is established; Pi has not started. Before this update,headba578b1 passes all three CI
+platforms; this establishes repository checks rather than benchmark success.
+
+Rupi3 PID30076 is live under original exec25019/runner23092/wrapper36544; saved full-
+SPEC/assertion/stable-key/private-fencing/lost-ack repair requirements pass. Continue
+the unchanged original pair with no local builds or concurrent inference. PR144 stays
+draft; Cases09/10 open. Fetch/prune confirms only main and this active branch locally/
+remotely; detached prior artifacts and unrelated root usage-policy edit are preserved.
+## Retry02 Rupi third attempt: help passes, acceptance unresolved (2026-10-04)
+
+Turn3 reaches600,192 ms watchdog; runtime status is unavailable. Six request starts/
+completion events, five usage records and18,787 recorded work tokens (9,250 uncached
+input,9,537 output). Completion events include an abandoned request; unrecorded
+unfinished inference remains unknown. Five tools complete: two writes/three edits,
+zero failed/Unknown. Tests and acceptance fail; all three help checks pass without
+verification timeouts. Manifest adds entry point4,388 bytes/worker7,507; server4,262/
+store19,399/initializer78 are listed, no tests or README. Generated contents/model
+output/diagnostics remain unread; presence/sizes do not establish complete behavior,
+exact edit targets, unchanged content or the acceptance failure cause.
+
+Cumulative through three turns:45,997 recorded work tokens,1,800,717 ms authoring time
+excluding verification,eleven completed tools,one failed/zero Unknown,three watchdogs.
+Interim audit passes all three saved prompts/selected controls,copied SPEC/two acceptance
+hashes/no extra non-cache reference files. Actual window3/cap12/low/native replay and
+binary/model/relay remain unchanged. Pi has not started; no matched improvement is
+established. Before this update,head4404957 passes all three CI platforms.
+
+Rupi4 PID32632 is live under original exec25019/runner23092/wrapper36544; saved full-
+SPEC/assertion/stable-key/private-fencing/lost-ack repair requirements pass. Continue
+the original pair unchanged without local builds or concurrent inference. PR144 stays
+draft; Cases09/10 remain open and Cases01 through08 configured wins stay skipped.
+## Retry02 Rupi fourth attempt exhausts request budget (2026-10-04)
+
+Turn4 exits0 after450,557 ms with status `budget_exhausted`, no outer watchdog.
+Eleven request starts/twelve completion events including earlier abandonment,eleven
+usage records,39,470 recorded work tokens (35,021 uncached input,4,449 output).
+Thirteen tools complete: four greps/seven reads/two writes,zero failed/Unknown.
+Unfinished unrecorded inference remains unknown. Tests exit5 and acceptance exits1;
+all help checks pass without verification timeouts. Manifest adds tests/__init__.py49
+bytes/tests/sink_helper.py6,136; application sizes match turn3,no test_*.py or README
+listed. Generated contents/model output/diagnostics remain unread; sizes do not prove
+unchanged contents,complete behavior,exact edit targets or the test/acceptance cause.
+Runtime exit0 and a shorter call are not task completion or a matched improvement.
+
+Cumulative through four turns:85,467 recorded work tokens,2,251,274 ms authoring time
+excluding verification,24 completed tools,one failed/zero Unknown,three watchdogs and
+one request-budget-exhausted attempt. Interim audit passes all four saved prompts/
+selected controls,copied SPEC/two acceptance hashes/no extra non-cache reference files.
+Actual window3/cap12/low/native replay and binary/model/relay remain unchanged.
+Before this update,headd4a67ef passes all three CI platforms. Pi has not started;
+no matched win or causal window/cache/token improvement is established.
+
+Rupi5 PID33836 is live under original exec25019/runner23092/wrapper36544; saved full-
+SPEC/assertion/stable-key/private-fencing/lost-ack repair requirements pass. Continue
+the unchanged original pair without local builds or concurrent inference. PR144 stays
+draft; Cases09/10 open and Cases01 through08 configured wins stay skipped.
+## Retry02 Rupi fifth attempt: tests listed but acceptance unresolved (2026-10-04)
+
+Turn5 reaches600,238 ms watchdog; runtime status is unavailable. Nine requests start,
+eight complete/eight usage records and54,663 recorded work tokens (49,333 uncached
+input,5,330 output). Unfinished unrecorded inference remains unknown,not zero. Eleven
+tools complete: two writes/nine reads,zero failed/Unknown. Tests and acceptance exit1;
+all help checks pass without verification timeouts. Manifest adds tests/test_http.py
+4,177 bytes,lists sink_helper3,153; other sizes match turn4,no README listed. Contents/
+model output/diagnostics remain unread; presence/sizes do not establish full behavior,
+exact edits,unchanged contents or the failure cause.
+
+Cumulative through five turns:140,130 recorded work tokens,2,851,512 ms authoring time
+excluding verification,35 completed tools,one failed/zero Unknown,four watchdogs and
+one request-budget-exhausted attempt. Interim audit passes all five saved prompts/
+selected controls,copied SPEC/two acceptance hashes/no extra non-cache reference files.
+Actual window3/cap12/low/native replay and binary/model/relay remain unchanged.
+Pi has not started; no matched win or causal window/cache/token improvement established.
+
+Rupi6 PID37284 is live under original exec25019/runner23092/wrapper36544; saved full-
+SPEC/assertion/stable-key/private-fencing/lost-ack repair requirements pass. Keep the
+original pair unchanged without local builds or concurrent inference. PR144 stays
+draft; Cases09/10 remain open and Cases01 through08 configured wins stay skipped.
+## Retry02 Rupi resolves acceptance in sixth attempt; Pi starts (2026-10-04)
+
+Turn6 exits0 after453,714 ms with runtime status `completed`,no outer watchdog.
+Seven request starts/eight completion events including earlier abandonment,seven
+usage records and23,348 recorded work tokens (17,085 uncached input,6,263 output).
+Eight tools complete: four reads/four edits,zero failed/Unknown. Tests,acceptance and
+all three help checks pass without verification timeouts. Manifest lists server4,602
+bytes/store19,765; other sizes match turn5 and no README is listed. Contents/model
+output/diagnostics remain unread; sizes do not prove unchanged contents or exact edits.
+Acceptance resolution with passing generated tests/help is verified; full public-task
+completion is not established because README is absent and contents remain unread.
+
+Rupi's half is terminal,resolved at turn6:163,478 recorded work tokens,3,305,226 ms
+authoring time excluding verification,43 completed tools,one failed/zero Unknown;
+four watchdogs,one budget-exhausted and one completed runtime turn. Unrecorded
+unfinished inference remains unknown. This is not yet a matched Rupi win: Pi may
+resolve in fewer turns or with fewer recorded work tokens at the same turn. Keep
+Case09 open until the original Pi half and final classification are verified.
+
+Pi1 PID35700 is live under original exec25019/runner23092/wrapper36544. Initial
+prompts are byte-identical and full-SPEC/stable-key/private-claim/lost-ack booleans
+pass. Interim audit passes all six completed Rupi-turn prompts/controls,both copied
+SPEC/two acceptance-file hashes/no extra non-cache reference files,initial equality
+and actual Rupi config/binary/model/relay. There are no completed Pi usage records;
+its live work is unknown,not zero. Pi controls await its per-turn summary. Continue
+the original sequential pair without source/config changes,builds or parallel inference.
+PR144 stays draft; Cases09/10 open. No causal window/cache/token speedup is claimed.
+## Retry02 Pi first attempt reaches watchdog; comparison pending (2026-10-04)
+
+Pi1 reaches600,333 ms watchdog with native status `toolUse`,seven requests/completions/
+usage records and21,912 recorded work tokens (11,486 uncached input,10,426 output).
+Eight native events complete: two reads/ls/five writes. Failed/Unknown counts remain
+unavailable,not zero; completion events do not establish successful effects.
+Unrecorded unfinished inference remains unknown. Tests and acceptance exit1; all
+three help checks pass without verification timeouts. Manifest lists initializer70
+bytes/entry point2,043/server3,267/store15,123/validation7,261; no worker,tests or
+README listed. Generated contents/model output/diagnostics remain unread; presence/
+sizes do not establish complete behavior or the failure cause.
+
+Selected Pi controls confirm six native tools/null cap/progress mode/window,
+low/configured2,048/endpoint8001/native replay/discovery disabled flags. Interim audit
+passes all seven completed-turn prompts/controls,both copied SPEC/two acceptance-file
+hashes/no extra non-cache reference files,byte-identical initial prompts and unchanged
+Rupi actual config/binary/model/relay. Rupi resolves at turn6 with tests/help passing;
+Pi remains unresolved after one. The matched winner is still unproven.
+
+Pi2 PID33112 is live under original exec25019/runner23092/wrapper36544; saved repair
+full-SPEC/assertion/stable-key/private-claim/lost-ack requirements pass. Continue the
+original pair unchanged without builds or parallel inference. PR144 stays draft and
+Cases09/10 open. Rupi's absent README/full-public-task limitation remains explicit.
+## Retry02 Pi second attempt reaches watchdog; README listed (2026-10-04)
+
+Pi2 reaches600,281 ms watchdog with native status `toolUse`,five requests/completions/
+usage records and14,564 recorded work tokens (4,442 uncached input,10,122 output).
+Five native write events complete; failed/Unknown remain unavailable,not zero.
+Completion events do not establish successful effects; unfinished unrecorded inference
+remains unknown. Tests and acceptance exit1; all three help checks pass without
+verification timeouts. Manifest adds worker6,557 bytes/test initializer0/test module
+7,280/README4,847; other sizes match turn1. Generated contents/model output/diagnostics
+remain unread; presence/sizes do not establish complete behavior,unchanged contents
+or the failure cause. README presence does not establish its correctness.
+
+Pi cumulative through two turns:36,476 recorded work tokens,1,200,614 ms authoring
+time excluding verification,13 completed native events,two watchdogs,failed/Unknown
+unavailable. Rupi resolves at6 with tests/help passing; Pi remains unresolved after2,
+so the matched winner is still unproven. Interim audit passes all eight completed-turn
+prompts/controls,both copied SPEC/two acceptance-file hashes/no extra non-cache files,
+initial equality and unchanged Rupi actual config/binary/model/relay. Native Pi
+controls remain six tools/null cap/mode/window,low/configured2,048/native replay/
+discovery disabled flags. Before this update,headdce7d74 passes all three CI platforms.
+
+Pi3 PID23836 is live under original exec25019/runner23092/wrapper36544; saved repair
+full-SPEC/assertion/stable-key/private-claim/lost-ack requirements pass. Continue the
+unchanged original pair without builds or parallel inference. PR144 stays draft and
+Cases09/10 open; Rupi README/full-public-task limitation remains explicit.
+## Retry02 Pi third attempt: tests/help pass,acceptance unresolved (2026-10-04)
+
+Pi3 reaches600,219 ms watchdog with native status `toolUse`,eight requests/completions/
+usage records and17,324 recorded work tokens (9,976 uncached input,7,348 output).
+Eight native events complete: five reads/three edits. Failed/Unknown remain unavailable,
+not zero; completion events do not establish successful effects. Unrecorded unfinished
+inference remains unknown. Tests and all three help checks pass; acceptance exits1,
+without verification timeouts. Manifest lists server3,474 bytes/store15,148; other
+sizes match turn2 and README4,847 is listed. Generated contents/model output/diagnostics
+remain unread; presence/sizes do not establish full behavior,unchanged contents,exact
+edit targets,README correctness or the acceptance failure cause.
+
+Pi cumulative through three turns:53,800 recorded work tokens,1,800,833 ms authoring
+time excluding verification,21 completed native events,three watchdogs,failed/Unknown
+unavailable. Rupi resolves at6 with tests/help passing; Pi remains unresolved after3,
+so the matched winner is still unproven. Interim audit passes all nine completed-turn
+prompts/controls,both copied SPEC/two acceptance-file hashes/no extra non-cache files,
+initial equality and unchanged Rupi actual config/binary/model/relay. Selected native
+Pi controls persist. Before this update,head42f6d85 passes all three CI platforms.
+
+Pi4 PID25844 is observed live under original exec25019/runner23092/wrapper36544;
+saved repair full-SPEC/assertion/stable-key/private-claim/lost-ack requirements pass.
+Continue the unchanged original pair without builds or parallel inference. PR144 stays
+draft and Cases09/10 open; Rupi README/full-public-task limitation remains explicit.
+## Retry02 Pi fourth attempt: tests/help pass,acceptance unresolved (2026-10-04)
+
+Pi4 reaches600,303 ms watchdog with native status `toolUse`,eight requests/completions/
+usage records and18,820 recorded work tokens (13,263 uncached input,5,557 output).
+Eight native events complete: six reads/two edits. Failed/Unknown remain unavailable,
+not zero; completion events do not establish successful effects. Unrecorded unfinished
+inference remains unknown. Tests and all three help checks pass; acceptance exits1,
+without verification timeouts. Manifest lists server3,678 bytes/store15,239; other
+sizes match turn3 and README4,847 is listed. Generated contents/model output/diagnostics
+remain unread; presence/sizes do not establish complete behavior,unchanged contents,
+exact edit targets,README correctness or the acceptance failure cause.
+
+Pi cumulative through four turns:72,620 recorded work tokens,2,401,136 ms authoring
+time excluding verification,29 completed native events,four watchdogs,failed/Unknown
+unavailable. Rupi resolves at6 with tests/help passing; Pi remains unresolved after4,
+so the matched winner is still unproven. Interim audit passes all ten completed-turn
+prompts/controls,both copied SPEC/two acceptance-file hashes/no extra non-cache files,
+initial equality and unchanged Rupi actual config/binary/model/relay. Selected native
+Pi controls persist. Before this update,head8377689 passes all three CI platforms.
+
+Pi5 PID29600 is observed live under original exec25019/runner23092/wrapper36544;
+saved repair full-SPEC/assertion/stable-key/private-claim/lost-ack requirements pass.
+Continue the unchanged original pair without builds or parallel inference. PR144 stays
+draft and Cases09/10 open; Rupi README/full-public-task limitation remains explicit.
+## Retry02 Pi fifth attempt: tests/help pass,acceptance unresolved (2026-10-04)
+
+Pi5 reaches600,164 ms watchdog with native status `toolUse`,four requests/completions/
+usage records and15,935 recorded work tokens (8,824 uncached input,7,111 output).
+Four native events complete: two reads/two edits. Failed/Unknown remain unavailable,
+not zero; completion events do not establish successful effects. Unrecorded unfinished
+inference remains unknown. Tests and all three help checks pass; acceptance exits1,
+without verification timeouts. Manifest lists store16,449 bytes; other sizes match
+turn4 and README4,847 is listed. Generated contents/model output/diagnostics remain
+unread; presence/sizes do not establish complete behavior,unchanged contents,exact
+edit targets,README correctness or the acceptance failure cause.
+
+Pi cumulative through five turns:88,555 recorded work tokens,3,001,300 ms authoring
+time excluding verification,33 completed native events,five watchdogs,failed/Unknown
+unavailable. Rupi resolves at6 with tests/help passing; Pi remains unresolved after5.
+The matched winner is unproven: Pi could resolve at6 with fewer recorded work tokens,
+or remain unresolved and establish Rupi's fewer-turn win. Interim audit passes all
+eleven completed-turn prompts/controls,both copied SPEC/two acceptance-file hashes/
+no extra non-cache files,initial equality and unchanged actual config/binary/model/
+relay. Selected native Pi controls persist. Prior head429f6db passes all three CI.
+
+Pi6 PID11228 is observed live under original exec25019/runner23092/wrapper36544;
+saved repair full-SPEC/assertion/stable-key/private-claim/lost-ack requirements pass.
+Continue the unchanged original pair without builds or parallel inference. PR144 stays
+draft and Cases09/10 open; Rupi README/full-public-task limitation remains explicit.
+## Retry02 terminal: configured Rupi fewer-turn win (2026-10-04)
+
+Pi6 reaches600,214 ms watchdog,native status `toolUse`,eleven requests/completions/
+usage records and13,548 recorded work tokens (7,314 uncached input,6,234 output).
+Eleven native events complete: seven reads/four edits. Failed/Unknown unavailable,
+not zero; completion events do not establish successful effects and unrecorded
+unfinished inference remains unknown. Tests and all help pass; acceptance exits1,
+without verification timeouts. Manifest lists store16,549 bytes; other sizes match
+turn5 and README4,847 remains listed. Contents/model output/diagnostics remain unread;
+sizes do not establish unchanged contents,exact edits,full behavior or failure cause.
+
+Both halves are terminal. **Configured Rupi fewer-turn win:** Rupi resolves acceptance
+at6; Pi remains unresolved after all six attempts,so its earliest possible resolution
+would be later. Rupi's final generated tests/help pass; its README is absent,so full
+public-task completion is not established. Pi's final tests/help pass and README is
+listed but unread; neither presence nor passing generated tests proves acceptance.
+
+| Agent | Acceptance resolution | Recorded work tokens | Authoring call ms | Completed tools |
+| --- | --- | ---: | ---: | ---: |
+| Rupi | Turn6 | 163,478 | 3,305,226 | 43 |
+| Pi0.86.1 | None in6 | 102,103 | 3,601,514 | 44 native events |
+
+Rupi failed/Unknown counts one/zero; Pi counts unavailable. Rupi has four watchdogs,
+one budget-exhausted and one completed runtime turn; Pi six watchdogs. Authoring time
+excludes verification; work excludes cache-read tokens and unrecorded unfinished
+inference remains unknown. Rupi records61,375 more work tokens; no token win,default-
+runtime superiority,full-public-task completion or causal window/cache speedup claimed.
+
+Exec25019 exits0; runner23092/wrapper36544/final Pi11228 are gone. All twelve saved
+prompt/control/reference audits pass,both copied SPEC/two acceptance hashes/no extra
+non-cache files,initial prompt equality and actual configuration/binary/model/relay
+unchanged. Harness F2F6A528...B54AD0/debug39829D0D...D1C9/Qwen27356/relay33028 retained.
+No builds or parallel inference occurred during the pair. Before this record,head
+d2e5ac7 passes all three CI platforms; required final local checks/startup/author review
+and exact-final-head CI remain pending. PR144 stays draft until those checks pass.
+Case09 now has a verified configured comparison win and is skipped in further trials;
+its delivery remains pending. Case10 is the sole remaining comparison target.
+## Final local verification and author review pass (2026-10-04)
+
+Required checks pass with stable routing matching the repository's verified pin:
+`rustc1.98.1 (48a229cea 2026-09-01)`. Exact commands:
+
+- `cargo +stable fmt --all --check`
+- `cargo +stable check -p rupi-core --all-features`
+- `cargo +stable clippy --workspace --all-targets -- -D warnings`
+- `cargo +stable test --workspace`
+- `cargo +stable doc --workspace --no-deps`
+- Git Bash `bench/startup.sh --json bench/results/startup-ci.json`
+
+Startup:156.009 ms cold,8.134 ms warm median,9.077 ms warm maximum,ten warm samples;
+within250/100 ms budgets. No local model inference overlaps these checks. Rust/startup
+sources remain identical to checked headac8795f; final harness revisions only correct
+Case09 mode capitalization and an isolated-discovery error label after the pair ends.
+No winning-run artifact,application,acceptance fixture or model-visible prompt changes.
+
+Author invariant review: **pass**, no blocking findings after one bounded revision.
+Public SPEC/domain guidance remains in the benchmark,not Rust core. Native exposure
+is checked before mutation,unrelated endpoint settings survive,Pi unavailable metrics
+stay null,oracle feedback excludes diagnostics and generated content stays unread.
+Shared Case08/09 selector routing preserves other profiles. No independent-agent review
+is claimed; the change owner performs source/consumer review and final verification.
+
+PowerShell ValidateSet accepts capitalization but runtime JSON uses lowercase enum
+names. Case09 now canonicalizes the input before config/metadata construction and
+its dry-run guard rejects non-canonical output. All-case default and capitalized
+selected Recurring/window3/cap12/low2,048 guards pass. All18 non-Case09 prompt hashes
+stay unchanged; final initial prompt is byte-identical to the winning run. Fresh
+actual workspace config/copied SPEC/two acceptance hashes pass. The discovery error
+now names Case09 alongside07/08. Final harness SHA:
+`71F7005BC460F8DA7AAF8B9B783ACE0317EA7559A14A6A4409217680B93F0515`.
+The winning comparison ran source5637c80/harness F2F6A528...B54AD0; lowercase selected
+controls remain unchanged by the final casing correction. The original comparison
+is not rerun: Case09 already has its verified configured win.
+
+Required local checks/startup/author review are complete; exact-final-head three-
+platform CI remains pending before authorized merge and local/remote branch cleanup.
+Case10 remains the sole comparison target; broader project stage gates stay active.

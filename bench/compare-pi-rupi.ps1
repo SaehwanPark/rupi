@@ -24,10 +24,17 @@ param(
   [string]$Case08ProgressBoundaryMode = "one_shot",
   [ValidateRange(1, 100)]
   [int]$Case08ProgressRequestWindow = 1,
+  [ValidateRange(0, 16384)]
+  [int]$Case09ReasoningBudgetTokens = 0,
+  [ValidateSet("one_shot", "recurring")]
+  [string]$Case09ProgressBoundaryMode = "one_shot",
+  [ValidateRange(1, 100)]
+  [int]$Case09ProgressRequestWindow = 1,
   [switch]$DryRun
 )
 
 $ErrorActionPreference = "Stop"
+$Case09ProgressBoundaryMode = $Case09ProgressBoundaryMode.ToLowerInvariant()
 $script:providerTimeoutGraceSeconds = [int][math]::Min(
   $ProviderTimeoutGraceSeconds,
   [math]::Max(1, [math]::Floor($TurnTimeoutSeconds / 10))
@@ -633,7 +640,87 @@ $spec
 "@
 }
 
+function Get-Case09Prompt([hashtable]$case, [object]$verification = $null) {
+  $spec = [IO.File]::ReadAllText((Join-Path (Join-Path $repoRoot $case.Source) "SPEC.md"))
+  $feedback = ""
+  if ($null -ne $verification) {
+    $oracleStatus = if ($verification.oracle.timed_out) { "timed out" } elseif (
+      $verification.oracle.exit_code -eq 0
+    ) { "passed" } else { "failed" }
+    $feedback = "Independent acceptance oracle: $oracleStatus (diagnostic details hidden)." +
+      [Environment]::NewLine + (Get-RecoveryFeedback $verification)
+  }
+  $guidance = if ($null -eq $verification) {
+    @'
+First tool call: write leasereceipt/__main__.py with the complete public workflow.
+Implement the CLI, authenticated admission, durable graph, worker, fencing and receipts now.
+Keep related behavior together; a compact single module or a few compact modules are allowed.
+Do not import absent local modules or start a partial health-only foundation stage.
+Use the embedded SPEC instead of rereading it; keep reads bounded.
+Then write public-command/HTTP unittest tests, tests/__init__.py and an honest README.
+Complete service, worker, tests and documentation in the same attempt.
+'@
+  } else {
+    @'
+Repair the earliest failing local test or help gate using the harness diagnostics.
+Implement missing public behavior before revising test fixtures; remove absent local imports.
+Preserve passing service/worker behavior, public assertions and all three help paths.
+Change a test fixture only when it misuses the documented public contract; preserve assertions.
+Use public commands/HTTP in tests, without assuming private function or class names.
+Use one focused application edit per response, at most 100 new lines; keep reads bounded.
+Continue the next source edit in the same attempt, then complete missing tests and honest README.
+File presence and passing help alone do not establish workflow completeness.
+'@
+  }
+  @"
+Implement the complete dependency-free Python 3 leasereceipt project in this workspace.
+The root already contains SPEC.md; use leasereceipt/ and tests/ paths directly.
+Use only Python standard-library modules. Create README.md and focused unittest tests.
+Work only here; do not edit SPEC.md, any rupi config or files outside the workspace.
+Do not inspect or run the external acceptance oracle. Oracle diagnostics stay hidden.
+Do not run commands, tests, help, service, worker or oracle; no exec or shell calls.
+Use native read/write/edit tools; execution and verification belong to the harness.
+The harness runs project tests, three help commands and independent acceptance each attempt.
+Report verification only when supplied; preserve every public requirement and assertion.
+
+$feedback
+
+$guidance
+
+Validate the full graph before atomic insertion; persist original pipeline/job order.
+Resolve only declared input_refs from successful dependencies. For barriers, collect only
+the selected top-level field in depends_on order. Missing selections fail locally without
+a sink call and block dependents. worker --once attempts each job at most once and never polls.
+The public delivery_key is exactly pipeline_id + ":" + job_id, stable across retry/reclaim/restart.
+Keep this key distinct from the fresh private unguessable claim token; never expose the token.
+Atomically claim, increment attempts and persist token/lease; commit BEFORE spawning the sink.
+Every finalization conditions its UPDATE on pipeline/job, status leased and the exact claim token;
+accept only one updated row. Reclaim clears the old token. Stale completion exits non-zero and
+changes none of the newer claim's status/output/attempts/lease/error/receipt.
+Send the stable delivery_key in the sink request. Accept success only with matching job_id/key,
+exact ok:true, object output and non-empty receipt_id; persist exact output and matching receipt.
+EOF/lost acknowledgement is retryable failure, never success and never an invented receipt.
+Clear the lease, leave pending and exit non-zero; a later worker sends the same delivery key.
+An idempotent sink replays its original output/receipt without repeating that key's logical effect.
+This is not exactly-once delivery. Use direct argv, no shell/network and bounded resource cleanup.
+
+Tests use fresh public commands/HTTP and tiny temporary sinks, never private APIs or the oracle.
+Cover HMAC rejection without mutation, atomic/duplicate/conflicting admission, original order,
+restart persistence, declared inputs, reversed selected-field fan-in, missing selections,
+blocking, later retries and rejected response keys/receipts. Exercise lost-ack recovery with
+a durable idempotent sink: one logical effect, two attempts, same key and original receipt/output.
+Add a bounded stale-worker race: block A, expire its one-second lease, let B finish, release A,
+require stale non-zero exit and no changes to B's public state/receipt. Assert private tokens
+never appear in HTTP or sink requests. Use deadlines, subprocess timeouts and resource cleanup.
+Preserve workflow assertions, all help paths and honest README commands/contract/exact checks.
+
+The complete Case 09 specification follows:
+$spec
+"@
+}
+
 function Get-InitialPrompt([hashtable]$case) {
+  if ($case.Id -eq "09-lease-receipt") { return Get-Case09Prompt $case }
   if ($case.Id -eq "08-lease-fence") { return Get-Case08Prompt $case }
   $guidance = Get-CaseGuidance $case
   $toolingGuidance = Get-WindowsToolGuidance
@@ -1140,6 +1227,9 @@ function Get-RecoveryPrompt(
   [object]$verification,
   [string]$ProjectPath = ""
 ) {
+  if ($case.Id -eq "09-lease-receipt") {
+    return Get-Case09Prompt $case $verification
+  }
   if ($case.Id -eq "08-lease-fence") {
     return Get-Case08Prompt $case $verification
   }
@@ -1830,15 +1920,33 @@ function Invoke-External {
 function Get-BenchmarkReasoningBudget([hashtable]$case) {
   if ($case.Id -eq "07-lease-cascade") { return $Case07ReasoningBudgetTokens }
   if ($case.Id -eq "08-lease-fence") { return $Case08ReasoningBudgetTokens }
+  if ($case.Id -eq "09-lease-receipt") { return $Case09ReasoningBudgetTokens }
   return 0
 }
 
+function Get-BenchmarkProgressControl([hashtable]$case) {
+  if ($case.Id -eq "08-lease-fence") {
+    return [pscustomobject]@{
+      mode = $Case08ProgressBoundaryMode
+      window = $Case08ProgressRequestWindow
+    }
+  }
+  if ($case.Id -eq "09-lease-receipt") {
+    return [pscustomobject]@{
+      mode = $Case09ProgressBoundaryMode
+      window = $Case09ProgressRequestWindow
+    }
+  }
+  return $null
+}
+
 function Set-BenchmarkProgressBoundary([hashtable]$case, [object]$limits) {
-  if ($case.Id -ne "08-lease-fence") { return }
+  $control = Get-BenchmarkProgressControl $case
+  if ($null -eq $control) { return }
   $limits | Add-Member -MemberType NoteProperty -Name progress_boundary_mode -Force `
-    -Value $Case08ProgressBoundaryMode
+    -Value $control.mode
   $limits | Add-Member -MemberType NoteProperty -Name max_model_requests_without_progress -Force `
-    -Value $Case08ProgressRequestWindow
+    -Value $control.window
 }
 
 function Get-BenchmarkEndpoint([hashtable]$case) {
@@ -1849,7 +1957,7 @@ function Get-BenchmarkEndpoint([hashtable]$case) {
 }
 
 function Get-BenchmarkTools([hashtable]$case, [string]$agent) {
-  if ($case.Id -in @("07-lease-cascade", "08-lease-fence")) {
+  if ($case.Id -in @("07-lease-cascade", "08-lease-fence", "09-lease-receipt")) {
     if ($agent -eq "rupi") { return @("read", "write", "edit", "grep") }
     return @("read", "write", "edit", "grep", "find", "ls")
   }
@@ -1860,7 +1968,8 @@ function Get-BenchmarkTools([hashtable]$case, [string]$agent) {
 }
 
 function Get-BenchmarkEnvironment([hashtable]$case, [string]$agent, [string]$agentRoot) {
-  if ($case.Id -notin @("07-lease-cascade", "08-lease-fence") -or $agent -ne "rupi") {
+  if ($case.Id -notin @("07-lease-cascade", "08-lease-fence", "09-lease-receipt") -or
+      $agent -ne "rupi") {
     return @{}
   }
   return @{
@@ -1870,10 +1979,10 @@ function Get-BenchmarkEnvironment([hashtable]$case, [string]$agent, [string]$age
 }
 
 function Set-BenchmarkReasoningCompatibility([hashtable]$case, [object]$endpoint) {
-  if ($case.Id -notin @("07-lease-cascade", "08-lease-fence")) { return }
+  if ($case.Id -notin @("07-lease-cascade", "08-lease-fence", "09-lease-receipt")) { return }
   if ($null -eq $endpoint.capabilities -or
       $endpoint.capabilities.exposed_reasoning -cne "native") {
-    $caseName = if ($case.Id -eq "07-lease-cascade") { "Case 07" } else { "Case 08" }
+    $caseName = "Case " + $case.Id.Substring(0, 2)
     throw "$caseName reasoning replay requires an explicit native exposure claim."
   }
   if ($null -eq $endpoint.PSObject.Properties["openai_compat"] -or
@@ -1910,7 +2019,7 @@ function New-BenchmarkWorkspace([hashtable]$case, [string]$agentRoot, [string]$t
     $config = Get-Content -Raw $configSourcePath | ConvertFrom-Json
     $config.thinking = $thinkingLevel
     $config.state_dir = ".rupi-state"
-    if ($case.Id -in @("07-lease-cascade", "08-lease-fence")) {
+    if ($case.Id -in @("07-lease-cascade", "08-lease-fence", "09-lease-receipt")) {
       if ($null -eq $config.tools) {
         $config | Add-Member -MemberType NoteProperty -Name tools -Value ([pscustomobject]@{})
       }
@@ -2196,17 +2305,18 @@ function Invoke-AgentCase([hashtable]$case, [string]$agent, [string]$root, [stri
     $verification = Invoke-Verification $case $agentRoot $workspace.project $turn
     $lastVerification = $verification
     $turnRecord = [ordered]@{ turn = $turn; call = $call; metrics = $metrics; verification = $verification; session_id = $sessionId }
-    if ($case.Id -in @("07-lease-cascade", "08-lease-fence")) {
+    if ($case.Id -in @("07-lease-cascade", "08-lease-fence", "09-lease-receipt")) {
       $turnRecord["configured_tool_allowlist"] = @(Get-BenchmarkTools $case $agent)
       $turnRecord["harness_model_request_cap"] = if ($agent -eq "rupi") {
         $MaxModelRequestsPerTurn
       } else { $null }
-      if ($case.Id -eq "08-lease-fence") {
+      $progressControl = Get-BenchmarkProgressControl $case
+      if ($null -ne $progressControl) {
         $turnRecord["configured_progress_boundary_mode"] = if ($agent -eq "rupi") {
-          $Case08ProgressBoundaryMode
+          $progressControl.mode
         } else { $null }
         $turnRecord["configured_progress_request_window"] = if ($agent -eq "rupi") {
-          $Case08ProgressRequestWindow
+          $progressControl.window
         } else { $null }
       }
       $turnRecord["configured_thinking_control"] = [ordered]@{
@@ -2251,6 +2361,9 @@ if (@($cases | Where-Object { $_.Id -eq "07-lease-cascade" }).Count -gt 0) {
 if (@($cases | Where-Object { $_.Id -eq "08-lease-fence" }).Count -gt 0) {
   $recoveryFeedbackScope += ";case08_oracle_status_only"
 }
+if (@($cases | Where-Object { $_.Id -eq "09-lease-receipt" }).Count -gt 0) {
+  $recoveryFeedbackScope += ";case09_oracle_status_only"
+}
 if ($DryRun) {
   Write-Host "Thinking level: $ThinkingLevel"
   Write-Host "Recovery feedback scope: $recoveryFeedbackScope"
@@ -2258,19 +2371,24 @@ if ($DryRun) {
     [void](Get-InitialPrompt $_)
     $progressLimits = [pscustomobject]@{ max_model_requests_without_progress = 1 }
     Set-BenchmarkProgressBoundary $_ $progressLimits
-    if ($_.Id -eq "08-lease-fence") {
-      if ($progressLimits.progress_boundary_mode -cne $Case08ProgressBoundaryMode) {
-        throw "Case 08 Rupi must use the selected progress boundary mode."
+    $hasProgressControl = $_.Id -in @("08-lease-fence", "09-lease-receipt")
+    if ($hasProgressControl) {
+      $expectedMode = if ($_.Id -eq "08-lease-fence") { $Case08ProgressBoundaryMode }
+        else { $Case09ProgressBoundaryMode }
+      $expectedWindow = if ($_.Id -eq "08-lease-fence") { $Case08ProgressRequestWindow }
+        else { $Case09ProgressRequestWindow }
+      if ($progressLimits.progress_boundary_mode -cne $expectedMode) {
+        throw "$($_.Id) Rupi must use the selected progress boundary mode."
       }
-      if ($progressLimits.max_model_requests_without_progress -ne $Case08ProgressRequestWindow) {
-        throw "Case 08 Rupi must use the selected progress request window."
+      if ($progressLimits.max_model_requests_without_progress -ne $expectedWindow) {
+        throw "$($_.Id) Rupi must use the selected progress request window."
       }
     } elseif ($null -ne $progressLimits.PSObject.Properties["progress_boundary_mode"]) {
-      throw "The Case 08 progress mode must not change other cases."
+      throw "Selected progress mode must not change other cases."
     }
-    if ($_.Id -ne "08-lease-fence" -and
+    if (-not $hasProgressControl -and
         $progressLimits.max_model_requests_without_progress -ne 1) {
-      throw "The Case 08 progress request window must not change other cases."
+      throw "Selected progress request window must not change other cases."
     }
     $expectedEndpoint = if ((Get-BenchmarkReasoningBudget $_) -gt 0) {
       "http://127.0.0.1:8001/v1"
@@ -2282,9 +2400,9 @@ if ($DryRun) {
     $rupiEnvironment = Get-BenchmarkEnvironment $_ "rupi" $environmentRoot
     $piEnvironment = Get-BenchmarkEnvironment $_ "pi" $environmentRoot
     if ($piEnvironment.Count -ne 0 -or
-        ($_.Id -notin @("07-lease-cascade", "08-lease-fence") -and
+        ($_.Id -notin @("07-lease-cascade", "08-lease-fence", "09-lease-receipt") -and
           $rupiEnvironment.Count -ne 0)) {
-      throw "Only Case 07/08 Rupi may receive an isolated discovery profile."
+      throw "Only Case 07/08/09 Rupi may receive an isolated discovery profile."
     }
     if ($_.Id -eq "07-lease-cascade") {
       if ($rupiEnvironment.Count -ne 2 -or -not $rupiEnvironment.ContainsKey("HOME") -or
@@ -2493,6 +2611,41 @@ if ($DryRun) {
           -not $initialPrompt.Contains('Do not inspect or run the external acceptance oracle.')) {
         throw "Case 08 must preserve its specification and oracle boundary."
       }
+    } elseif ($_.Id -eq "09-lease-receipt") {
+      if ($progressLimits.progress_boundary_mode -cnotin @("one_shot", "recurring")) {
+        throw "Case 09 progress mode must use canonical lowercase runtime JSON names."
+      }
+      if ($rupiEnvironment.Count -ne 2 -or $null -ne $rupiEnvironment.HOME -or
+          $rupiEnvironment.USERPROFILE -ne (Join-Path $environmentRoot "discovery-profile") -or
+          (@(Get-BenchmarkTools $_ "rupi") -join ",") -ne "read,write,edit,grep" -or
+          (@(Get-BenchmarkTools $_ "pi") -join ",") -ne "read,write,edit,grep,find,ls") {
+        throw "Case 09 requires file tools and isolated Rupi skill discovery."
+      }
+      $endpoint = [pscustomobject]@{
+        capabilities = [pscustomobject]@{ exposed_reasoning = "native" }
+        openai_compat = [pscustomobject]@{ stream = $false }
+      }
+      Set-BenchmarkReasoningCompatibility $_ $endpoint
+      if ($endpoint.openai_compat.thinking_input -ne "reasoning_effort" -or
+          $endpoint.openai_compat.thinking_disable -ne "reasoning_effort_none" -or
+          $endpoint.openai_compat.preserve_reasoning -ne $true -or
+          $endpoint.openai_compat.stream -ne $false) {
+        throw "Case 09 must set native reasoning controls and preserve unrelated settings."
+      }
+      $invalidEndpoint = [pscustomobject]@{
+        capabilities = [pscustomobject]@{ exposed_reasoning = "provider_summary" }
+      }
+      $before = $invalidEndpoint | ConvertTo-Json -Depth 4 -Compress
+      $rejected = $false
+      try { Set-BenchmarkReasoningCompatibility $_ $invalidEndpoint } catch {
+        if ($_.Exception.Message -cne
+            "Case 09 reasoning replay requires an explicit native exposure claim.") { throw }
+        $rejected = $true
+      }
+      if (-not $rejected -or
+          ($invalidEndpoint | ConvertTo-Json -Depth 4 -Compress) -cne $before) {
+        throw "Case 09 must reject non-native exposure before changing endpoint settings."
+      }
     } else {
       $unchangedEndpoint = [pscustomobject]@{
         openai_compat = [pscustomobject]@{ thinking_input = "none" }
@@ -2586,6 +2739,69 @@ if ($DryRun) {
             -not $helpRepairPrompt.Contains('exact claim token; accept only one updated row.') -or
             $helpRepairPrompt.Contains('CASE08_PRIVATE_ORACLE_DIAGNOSTIC')) {
           throw "Case 08 failing help must preserve repair and oracle isolation."
+        }
+        $dryRunVerification.help[0].exit_code = 0
+      } finally {
+        Remove-Item -LiteralPath $oracleDiagnostic -Force
+        if (@(Get-ChildItem -LiteralPath $dryRunProject -Force).Count -ne 0) {
+          throw "Dry-run directory contains unexpected files: $dryRunProject"
+        }
+        Remove-Item -LiteralPath $dryRunProject -Force
+      }
+    }
+    if ($_.Id -eq "09-lease-receipt") {
+      $spec = [IO.File]::ReadAllText((Join-Path (Join-Path $repoRoot $_.Source) "SPEC.md"))
+      $dryRunProject = Join-Path ([IO.Path]::GetTempPath()) (
+        "rupi-case09-dryrun-" + [Guid]::NewGuid().ToString("N")
+      )
+      $oracleDiagnostic = Join-Path $dryRunProject "oracle-diagnostic.txt"
+      New-Item -ItemType Directory -Path $dryRunProject | Out-Null
+      try {
+        Write-Text $oracleDiagnostic "CASE09_PRIVATE_ORACLE_DIAGNOSTIC"
+        $dryRunVerification.oracle.exit_code = 1
+        $dryRunVerification.oracle.stderr_path = $oracleDiagnostic
+        $dryRunVerification.oracle.stdout_path = $oracleDiagnostic
+        $initialPrompt = Get-InitialPrompt $_
+        $oracleFailurePrompt = Get-RecoveryPrompt $_ $dryRunVerification
+        $dryRunVerification.project_tests.exit_code = 1
+        $repairPrompt = Get-RecoveryPrompt $_ $dryRunVerification $dryRunProject
+        $dryRunVerification.project_tests.exit_code = 0
+        $dryRunVerification.help[0].exit_code = 1
+        $helpRepairPrompt = Get-RecoveryPrompt $_ $dryRunVerification $dryRunProject
+        $requirements = @(
+          $spec
+          'Do not inspect or run the external acceptance oracle.'
+          'public delivery_key is exactly pipeline_id + ":" + job_id'
+          'fresh private unguessable claim token'
+          'exact claim token;'
+          'accept only one updated row'
+          'status/output/attempts/lease/error/receipt'
+          'EOF/lost acknowledgement is retryable failure'
+          'never an invented receipt'
+          'one logical effect, two attempts, same key and original receipt/output'
+          'public commands/HTTP'
+          'resource cleanup'
+        )
+        foreach ($prompt in @($initialPrompt, $dryRunRecovery, $oracleFailurePrompt,
+            $repairPrompt, $helpRepairPrompt)) {
+          foreach ($requirement in $requirements) {
+            if (-not $prompt.Contains($requirement)) {
+              throw "Case 09 prompt lost a public specification or receipt/fencing requirement."
+            }
+          }
+          if ($prompt.Contains('CASE09_PRIVATE_ORACLE_DIAGNOSTIC')) {
+            throw "Case 09 oracle diagnostics must remain hidden."
+          }
+        }
+        if (-not $initialPrompt.Contains('First tool call: write leasereceipt/__main__.py')) {
+          throw "Case 09 initial prompt must request complete application behavior first."
+        }
+        foreach ($prompt in @($repairPrompt, $helpRepairPrompt)) {
+          if (-not $prompt.Contains('Repair the earliest failing local test or help gate') -or
+              -not $prompt.Contains('preserve assertions') -or
+              -not $prompt.Contains('at most 100 new lines')) {
+            throw "Case 09 repair must preserve assertions and bounded application edits."
+          }
         }
         $dryRunVerification.help[0].exit_code = 0
       } finally {
@@ -2759,6 +2975,11 @@ $summary = [ordered]@{
   } else { $null }
   case08_rupi_progress_boundary_mode = $Case08ProgressBoundaryMode
   case08_rupi_progress_request_window = $Case08ProgressRequestWindow
+  case09_reasoning_budget_tokens = if ($Case09ReasoningBudgetTokens -gt 0) {
+    $Case09ReasoningBudgetTokens
+  } else { $null }
+  case09_rupi_progress_boundary_mode = $Case09ProgressBoundaryMode
+  case09_rupi_progress_request_window = $Case09ProgressRequestWindow
   max_turns = $MaxTurns
   turn_timeout_seconds = $TurnTimeoutSeconds
   provider_timeout_grace_seconds = $script:providerTimeoutGraceSeconds
