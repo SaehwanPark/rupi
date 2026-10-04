@@ -286,3 +286,35 @@ the complete specification and original repair guidance, excluding the candidate
 workflow-test-first phase and new repair wording. Retry01 remains fixed at launch
 source 465ef6c. There is no matched winner yet. All-platform CI passed at 13413e0:
 [CI run](https://github.com/SaehwanPark/rupi/actions/runs/37168385097).
+
+## Retry01 terminal comparison (2026-10-04 01:48 UTC)
+
+Pi turn 4 reached its 600,257 ms outer timeout with 17,368 recorded work tokens
+(9,953 input, 7,415 output), 19 requests/usage records, and 19 completed tools.
+Project tests and all help checks passed; the oracle failed. Its entry point is
+20,755 bytes; workflow tests, foundation tests, and README are unchanged from turn 3.
+
+The runner exited successfully and its model child is gone. Per-turn evidence gives:
+
+| Agent | Oracle resolution | Work tokens | Call time | Final tests / help |
+| --- | --- | ---: | ---: | --- |
+| Rupi | none in 4 turns | 73,794 | 1,958,537 ms | pass / all pass |
+| Pi | none in 4 turns | 59,600 | 1,936,614 ms | pass / all pass |
+
+The comparison is inconclusive; lower Pi work and call time do not establish a
+resolution win. Call time excludes verification; unrecorded inference is unknown.
+Pi requested/completed 40 tools; its failure and Unknown counts are unavailable.
+Rupi requested 27 tools, completing 26 with one failure and zero Unknown.
+
+Final hashes still match both copied specifications and both two-file acceptance
+suites. Every saved prompt preserves the complete specification and excludes the
+prepared test-authoring candidate. Initial and turn-2 recovery prompts match across
+agents. Neither generated code, model traces, nor oracle diagnostics were inspected.
+CI passed all platforms at d59a38d:
+[CI run](https://github.com/SaehwanPark/rupi/actions/runs/37168839828).
+
+Next: launch retry02 from the current committed workflow-test-first candidate in
+fresh workspaces, retaining the same local model, pinned Pi, low/budget 2,048, four
+600-second turns, six-second grace, and Rupi cap 12/Pi native request policy. The
+parent's usage check at 01:48 UTC reported 51% five-hour and 73% weekly usage.
+The relay remains task-owned and healthy; no other comparison is running.
