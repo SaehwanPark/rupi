@@ -798,3 +798,24 @@ main 4174c1e in an isolated checkout. Its default stays one-shot; implementation
 fixtures and verification are pending. Local builds are deferred until this pair is
 terminal. No runtime mode, model, relay, fixture or binary changes during retry04.
 The design is a future candidate, not proof of a Case08 win or an existing runtime bug.
+
+## Retry04 Pi workflow-test delivery verified (2026-10-04 04:56 UTC)
+
+Pi turn 2 completed in 586,899 ms without an authoring timeout. It recorded 21,186
+work tokens (10,031 input, 11,155 output), eight requests/completions/usage records
+and seven completed tools: one write, four edits and two reads. Failure/Unknown
+counters remain unavailable. Tests/oracle fail without verification timeouts;
+all help checks pass. The workflow-test module is 18,538 bytes; prior application,
+foundation tests and README sizes remain unchanged. Contents remain unread.
+
+Across two turns, Pi recorded 29,606 work tokens and 745,145 ms call time excluding
+verification. Turn 3 is live (node PID 26316 under runner 35136; exec session 54053).
+Its saved prompt confirms repair, the full specification, one focused application
+edit per response/100-line guidance and preservation of both test sets. Both agents
+therefore received the candidate in the repair phase. The result remains pending.
+
+PR #143's implementation and fixtures are now drafted in the isolated checkout.
+Formatting/diff checks pass at 2b06e63; compilation, runtime tests, startup budgets
+and author invariant review remain pending. No local build has overlapped retry04.
+Its source preparation does not alter this interpreter or the corrected benchmark
+binary. Future recurring mode is not active in this pair.
