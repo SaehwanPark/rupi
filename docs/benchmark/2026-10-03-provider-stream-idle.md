@@ -48,7 +48,10 @@ Case 08 model failure; that attribution remains unproven without additional evid
 Implementation removes only the redundant outer decoded-event idle timer. The
 existing HTTP read timeout and SSE logical idle handling remain, as do the outer
 total deadline, cancellation, quarantine and replay rules. No new activity events
-or state are introduced. All 26 transport tests pass, including the regression,
+or state are introduced. All 29 transport tests pass, including the regression,
 quiet-stream expiry, total timeout, cancellation and delayed headers. Formatting
-passes. Extended framing/body coverage, full checks and final invariant review
-remain pending. Keep the PR draft until they pass.
+passes. Active partial SSE frames and one-shot bodies preserve exact output; active
+input still expires at the total deadline without synthetic model events. Core
+check, Clippy, workspace tests and documentation passed before these extra fixtures.
+Final formatting/Clippy pass; final workspace tests, startup and invariant review
+remain active. Keep the PR draft until they pass.
