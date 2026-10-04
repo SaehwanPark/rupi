@@ -2077,3 +2077,20 @@ by Pi. Turn2 is live under node PID28328, runner16344/exec28157. Its saved promp
 retains full SPEC, repair/fencing/assertion guidance and no prescribed module stage.
 Rupi resolved acceptance on turn4; matched outcome is still pending. PR141 stays
 draft, conditional candidate unimplemented and Cases08 through10 open.
+
+## Retry10 Pi second attempt verified (2026-10-04)
+
+Turn2 reaches the 600,260 ms watchdog with 11,236 recorded work tokens (3,952
+uncached input, 7,284 output), three requests/completions/usage records and four
+completed native tool events: ls, two reads and write. Failed/Unknown counts are
+unavailable, not zero; unfinished unrecorded inference remains unknown. Tests and
+oracle fail without verification timeouts; all help checks pass. Manifest adds a
+23,191-byte test module; other sizes match turn1 and no README is listed. Generated
+contents/diagnostics remain unread; sizes do not prove unchanged content or exact edits.
+
+Across two Pi turns: 25,984 recorded work tokens, 1,200,566 ms call time excluding
+verification and11 completed native events; failed/Unknown remain unavailable.
+Selected controls persist. Turn3 is live under node PID22536, runner16344/exec28157.
+Its saved prompt retains full SPEC, repair/fencing/assertion guidance and no prescribed
+module stage. Rupi resolved on turn4; matched outcome remains pending, PR141 draft,
+conditional candidate unimplemented and Cases08 through10 open.
