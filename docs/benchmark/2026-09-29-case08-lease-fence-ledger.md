@@ -1664,3 +1664,20 @@ verification and 14 completed tools. Selected controls persist. Turn 4 is live u
 node PID 25520, runner 36808/exec session 79760. Its saved prompt retains full SPEC,
 repair/fencing/assertion guidance and no prescribed module stage. Rupi's six-turn half
 is unresolved; matched result remains pending and Cases08 through 10 remain open.
+
+## Retry08 Pi fourth attempt verified (2026-10-04)
+
+Turn 4 reached the 600,257 ms watchdog with 13,509 recorded work tokens (5,421
+uncached input, 8,088 output), six requests/completions/usage records and six
+completed tools: two reads, two edits and two writes. Failed/Unknown counts are
+unavailable, not zero; unfinished unrecorded inference remains unknown. Tests and
+oracle fail without verification timeouts; all help checks pass.
+Manifest lists store 14,276 bytes and worker 8,978; other sizes match turn 3 and no
+README is listed. Contents and diagnostics remain unread; sizes do not establish
+unchanged contents, exact edit targets or correct workflow behavior.
+
+Across four Pi turns: 51,312 recorded work tokens, 2,401,143 ms call time excluding
+verification and 20 completed tools. Selected controls persist. Turn 5 is live under
+node PID 7000, runner 36808/exec session 79760. Its saved prompt retains full SPEC,
+repair/fencing/assertion guidance and no prescribed module stage. Rupi's six-turn half
+is unresolved; matched result remains pending and Cases08 through 10 remain open.
