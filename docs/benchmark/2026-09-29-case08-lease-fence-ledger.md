@@ -153,3 +153,21 @@ oracle wins. Case 04's Pi run stopped once its earliest possible resolution woul
 require more turns than Rupi. Recorded work excludes unknown or unrecorded inference.
 These are configured comparison wins, not a claim of default-runtime superiority.
 Cases 08, 09, and 10 remain incomplete; do not close the full objective yet.
+
+## First retry: Rupi turn 2 verified (2026-10-04 00:57 UTC)
+
+Turn 2 reached its 600,251 ms outer timeout with 28,366 recorded work tokens
+(19,251 input, 9,115 output), 11 started/10 completed model requests, and ten
+usage records. Its read and nine edits completed with zero failed or Unknown tools.
+Project tests and all three help checks passed; the oracle failed.
+
+The entry point grew from 2,702 to 23,239 bytes; other snapshot sizes remained
+unchanged, including the 1,267-byte test module. File sizes do not establish
+implementation or test coverage. No source, model logs, or oracle diagnostics
+were inspected. Unrecorded inference from the interrupted request remains unknown.
+
+Rupi turn 3 is live (PID 25936 under runner 2844). The saved recovery prompt selects
+workflow, preserves the full specification and fencing guidance, and includes only
+oracle status. Source/settings remain fixed at `465ef6c`; Pi has not started.
+There is no matched result yet. CI also passed on all three platforms at docs head
+`0acb3c3`: [CI run](https://github.com/SaehwanPark/rupi/actions/runs/37166190348).
