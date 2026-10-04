@@ -1507,9 +1507,12 @@ TUI rendering passed all budgets (3.31–3.90 µs/unit); checkpointed restore me
   moves workflow implementation before workflow-test authoring and permits compact
   application modules. All-case routing/oracle-isolation guards and author review pass;
   retry06 was inconclusive: Rupi recorded 101,345 work tokens versus Pi 63,660;
-  both failed final tests and passed help. Retry07 is a fresh matched six-turn pair,
-  live from 975470f with unchanged harness/model/runtime controls and initial prompt,
-  while allowing both agents more repair attempts. Its outcome remains pending.
+  both failed final tests and passed help. Retry07's fresh matched six-turn pair
+  from 975470f is terminal: Pi resolved on turn 2 with 31,957 recorded work tokens,
+  while Rupi remained unresolved after six with 167,131. Pi's final tests, oracle and
+  help pass; Rupi's tests/oracle fail and help passes. Reference/prompt/control audits
+  pass; unfinished inference remains unknown. This is a configured Pi win and PR141
+  remains draft. The next candidate must improve Rupi without weakening public gates.
   Fresh pairs retain the same local
   `qwen3.8-flash-next` and pinned Pi 0.86.1.
   Cases 01 through 07 have verified comparison wins and are skipped. Cases 08 through

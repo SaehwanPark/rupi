@@ -1400,3 +1400,32 @@ The unused copied Rupi config does not configure Pi's progress policy.
 Turn 2 is live under node PID 36712, runner 11996/exec session 72703. Its saved
 prompt retains full SPEC, repair priority, fencing, both test sets and assertions.
 The matched six-turn outcome remains pending; Rupi's six-turn half is unresolved.
+
+## Retry07 terminal audit: Pi wins (2026-10-04)
+
+Pi turn 2 completed in 529,338 ms with 15,698 recorded work tokens (7,071 uncached
+input, 8,627 output), 14 requests/completions/usage records and 13 completed tools.
+Tests, oracle and all help checks pass without verification timeouts. Failed/Unknown
+counters are unavailable, not zero. Manifest adds README 3,685 bytes and lists worker
+10,232; other sizes match turn 1. Contents and README completeness remain uninspected.
+
+Pi resolves on turn 2 while Rupi remains unresolved after six: this is a Pi win under
+the configured comparison, not an inconclusive pair or a Rupi improvement claim.
+Pi totals 31,957 recorded work tokens, 1,129,631 ms call time excluding verification
+and 22 completed tools. Rupi totals 167,131 work tokens, 2,939,691 ms and 42 completed
+tools, two failed and zero Unknown. Earlier unrecorded inference remains unknown.
+Pi's native uncapped/six-tool policy differs from Rupi recurring/progress1/cap12/four
+tools; those asymmetries remain disclosed and do not establish default-runtime behavior.
+
+Exec session 72703 exited zero; runner 11996, wrapper 31116 and final Pi node 36712
+are absent. Model/relay remain preserved, and the server advertises qwen3.8-flash-next.
+All eight saved prompts contain full SPEC; both initial prompts are byte-equal.
+Both copied SPECs and both acceptance files match source hashes, with no additional
+non-cache acceptance files. Selected low/budget2,048/native replay/endpoint controls
+match all summaries; Rupi cap/mode and Pi native null cap/mode also match. The Rupi
+binary hash is unchanged. No generated code, model output, diagnostic contents,
+aggregate results or runner log were inspected. No local build or concurrent pair ran.
+
+PR141 remains draft and unmerged. Baseline/retries01 through 06 remain inconclusive;
+retry07 is a decisive Pi win. Cases08 through 10 remain open. The next bounded
+candidate must improve the unresolved Rupi result without weakening the public task.
