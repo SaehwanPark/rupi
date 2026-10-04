@@ -126,3 +126,11 @@ four edits, grep and two reads). Project tests1/oracle1, all four help0; no veri
 timeouts. Snapshot lists init75/main27,606/http_service4,767/store17,721/validate5,539 bytes,
 no tests or README. Main's matching size does not prove unchanged contents. Generated files
 remain unread. Turn3 active, Pi not started; cumulative recorded work43,843. No win claim.
+
+Rupi turn3 reaches its watchdog at600,222ms:50,398 recorded work (43,363 input+7,035 output),
+eleven starts/eleven completions including abandoned-request completion, ten usage records.
+Fourteen tool requests/thirteen complete/one failed/zero Unknown; request names include eight
+reads, four grep, one edit and one write. Tests1/oracle1/all four help0, no verification timeouts.
+README8,720 bytes and init110 now listed; other five application sizes match turn2, which
+proves neither exact edits nor unchanged contents. No tests listed. README/generated content
+unread. Cumulative work94,241; turn4 active with unchanged source/controls. Pi not started.
