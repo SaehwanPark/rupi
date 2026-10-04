@@ -1647,3 +1647,20 @@ verification and ten completed tools. Selected native/low/budget2,048/endpoint80
 replay controls persist. Turn 3 is live under node PID 34856, runner 36808/exec
 session 79760. Its saved prompt retains full SPEC, repair/fencing/assertion guidance
 and no prescribed module stage. Rupi remains unresolved after six; matched result pending.
+
+## Retry08 Pi test-module manifest and failing gate verified (2026-10-04)
+
+Turn 3 reached the 600,350 ms watchdog with 11,284 recorded work tokens (3,840
+uncached input, 7,444 output), four requests/completions/usage records and four
+completed tools: two ls, one write and one read. Failed/Unknown counts are unavailable,
+not zero; unfinished unrecorded inference remains unknown. Tests and oracle fail
+without verification timeouts; all help checks pass.
+Manifest adds a 25,213-byte test module; other sizes match turn 2 and no README is
+listed. Contents and diagnostics remain unread; presence does not prove coverage or
+correctness and sizes do not establish unchanged contents or exact edit targets.
+
+Across three Pi turns: 37,803 recorded work tokens, 1,800,886 ms call time excluding
+verification and 14 completed tools. Selected controls persist. Turn 4 is live under
+node PID 25520, runner 36808/exec session 79760. Its saved prompt retains full SPEC,
+repair/fencing/assertion guidance and no prescribed module stage. Rupi's six-turn half
+is unresolved; matched result remains pending and Cases08 through 10 remain open.
