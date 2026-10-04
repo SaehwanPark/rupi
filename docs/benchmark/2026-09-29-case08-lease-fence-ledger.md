@@ -899,3 +899,10 @@ The source agrees with merged ab3dc33; this branch changes harness and evidence 
 Usage before launch was 58% five-hour and 87% weekly, below both soft stops.
 Run matched retry05 before evaluating this candidate.
 No Case08 win or broader stage gate is established by these runtime checks.
+
+Retry05 launched from ddb5e89 as
+`bench-20261004-case08-recurring-progress-budget2048-low-retry05-rupi12-matched4-600s`.
+Continuation: exec session 85505, runner PID 14912 under wrapper 32740; first Rupi
+PID 7332. Model PID 27356 and content-free relay PID 33028 were preserved. The
+written Rupi config confirms recurring mode, progress limit 1, request cap 12,
+low effort and endpoint 8001. The pair is live and no result is claimed.
