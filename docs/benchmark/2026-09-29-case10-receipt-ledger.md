@@ -279,3 +279,12 @@ Source `92d2b269f2ace551e38fd1346c8c2115d1cfba8b`; exec41676/runner33728/wrapper
 Fresh Rupi-only single-module/discoverable-TestCase screen active. Same controls/model/relay/
 binary; all model slots idle before launch. Saved initial prompt matches own current harness.
 No builds or parallel inference during the screen. Pi conditional on acceptance; outcome pending.
+
+Retry03 Rupi turn1 reaches its watchdog at600,415ms, unresolved:31,270 recorded work
+(21,972 input+9,298 output), six starts/five completions/five usage records. Six requested
+and completed tools/zero fail/zero Unknown (grep/read/read/write/read/read). All four help0,
+project tests1/oracle1; no verification timeouts. Snapshot lists only application main36,906,
+no tests or README. Generated contents unread; file presence/passing help do not prove complete
+behavior. Actual first requested tool is grep despite first-write guidance; no compliance or
+causal claim is inferred from the prompt. Turn2 active with public-TestCase repair guidance.
+No Pi run. Evidence/controls remain frozen; missing test/README requirements are preserved.
