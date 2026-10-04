@@ -1544,12 +1544,12 @@ TUI rendering passed all budgets (3.31–3.90 µs/unit); checkpointed restore me
   and isolated benchmark controls. Retry01 is terminal,inconclusive: neither resolves
   acceptance in six turns; all twelve prompt/control/reference audits pass.
   Retry02 selects existing Recurring/window3/cap12,all other prompts/settings/gates
-  unchanged. Rupi remains unresolved after five attempts:140,130 recorded work tokens/
-  2,851,512 ms authoring time,four watchdogs/one request-budget exhaustion. Latest
-  tests/acceptance exit1,help passes; test_http.py now listed,no README. Generated
-  contents remain unread; unrecorded unfinished inference remains unknown.
-  All five completed-turn prompt/control/reference audits pass; binary/model unchanged.
-  Rupi6 is live; Pi has not started. PR144 remains draft,no matched improvement claimed.
+  unchanged. Rupi resolves acceptance at turn6 with tests/help passing:163,478 recorded
+  work tokens/3,305,226 ms authoring time,43 completed tools/one failed/zero Unknown.
+  README absent; generated contents unread,unrecorded unfinished inference unknown.
+  Six completed Rupi-turn audits,both reference copies and initial equality pass;
+  config/binary/model unchanged. Pi1 is live; matched winner remains unproven.
+  PR144 stays draft. No full-public-task or causal window/cache/token improvement claimed.
   Preserve stable public delivery keys, distinct private fencing, lost-ack retry and
   accepted receipt persistence. No acceptance fixtures or manually generated solution
   are changed. See the Case08/Case09 ledgers for evidence; broader project gates remain active.

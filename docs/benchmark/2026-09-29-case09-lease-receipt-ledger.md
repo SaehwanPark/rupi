@@ -509,3 +509,30 @@ Rupi6 PID37284 is live under original exec25019/runner23092/wrapper36544; saved 
 SPEC/assertion/stable-key/private-fencing/lost-ack repair requirements pass. Keep the
 original pair unchanged without local builds or concurrent inference. PR144 stays
 draft; Cases09/10 remain open and Cases01 through08 configured wins stay skipped.
+## Retry02 Rupi resolves acceptance in sixth attempt; Pi starts (2026-10-04)
+
+Turn6 exits0 after453,714 ms with runtime status `completed`,no outer watchdog.
+Seven request starts/eight completion events including earlier abandonment,seven
+usage records and23,348 recorded work tokens (17,085 uncached input,6,263 output).
+Eight tools complete: four reads/four edits,zero failed/Unknown. Tests,acceptance and
+all three help checks pass without verification timeouts. Manifest lists server4,602
+bytes/store19,765; other sizes match turn5 and no README is listed. Contents/model
+output/diagnostics remain unread; sizes do not prove unchanged contents or exact edits.
+Acceptance resolution with passing generated tests/help is verified; full public-task
+completion is not established because README is absent and contents remain unread.
+
+Rupi's half is terminal,resolved at turn6:163,478 recorded work tokens,3,305,226 ms
+authoring time excluding verification,43 completed tools,one failed/zero Unknown;
+four watchdogs,one budget-exhausted and one completed runtime turn. Unrecorded
+unfinished inference remains unknown. This is not yet a matched Rupi win: Pi may
+resolve in fewer turns or with fewer recorded work tokens at the same turn. Keep
+Case09 open until the original Pi half and final classification are verified.
+
+Pi1 PID35700 is live under original exec25019/runner23092/wrapper36544. Initial
+prompts are byte-identical and full-SPEC/stable-key/private-claim/lost-ack booleans
+pass. Interim audit passes all six completed Rupi-turn prompts/controls,both copied
+SPEC/two acceptance-file hashes/no extra non-cache reference files,initial equality
+and actual Rupi config/binary/model/relay. There are no completed Pi usage records;
+its live work is unknown,not zero. Pi controls await its per-turn summary. Continue
+the original sequential pair without source/config changes,builds or parallel inference.
+PR144 stays draft; Cases09/10 open. No causal window/cache/token speedup is claimed.
