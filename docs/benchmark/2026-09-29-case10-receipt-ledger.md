@@ -221,3 +221,11 @@ request, three usage records. Two requested tools/one complete/one failed/zero U
 (edit/write). Tests5/all four help1/oracle1, no verification timeouts. app.py12,150 now
 listed; four earlier file sizes match, without proving unchanged contents. No test_*.py
 or README; generated contents unread. Cumulative work96,352. Turn4 active, no Pi run.
+
+Retry02 Rupi turn4 reaches its watchdog at600,199ms, unresolved:21,041 recorded work
+(12,529 input+8,512 output), three starts/three completions including earlier abandoned
+request, two usage records. Two edit tools complete/zero failed/zero Unknown. Tests5/oracle1,
+all four help now0; no verification timeouts. app size12,150→36,984, other four sizes match
+without proving unchanged contents or exact edits. No test_*.py or README. Contents unread.
+Cumulative work117,393/authoring2,400,888ms. Turn5 active with the shared guidance to write
+missing public tests when help passes. No Pi inference or win claim; controls remain unchanged.
