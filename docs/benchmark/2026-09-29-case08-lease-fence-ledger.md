@@ -2118,3 +2118,27 @@ on turn4 with106,173 recorded work tokens, but the matched outcome remains pendi
 PR141 stays draft, the conditional candidate stays unimplemented and Cases08 through10
 remain open. Fetch/prune confirms only main and the active141 branch locally/remotely;
 detached worktrees and comparison artifacts remain preserved.
+
+## Retry10 Pi fourth attempt fails; fewer-turn criterion established (2026-10-04)
+
+Turn4 reaches the600,223 ms watchdog with17,102 recorded work tokens (9,383 uncached
+input,7,719 output), seven requests/completions/usage records and seven completed
+native events: three reads/four edits. Failed/Unknown remain unavailable, not zero;
+unfinished unrecorded inference remains unknown. Tests and oracle fail without
+verification timeouts; all help checks pass. Manifest lists server4,644/store14,244
+bytes; other sizes match turn3 and no README is listed. Generated contents and
+diagnostics remain unread; sizes do not prove unchanged content or exact edit targets.
+
+Pi cumulative through turn4:57,164 recorded work tokens,2,384,919 ms call time and23
+completed native events, three authoring watchdog expiries. All eight completed-turn
+prompt/control/reference audits pass; the binary/model/relay remain unchanged.
+Rupi resolved acceptance on turn4 while Pi remains unresolved after four, establishing
+the configured fewer-turn comparison criterion. Pi's lower recorded work on unresolved
+attempts is not a same-resolution token win. Rupi's project tests still fail and no
+README is listed; this does not prove complete public-task or default-runtime superiority.
+
+Pi turn5 is observed live under node PID17976, runner16344/exec28157. Let the existing
+six-turn maximum pair finish without changing its configuration. Terminal audit,
+required final checks, author review and exact-head CI remain before PR141 merge.
+The conditional write-only plan stays unimplemented because retry10 has met the win
+criterion. PR141 remains draft and Cases08 through10 remain open pending delivery.
