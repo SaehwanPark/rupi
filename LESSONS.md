@@ -3,6 +3,21 @@
 Durable, verified lessons for contributors to this repository. Keep entries small and
 evidence-backed; delete one when its prevention becomes structurally enforced.
 
+## Select Git Bash explicitly for native Windows startup checks
+
+PowerShell can resolve `bash` to the WSL launcher while Rust is installed for Windows.
+The startup script then fails with `cargo: command not found` despite native Cargo working.
+Check `Get-Command bash,cargo,python`, then invoke Git for Windows Bash explicitly:
+
+```powershell
+& "$env:ProgramFiles/Git/bin/bash.exe" bench/startup.sh --json bench/results/startup-ci.json
+```
+
+Use an installed Rust toolchain matching the repository pin. The script already chooses
+native `python` under Git Bash, avoiding broken Windows `python3` execution aliases.
+The explicit shell route passed the required benchmark after the WSL route failed;
+no benchmark or runtime change was needed.
+
 ## Merging a stacked PR series out of band leaves every PR "open"
 
 - Context: 36 CI-green PRs, each stacked on another branch, all landed into `main`

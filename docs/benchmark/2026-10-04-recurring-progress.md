@@ -1,6 +1,6 @@
 # Recurring progress boundary
 
-Status: implementation draft; local execution and verification pending.
+Status: verified runtime contract; final-head CI and merge pending.
 
 Case08 retry04 delivered two edits and a write, then ten reads in Rupi turn 3.
 Turn 4 completed without any tool call while independent project checks still failed.
@@ -59,9 +59,40 @@ Fixtures cover repeated windows, canonical versus projected text, failed/unchang
 Unknown tools, unavailable tools, exhausted mutation capacity, finalization bypass,
 explicit no-tool assessment and disabled enforcement. A fake-server CLI fixture
 checks that configuration reaches the live runtime and narrows subsequent schemas.
-These fixtures are authored, not locally executed yet.
+All these fixtures pass locally on the verified Rust sources.
 
 The active Case08 retry04 retains its original binary, relay and loaded definitions.
 Prepare source in this isolated checkout; defer builds until that pair is terminal.
 Only a later fresh comparison may select recurring mode. Benchmark benefit and
 Case08 resolution are unverified; Cases08 through 10 remain open.
+
+## Verification and author invariant review (2026-10-04)
+
+Source head fdbdb79 passed all-platform CI:
+[run 37178770766](https://github.com/SaehwanPark/rupi/actions/runs/37178770766).
+Local exact Rust/Cargo 1.98.1 via the installed stable route passed formatting,
+core all-features check, workspace all-target clippy with warnings denied,
+workspace tests and workspace docs without dependencies. All new config/runtime/
+CLI fixtures pass. Logs remain in the ignored change workspace; no model-backed
+child or independent-agent review was used.
+
+Startup from the source checkout's release build measured 143.305 ms cold,
+8.118 ms warm median and 9.712 ms warm maximum over ten warm runs, within the
+250/100 ms budgets. The initial default Bash call selected WSL and could not find
+native Cargo. Explicit Git Bash passed the benchmark; its existing script selects
+native Python, so a Python wrapper was unnecessary. The verified prevention is in
+LESSONS.md. No runtime, benchmark or latency-budget workaround was introduced.
+
+Author invariant review: pass, no blocking finding. Reviewed config defaults and
+validation, CLI propagation, canonical retention versus model-visible projection,
+Changed effect evidence, Unknown reconciliation, tool/approval availability,
+request/mutation budget endings, no-tool assessment and startup behavior. Existing
+one-shot regression fixtures pass and their model-visible guidance is unchanged.
+Recurring activation uses existing runtime-owned events and retains single-model
+execution; unavailable tools fail semantically without a provider retry loop.
+
+Residual scope: callers explicitly choose recurring enforcement for implementation
+turns and still verify artifacts independently. It does not establish full project
+completion, Pi parity for new settings or a Case08 comparison win. Retry04 is now
+terminal and inconclusive; no local build overlapped that pair. Integrate this slice
+only after final-head CI, then select it in a fresh matched comparison.
