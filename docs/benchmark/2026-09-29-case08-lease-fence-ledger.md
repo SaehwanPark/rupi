@@ -1260,3 +1260,15 @@ while giving both agents up to three repair attempts. This is a new six-turn
 comparison, not an extension or reinterpretation of retry06's four-turn result.
 The existing MaxTurns range supports six; all public requirements/gates stay intact.
 Cases08 through 10 remain open.
+
+## Fresh matched six-turn pair launched (2026-10-04)
+
+Retry07 launched from 975470f as
+`bench-20261004-case08-implementation-first-budget2048-low-retry07-rupi12-matched6-600s`.
+Continuation: exec session 72703, runner PID 11996 under wrapper 31116; first Rupi
+PID 34652. Prior session 62809 is terminal and must not be reused. Model/relay are
+preserved and no pair/build runs concurrently. The harness and runtime source are
+unchanged from 764972b; only the shared outer limit changes from four to six.
+Written Rupi config confirms recurring/progress1/cap12, low effort, endpoint 8001
+and provider timeout 594,000 ms. The initial prompt retains full SPEC and is byte-equal
+to retry06's. The six-turn all-case guards pass. No result yet; Cases08 through 10 stay open.
