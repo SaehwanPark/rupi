@@ -266,3 +266,23 @@ Pi turn 3 is live (node PID 37364 under runner 2844). Its saved prompt selects t
 original local-repair guidance, retains the full specification, and excludes both
 candidate repair wording and the new test-authoring phase. The fixed control remains
 valid. Both agents are still unresolved; finish Pi before starting the next pair.
+
+## Retry01 Pi turn 3 verified (2026-10-04 01:38 UTC)
+
+Pi turn 3 reached its 600,238 ms outer timeout with 18,497 recorded work tokens
+(9,065 input, 9,432 output), 13 requests/usage records, and 13 completed tools.
+Project tests and the oracle failed; all three help checks passed. Failure and
+Unknown counters remain unavailable. Across three turns, Pi recorded 42,232 work
+tokens and 1,336,357 ms call time, excluding verification.
+
+The entry point is 21,139 bytes, workflow tests 21,701 bytes; foundation tests and
+README remain unchanged. Contents and diagnostics remain unread. Both agents'
+copied acceptance directories contain the same two reference files with matching
+SHA-256 hashes, excluding Python caches. Their copied public specifications also
+match the source. This is an integrity check, not an oracle success claim.
+
+Pi turn 4 is live (node PID 37840 under runner 2844). Its saved prompt preserves
+the complete specification and original repair guidance, excluding the candidate
+workflow-test-first phase and new repair wording. Retry01 remains fixed at launch
+source 465ef6c. There is no matched winner yet. All-platform CI passed at 13413e0:
+[CI run](https://github.com/SaehwanPark/rupi/actions/runs/37168385097).
