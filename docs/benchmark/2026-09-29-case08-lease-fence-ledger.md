@@ -1341,3 +1341,21 @@ from earlier turns remains unknown. Selected controls persist. Turn 5 is live un
 Rupi PID 35732, runner 11996/exec session 72703. Its saved prompt retains full SPEC,
 repair/fencing guidance, both test sets and assertion preservation. One further
 attempt remains after turn 5 if needed. The matched result remains pending.
+
+## Retry07 Rupi second repair completed (2026-10-04)
+
+Turn 5 completed in 543,035 ms without an authoring timeout, ending at the runtime
+budget boundary. It recorded 34,980 work tokens (30,260 uncached input, 4,720 output),
+11 usage records and 11 completed tools from 12 requests. One tool failed and zero
+became Unknown. Tests and oracle fail without verification timeouts; all help checks pass.
+Manifest lists entry point 2,258 bytes, server 3,332, store 15,728 and validation
+5,896. Generated contents remain unread; file sizes do not identify exact edits.
+
+Across five turns Rupi recorded 125,285 work tokens and 2,393,282 ms call time
+excluding verification, with 32 completed tools, one failed and zero Unknown.
+Unrecorded unfinished inference from earlier turns remains unknown. Selected
+recurring/cap12/low/budget2,048/endpoint8001/native replay controls persist.
+Turn 6 is live under Rupi PID 36148, runner 11996/exec session 72703. Its saved
+prompt retains full SPEC, repair priority, detailed fencing guidance, both test sets
+and assertion preservation. This is Rupi's last attempt in the six-turn pair;
+the Pi half has not started and the matched result remains pending.
