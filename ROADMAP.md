@@ -1527,6 +1527,8 @@ TUI rendering passed all budgets (3.31–3.90 µs/unit); checkpointed restore me
   Reference/prompt/control audits pass; unfinished inference remains unknown. This is
   a configured Pi win, not inconclusive. Next candidate selects window12 under the
   existing cap12 and first-mutation completion requirement, with other controls kept.
+  All-case window12 guards and author configuration review pass. Fresh retry10 from
+  39f402f is live; its initial prompt matches retry09, binary/model are unchanged.
   Fresh pairs retain the same local
   `qwen3.8-flash-next` and pinned Pi 0.86.1.
   Cases 01 through 07 have verified comparison wins and are skipped. Cases 08 through

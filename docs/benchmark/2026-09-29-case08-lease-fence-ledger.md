@@ -1955,3 +1955,19 @@ tools. The initial text-only completion guard still requires a qualifying mutati
 The longer window can allow more inspection before recurring narrowing; its cache
 effect and task benefit are unproven. Shared guidance and all public/independent
 gates are retained. PR141 remains draft pending a verified matched Rupi win.
+
+## Retry10 window12 pair launched (2026-10-04)
+
+Run `bench-20261004-case08-window12-budget2048-low-retry10-rupi12-matched6-600s`
+launches from source39f402f with exec28157, runner16344/wrapper25888. Rupi turn1
+is live under PID31592. Written config confirms recurring/window12/cap12/four file
+tools/low/endpoint8001/594,000 ms provider deadline/native replay. Its saved prompt
+retains full SPEC and is byte-equal to retry09's initial prompt. The existing harness
+selector source is unchanged; only the selected Rupi window changes from3 to12.
+Binary SHA256 remains 39829D0D62129F4138C449EC4FC913DE4EF81B028527B649EEDFEA1D3EE3D1C9.
+
+Same local Qwen server/relay and pinned Pi0.86.1 remain. This is a fresh six-turn/
+600s matched pair with the public and independent gates preserved. No result yet;
+do not restart live work after an observation timeout. No runtime/harness source
+change, model reload, local build or measured benefit is claimed. PR141 stays draft;
+Cases01 through07 are skipped and Cases08 through10 remain open.
