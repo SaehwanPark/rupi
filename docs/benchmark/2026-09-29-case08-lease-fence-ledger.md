@@ -1523,3 +1523,22 @@ verification, 25 completed tools, one failed and zero Unknown. Selected controls
 Turn 4 is live under Rupi PID 18104, runner 36808/exec session 79760. Its saved
 prompt retains full SPEC, repair/fencing/assertion guidance and no prescribed module
 stage. No oracle resolution or matched win yet; Cases08 through 10 remain open.
+
+## Retry08 Rupi workflow-test manifest and failing gate verified (2026-10-04)
+
+Turn 4 reached the 600,327 ms watchdog with 20,725 recorded work tokens (15,593
+uncached input, 5,132 output), three usage records and four completed tools: three
+reads and one write. Failed/Unknown counts are zero. Completion counters include
+an earlier abandoned request; unfinished unrecorded inference remains unknown.
+Tests and oracle fail without verification timeouts; all help checks pass.
+Manifest adds a 10,137-byte workflow-test module. Other sizes match turn 3; no
+README is listed. Contents and diagnostics remain unread. New test presence does
+not prove test correctness, identify a defect or establish an implementation regression.
+
+Across four turns: 106,902 recorded work tokens, 2,401,096 ms call time excluding
+verification, 29 completed tools, one failed and zero Unknown. Selected controls
+persist; a direct copied-config audit confirms recurring/progress1/cap12, timeout
+594,000 ms, reasoning_effort input and native replay enabled.
+Turn 5 is live under Rupi PID 24240, runner 36808/exec session 79760. Its saved
+prompt retains full SPEC, repair/fencing/assertion guidance and no prescribed module
+stage. Rupi remains unresolved; Pi has not started and the matched outcome is pending.
