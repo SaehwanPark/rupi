@@ -30,11 +30,18 @@ param(
   [string]$Case09ProgressBoundaryMode = "one_shot",
   [ValidateRange(1, 100)]
   [int]$Case09ProgressRequestWindow = 1,
+  [ValidateRange(0, 16384)]
+  [int]$Case10ReasoningBudgetTokens = 0,
+  [ValidateSet("one_shot", "recurring")]
+  [string]$Case10ProgressBoundaryMode = "one_shot",
+  [ValidateRange(1, 100)]
+  [int]$Case10ProgressRequestWindow = 1,
   [switch]$DryRun
 )
 
 $ErrorActionPreference = "Stop"
 $Case09ProgressBoundaryMode = $Case09ProgressBoundaryMode.ToLowerInvariant()
+$Case10ProgressBoundaryMode = $Case10ProgressBoundaryMode.ToLowerInvariant()
 $script:providerTimeoutGraceSeconds = [int][math]::Min(
   $ProviderTimeoutGraceSeconds,
   [math]::Max(1, [math]::Floor($TurnTimeoutSeconds / 10))
@@ -719,7 +726,109 @@ $spec
 "@
 }
 
+function Get-Case10Prompt([hashtable]$case, [object]$verification = $null) {
+  $spec = [IO.File]::ReadAllText((Join-Path (Join-Path $repoRoot $case.Source) "SPEC.md"))
+  $feedback = ""
+  if ($null -ne $verification) {
+    $oracleStatus = if ($verification.oracle.timed_out) { "timed out" } elseif (
+      $verification.oracle.exit_code -eq 0
+    ) { "passed" } else { "failed" }
+    $feedback = "Independent acceptance oracle: $oracleStatus (diagnostic details hidden)." +
+      [Environment]::NewLine + (Get-RecoveryFeedback $verification)
+  }
+  $guidance = if ($null -eq $verification) {
+    @'
+First tool call: write receiptledger/__main__.py with the complete public workflow.
+Implement the CLI, authenticated admission, durable graph, worker, fencing, receipts and audit now.
+Keep related behavior together; a compact single module or a few compact modules are allowed.
+Do not import absent local modules or start a partial health-only foundation stage.
+Use the embedded SPEC instead of rereading it; keep reads bounded.
+Then write public-command/HTTP unittest tests, tests/__init__.py and an honest README.
+Complete service, worker, audit, tests and documentation in the same attempt.
+'@
+  } else {
+    @'
+Repair the earliest failing local test or help gate using the harness diagnostics.
+Implement missing public behavior before revising test fixtures; remove absent local imports.
+Preserve passing service/worker behavior, public assertions and all four help paths.
+Change a test fixture only when it misuses the documented public contract; preserve assertions.
+Use public commands/HTTP in tests, without assuming private function or class names.
+Use one focused application edit per response, at most 100 new lines; keep reads bounded.
+Continue the next source edit in the same attempt, then complete missing tests and honest README.
+File presence and passing help alone do not establish workflow completeness.
+'@
+  }
+  @"
+Implement the complete dependency-free Python 3 receiptledger project in this workspace.
+The root already contains SPEC.md; use receiptledger/ and tests/ paths directly.
+Use only Python standard-library modules. Create README.md and focused unittest tests.
+Work only here; do not edit SPEC.md, any rupi config or files outside the workspace.
+Do not inspect or run the external acceptance oracle. Oracle diagnostics stay hidden.
+Do not run commands, tests, help, service, worker, audit or oracle; no exec or shell calls.
+Use native read/write/edit tools; execution and verification belong to the harness.
+The harness runs project tests, four help commands and independent acceptance each attempt.
+Report verification only when supplied; preserve every public requirement and assertion.
+
+$feedback
+
+$guidance
+
+Validate the full graph before atomic insertion; persist original pipeline/job order.
+Resolve only declared input_refs from successful dependencies. For barriers, collect only
+the selected top-level field in depends_on order. Missing selections fail locally without
+a sink call and block dependents. worker --once attempts each job at most once and never polls.
+The public delivery_key is exactly pipeline_id + ":" + job_id, stable across retry/reclaim/restart.
+Keep this key distinct from the fresh private unguessable claim token; never expose the token.
+Atomically claim, increment attempts and persist token/lease; commit BEFORE spawning the sink.
+Every finalization conditions its UPDATE on pipeline/job, status leased and the exact claim token;
+accept only one updated row. Reclaim clears the old token. Stale completion exits non-zero and
+changes none of the newer claim's status/output/attempts/lease/error/receipt.
+Send the stable delivery_key in the sink request. Accept success only with matching job_id/key,
+exact ok:true, object output and non-empty receipt_id; persist exact output and matching receipt.
+EOF/lost acknowledgement is retryable failure, never success and never an invented receipt.
+Clear the lease, leave pending and exit non-zero; a later worker sends the same delivery key.
+An idempotent sink replays its original output/receipt without repeating that key's logical effect.
+This is not exactly-once delivery. Use direct argv, no shell/network and bounded resource cleanup.
+
+Tests use fresh public commands/HTTP and tiny temporary sinks, never private APIs or the oracle.
+Cover HMAC rejection without mutation, atomic/duplicate/conflicting admission, original order,
+restart persistence, declared inputs, reversed selected-field fan-in, missing selections,
+blocking, later retries and rejected response keys/receipts. Exercise lost-ack recovery with
+a durable idempotent sink: one logical effect, two attempts, same key and original receipt/output.
+Add a bounded stale-worker race: block A, expire its one-second lease, let B finish, release A,
+require stale non-zero exit and no changes to B's public state/receipt. Assert private tokens
+never appear in HTTP or sink requests. Use deadlines, subprocess timeouts and resource cleanup.
+Preserve workflow assertions, all help paths and honest README commands/contract/exact checks.
+
+Write each authoritative mutation and its corresponding audit_events append in the SAME SQLite
+transaction. Admission commits pipeline/jobs/first event atomically; duplicate, invalid and
+conflicting admission append nothing. Audit rows are evidence, never worker input or job state.
+Include claims, reclaims, success, retryable/terminal failure and each blocked transition.
+Rejected stale finalization appends only a safe operational event; never modify the newer job.
+Allocate seq from1 with no gaps under the transaction; canonical event_json has sorted keys
+and compact separators. Use the exact public SPEC hash expression and preserve its separator.
+Link prev_hash to the prior event_hash, or64 zeroes for row1. Keep every bounded public kind.
+Store safe public identifiers/status/attempts and concise outcomes; never secret, private token,
+raw argv or arbitrary sink response bytes. Persist lost-ack observed outcome:unknown when possible.
+audit --verify opens SQLite read-only and checks the FULL sequence and recomputed hash chain;
+reject missing/reordered/edited rows with an actionable non-zero error, never repair/truncate.
+audit --tail COUNT reads only, emits at most COUNT safe canonical objects and does not imply
+verification. Neither audit path may mutate jobs/events or invoke a worker/sink.
+
+Tests independently recompute the complete chain from the public SPEC expression and prove
+admission/state/event atomicity, duplicate/invalid/conflict preservation, restart verification,
+safe fields/no private tokens or raw argv, stable delivery keys across reclaims/retries,
+lost-ack outcome:unknown and stale rejection with unchanged newer public state. Tamper one row
+in a disposable database and require read-only verify failure without repairing/truncating it.
+Test bounded tail output and all four help paths. Preserve all workflow assertions.
+
+The complete Case 10 specification follows:
+$spec
+"@
+}
+
 function Get-InitialPrompt([hashtable]$case) {
+  if ($case.Id -eq "10-receipt-ledger") { return Get-Case10Prompt $case }
   if ($case.Id -eq "09-lease-receipt") { return Get-Case09Prompt $case }
   if ($case.Id -eq "08-lease-fence") { return Get-Case08Prompt $case }
   $guidance = Get-CaseGuidance $case
@@ -1227,6 +1336,9 @@ function Get-RecoveryPrompt(
   [object]$verification,
   [string]$ProjectPath = ""
 ) {
+  if ($case.Id -eq "10-receipt-ledger") {
+    return Get-Case10Prompt $case $verification
+  }
   if ($case.Id -eq "09-lease-receipt") {
     return Get-Case09Prompt $case $verification
   }
@@ -1921,10 +2033,17 @@ function Get-BenchmarkReasoningBudget([hashtable]$case) {
   if ($case.Id -eq "07-lease-cascade") { return $Case07ReasoningBudgetTokens }
   if ($case.Id -eq "08-lease-fence") { return $Case08ReasoningBudgetTokens }
   if ($case.Id -eq "09-lease-receipt") { return $Case09ReasoningBudgetTokens }
+  if ($case.Id -eq "10-receipt-ledger") { return $Case10ReasoningBudgetTokens }
   return 0
 }
 
 function Get-BenchmarkProgressControl([hashtable]$case) {
+  if ($case.Id -eq "10-receipt-ledger") {
+    return [pscustomobject]@{
+      mode = $Case10ProgressBoundaryMode
+      window = $Case10ProgressRequestWindow
+    }
+  }
   if ($case.Id -eq "08-lease-fence") {
     return [pscustomobject]@{
       mode = $Case08ProgressBoundaryMode
@@ -1957,7 +2076,8 @@ function Get-BenchmarkEndpoint([hashtable]$case) {
 }
 
 function Get-BenchmarkTools([hashtable]$case, [string]$agent) {
-  if ($case.Id -in @("07-lease-cascade", "08-lease-fence", "09-lease-receipt")) {
+  if ($case.Id -in @("07-lease-cascade", "08-lease-fence",
+      "09-lease-receipt", "10-receipt-ledger")) {
     if ($agent -eq "rupi") { return @("read", "write", "edit", "grep") }
     return @("read", "write", "edit", "grep", "find", "ls")
   }
@@ -1968,7 +2088,8 @@ function Get-BenchmarkTools([hashtable]$case, [string]$agent) {
 }
 
 function Get-BenchmarkEnvironment([hashtable]$case, [string]$agent, [string]$agentRoot) {
-  if ($case.Id -notin @("07-lease-cascade", "08-lease-fence", "09-lease-receipt") -or
+  if ($case.Id -notin @("07-lease-cascade", "08-lease-fence",
+      "09-lease-receipt", "10-receipt-ledger") -or
       $agent -ne "rupi") {
     return @{}
   }
@@ -1979,7 +2100,8 @@ function Get-BenchmarkEnvironment([hashtable]$case, [string]$agent, [string]$age
 }
 
 function Set-BenchmarkReasoningCompatibility([hashtable]$case, [object]$endpoint) {
-  if ($case.Id -notin @("07-lease-cascade", "08-lease-fence", "09-lease-receipt")) { return }
+  if ($case.Id -notin @("07-lease-cascade", "08-lease-fence",
+      "09-lease-receipt", "10-receipt-ledger")) { return }
   if ($null -eq $endpoint.capabilities -or
       $endpoint.capabilities.exposed_reasoning -cne "native") {
     $caseName = "Case " + $case.Id.Substring(0, 2)
@@ -2019,7 +2141,8 @@ function New-BenchmarkWorkspace([hashtable]$case, [string]$agentRoot, [string]$t
     $config = Get-Content -Raw $configSourcePath | ConvertFrom-Json
     $config.thinking = $thinkingLevel
     $config.state_dir = ".rupi-state"
-    if ($case.Id -in @("07-lease-cascade", "08-lease-fence", "09-lease-receipt")) {
+    if ($case.Id -in @("07-lease-cascade", "08-lease-fence",
+      "09-lease-receipt", "10-receipt-ledger")) {
       if ($null -eq $config.tools) {
         $config | Add-Member -MemberType NoteProperty -Name tools -Value ([pscustomobject]@{})
       }
@@ -2305,7 +2428,8 @@ function Invoke-AgentCase([hashtable]$case, [string]$agent, [string]$root, [stri
     $verification = Invoke-Verification $case $agentRoot $workspace.project $turn
     $lastVerification = $verification
     $turnRecord = [ordered]@{ turn = $turn; call = $call; metrics = $metrics; verification = $verification; session_id = $sessionId }
-    if ($case.Id -in @("07-lease-cascade", "08-lease-fence", "09-lease-receipt")) {
+    if ($case.Id -in @("07-lease-cascade", "08-lease-fence",
+      "09-lease-receipt", "10-receipt-ledger")) {
       $turnRecord["configured_tool_allowlist"] = @(Get-BenchmarkTools $case $agent)
       $turnRecord["harness_model_request_cap"] = if ($agent -eq "rupi") {
         $MaxModelRequestsPerTurn
@@ -2364,6 +2488,9 @@ if (@($cases | Where-Object { $_.Id -eq "08-lease-fence" }).Count -gt 0) {
 if (@($cases | Where-Object { $_.Id -eq "09-lease-receipt" }).Count -gt 0) {
   $recoveryFeedbackScope += ";case09_oracle_status_only"
 }
+if (@($cases | Where-Object { $_.Id -eq "10-receipt-ledger" }).Count -gt 0) {
+  $recoveryFeedbackScope += ";case10_oracle_status_only"
+}
 if ($DryRun) {
   Write-Host "Thinking level: $ThinkingLevel"
   Write-Host "Recovery feedback scope: $recoveryFeedbackScope"
@@ -2371,12 +2498,11 @@ if ($DryRun) {
     [void](Get-InitialPrompt $_)
     $progressLimits = [pscustomobject]@{ max_model_requests_without_progress = 1 }
     Set-BenchmarkProgressBoundary $_ $progressLimits
-    $hasProgressControl = $_.Id -in @("08-lease-fence", "09-lease-receipt")
+    $hasProgressControl = $_.Id -in @("08-lease-fence", "09-lease-receipt", "10-receipt-ledger")
     if ($hasProgressControl) {
-      $expectedMode = if ($_.Id -eq "08-lease-fence") { $Case08ProgressBoundaryMode }
-        else { $Case09ProgressBoundaryMode }
-      $expectedWindow = if ($_.Id -eq "08-lease-fence") { $Case08ProgressRequestWindow }
-        else { $Case09ProgressRequestWindow }
+      $expectedControl = Get-BenchmarkProgressControl $_
+      $expectedMode = $expectedControl.mode
+      $expectedWindow = $expectedControl.window
       if ($progressLimits.progress_boundary_mode -cne $expectedMode) {
         throw "$($_.Id) Rupi must use the selected progress boundary mode."
       }
@@ -2400,9 +2526,10 @@ if ($DryRun) {
     $rupiEnvironment = Get-BenchmarkEnvironment $_ "rupi" $environmentRoot
     $piEnvironment = Get-BenchmarkEnvironment $_ "pi" $environmentRoot
     if ($piEnvironment.Count -ne 0 -or
-        ($_.Id -notin @("07-lease-cascade", "08-lease-fence", "09-lease-receipt") -and
+        ($_.Id -notin @("07-lease-cascade", "08-lease-fence",
+      "09-lease-receipt", "10-receipt-ledger") -and
           $rupiEnvironment.Count -ne 0)) {
-      throw "Only Case 07/08/09 Rupi may receive an isolated discovery profile."
+      throw "Only Case 07/08/09/10 Rupi may receive an isolated discovery profile."
     }
     if ($_.Id -eq "07-lease-cascade") {
       if ($rupiEnvironment.Count -ne 2 -or -not $rupiEnvironment.ContainsKey("HOME") -or
@@ -2646,6 +2773,41 @@ if ($DryRun) {
           ($invalidEndpoint | ConvertTo-Json -Depth 4 -Compress) -cne $before) {
         throw "Case 09 must reject non-native exposure before changing endpoint settings."
       }
+    } elseif ($_.Id -eq "10-receipt-ledger") {
+      if ($progressLimits.progress_boundary_mode -cnotin @("one_shot", "recurring")) {
+        throw "Case 10 progress mode must use canonical lowercase runtime JSON names."
+      }
+      if ($rupiEnvironment.Count -ne 2 -or $null -ne $rupiEnvironment.HOME -or
+          $rupiEnvironment.USERPROFILE -ne (Join-Path $environmentRoot "discovery-profile") -or
+          (@(Get-BenchmarkTools $_ "rupi") -join ",") -ne "read,write,edit,grep" -or
+          (@(Get-BenchmarkTools $_ "pi") -join ",") -ne "read,write,edit,grep,find,ls") {
+        throw "Case 10 requires file tools and isolated Rupi skill discovery."
+      }
+      $endpoint = [pscustomobject]@{
+        capabilities = [pscustomobject]@{ exposed_reasoning = "native" }
+        openai_compat = [pscustomobject]@{ stream = $false }
+      }
+      Set-BenchmarkReasoningCompatibility $_ $endpoint
+      if ($endpoint.openai_compat.thinking_input -ne "reasoning_effort" -or
+          $endpoint.openai_compat.thinking_disable -ne "reasoning_effort_none" -or
+          $endpoint.openai_compat.preserve_reasoning -ne $true -or
+          $endpoint.openai_compat.stream -ne $false) {
+        throw "Case 10 must set native reasoning controls and preserve unrelated settings."
+      }
+      $invalidEndpoint = [pscustomobject]@{
+        capabilities = [pscustomobject]@{ exposed_reasoning = "provider_summary" }
+      }
+      $before = $invalidEndpoint | ConvertTo-Json -Depth 4 -Compress
+      $rejected = $false
+      try { Set-BenchmarkReasoningCompatibility $_ $invalidEndpoint } catch {
+        if ($_.Exception.Message -cne
+            "Case 10 reasoning replay requires an explicit native exposure claim.") { throw }
+        $rejected = $true
+      }
+      if (-not $rejected -or
+          ($invalidEndpoint | ConvertTo-Json -Depth 4 -Compress) -cne $before) {
+        throw "Case 10 must reject non-native exposure before changing endpoint settings."
+      }
     } else {
       $unchangedEndpoint = [pscustomobject]@{
         openai_compat = [pscustomobject]@{ thinking_input = "none" }
@@ -2801,6 +2963,79 @@ if ($DryRun) {
               -not $prompt.Contains('preserve assertions') -or
               -not $prompt.Contains('at most 100 new lines')) {
             throw "Case 09 repair must preserve assertions and bounded application edits."
+          }
+        }
+        $dryRunVerification.help[0].exit_code = 0
+      } finally {
+        Remove-Item -LiteralPath $oracleDiagnostic -Force
+        if (@(Get-ChildItem -LiteralPath $dryRunProject -Force).Count -ne 0) {
+          throw "Dry-run directory contains unexpected files: $dryRunProject"
+        }
+        Remove-Item -LiteralPath $dryRunProject -Force
+      }
+    }
+    if ($_.Id -eq "10-receipt-ledger") {
+      $spec = [IO.File]::ReadAllText((Join-Path (Join-Path $repoRoot $_.Source) "SPEC.md"))
+      $dryRunProject = Join-Path ([IO.Path]::GetTempPath()) (
+        "rupi-case10-dryrun-" + [Guid]::NewGuid().ToString("N")
+      )
+      $oracleDiagnostic = Join-Path $dryRunProject "oracle-diagnostic.txt"
+      New-Item -ItemType Directory -Path $dryRunProject | Out-Null
+      try {
+        Write-Text $oracleDiagnostic "CASE10_PRIVATE_ORACLE_DIAGNOSTIC"
+        $dryRunVerification.oracle.exit_code = 1
+        $dryRunVerification.oracle.stderr_path = $oracleDiagnostic
+        $dryRunVerification.oracle.stdout_path = $oracleDiagnostic
+        $initialPrompt = Get-InitialPrompt $_
+        $oracleFailurePrompt = Get-RecoveryPrompt $_ $dryRunVerification
+        $dryRunVerification.project_tests.exit_code = 1
+        $repairPrompt = Get-RecoveryPrompt $_ $dryRunVerification $dryRunProject
+        $dryRunVerification.project_tests.exit_code = 0
+        $dryRunVerification.help[0].exit_code = 1
+        $helpRepairPrompt = Get-RecoveryPrompt $_ $dryRunVerification $dryRunProject
+        $requirements = @(
+          $spec
+          'Do not inspect or run the external acceptance oracle.'
+          'public delivery_key is exactly pipeline_id + ":" + job_id'
+          'fresh private unguessable claim token'
+          'exact claim token;'
+          'accept only one updated row'
+          'status/output/attempts/lease/error/receipt'
+          'EOF/lost acknowledgement is retryable failure'
+          'never an invented receipt'
+          'one logical effect, two attempts, same key and original receipt/output'
+          'public commands/HTTP'
+          'resource cleanup'
+          'SAME SQLite'
+          'exact public SPEC hash expression'
+          'Audit rows are evidence, never worker input or job state.'
+          'Rejected stale finalization appends only a safe operational event'
+          'audit --verify opens SQLite read-only'
+          'FULL sequence and recomputed hash chain'
+          'never repair/truncate'
+          'audit --tail COUNT reads only'
+          'outcome:unknown'
+          'all four help paths'
+        )
+        foreach ($prompt in @($initialPrompt, $dryRunRecovery, $oracleFailurePrompt,
+            $repairPrompt, $helpRepairPrompt)) {
+          foreach ($requirement in $requirements) {
+            if (-not $prompt.Contains($requirement)) {
+              throw "Case 10 prompt lost a public specification or receipt/fencing requirement."
+            }
+          }
+          if ($prompt.Contains('CASE10_PRIVATE_ORACLE_DIAGNOSTIC')) {
+            throw "Case 10 oracle diagnostics must remain hidden."
+          }
+        }
+        if (-not $initialPrompt.Contains('First tool call: write receiptledger/__main__.py')) {
+          throw "Case 10 initial prompt must request complete application behavior first."
+        }
+        foreach ($prompt in @($repairPrompt, $helpRepairPrompt)) {
+          if (-not $prompt.Contains('Repair the earliest failing local test or help gate') -or
+              -not $prompt.Contains('preserve assertions') -or
+              -not $prompt.Contains('at most 100 new lines')) {
+            throw "Case 10 repair must preserve assertions and bounded application edits."
           }
         }
         $dryRunVerification.help[0].exit_code = 0
@@ -2980,6 +3215,11 @@ $summary = [ordered]@{
   } else { $null }
   case09_rupi_progress_boundary_mode = $Case09ProgressBoundaryMode
   case09_rupi_progress_request_window = $Case09ProgressRequestWindow
+  case10_reasoning_budget_tokens = if ($Case10ReasoningBudgetTokens -gt 0) {
+    $Case10ReasoningBudgetTokens
+  } else { $null }
+  case10_rupi_progress_boundary_mode = $Case10ProgressBoundaryMode
+  case10_rupi_progress_request_window = $Case10ProgressRequestWindow
   max_turns = $MaxTurns
   turn_timeout_seconds = $TurnTimeoutSeconds
   provider_timeout_grace_seconds = $script:providerTimeoutGraceSeconds

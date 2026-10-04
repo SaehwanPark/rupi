@@ -78,3 +78,29 @@ Before delivery, perform author invariant review, required Rust checks and start
 verification; wait for exact-head three-platform CI before autonomous merge. Push progress
 regularly. Verify the squash tree/remote main, detach artifacts, and delete merged branches.
 Broader roadmap gates remain active. Status: plan committed; implementation/verification pending.
+
+### Implementation and preflight
+
+PR145 is draft: https://github.com/SaehwanPark/rupi/pull/145.
+Shared full-SPEC initial/repair guidance and isolated selectors/metadata are implemented.
+All-case default and selected/capitalized-mode guards pass, including non-native exposure
+rejection before endpoint mutation and fake-oracle sentinel isolation. All18 other-case
+initial/repair prompt hashes match. Independent Case10 budget/progress isolation and
+zero-window rejection pass. Fresh actual config is low/relay2048/native replay/Recurring/
+window3/cap12/four file tools, provider594000ms/max-output16384. Copied SPEC and all three
+acceptance files match source hashes; the first ignored probe assumed two files and failed
+before any inference. Corrected count includes .gitignore; no reference contents inspected.
+The ignored selector probe first used helper functions outside their script scope; dot-source
+corrected that probe, and isolation passed. Both probe failures caused no inference.
+
+Harness SHA256:
+`B601DB6B75DB23D92B990A3367CCD803C1CD97FEE9F4CDCA756015CA39162020`.
+Debug binary SHA256:
+`8159F875187D28D5DCAF12038AA14709A5B3B9478D392C73E34C9E2915C77F24`.
+The binary was rebuilt during the completed Case09 final checks, after its winning pair;
+Case10 captures this fresh binary independently. Model27356 and relay33028 retain their
+original start times. Relay health confirms2048/upstream8000/content_logging:false; model
+alias isqwen3.8-flash-next. No rupi inference process is active before launch.
+Author source/consumer review finds no blocking invariant violation; final review/checks
+remain pending after comparison. No Rust, startup-path or acceptance changes. Diff check
+and added harness100-column check pass. Fresh pair launch is the next action.
