@@ -11583,13 +11583,13 @@ mod tests {
   fn recurring_progress_does_not_accept_failed_unchanged_or_unknown_mutations() {
     for (outcome, status, expected_requests) in [
       (
-        ToolOutcome::failed("rejected"),
+        ToolOutcome::failed("rejected").with_effect(rupi_core::ToolEffectDisposition::None),
         TurnStatus::BudgetExhausted,
         3,
       ),
       (
         ToolOutcome::succeeded("unchanged")
-          .with_effect(rupi_core::ToolEffectDisposition::Unchanged),
+          .with_effect(rupi_core::ToolEffectDisposition::None),
         TurnStatus::BudgetExhausted,
         3,
       ),
