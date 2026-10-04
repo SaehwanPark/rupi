@@ -383,3 +383,10 @@ presence does not prove assertion preservation or discovered/passing tests. Cumu
 work63,142/authoring1,801,362ms. Turn4 active, controls frozen; Pi not run. Branch audit after
 fetch/prune: only main and active fix/case10-audit-ledger remain locally/remotely; historical
 worktrees detached with artifacts retained. No failed-screen win claim.
+Retry04 Rupi turn4 reaches its watchdog at600,380ms, unresolved:10,409 recorded work
+(8,648 input+1,761 output), two starts/two completions including an earlier abandoned
+request, one usage record. Zero tools requested/completed/failed/Unknown. Tests1/oracle1/
+all four help0, no verification timeouts. Main27,737/tests-init0/test_help991 sizes match
+turn3 without proving unchanged contents; README absent, contents unread. Unfinished
+inference usage unknown. Cumulative work73,551/authoring2,401,742ms. Turn5 active; Pi not run.
+Lower recorded work on this failed turn is not success or a causal progress-window benefit.
