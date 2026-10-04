@@ -377,3 +377,23 @@ All other settings and full shared prompts/gates remain unchanged. All-case sele
 guards and actual workspace/reference-hash probe already pass; this trial changes only
 the existing Rupi progress window and establishes no causal benefit in advance.
 PR144 stays draft; Cases09/10 remain open. Cases01 through08 configured wins are skipped.
+## Retry02 window3 matched pair launched (2026-10-04)
+
+Fresh run `bench-20261004-case09-window3-budget2048-low-retry02-rupi12-matched6-600s`
+starts from pushed head36841a3, same source5637c80/harness F2F6A528...B54AD0 and debug
+binary39829D0D...D1C9. Exec25019/wrapper36544/runner23092 are live; Rupi turn1 PID20020.
+Pi follows sequentially on the same model27356/relay33028, no concurrent inference or
+local builds. The old pair is terminal, not restarted. A launch preflight used `/health`
+by mistake and stopped before creating any run or inference; corrected `/healthz` passes.
+Only one fresh comparison is launched.
+
+Actual configuration confirms Recurring/window3/cap12, low/native reasoning replay,
+four file tools, endpoint8001,594,000 ms provider deadline and16,384 max output tokens.
+Reasoning budget remains configured/injected2,048; its actual reasoning length is not
+claimed. Six attempts maximum per agent,600s watchdog/grace6; native Pi stays uncapped
+with six tools/null progress mode/window. Complete shared prompts/gates stay unchanged.
+Copied public SPEC/two acceptance hashes pass; initial prompt hash equals retry01 and
+full-SPEC/stable-key/private-fencing/lost-ack prompt booleans pass. Pi initial equality
+and terminal all-turn audits remain pending until its workspace/finished turns exist.
+No resolution/work totals yet; unfinished inference is unknown. PR144 stays draft and
+Cases09/10 open. Only main and the active Case09 branch remain locally/remotely.
