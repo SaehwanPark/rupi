@@ -1032,3 +1032,34 @@ Turn 4 is live under node PID 31772, runner 14912/exec session 85505. Its saved
 prompt retains full SPEC, shared focused-edit bound and both test-set preservation.
 Finish this final attempt and reference/control audit before recording the matched
 result or selecting a new candidate. Cases08 through 10 remain open.
+
+## Retry05 terminal matched audit (2026-10-04)
+
+Pi turn 4 completed in 416,126 ms with 11,082 recorded work tokens (5,536 uncached
+input, 5,546 output), ten requests/completions/usage records and nine completed tools:
+six reads, two edits and one grep. Failed/Unknown counters remain unavailable.
+Project tests and all help checks pass without timeouts; the oracle fails without
+a timeout. The workflow-test module is 13,496 bytes; other manifest sizes remain
+unchanged. Generated contents and diagnostic contents remain unread.
+
+Neither agent resolved in four turns. Rupi recorded 96,333 work tokens and
+1,621,297 ms call time; Pi recorded 53,532 tokens and 1,774,051 ms. Times exclude
+verification. Tool completions are 15 for Rupi (zero failed/Unknown) and 28 for Pi
+(failed/Unknown unavailable). Rupi's final unfinished inference work is unknown.
+Final tests fail for Rupi and pass for Pi; both pass help and fail the oracle.
+The matched result is inconclusive, not a Rupi win.
+
+Both specifications and both two-file acceptance copies match source hashes with
+no extra non-cache files. All eight saved prompts retain full SPEC; every repair
+prompt preserves the shared edit bound and both test sets. Initial and turn-2 prompts
+match between agents. All per-turn controls retain low effort, budget 2,048, endpoint
+8001 and native replay. Rupi records recurring mode/cap 12; Pi records null mode/cap
+for its native policy. Selected model configs retain the same qwen3.8-flash-next;
+Rupi's provider deadline is 594,000 ms. The candidate binary hash is unchanged.
+Exec session 85505 exited 0; runner 14912 and wrapper 32740 are gone.
+
+Baseline and five guided retries remain inconclusive. A next shared candidate can
+move implementation before workflow-test authoring and permit bounded application
+modules, while retaining all public requirements, oracle isolation and honest gates.
+This follows the recorded authoring sequence and public specification; no generated
+code or oracle diagnostic inspection is needed. Cases08 through 10 remain open.

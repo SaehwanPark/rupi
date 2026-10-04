@@ -1491,7 +1491,7 @@ TUI rendering passed all budgets (3.31–3.90 µs/unit); checkpointed restore me
   its native request policy. This closes the Case 07 comparison objective for PR #139;
   the remaining comparison series and broader live-project gates remain active.
 
-  Case 08's baseline and four guided retries remain inconclusive: neither agent resolved
+  Case 08's baseline and five guided retries remain inconclusive: neither agent resolved
   the stale-worker fencing oracle in four turns. Retry01 recorded 73,794 Rupi work tokens
   versus 59,600 Pi tokens; both passed final project tests and help. The next shared
   recovery revision requires discoverable public workflow tests before implementation
@@ -1501,8 +1501,11 @@ TUI rendering passed all budgets (3.31–3.90 µs/unit); checkpointed restore me
   and recorded 68,337 Rupi work tokens versus 61,380 Pi tokens; both failed final
   tests and passed help. The recurring progress-boundary runtime slice passed local
   checks, startup budgets, author review and final-head CI, then merged in PR #143.
-  Retry05 is live with recurring mode explicitly selected for Rupi; Pi retains its
-  native runtime policy. No outcome yet. Fresh comparisons retain the same local
+  Retry05 selected recurring mode for Rupi while Pi retained its native runtime policy.
+  Neither resolved in four turns: Rupi recorded 96,333 work tokens versus Pi 53,532;
+  Rupi failed final tests, Pi passed them, and both passed help. The next shared candidate
+  will move workflow implementation before workflow-test authoring. Fresh pairs retain
+  the same local
   `qwen3.8-flash-next` and pinned Pi 0.86.1.
   Cases 01 through 07 have verified comparison wins and are skipped. Cases 08 through
   10 remain open; see the [Case 08 ledger](docs/benchmark/2026-09-29-case08-lease-fence-ledger.md).
