@@ -1540,18 +1540,17 @@ TUI rendering passed all budgets (3.31–3.90 µs/unit); checkpointed restore me
   Fresh pairs retain the same local
   `qwen3.8-flash-next` and pinned Pi 0.86.1.
   Cases 01 through 08 have verified configured comparison wins and are skipped.
-  Cases09 and10 remain open. Case09 adds shared full-spec receipt-recovery guidance
-  and isolated benchmark controls. Retry01 is terminal,inconclusive: neither resolves
-  acceptance in six turns; all twelve prompt/control/reference audits pass.
-  Retry02 selects existing Recurring/window3/cap12,all other prompts/settings/gates
-  unchanged. Rupi resolves acceptance at turn6 with tests/help passing:163,478 recorded
-  work tokens/3,305,226 ms authoring time,43 completed tools/one failed/zero Unknown.
-  README absent; generated contents unread,unrecorded unfinished inference unknown.
-  Pi remains unresolved after5:88,555 work tokens/3,001,300 ms/33 native completion
-  events,five watchdogs,failed/Unknown unavailable. Latest tests/help pass,acceptance
-  fails; README listed,contents unread. All eleven completed-turn audits,both reference
-  copies and initial equality pass; config/binary/model unchanged. Pi6 is live.
-  PR144 stays draft; matched winner and full-public-task completion remain unproven.
+  Case09 adds shared full-spec receipt-recovery guidance and isolated benchmark
+  controls. Retry01 is terminal,inconclusive: neither resolves acceptance in six turns.
+  Retry02 Recurring/window3/cap12 is terminal with a configured Rupi fewer-turn win:
+  Rupi resolves at6; Pi0.86.1 remains unresolved after all six. Rupi records163,478 work
+  tokens/3,305,226 ms authoring time/43 completed tools/one failed/zero Unknown; Pi
+  102,103/3,601,514 ms/44 native events,failed/Unknown unavailable. Both final tests/help
+  pass. Rupi README absent; Pi README listed but unread,full-public-task claim unproven.
+  All twelve prompt/control/reference audits pass; binary/model/relay unchanged and
+  runner exits0. PR144 remains draft pending required final checks/startup/author review
+  and exact-final-head CI. Cases01–09 have configured wins and are skipped; Case10
+  remains the sole comparison target. Broader project stage gates remain active.
   Preserve stable public delivery keys, distinct private fencing, lost-ack retry and
   accepted receipt persistence. No acceptance fixtures or manually generated solution
   are changed. See the Case08/Case09 ledgers for evidence; broader project gates remain active.

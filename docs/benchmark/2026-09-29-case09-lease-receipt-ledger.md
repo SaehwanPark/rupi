@@ -657,3 +657,40 @@ Pi6 PID11228 is observed live under original exec25019/runner23092/wrapper36544;
 saved repair full-SPEC/assertion/stable-key/private-claim/lost-ack requirements pass.
 Continue the unchanged original pair without builds or parallel inference. PR144 stays
 draft and Cases09/10 open; Rupi README/full-public-task limitation remains explicit.
+## Retry02 terminal: configured Rupi fewer-turn win (2026-10-04)
+
+Pi6 reaches600,214 ms watchdog,native status `toolUse`,eleven requests/completions/
+usage records and13,548 recorded work tokens (7,314 uncached input,6,234 output).
+Eleven native events complete: seven reads/four edits. Failed/Unknown unavailable,
+not zero; completion events do not establish successful effects and unrecorded
+unfinished inference remains unknown. Tests and all help pass; acceptance exits1,
+without verification timeouts. Manifest lists store16,549 bytes; other sizes match
+turn5 and README4,847 remains listed. Contents/model output/diagnostics remain unread;
+sizes do not establish unchanged contents,exact edits,full behavior or failure cause.
+
+Both halves are terminal. **Configured Rupi fewer-turn win:** Rupi resolves acceptance
+at6; Pi remains unresolved after all six attempts,so its earliest possible resolution
+would be later. Rupi's final generated tests/help pass; its README is absent,so full
+public-task completion is not established. Pi's final tests/help pass and README is
+listed but unread; neither presence nor passing generated tests proves acceptance.
+
+| Agent | Acceptance resolution | Recorded work tokens | Authoring call ms | Completed tools |
+| --- | --- | ---: | ---: | ---: |
+| Rupi | Turn6 | 163,478 | 3,305,226 | 43 |
+| Pi0.86.1 | None in6 | 102,103 | 3,601,514 | 44 native events |
+
+Rupi failed/Unknown counts one/zero; Pi counts unavailable. Rupi has four watchdogs,
+one budget-exhausted and one completed runtime turn; Pi six watchdogs. Authoring time
+excludes verification; work excludes cache-read tokens and unrecorded unfinished
+inference remains unknown. Rupi records61,375 more work tokens; no token win,default-
+runtime superiority,full-public-task completion or causal window/cache speedup claimed.
+
+Exec25019 exits0; runner23092/wrapper36544/final Pi11228 are gone. All twelve saved
+prompt/control/reference audits pass,both copied SPEC/two acceptance hashes/no extra
+non-cache files,initial prompt equality and actual configuration/binary/model/relay
+unchanged. Harness F2F6A528...B54AD0/debug39829D0D...D1C9/Qwen27356/relay33028 retained.
+No builds or parallel inference occurred during the pair. Before this record,head
+d2e5ac7 passes all three CI platforms; required final local checks/startup/author review
+and exact-final-head CI remain pending. PR144 stays draft until those checks pass.
+Case09 now has a verified configured comparison win and is skipped in further trials;
+its delivery remains pending. Case10 is the sole remaining comparison target.
