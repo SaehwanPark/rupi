@@ -188,3 +188,13 @@ maximum600s/grace6 attempts. If Rupi resolves, freeze guidance/binary and run fr
 on the same RunId, prompt and public gates. If Rupi does not resolve, do not spend Pi inference
 on a candidate that cannot win. Each rejected screen stays explicitly non-winning/incomplete.
 Final paired evidence, required checks/startup, review and exact-head CI remain pending.
+
+### Retry02 screen: launched
+
+Run: `bench-20261004-case10-bounded-repair-budget2048-low-retry02-rupi12-window3-screen6-600s`.
+Source `a821834fa7e64f63a37374b7ae29d9f9be35971c`; exec35467/runner9740/wrapper34732.
+Fresh Rupi-only screen is active, no Pi inference yet. Same selected controls/model/relay/
+binary as retry01, revised shared guidance only. All model slots idle before launch; no build
+or parallel inference during the screen. Saved initial prompt matches own revised harness.
+If this screen resolves acceptance, run fresh Pi with the same frozen guidance/configuration.
+No outcome/paired/default/causal claim is available yet.
