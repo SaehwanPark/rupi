@@ -1192,3 +1192,20 @@ prompt retains full SPEC and the implementation-first/fencing guidance, and is
 byte-equal to Rupi's turn 2 prompt. Both agents received the revised shared sequence.
 The matched result remains pending. Usage before this observation was 91% five-hour
 and 92% weekly, below both soft stops. Cases08 through 10 remain open.
+
+## Retry06 Pi implementation delivery verified (2026-10-04)
+
+Pi turn 2 reached the 600,242 ms outer watchdog with 20,413 recorded work tokens
+(9,593 uncached input, 10,820 output), six requests/completions/usage records and
+six completed writes. Failed/Unknown counters remain unavailable. Tests and all
+help checks pass without verification timeouts; the oracle fails without a timeout.
+Manifest lists store 14,843 bytes, worker 5,558, server 3,399, entry point 1,785,
+package initializer 21 and README 3,780; foundation test sizes remain unchanged.
+Contents remain unread and module delivery does not establish workflow correctness.
+
+Across two turns Pi recorded 28,959 work tokens and 783,378 ms call time excluding
+verification. Selected low/budget2,048/endpoint8001/native replay controls persist;
+mode/cap remain null for native Pi policy. Turn 3 is live under node PID 38688,
+runner 30660/exec session 62809. Its saved prompt contains full SPEC and selects
+public workflow tests including the bounded stale-worker race. It is byte-equal to
+Rupi's turn 3 prompt. The matched outcome remains pending; finish Pi before another pair.
