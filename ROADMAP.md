@@ -1491,6 +1491,56 @@ TUI rendering passed all budgets (3.31–3.90 µs/unit); checkpointed restore me
   its native request policy. This closes the Case 07 comparison objective for PR #139;
   the remaining comparison series and broader live-project gates remain active.
 
+  Case 08's baseline and six guided retries remain inconclusive: neither agent resolved
+  the stale-worker fencing oracle in four turns. Retry01 recorded 73,794 Rupi work tokens
+  versus 59,600 Pi tokens; both passed final project tests and help. The next shared
+  recovery revision requires discoverable public workflow tests before implementation
+  repair. Retry03 used the verified provider-idle fix and recorded 33,909 Rupi work
+  tokens versus 42,512 Pi tokens; both failed final project tests and passed help.
+  Unrecorded Rupi inference remains unknown. Retry04 used the shared repair bound
+  and recorded 68,337 Rupi work tokens versus 61,380 Pi tokens; both failed final
+  tests and passed help. The recurring progress-boundary runtime slice passed local
+  checks, startup budgets, author review and final-head CI, then merged in PR #143.
+  Retry05 selected recurring mode for Rupi while Pi retained its native runtime policy.
+  Neither resolved in four turns: Rupi recorded 96,333 work tokens versus Pi 53,532;
+  Rupi failed final tests, Pi passed them, and both passed help. The next shared candidate
+  moves workflow implementation before workflow-test authoring and permits compact
+  application modules. All-case routing/oracle-isolation guards and author review pass;
+  retry06 was inconclusive: Rupi recorded 101,345 work tokens versus Pi 63,660;
+  both failed final tests and passed help. Retry07's fresh matched six-turn pair
+  from 975470f is terminal: Pi resolved on turn 2 with 31,957 recorded work tokens,
+  while Rupi remained unresolved after six with 167,131. Pi's final tests, oracle and
+  help pass; Rupi's tests/oracle fail and help passes. Reference/prompt/control audits
+  pass; unfinished inference remains unknown. This is a configured Pi win and PR141
+  remains draft. The next candidate must improve Rupi without weakening public gates.
+  Shared full-workflow-first guidance now removes partial foundation yields and required
+  module-name staging. Guards and author review pass; retry08 is terminal and inconclusive:
+  neither resolved in six turns. Rupi recorded 176,102 work tokens versus Pi 75,531;
+  both failed final tests/oracle and passed help. Reference/prompt/control audits pass;
+  unfinished inference remains unknown. The next bounded candidate tests an existing
+  recurring progress window of three requests instead of one; no runtime change or
+  cache speedup is established. PR141 remains draft.
+  The Case08-only selector keeps default1; default/selected3 all-case guards and
+  author harness review pass. Retry09 from c52f79e is terminal: Pi resolves acceptance
+  on turn2 with 38,151 recorded work tokens; Rupi remains unresolved after six with
+  219,122. Rupi final tests/help pass, oracle fails; Pi oracle/help pass, tests exit5.
+  Reference/prompt/control audits pass; unfinished inference remains unknown. This is
+  a configured Pi win, not inconclusive. Next candidate selects window12 under the
+  existing cap12 and first-mutation completion requirement, with other controls kept.
+  All-case window12 guards and author configuration review pass. Fresh retry10 from
+  39f402f is live; its initial prompt matches retry09, binary/model are unchanged.
+  Rupi resolves acceptance on turn4 with 106,173 recorded work tokens; final help
+  passes, project tests fail and no README is listed. Pi resolves on turn5 with72,205
+  recorded work tokens; its final tests/help pass and a README is listed but unread.
+  Retry10 is terminal with a configured Rupi fewer-turn win,4 versus5. All nine saved
+  prompts/control/reference audits pass; binary/model remain unchanged. Required local
+  Rust checks pass; startup151.749 ms cold/7.801 ms warm median meets250/100 ms budgets.
+  Exact-final-head CI and PR141 handoff remain pending. PR141 stays draft.
+  Fresh pairs retain the same local
+  `qwen3.8-flash-next` and pinned Pi 0.86.1.
+  Cases 01 through 07 have verified comparison wins and are skipped. Cases 08 through
+  10 remain open; see the [Case 08 ledger](docs/benchmark/2026-09-29-case08-lease-fence-ledger.md).
+
   Case 10 used the pinned Pi 0.86.1 run `bench-20260929-case10-pi0861-low-matched4-600s`.
   Neither agent resolved in four turns. Rupi used 89,125 work tokens over 2,337,401 ms; Pi used
   9,202 over 2,401,150 ms. Both failed all oracle and project-test checks, and every help check.

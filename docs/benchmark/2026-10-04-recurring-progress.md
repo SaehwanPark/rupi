@@ -1,6 +1,8 @@
 # Recurring progress boundary
 
-Status: verified runtime contract; final-head CI and merge pending.
+Status: verified runtime contract, merged in PR #143 as ab3dc33.
+
+Final head a8edd208 passed CI on Linux, macOS and Windows before merge.
 
 Case08 retry04 delivered two edits and a write, then ten reads in Rupi turn 3.
 Turn 4 completed without any tool call while independent project checks still failed.
@@ -94,5 +96,7 @@ execution; unavailable tools fail semantically without a provider retry loop.
 Residual scope: callers explicitly choose recurring enforcement for implementation
 turns and still verify artifacts independently. It does not establish full project
 completion, Pi parity for new settings or a Case08 comparison win. Retry04 is now
-terminal and inconclusive; no local build overlapped that pair. Integrate this slice
-only after final-head CI, then select it in a fresh matched comparison.
+terminal and inconclusive; no local build overlapped that pair. This slice is now
+integrated into the Case08 branch and explicitly selected for fresh comparisons.
+See the Case08 comparison ledger for outcomes; the runtime contract alone does not
+establish a comparison win.
