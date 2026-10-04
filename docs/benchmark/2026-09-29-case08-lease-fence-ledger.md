@@ -1285,3 +1285,21 @@ Selected recurring/cap12/low/budget2,048/endpoint8001/native replay controls per
 Turn 2 is live under Rupi PID 38792, runner 11996/exec session 72703. Its saved
 prompt contains full SPEC and implementation-first/fencing guidance, and is byte-equal
 to retry06's turn 2 prompt. The six-turn pair has no matched outcome yet.
+
+## Retry07 Rupi implementation delivery verified (2026-10-04)
+
+Rupi turn 2 reached the 600,257 ms watchdog with 38,896 recorded work tokens
+(30,240 uncached input, 8,656 output), four started requests and three completions/
+usage records. Five tools completed: one read, one grep and three writes;
+Failed/Unknown counts are zero. Unrecorded unfinished inference remains unknown.
+Tests and help pass without verification timeouts; the oracle fails without a timeout.
+Manifest lists store 14,363 bytes, worker 6,319 and server 3,995. Entry point, test and
+README sizes remain unchanged. Contents remain unread; these sizes do not prove
+unchanged contents, wiring, workflow correctness or full project completion.
+
+Across two turns Rupi recorded 51,385 work tokens and 867,218 ms call time excluding
+verification, with nine completed tools. Selected recurring/cap12/low/budget2,048/
+endpoint8001/native replay controls persist. Turn 3 is live under Rupi PID 33916,
+runner 11996/exec session 72703. Its saved prompt retains full SPEC and selects
+public workflow tests including the bounded stale-worker race after module presence.
+The matched six-turn result remains pending.
