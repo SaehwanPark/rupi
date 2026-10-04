@@ -584,3 +584,27 @@ Pi3 PID23836 is live under original exec25019/runner23092/wrapper36544; saved re
 full-SPEC/assertion/stable-key/private-claim/lost-ack requirements pass. Continue the
 unchanged original pair without builds or parallel inference. PR144 stays draft and
 Cases09/10 open; Rupi README/full-public-task limitation remains explicit.
+## Retry02 Pi third attempt: tests/help pass,acceptance unresolved (2026-10-04)
+
+Pi3 reaches600,219 ms watchdog with native status `toolUse`,eight requests/completions/
+usage records and17,324 recorded work tokens (9,976 uncached input,7,348 output).
+Eight native events complete: five reads/three edits. Failed/Unknown remain unavailable,
+not zero; completion events do not establish successful effects. Unrecorded unfinished
+inference remains unknown. Tests and all three help checks pass; acceptance exits1,
+without verification timeouts. Manifest lists server3,474 bytes/store15,148; other
+sizes match turn2 and README4,847 is listed. Generated contents/model output/diagnostics
+remain unread; presence/sizes do not establish full behavior,unchanged contents,exact
+edit targets,README correctness or the acceptance failure cause.
+
+Pi cumulative through three turns:53,800 recorded work tokens,1,800,833 ms authoring
+time excluding verification,21 completed native events,three watchdogs,failed/Unknown
+unavailable. Rupi resolves at6 with tests/help passing; Pi remains unresolved after3,
+so the matched winner is still unproven. Interim audit passes all nine completed-turn
+prompts/controls,both copied SPEC/two acceptance-file hashes/no extra non-cache files,
+initial equality and unchanged Rupi actual config/binary/model/relay. Selected native
+Pi controls persist. Before this update,head42f6d85 passes all three CI platforms.
+
+Pi4 PID25844 is observed live under original exec25019/runner23092/wrapper36544;
+saved repair full-SPEC/assertion/stable-key/private-claim/lost-ack requirements pass.
+Continue the unchanged original pair without builds or parallel inference. PR144 stays
+draft and Cases09/10 open; Rupi README/full-public-task limitation remains explicit.
