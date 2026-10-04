@@ -611,3 +611,18 @@ on-disk candidate 5ecff6f did not alter the loaded launch definitions.
 No matched result exists yet. Keep the binary, copied specs/fixtures and selected
 configs fixed. Finish Pi before selecting a new pair. The prepared bounded-repair
 candidate is shared across agents only when a fresh interpreter is launched.
+
+## Retry03 Pi turn 2 verified (2026-10-04 03:48 UTC)
+
+Pi turn 2 completed in 263,462 ms with 8,606 recorded work tokens (3,409 input,
+5,197 output), two requests/usage records and one completed write. Project tests and
+the oracle failed; all help checks passed. Failure/Unknown counters are unavailable.
+Its workflow test module is 15,807 bytes, entry point 3,270, foundation tests 2,283
+and README 2,549. Contents and diagnostics remain unread. Across two turns, Pi
+recorded 16,870 work tokens and 424,880 ms call time, excluding verification.
+
+Pi turn 3 is live (node PID 3492 under runner 8524; exec session 12652). Its saved
+repair prompt preserves CLI/workflow tests and the full specification, but excludes
+the candidate's one-edit/100-line bound. This confirms that the on-disk candidate
+did not replace the live interpreter's launch definitions. Recheck the final saved
+prompt and reference hashes when terminal. Neither agent has resolved yet.
