@@ -130,3 +130,24 @@ public assertions and no external-oracle access. Binary/model/relay checks pass 
 launch. Runtime source remains unchanged; no local builds or parallel comparisons run.
 Pi has not started and no per-turn verification is available yet. Keep PR144 draft;
 the Case09 comparison result remains pending and Case10 has not begun.
+
+## Retry01 Rupi first attempt verified (2026-10-04)
+
+Turn1 reaches the600,510 ms watchdog with27,928 recorded work tokens (18,111 uncached
+input,9,817 output), seven requests started/six completions and six usage records.
+Eight tools complete: two greps/two reads/four writes; recorded failed/Unknown are zero.
+Unfinished unrecorded inference remains unknown. Project tests, independent acceptance
+and all three help checks fail without verification timeouts. This is not a resolution.
+
+Manifest lists initializer264 bytes, entry point356, store22,419 and validation7,652.
+No server/worker files, tests or README are listed. Generated contents/diagnostics
+remain unread; file presence/sizes do not establish workflow behavior or the failure cause.
+Selected per-turn controls remain low/budget2,048/native replay/endpoint8001 and
+Recurring/window12/cap12/four tools/isolated discovery. Harness source SHA256 remains
+F2F6A528F3203EAB21D4CFA926812BB99D7CD0BFC0445007C5B7A57D48B54AD0.
+
+Rupi turn2 is live under PID22716, runner19500/exec47054. Its saved repair prompt
+retains full SPEC, assertions, stable delivery key, private fencing, lost-ack retry
+and no external-oracle access. Let the same six-turn-maximum pair continue without
+source/configuration changes, local builds or parallel inference. Pi has not started;
+no matched outcome is available. PR144 stays draft and Cases09 through10 remain open.
