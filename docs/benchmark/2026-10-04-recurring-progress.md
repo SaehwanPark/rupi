@@ -97,5 +97,6 @@ Residual scope: callers explicitly choose recurring enforcement for implementati
 turns and still verify artifacts independently. It does not establish full project
 completion, Pi parity for new settings or a Case08 comparison win. Retry04 is now
 terminal and inconclusive; no local build overlapped that pair. This slice is now
-integrated into the Case08 branch and explicitly selected for fresh retry05.
-That live pair has no verified outcome yet.
+integrated into the Case08 branch and explicitly selected for fresh comparisons.
+See the Case08 comparison ledger for outcomes; the runtime contract alone does not
+establish a comparison win.

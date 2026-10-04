@@ -1,5 +1,9 @@
 # Conditional Case08 initial write-only candidate
 
+Status: retired without implementation. Retry10 establishes the configured fewer-turn
+criterion with Rupi acceptance on turn4 and Pi unresolved through turn4. The condition
+below is false; no initial-write-only CLI option or tool-profile changes were added.
+
 Implement only after retry10 is terminal and does not establish a matched Rupi win.
 Goal: complete the fresh application's workflow before spending requests inspecting
 new files. Retry10 turn1 requested nine reads/four greps/two writes and produced no
