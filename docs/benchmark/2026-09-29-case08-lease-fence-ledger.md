@@ -348,3 +348,18 @@ includes the bounded stale-worker race, and asks the model to yield for feedback
 Oracle diagnostics remain hidden. Pi has not started; no matched result exists.
 CI passed all three platforms at f9c619f:
 [CI run](https://github.com/SaehwanPark/rupi/actions/runs/37169245011).
+
+## Retry02 Rupi turn 2 verified (2026-10-04 02:02 UTC)
+
+Turn 2 exited 1 after 407,412 ms with a provider-timeout status; the outer watchdog
+did not fire. It records one started/completed request counter, no usage records,
+and no tools. Recorded work is zero because usage is absent; actual inference is
+unknown, not zero. No failed or Unknown tools were recorded. The file snapshot hash
+matches turn 1, so no workflow test module was delivered. Tests and all help checks
+passed; the oracle failed again. Completion counters do not prove inference success.
+
+Turn 3 is live (PID 30164 under runner 24108; exec session 76232). Its saved prompt
+again selects workflow-test-first and preserves the full specification. No input or
+settings changed. Pi has not started; keep the pair running before evaluating the
+candidate. All-platform CI passed at fdae641:
+[CI run](https://github.com/SaehwanPark/rupi/actions/runs/37169486236).
