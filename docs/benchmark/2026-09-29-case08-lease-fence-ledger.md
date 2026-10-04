@@ -586,3 +586,28 @@ This candidate is not active in retry03: its interpreter loaded launch definitio
 once and does not reload the script. Recheck Pi's saved prompts before reporting the
 pair. Launch a fresh candidate pair only after retry03 is terminal and usage checked.
 At 03:34 UTC, usage is 4% five-hour after reset and 79% weekly, below soft stops.
+
+## Retry03 Rupi terminal, Pi foundation verified (October 4)
+
+Rupi turn 4 exited 1 after 595,430 ms with a provider-timeout status, not an outer
+watchdog timeout. One request started, two completion counters include abandonment,
+and no usage record or tool was delivered. Recorded work is zero because usage is
+absent; actual inference is unknown. Snapshot hash matches turn 3. Tests/oracle
+fail; all help checks pass. No failed or Unknown tools were recorded.
+
+Rupi is unresolved in four turns: 33,909 recorded work tokens and 1,963,422 ms call
+time, excluding verification, with 14 completed tools and zero failures/Unknown.
+Unrecorded inference on turns 3 and 4 prevents an actual total-work claim. Completion
+counters include prior abandoned requests and are not successful current-turn counts.
+
+Pi turn 1 completed in 161,418 ms with 8,264 work tokens (5,450 input, 2,814 output),
+six requests/usage records and five completed writes. Failure/Unknown counters are
+unavailable. Tests/help pass; oracle fails. Pi turn 2 is live (node PID 33704 under
+runner 8524; exec session 12652). Its prompt selects workflow-test-first and retains
+the full specification. Initial and turn-2 recovery prompts match across agents;
+the future repair bound is absent. Recheck later repair prompts to establish that
+on-disk candidate 5ecff6f did not alter the loaded launch definitions.
+
+No matched result exists yet. Keep the binary, copied specs/fixtures and selected
+configs fixed. Finish Pi before selecting a new pair. The prepared bounded-repair
+candidate is shared across agents only when a fresh interpreter is launched.
