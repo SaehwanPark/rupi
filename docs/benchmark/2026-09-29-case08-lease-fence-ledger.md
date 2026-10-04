@@ -1971,3 +1971,20 @@ Same local Qwen server/relay and pinned Pi0.86.1 remain. This is a fresh six-tur
 do not restart live work after an observation timeout. No runtime/harness source
 change, model reload, local build or measured benefit is claimed. PR141 stays draft;
 Cases01 through07 are skipped and Cases08 through10 remain open.
+
+## Retry10 Rupi first attempt verified (2026-10-04)
+
+Turn1 reaches the 600,244 ms watchdog with 40,429 recorded work tokens (32,141
+uncached input, 8,288 output), ten completion/usage records, thirteen completed and
+two failed tools, zero Unknown. Fifteen requested names are nine reads, four greps
+and two writes; individual failure causes/targets remain unread. Unfinished
+unrecorded inference remains unknown. Tests, oracle and all help checks fail
+without verification timeouts. Manifest lists initializer183 bytes and store20,347;
+no entry point, server/worker module, tests or README. Contents remain unread;
+presence and sizes do not establish correct workflow behavior.
+
+Selected controls verify recurring/window12/cap12/low/budget2,048/endpoint8001/native
+replay. Turn2 is live under Rupi PID34964, runner16344/exec28157. Its saved prompt
+retains full SPEC, repair/fencing/assertion guidance and no prescribed module stage.
+The longer-window candidate has not established a win or cache/speed improvement.
+No oracle resolution or matched result yet; PR141 stays draft and Cases08 through10 stay open.
