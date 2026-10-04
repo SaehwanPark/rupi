@@ -1504,8 +1504,9 @@ TUI rendering passed all budgets (3.31–3.90 µs/unit); checkpointed restore me
   Retry05 selected recurring mode for Rupi while Pi retained its native runtime policy.
   Neither resolved in four turns: Rupi recorded 96,333 work tokens versus Pi 53,532;
   Rupi failed final tests, Pi passed them, and both passed help. The next shared candidate
-  will move workflow implementation before workflow-test authoring. Fresh pairs retain
-  the same local
+  moves workflow implementation before workflow-test authoring and permits compact
+  application modules. All-case routing/oracle-isolation guards and author review pass;
+  a fresh matched comparison is pending. Fresh pairs retain the same local
   `qwen3.8-flash-next` and pinned Pi 0.86.1.
   Cases 01 through 07 have verified comparison wins and are skipped. Cases 08 through
   10 remain open; see the [Case 08 ledger](docs/benchmark/2026-09-29-case08-lease-fence-ledger.md).

@@ -568,12 +568,32 @@ function Get-Case08Prompt(
       $workflowTestsPresent = Test-Path -LiteralPath (
         Join-Path $ProjectPath "tests/test_workflow.py"
       )
+      $workflowModulesPresent = @("store.py", "server.py", "worker.py" | Where-Object {
+        -not (Test-Path -LiteralPath (Join-Path $ProjectPath "leasefence/$_"))
+      }).Count -eq 0
       $phase = if (-not $helpPassed -or $verification.project_tests.timed_out -or
         $verification.project_tests.exit_code -ne 0) {
         "repair"
-      } elseif (-not $workflowTestsPresent) { "workflow_tests" } else { "workflow" }
+      } elseif (-not $workflowModulesPresent) { "workflow" }
+      elseif (-not $workflowTestsPresent) { "workflow_tests" } else { "workflow" }
     }
   }
+  $workflowContract = @'
+Validate the full graph before atomic insertion; persist original pipeline/job order.
+Resolve only declared input_refs from successful dependencies. Build barrier fan_in in
+depends_on order using only collect.field, with job_id/value items under the declared as key.
+Fail missing inputs/selections locally; block dependents and never invoke a failed barrier sink.
+Claim in a short transaction, increment attempts, persist a fresh private unguessable token
+and lease, then commit BEFORE spawning the sink. Never hold a transaction while it runs.
+Every success, retryable failure, and terminal failure finalization must condition its UPDATE
+on pipeline_id, job_id, status == leased, and the exact claim token; accept only one updated row.
+Reclaim expiry by clearing the old token and returning pending with a diagnostic.
+Reject stale completion with non-zero exit, changing no state from the newer claim.
+Never expose the private token through HTTP or sink requests. This is not exactly-once delivery.
+worker --once attempts each job at most once per invocation and never polls for new work.
+Invoke the sink with direct argv; close SQLite and subprocess resources on all paths.
+Preserve passing tests and all three help paths; update README truthfully.
+'@
   $guidance = switch ($phase) {
     "foundation" {
       @'
@@ -591,19 +611,22 @@ public contract, and exact checks. Yield after these four foundation writes.
       @'
 Repair the earliest failing local test or help gate using the harness diagnostics.
 Preserve existing service and worker behavior. Remove imports of missing local modules.
-Keep application code in leasefence/__main__.py; preserve both CLI and workflow tests.
+Use compact application modules; preserve both CLI and workflow tests.
+Implement missing public behavior in the application before revising test fixtures.
+Change a test fixture only when it misuses the documented public contract; preserve assertions.
 For application changes, use one focused edit per response, at most 100 new lines.
-Do not replace __main__.py with one large write or create application helper modules.
+Write missing store.py, server.py, or worker.py modules compactly; edit existing modules.
 Continue the next source edit in the same attempt; use bounded reads only when needed.
 If tests are missing, write an importable unittest.TestCase with real test_* methods,
 then tests/__init__.py. Do not replace failing workflow tests with help-only checks.
 Use public commands and HTTP in tests; do not assume private function or class names.
 After repairing the local failure, continue missing specification behavior in small edits.
 '@
+      $workflowContract
     }
     "workflow_tests" {
       @'
-Foundation tests and all help commands pass, but the workflow test module is missing.
+Application modules are present and local gates pass, but workflow tests are missing.
 First write: tests/test_workflow.py with a real unittest.TestCase and test_* methods.
 Do not write only sink fixtures or repeatedly revise the existing CLI help tests.
 Keep the test module self-contained: write tiny sink scripts inside its temporary directory.
@@ -620,34 +643,27 @@ Ensure private claim tokens never appear in HTTP responses or sink requests.
 Use explicit deadlines and subprocess timeouts; close all responses, pipes, and processes.
 Use only the embedded public specification, never the external oracle or its diagnostics.
 Keep the first workflow test write compact; helper scripts belong inside that test module.
-After writing the discovered test module, yield for harness feedback. Do not implement
-the whole workflow in the same attempt; repair the public-test failures in the next attempt.
+After writing the discovered test module, yield for harness feedback.
 '@
     }
     "workflow" {
       @'
 Foundation tests and all help commands pass. Add the complete durable workflow now.
-First source edit: implement signed admission, SQLite state, worker --once, and retrieval
-in existing leasefence/__main__.py. Keep application code there; do not create helper modules.
-Use focused edits of at most 100 new lines each; continue edits in the same attempt.
-Validate the full graph before atomic insertion; persist original pipeline/job order.
-Resolve only declared input_refs from successful dependencies. Build barrier fan_in in
-depends_on order using only collect.field, with job_id/value items under the declared as key.
-Fail missing inputs/selections locally; block dependents and never invoke a failed barrier sink.
-Claim in a short transaction, increment attempts, persist a fresh private unguessable token
-and lease, then commit BEFORE spawning the sink. Never hold a transaction while it runs.
-Every success, retryable failure, and terminal failure finalization must condition its UPDATE
-on pipeline_id, job_id, status == leased, and the exact claim token; accept only one updated row.
-Reclaim expiry by clearing the old token and returning pending with a diagnostic.
-Reject stale completion with non-zero exit, changing no state from the newer claim.
-Never expose the private token through HTTP or sink requests. This is not exactly-once delivery.
-worker --once attempts each job at most once per invocation and never polls for new work.
-Invoke the sink with direct argv; close SQLite and subprocess resources on all paths.
-Add public-spec workflow tests, including a bounded fresh-process stale-worker race,
-then update README truthfully. Preserve passing tests and all three help paths.
+First source write: leasefence/store.py with validation, SQLite admission and public retrieval.
+Second source write: leasefence/worker.py with ordered claiming, sink delivery and fencing.
+Third source write: leasefence/server.py with raw-body HMAC, routes and deterministic errors.
+Keep these modules compact and standard-library-only; create no speculative abstractions.
+If a module already exists, repair it with focused edits instead of replacing working behavior.
+Then wire existing __main__.py to the modules while preserving all help commands and /healthz.
+Complete these application changes in this attempt before writing workflow tests.
+Do not import missing modules until they exist. Keep reads bounded; use the embedded SPEC.
+After implementing the workflow and updating README honestly, yield for harness feedback.
+The next attempt will add public workflow tests; their absence is not evidence of completeness.
 '@
+      $workflowContract
     }
   }
+  $guidance = @($guidance) -join "`n"
   @"
 Implement the complete dependency-free Python 3 leasefence project in the current workspace.
 The project root already contains SPEC.md; use leasefence/ and tests/ paths directly.
@@ -2562,12 +2578,32 @@ if ($DryRun) {
       $dryRunEntry = Join-Path $dryRunPackage "__main__.py"
       $dryRunTests = Join-Path $dryRunProject "tests"
       $dryRunWorkflow = Join-Path $dryRunTests "test_workflow.py"
+      $dryRunModules = @("store.py", "server.py", "worker.py" | ForEach-Object {
+        Join-Path $dryRunPackage $_
+      })
       $oracleDiagnostic = Join-Path $dryRunProject "oracle-diagnostic.txt"
       try {
         New-Item -ItemType Directory -Path $dryRunPackage -Force | Out-Null
         Write-Text $dryRunEntry "# dry-run entry point marker"
         Write-Text $oracleDiagnostic "CASE08_PRIVATE_ORACLE_DIAGNOSTIC"
         $dryRunVerification.oracle.stdout_path = $oracleDiagnostic
+        $implementationPrompt = Get-RecoveryPrompt $_ $dryRunVerification $dryRunProject
+        if (-not $implementationPrompt.Contains($spec) -or
+            -not $implementationPrompt.Contains('First source write: leasefence/store.py') -or
+            -not $implementationPrompt.Contains(
+              'exact claim token; accept only one updated row.'
+            ) -or
+            $implementationPrompt.Contains('First write: tests/test_workflow.py') -or
+            $implementationPrompt.Contains('CASE08_PRIVATE_ORACLE_DIAGNOSTIC')) {
+          throw "Case 08 must implement missing workflow modules before authoring workflow tests."
+        }
+        Write-Text $dryRunModules[0] "# dry-run storage marker"
+        $partialPrompt = Get-RecoveryPrompt $_ $dryRunVerification $dryRunProject
+        if (-not $partialPrompt.Contains('First source write: leasefence/store.py') -or
+            $partialPrompt.Contains('First write: tests/test_workflow.py')) {
+          throw "Case 08 partial module presence must not advance to workflow-test authoring."
+        }
+        foreach ($module in $dryRunModules) { Write-Text $module "# dry-run module marker" }
         $testsPrompt = Get-RecoveryPrompt $_ $dryRunVerification $dryRunProject
         if (-not $testsPrompt.Contains($spec) -or
             -not $testsPrompt.Contains('First write: tests/test_workflow.py') -or
@@ -2589,16 +2625,30 @@ if ($DryRun) {
         if (-not $repairPrompt.Contains('Repair the earliest failing local test or help gate') -or
             -not $repairPrompt.Contains('one focused edit per response, at most 100 new lines') -or
             -not $repairPrompt.Contains('preserve both CLI and workflow tests') -or
+            -not $repairPrompt.Contains('exact claim token; accept only one updated row.') -or
+            -not $repairPrompt.Contains('preserve assertions') -or
             -not $repairPrompt.Contains($spec) -or
             $repairPrompt.Contains('CASE08_PRIVATE_ORACLE_DIAGNOSTIC') -or
             $repairPrompt.Contains('Foundation tests and all help commands pass.')) {
           throw "Case 08 failing local checks must select repair rather than workflow."
         }
+        $dryRunVerification.project_tests.exit_code = 0
+        $dryRunVerification.help[0].exit_code = 1
+        $helpRepairPrompt = Get-RecoveryPrompt $_ $dryRunVerification $dryRunProject
+        if (-not $helpRepairPrompt.Contains(
+              'Repair the earliest failing local test or help gate'
+            ) -or
+            -not $helpRepairPrompt.Contains('Remove imports of missing local modules') -or
+            $helpRepairPrompt.Contains('First write: tests/test_workflow.py') -or
+            $helpRepairPrompt.Contains('CASE08_PRIVATE_ORACLE_DIAGNOSTIC')) {
+          throw "Case 08 failing help must select repair despite all module markers."
+        }
+        $dryRunVerification.help[0].exit_code = 0
         if (-not $dryRunRecovery.Contains('First tool call: write a compact runnable CLI')) {
           throw "Case 08 missing entry point must select foundation recovery."
         }
       } finally {
-        foreach ($file in @($dryRunEntry, $dryRunWorkflow, $oracleDiagnostic)) {
+        foreach ($file in (@($dryRunEntry, $dryRunWorkflow, $oracleDiagnostic) + $dryRunModules)) {
           if (Test-Path -LiteralPath $file) { Remove-Item -LiteralPath $file -Force }
         }
         foreach ($directory in @($dryRunPackage, $dryRunTests, $dryRunProject)) {

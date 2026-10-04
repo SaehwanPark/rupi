@@ -1063,3 +1063,30 @@ move implementation before workflow-test authoring and permit bounded applicatio
 modules, while retaining all public requirements, oracle isolation and honest gates.
 This follows the recorded authoring sequence and public specification; no generated
 code or oracle diagnostic inspection is needed. Cases08 through 10 remain open.
+
+## Shared implementation-first candidate verified (2026-10-04)
+
+After terminal retry05, the harness was revised for both agents. A passing compact
+foundation now selects workflow implementation before workflow-test authoring.
+Guidance writes compact store/worker/server modules, then wires the existing entry
+point and updates README honestly. Missing modules remain in implementation phase;
+all three module paths plus passing local gates select public workflow tests.
+Path presence is a routing heuristic, not proof of implementation or completeness.
+Failed local tests/help retain repair priority. Repair permits compact modules,
+prefers fixing missing public application behavior, preserves all test assertions
+and includes the same detailed transactional fencing/data-flow contract.
+
+All-case dry-run guards pass with low/budget2,048/recurring and with off/no budget/
+default mode. Fixtures cover absent, partial and complete modules; workflow-test
+discovery; failed tests; failed help despite module markers; full SPEC preservation;
+fencing guidance in implementation and repair; and oracle sentinel exclusion.
+Whitespace and added-line-width checks pass. Rust source agrees with merged main;
+no runtime rebuild or duplicate full Rust checks were needed for this harness change.
+The selected binary SHA256 remains
+`39829D0D62129F4138C449EC4FC913DE4EF81B028527B649EEDFEA1D3EE3D1C9`.
+
+Author invariant review: pass, no blocking finding. The shared authoring sequence
+changes neither the verifier nor its acceptance criteria, does not expose oracle
+diagnostics, does not weaken public tests, and stays outside core runtime.
+No independent agent review is claimed. A fresh matched retry06 must establish any
+comparison improvement; baseline and retries01 through 05 remain inconclusive.
