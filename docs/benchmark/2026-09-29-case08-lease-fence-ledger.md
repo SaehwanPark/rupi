@@ -701,3 +701,17 @@ workflow-test-first prompt contains the full specification and matches retry03's
 turn-2 prompt byte-for-byte. The repair-only bound is absent from this phase as
 intended. Verify its presence when repair is selected. Pi has not started, and
 no matched outcome exists. Keep the binary, model, controls and references fixed.
+
+## Reasoning-budget protocol audit (2026-10-04 04:18 UTC)
+
+The local llama executable reports 0.4.0-dev, build 10909, commit a2878d30d;
+its serve help exposes the reasoning-budget control. The corresponding upstream
+[chat parser source][budget]
+reads request reasoning_budget_tokens before the alias and server default. It
+passes the budget to sampling when the chat template exposes thinking end tags.
+This confirms that the relay's canonical field is supported in that source;
+it does not prove this model template's detected tags or actual reasoning length.
+No model trace, generated code or acceptance diagnostics were inspected. The
+relay, model process, configured budget and active pair remain unchanged.
+
+[budget]: https://github.com/ggml-org/llama.cpp/blob/a2878d30d/tools/server/server-common.cpp
