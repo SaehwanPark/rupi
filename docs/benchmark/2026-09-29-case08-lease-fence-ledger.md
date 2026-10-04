@@ -1812,3 +1812,21 @@ verification and21 completed tools, zero failed/Unknown. Selected controls persi
 Turn3 is live under Rupi PID27400, runner12644/exec84321. Its saved prompt retains
 full SPEC, repair/fencing/assertion guidance and no prescribed module stage. No
 oracle resolution or matched result yet; PR141 stays draft and Cases08 through10 stay open.
+
+## Retry09 Rupi third attempt verified (2026-10-04)
+
+Turn3 reaches the 600,243 ms watchdog with 42,486 recorded work tokens (36,939
+uncached input, 5,547 output), eight usage records, seven completed and three failed
+tools, zero Unknown. Ten requested tool names are four edits, one write, three reads
+and two greps; individual failure causes/targets remain unread. Request/completion
+counters include an earlier abandoned request; unfinished unrecorded inference is
+unknown. Tests and oracle fail without verification timeouts; all help checks pass.
+Manifest adds workflow tests7,775 bytes and lists server4,349. Other sizes match
+turn2 and no README is listed. Contents remain unread; test presence does not prove
+coverage/correctness and sizes do not establish unchanged contents or exact edits.
+
+Across three turns: 121,812 recorded work tokens, 1,800,912 ms call time excluding
+verification,28 completed tools, three failed and zero Unknown. Selected controls
+persist. Turn4 is live under Rupi PID33760, runner12644/exec84321. Its saved prompt
+retains full SPEC, repair/fencing/assertion guidance and no prescribed module stage.
+No oracle resolution or matched result yet; PR141 stays draft and Cases08 through10 stay open.
