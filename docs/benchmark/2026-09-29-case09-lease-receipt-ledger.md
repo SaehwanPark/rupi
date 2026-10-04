@@ -346,3 +346,34 @@ SPEC/assertion/stable-key/private-fencing/lost-ack repair requirements pass. Pre
 this pair unchanged until terminal, then consider the already-validated window3 profile.
 Rupi's six attempts remain unresolved; final matched classification is pending. PR144
 stays draft, Cases09/10 open, no source/config changes, builds or parallel inference.
+## Retry01 terminal: neither resolves acceptance in six turns (2026-10-04)
+
+Pi6 exits0 after469,771 ms with status `stop`, eight requests/completions/usage records
+and19,051 recorded work tokens (14,264 uncached input,4,787 output). Seven native events
+complete: six reads/ls, no recorded mutation. Tests and help pass; acceptance fails,
+without verification timeouts. Manifest sizes match turn5, no README listed. Contents/
+diagnostics remain unread; sizes do not establish unchanged contents or failure cause.
+Failed/Unknown remain unavailable, not zero; completion events do not establish effects.
+Unrecorded unfinished inference remains unknown.
+
+Both halves are terminal with no acceptance resolution after six attempts. Classification:
+**inconclusive**, not a Rupi win or token/speed improvement. Rupi records166,364 work
+tokens,2,696,841 ms authoring time,57 completed tools/one failed/zero Unknown; two
+watchdogs/two budget-exhausted/two completed runtime turns. Pi records74,371 work tokens,
+1,965,799 ms authoring time,33 native completion events/failed and Unknown unavailable;
+one watchdog. Authoring time excludes verification. Final Rupi tests fail/help passes;
+Pi tests/help pass. Neither manifest lists README; Rupi lists no tests. Full public-task
+completion and default-runtime superiority are not established.
+
+Exec47054 exits0; runner19500/wrapper22280/final Pi18332 are gone. Terminal audit passes
+all twelve saved prompts/selected controls, initial prompt equality, copied SPEC/two
+acceptance-file hashes/no extra non-cache files, actual Rupi configuration and unchanged
+binary/model/relay. Source harness SHA F2F6A528...B54AD0 remains unchanged throughout.
+No local builds or parallel model inference occurred in this pair.
+
+Proceed with existing Recurring/window3/cap12 in a fresh sequential matched pair:
+`bench-20261004-case09-window3-budget2048-low-retry02-rupi12-matched6-600s`.
+All other settings and full shared prompts/gates remain unchanged. All-case selected3
+guards and actual workspace/reference-hash probe already pass; this trial changes only
+the existing Rupi progress window and establishes no causal benefit in advance.
+PR144 stays draft; Cases09/10 remain open. Cases01 through08 configured wins are skipped.
