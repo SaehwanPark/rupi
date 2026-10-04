@@ -995,3 +995,22 @@ README 2,169; generated contents remain unread. Turn 2's saved prompt contains t
 full specification and public workflow-test instructions, and is byte-equal to Rupi's
 turn 2 prompt. The recurring property in Pi's unused copied Rupi config does not
 configure Pi; its selected native settings remain separate.
+
+## Retry05 Pi workflow-test attempt verified (2026-10-04)
+
+Pi turn 2 reached the 600,295 ms outer watchdog with 15,000 recorded work tokens
+(3,556 uncached input, 11,444 output), eight requests/completions/usage records and
+eight completed writes. Failed/Unknown counters remain unavailable. Tests and oracle
+fail without verification timeouts; all help checks pass. Across two turns Pi recorded
+22,905 work tokens and 757,667 ms call time excluding verification.
+
+Pi turn 3 is live under node PID 9208, runner 14912/exec session 85505. The paired
+result remains pending; finish Pi before drawing a matched conclusion or starting
+another pair. Generated application/test contents remain unread.
+
+The manifest lists a 13,620-byte workflow-test module and 1,833-byte test helper,
+along with application server/store/worker modules and a changed README size.
+This differs from the shared instruction to yield after a self-contained test write.
+No assertion about their correctness follows from file names or sizes.
+Turn 3's saved prompt retains the full specification, shared focused-edit bound and
+preservation of both test sets. Pi has not yet resolved the oracle.
