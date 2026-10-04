@@ -151,6 +151,11 @@ fn configured_recurring_progress_rejects_completion_until_a_file_change_is_obser
   assert_eq!(correction["tools"].as_array().unwrap().len(), 1);
   assert_eq!(correction["tools"][0]["function"]["name"], "write");
   assert!(!requests[2].body.contains("premature success"));
+  let events = trace_events(&temp.path().join("state"));
+  assert!(events.iter().any(|event| matches!(
+    event,
+    AgentEvent::TurnCompleted(done) if done.status == TurnStatus::Completed
+  )));
 }
 
 #[test]
