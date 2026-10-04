@@ -1681,3 +1681,20 @@ verification and 20 completed tools. Selected controls persist. Turn 5 is live u
 node PID 7000, runner 36808/exec session 79760. Its saved prompt retains full SPEC,
 repair/fencing/assertion guidance and no prescribed module stage. Rupi's six-turn half
 is unresolved; matched result remains pending and Cases08 through 10 remain open.
+
+## Retry08 Pi fifth attempt verified (2026-10-04)
+
+Turn 5 reached the 600,248 ms watchdog with 12,725 recorded work tokens (6,661
+uncached input, 6,064 output), four requests/completions/usage records and four
+completed tools: read, edit, grep and write. Failed/Unknown counts are unavailable,
+not zero; unfinished unrecorded inference remains unknown. Tests and oracle fail
+without verification timeouts; all help checks pass.
+Manifest adds README 4,140 bytes and lists the test module at 25,452. Other sizes
+match turn 4. Contents and diagnostics remain unread; README presence does not prove
+completeness and sizes do not establish unchanged contents or exact edit targets.
+
+Across five Pi turns: 64,037 recorded work tokens, 3,001,391 ms call time excluding
+verification and 24 completed tools. Selected controls persist. Turn 6 is live under
+node PID 25188, runner 36808/exec session 79760. Its saved prompt retains full SPEC,
+repair/fencing/assertion guidance and no prescribed module stage. Rupi's six-turn half
+is unresolved; matched result remains pending and Cases08 through 10 remain open.
