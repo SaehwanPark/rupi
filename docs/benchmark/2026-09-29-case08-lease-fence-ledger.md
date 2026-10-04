@@ -479,3 +479,28 @@ Next: integrate main's merged provider idle fix, rebuild the binary and verify t
 unchanged adapter prompts/controls. Check usage, then launch retry03 in fresh
 workspaces with the same model, prompts and matched settings. Finish all local
 checks/builds first. Cases 08 through 10 remain open; keep this PR draft.
+
+## Retry03 corrected-binary preparation (2026-10-04 03:00 UTC)
+
+Main's provider fix was integrated as a04beec after retry02 was terminal. The
+adapter script is byte-unchanged from retry02 source 3f478a5. Rust sources match
+verified main 4174c1e; PR #142's required checks, transport tests, startup and CI
+therefore apply to this unchanged Rust tree. All-case low/budget-2,048 and off/no-
+budget dry runs passed again, including phase routing and oracle exclusion.
+
+The corrected binary was rebuilt with stable 1.98.1 in this checkout, copied and
+hash-verified. CLI help passed. Its SHA-256 is:
+
+`081F516E12BF0BC349A36891AF1733AC0B98EF3B06A9856CDA61D37D7390BA11`
+
+Retry02's original executable is preserved in its ignored run root as
+rupi-original.exe, with SHA-256:
+
+`48DC29D1F089DAFB1FDE7CEF607705CBF2831F0A6E04CD7D1C3D63F351489858`
+
+No local build/check remains running. The shared relay is healthy with budget
+2,048 and content logging disabled; the local model server is unchanged. Parent
+usage at 03:00 UTC is 79% five-hour and 77% weekly, below the active soft stops.
+Launch a fresh four-turn pair with the same low effort, 600-second limits,
+six-second grace and Rupi cap 12/Pi native policy. Prompts, model and fixtures stay
+fixed; the provider idle correction is the runtime change being tested.
