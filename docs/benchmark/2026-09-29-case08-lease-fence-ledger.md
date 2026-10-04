@@ -669,3 +669,20 @@ The next fresh pair will load candidate 5ecff6f's shared one-edit/100-line repai
 guidance. Its all-case low/budget and off/no-budget dry runs already pass, and no
 runtime source changed after verified main 4174c1e. Usage at 04:06 UTC is 16%
 five-hour and 81% weekly, below both soft stops. Cases 08 through 10 remain open.
+
+## Bounded-repair retry04 launched (2026-10-04 04:08 UTC)
+
+Fresh matched run:
+`bench-20261004-case08-bounded-repair-budget2048-low-retry04-rupi12-matched4-600s`.
+Launch source is d32b865, loading candidate 5ecff6f's shared bounded-repair guidance.
+No runtime source differs from verified main 4174c1e; binary hash and help smoke
+check pass. Relay health confirms budget 2,048, upstream 8000 and no content logging.
+There is no other live comparison pair or build.
+
+Rupi turn 1 is live (PID 10472 under runner 35136, wrapper 38316; exec session
+54053). Its config selects local qwen3.8-flash-next, low effort, endpoint 8001,
+594,000 ms provider timeout, native replay on declared exposure, request cap 12 and
+file tools only. The saved foundation prompt contains the full specification and
+matches retry03's initial prompt byte-for-byte. Four 600-second turns/six-second
+grace and Pi's native request policy remain fixed. Verify the new bound in saved
+repair prompts when that phase occurs. No outcome exists yet; Pi has not started.
