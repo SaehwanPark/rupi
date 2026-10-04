@@ -533,3 +533,26 @@ Turn 2 is live (PID 15012 under runner 8524; exec session 12652). Its saved prom
 selects workflow-test-first, preserves the full specification and matches retry02's
 turn-2 recovery prompt byte-for-byte. The corrected binary and fixed controls remain
 unchanged. Pi has not started; the matched result is pending.
+
+## Retry03 Rupi turn 2 verified (2026-10-04 03:17 UTC)
+
+Turn 2 completed after 532,413 ms without either timeout. It recorded 21,105 work
+tokens (11,454 input, 9,651 output), five requests/usage records and eight completed
+tools (one write/seven edits), with zero failures/Unknown. The workflow test module
+is 19,106 bytes; entry point, foundation tests and README remain unchanged. Contents
+and diagnostics remain unread. Tests and oracle fail; all three help checks pass.
+Module presence proves delivery, not complete coverage or oracle resolution.
+
+Across two turns, Rupi recorded 30,203 work tokens and 767,791 ms call time,
+excluding verification, with 13 completed tools and zero failures/Unknown. Unlike
+retry02's second-turn provider timeout with no usage or tools, this turn delivered
+the discovered test module with complete usage records. This observed difference
+is not a standalone causal or comparison-win claim; the independent transport
+fixture established the idle-timer bug, and this matched pair remains unfinished.
+
+Turn 3 is live (PID 12884 under runner 8524; exec session 12652), selecting local
+repair with preserved CLI/workflow tests and the full specification. Pi has not
+started. Binary and controls remain fixed. Parent usage at 03:17 UTC is 86% five-hour
+and 78% weekly, below soft stops; the five-hour window resets shortly.
+All-platform CI passed at d9e560a:
+[CI run](https://github.com/SaehwanPark/rupi/actions/runs/37173170972).
