@@ -114,3 +114,19 @@ Verified before launch:
 
 Push the candidate before inference. No comparison win is claimed; the matched pair,
 per-turn/terminal audits and final required checks/CI remain pending.
+
+## Retry01 launched (2026-10-04)
+
+Run: `bench-20261004-case09-receipt-guidance-budget2048-low-retry01-rupi12-matched6-600s`.
+Launch source5637c80 is pushed before inference. Exec47054, runner19500/wrapper22280
+and Rupi turn1 PID24748 are confirmed live. No observation timeout triggers a restart.
+Six-turn maximum,600s/grace6s, low/configured budget2,048/native replay, Rupi
+Recurring/window12/cap12/four file tools versus native uncapped Pi/six file tools.
+
+The actual Rupi workspace config verifies selected mode/window/cap, four tools, low,
+endpoint8001/deadline594,000 ms and native replay. Saved initial prompt retains the
+complete public SPEC, stable delivery identity, private fencing, lost-ack retry,
+public assertions and no external-oracle access. Binary/model/relay checks pass before
+launch. Runtime source remains unchanged; no local builds or parallel comparisons run.
+Pi has not started and no per-turn verification is available yet. Keep PR144 draft;
+the Case09 comparison result remains pending and Case10 has not begun.
