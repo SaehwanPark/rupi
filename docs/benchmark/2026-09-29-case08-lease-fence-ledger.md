@@ -1303,3 +1303,23 @@ endpoint8001/native replay controls persist. Turn 3 is live under Rupi PID 33916
 runner 11996/exec session 72703. Its saved prompt retains full SPEC and selects
 public workflow tests including the bounded stale-worker race after module presence.
 The matched six-turn result remains pending.
+
+## Retry07 Rupi workflow-test delivery and repair verified (2026-10-04)
+
+Turn 3 reached the 600,250 ms watchdog with 13,083 recorded work tokens
+(5,366 uncached input, 7,717 output), three usage records and six completed tools:
+two writes and four edits. Failed/Unknown counts are zero. Request completion
+counters include an abandoned earlier request; unrecorded unfinished inference
+remains unknown. Tests and oracle fail without verification timeouts; all help
+checks pass. Manifest lists a 22,903-byte workflow-test module and changed application
+sizes: entry point 2,133, store 13,887, worker 6,127 and server 4,054. README and
+foundation-test sizes remain unchanged. Contents remain unread; sizes do not
+establish correctness or identify exact edit targets.
+
+Across three turns Rupi recorded 64,468 work tokens and 1,467,468 ms call time
+excluding verification, with 15 completed tools. Selected recurring/cap12/low/
+budget2,048/endpoint8001/native replay controls persist. Turn 4 is live under Rupi
+PID 14748, runner 11996/exec session 72703. Its saved prompt retains full SPEC,
+repair priority, detailed fencing guidance, both test sets and assertion preservation.
+Up to three repair attempts remain within this fresh six-turn comparison.
+The oracle is unresolved and the matched outcome remains pending.
