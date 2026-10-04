@@ -1507,3 +1507,19 @@ verification, 18 completed tools, one failed and zero Unknown. Selected controls
 Turn 3 is live under Rupi PID 19620, runner 36808/exec session 79760. Its saved
 prompt retains full SPEC, repair/fencing/assertion guidance and no prescribed module
 stage. Rupi is unresolved; the Pi half has not started and the matched outcome is pending.
+
+## Retry08 Rupi third attempt verified (2026-10-04)
+
+Turn 3 reached the 600,311 ms watchdog with 30,731 recorded work tokens (25,698
+uncached input, 5,033 output), seven usage records and seven completed tools:
+three reads and four edits. Failed/Unknown counts are zero. Completion counters
+include an earlier abandoned request; unfinished unrecorded inference remains unknown.
+Tests and all help checks pass without verification timeouts; oracle fails without a timeout.
+Manifest lists CLI 3,841 bytes and store 21,374. Other sizes match turn 2; no README
+is listed. Generated contents remain unread and sizes do not identify exact edit targets.
+
+Across three turns: 86,177 recorded work tokens, 1,800,769 ms call time excluding
+verification, 25 completed tools, one failed and zero Unknown. Selected controls persist.
+Turn 4 is live under Rupi PID 18104, runner 36808/exec session 79760. Its saved
+prompt retains full SPEC, repair/fencing/assertion guidance and no prescribed module
+stage. No oracle resolution or matched win yet; Cases08 through 10 remain open.
