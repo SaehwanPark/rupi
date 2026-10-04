@@ -206,3 +206,11 @@ read/read/read. Tests1/all four help1/oracle1, no verification timeouts. Snapsho
 main835/storage30,722 bytes, no tests or README. File presence does not prove complete
 behavior; generated contents remain unread. The complete shared prompt preserves public
 requirements and first-write guidance. Turn2 active; no Pi run and no win/causal claim.
+
+Retry02 Rupi turn2 reaches its watchdog at600,257ms, unresolved:45,588 recorded work
+(39,521 input+6,067 output), twelve starts/twelve completions including earlier abandoned
+request, eleven usage records. Seventeen requested tools/fifteen complete/two fail/zero Unknown;
+names include two writes, seven reads, five grep and three edits. Tests5/all four help1/oracle1,
+no verification timeouts. Init983/tests-init58 now listed; main835/storage30,722 sizes match
+turn1 without proving unchanged content. No test_*.py or README. Contents unread. Cumulative
+work71,859. Turn3 active with unchanged revised guidance/controls; no Pi run or win claim.
