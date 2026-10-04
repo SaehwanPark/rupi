@@ -1153,3 +1153,26 @@ runner 30660/exec session 62809. Its saved prompt retains full SPEC, repair prio
 the detailed fencing contract, both test sets and assertion preservation.
 Selected recurring/cap12/low/budget2,048/endpoint8001/native replay controls persist.
 The oracle remains unresolved and the matched result is pending.
+
+## Retry06 Rupi terminal, Pi live (2026-10-04)
+
+Rupi turn 4 reached the 600,243 ms outer watchdog with 33,751 recorded work tokens
+(28,042 uncached input, 5,709 output), eight usage records and 11 requested tools:
+ten completed, one failed and zero Unknown. Request counters include an abandoned
+earlier request; they do not prove nine successful current-request completions.
+Unrecorded unfinished inference work remains unknown. Tests and oracle fail without
+verification timeouts; all help checks pass. Manifest adds a 129-byte package
+initializer and lists worker 9,710 bytes/README 5,837; other sizes remain unchanged.
+Generated contents remain unread and sizes do not identify edits or prove correctness.
+
+Rupi is unresolved after four turns, recording 101,345 work tokens, 1,954,890 ms
+call time excluding verification and 24 completed tools, with one failed/zero Unknown.
+Selected controls persist in all four turn records; all saved Rupi prompts retain
+full SPEC. Both copied specifications match source hashes and initial Rupi/Pi prompts
+are byte-equal. Binary SHA256 is unchanged. Finish the reference/control audit after Pi.
+
+Pi turn 1 is live under node PID 23892, runner 30660/exec session 62809. This pair
+remains active and has no matched result yet; do not reuse terminal retry05's handle.
+The implementation-first sequence delivered modules and workflow tests by turn 3,
+leaving one outer repair attempt in this four-turn comparison. Module/test delivery
+is verified, while oracle resolution and full public-project completion remain unproven.
