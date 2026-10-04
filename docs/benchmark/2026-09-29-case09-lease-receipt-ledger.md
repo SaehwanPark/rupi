@@ -197,3 +197,25 @@ pair. Pi has not started; no matched result yet. PR144 stays draft and Cases09/1
 Before this evidence update, headc90dfcd passes Linux/macOS/Windows CI; this proves
 repository checks rather than a model-comparison win. Fetch/prune confirms only main
 and the active Case09 branch locally/remotely; detached prior artifacts are preserved.
+
+## Retry01 Rupi fourth attempt exhausts budget without recorded mutation (2026-10-04)
+
+Turn4 exits0 after198,008 ms with status `budget_exhausted`, no outer watchdog expiry.
+Recorded work16,768 tokens (15,284 uncached input,1,484 output), eleven usage records,
+eleven requests started and twelve completion events including an earlier abandoned
+request. Eleven tools complete: nine greps/two reads, no recorded mutating tool;
+failed/Unknown are zero. Unfinished unrecorded inference remains unknown. Tests and
+acceptance fail, all help checks pass, with no verification timeouts. Shorter call
+time/lower recorded work and exit0 are not task completion or a comparison improvement.
+
+Manifest sizes match turn3; no worker file, tests or README are listed. Generated
+contents/diagnostics remain unread; sizes do not prove unchanged content or complete
+behavior. Cumulative through four turns:115,715 recorded work tokens,1,907,058 ms
+call time excluding verification,41 completed tools, one failed/zero Unknown. Two
+authoring watchdog expiries and two request-budget-exhausted attempts.
+
+Selected controls persist. Rupi turn5 is live under PID23972, runner19500/exec47054.
+Its saved prompt retains full SPEC/assertions/stable key/private fencing/lost-ack
+retry/oracle isolation. Continue the original matched pair without source/config
+changes, local builds or parallel inference. Pi has not started; matched outcome
+remains pending, PR144 draft and Cases09 through10 open.
