@@ -1487,3 +1487,23 @@ prompt retains full SPEC, repair priority, fencing and assertion preservation,
 without prescribing the former store/module stage. No matched outcome yet.
 The usage monitor now reports five-hour1%/weekly0%; no cause for the changed quota
 report is inferred. Cases08 through 10 remain open and PR141 remains draft.
+
+## Retry08 Rupi public test gate recovered (2026-10-04)
+
+Turn 2 reached the 600,239 ms watchdog with 29,235 recorded work tokens (24,800
+uncached input, 4,435 output) and seven usage records. Request completion counters
+include an earlier abandoned request and do not establish eight successful current
+completions. Eight tools were requested (five reads, three writes), seven completed,
+one failed and zero became Unknown. Unrecorded unfinished inference remains unknown.
+Project tests and all help checks pass without verification timeouts; oracle fails
+without a timeout. Passing generated tests alone does not prove complete coverage.
+
+Manifest adds empty tests initializer, support module 4,749 bytes and HTTP tests
+5,986. No README is listed. Application sizes match turn 1, but that does not prove
+unchanged content or identify exact edit targets. Generated contents remain unread.
+Across two turns: 55,446 recorded work tokens, 1,200,458 ms call time excluding
+verification, 18 completed tools, one failed and zero Unknown. Selected controls persist.
+
+Turn 3 is live under Rupi PID 19620, runner 36808/exec session 79760. Its saved
+prompt retains full SPEC, repair/fencing/assertion guidance and no prescribed module
+stage. Rupi is unresolved; the Pi half has not started and the matched outcome is pending.
