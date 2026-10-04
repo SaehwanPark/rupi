@@ -134,3 +134,11 @@ reads, four grep, one edit and one write. Tests1/oracle1/all four help0, no veri
 README8,720 bytes and init110 now listed; other four application sizes match turn2, which
 proves neither exact edits nor unchanged contents. No tests listed. README/generated content
 unread. Cumulative work94,241; turn4 active with unchanged source/controls. Pi not started.
+
+Rupi turn4 exits0 with runtime budget_exhausted at564,085ms, unresolved:75,833 recorded work
+(72,642 input+3,191 output), eleven starts/twelve completions including earlier abandoned
+request, eleven usage records. Fifteen tools complete/zero fail/zero Unknown (thirteen reads,
+two writes). Tests5/oracle1/all four help0; no verification timeouts. tests/__init__.py71
+is now listed, but no test_*.py. All six earlier file sizes match, without proving unchanged
+contents. No generated content inspected. Cumulative recorded work170,074. Turn5 active;
+Pi has not started. Three authoring watchdogs and one budget-exhausted turn so far; no win.
