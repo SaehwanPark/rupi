@@ -24,8 +24,8 @@ architecture/roadmap notes after implementation; no public/durable schema change
 | Transport activity | No invented model output, usage, reasoning, or journal events |
 
 1. Reproduce using valid buffered tool-argument fragments over loopback HTTP.
-2. Track response activity separately from normalized model events with bounded,
-   content-free state at the adapter boundary; retain absolute request deadlines.
+2. Keep transport inactivity enforcement in the existing HTTP/SSE reader; remove
+   the duplicate decoded-event idle timer and retain absolute request deadlines.
 3. Verify buffered arguments and partial framing, quiet streams, total deadlines,
    cancellation and ambiguous request quarantine; run required repository checks.
 4. Apply the invariant-reviewer role, push/reconcile docs, merge when verified, and
@@ -45,4 +45,10 @@ idle budget and a 5,000 ms total budget. It fails on unmodified provider code wi
 No tool was emitted. This proves a transport bug, not the exact cause of the
 Case 08 model failure; that attribution remains unproven without additional evidence.
 
-Implementation and final checks are pending. Keep the PR draft until they pass.
+Implementation removes only the redundant outer decoded-event idle timer. The
+existing HTTP read timeout and SSE logical idle handling remain, as do the outer
+total deadline, cancellation, quarantine and replay rules. No new activity events
+or state are introduced. All 26 transport tests pass, including the regression,
+quiet-stream expiry, total timeout, cancellation and delayed headers. Formatting
+passes. Extended framing/body coverage, full checks and final invariant review
+remain pending. Keep the PR draft until they pass.
