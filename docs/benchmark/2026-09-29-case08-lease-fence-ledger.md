@@ -1323,3 +1323,21 @@ PID 14748, runner 11996/exec session 72703. Its saved prompt retains full SPEC,
 repair priority, detailed fencing guidance, both test sets and assertion preservation.
 Up to three repair attempts remain within this fresh six-turn comparison.
 The oracle is unresolved and the matched outcome remains pending.
+
+## Retry07 Rupi first repair completed (2026-10-04)
+
+Turn 4 completed in 382,779 ms with 25,837 recorded work tokens (20,532 uncached
+input, 5,305 output), five usage records and six completed tools: one read, two greps
+and three writes. Failed/Unknown counts are zero. Completion counters include an
+earlier abandoned request and are not six successful current-request completions.
+Tests and oracle fail without verification timeouts; all help checks pass.
+Manifest adds package initializer 85 bytes and validation module 5,656; store size
+is 14,654. Other sizes remain unchanged. Generated contents remain unread and
+sizes do not prove correctness or identify exact edits.
+
+Across four turns Rupi recorded 90,305 work tokens and 1,850,247 ms call time
+excluding verification, with 21 completed tools. Unrecorded unfinished inference
+from earlier turns remains unknown. Selected controls persist. Turn 5 is live under
+Rupi PID 35732, runner 11996/exec session 72703. Its saved prompt retains full SPEC,
+repair/fencing guidance, both test sets and assertion preservation. One further
+attempt remains after turn 5 if needed. The matched result remains pending.
