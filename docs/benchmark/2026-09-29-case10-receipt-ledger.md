@@ -118,3 +118,11 @@ Project tests1/all four help1/oracle1; no verification timeouts. Snapshot lists 
 application file, receiptledger/__main__.py27,606 bytes, with no tests or README. Contents
 are unread; file presence does not establish complete behavior. Unfinished inference unknown.
 Turn2 is active with unchanged harness/shared repair guidance. Pi has not started; no win claim.
+
+Rupi turn2 also reaches its watchdog at600,242ms:23,738 recorded work (13,442 input+
+10,296 output), ten request starts/ten completions including earlier abandoned-request
+completion, nine usage records. Eleven tools complete/zero fail/zero Unknown (four writes,
+four edits, grep and two reads). Project tests1/oracle1, all four help0; no verification
+timeouts. Snapshot lists init75/main27,606/http_service4,767/store17,721/validate5,539 bytes,
+no tests or README. Main's matching size does not prove unchanged contents. Generated files
+remain unread. Turn3 active, Pi not started; cumulative recorded work43,843. No win claim.
