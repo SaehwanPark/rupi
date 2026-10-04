@@ -1547,10 +1547,10 @@ TUI rendering passed all budgets (3.31–3.90 µs/unit); checkpointed restore me
   unchanged. Rupi resolves acceptance at turn6 with tests/help passing:163,478 recorded
   work tokens/3,305,226 ms authoring time,43 completed tools/one failed/zero Unknown.
   README absent; generated contents unread,unrecorded unfinished inference unknown.
-  Pi remains unresolved after3:53,800 work tokens/1,800,833 ms/21 native completion
-  events,three watchdogs,failed/Unknown unavailable. Latest tests/help pass,acceptance
-  fails; README listed,contents unread. All nine completed-turn audits,both reference
-  copies and initial equality pass; config/binary/model unchanged. Pi4 is live.
+  Pi remains unresolved after4:72,620 work tokens/2,401,136 ms/29 native completion
+  events,four watchdogs,failed/Unknown unavailable. Latest tests/help pass,acceptance
+  fails; README listed,contents unread. All ten completed-turn audits,both reference
+  copies and initial equality pass; config/binary/model unchanged. Pi5 is live.
   PR144 stays draft; matched winner and full-public-task completion remain unproven.
   Preserve stable public delivery keys, distinct private fencing, lost-ack retry and
   accepted receipt persistence. No acceptance fixtures or manually generated solution
