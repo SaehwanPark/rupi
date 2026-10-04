@@ -686,3 +686,18 @@ file tools only. The saved foundation prompt contains the full specification and
 matches retry03's initial prompt byte-for-byte. Four 600-second turns/six-second
 grace and Pi's native request policy remain fixed. Verify the new bound in saved
 repair prompts when that phase occurs. No outcome exists yet; Pi has not started.
+
+## Retry04 Rupi foundation verified (2026-10-04 04:15 UTC)
+
+Turn 1 completed in 339,783 ms with 16,998 recorded work tokens (10,962 input,
+6,036 output), nine requests/completions/usage records and 13 completed tools.
+Zero failed or Unknown tools were recorded. Project tests and all help commands
+pass; oracle fails. Manifest sizes are entry point 2,372 bytes, server 2,362,
+worker 363, foundation tests 1,335 and README 7,223. Contents remain unread;
+foundation validation and file presence do not prove workflow completeness.
+
+Turn 2 is live (PID 31788 under runner 35136; exec session 54053). Its saved
+workflow-test-first prompt contains the full specification and matches retry03's
+turn-2 prompt byte-for-byte. The repair-only bound is absent from this phase as
+intended. Verify its presence when repair is selected. Pi has not started, and
+no matched outcome exists. Keep the binary, model, controls and references fixed.
