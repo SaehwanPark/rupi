@@ -214,3 +214,10 @@ names include two writes, seven reads, five grep and three edits. Tests5/all fou
 no verification timeouts. Init983/tests-init58 now listed; main835/storage30,722 sizes match
 turn1 without proving unchanged content. No test_*.py or README. Contents unread. Cumulative
 work71,859. Turn3 active with unchanged revised guidance/controls; no Pi run or win claim.
+
+Retry02 Rupi turn3 reaches its watchdog at600,249ms, unresolved:24,493 recorded work
+(15,316 input+9,177 output), four starts/four completions including earlier abandoned
+request, three usage records. Two requested tools/one complete/one failed/zero Unknown
+(edit/write). Tests5/all four help1/oracle1, no verification timeouts. app.py12,150 now
+listed; four earlier file sizes match, without proving unchanged contents. No test_*.py
+or README; generated contents unread. Cumulative work96,352. Turn4 active, no Pi run.
