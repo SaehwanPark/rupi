@@ -324,3 +324,29 @@ request, eleven usage records. Eleven requested tools/ten complete/one failed/ze
 Main size37,002→15,944; other three sizes match. Contents unread: size reduction proves neither
 exact edits nor retained/lost behavior. Package init absent. Cumulative work191,159/authoring
 2,804,589ms. Final Rupi attempt6 active; no Pi run or comparative win. No inference/build overlap.
+
+Retry03 Rupi turn6 reaches its watchdog at600,187ms, unresolved:24,992 recorded work
+(15,567 input+9,425 output), eight starts/seven completions/seven usage records. Seven tools
+requested/complete/zero failed/Unknown (four edits, three reads). Tests1/oracle1/all four help0,
+no verification timeouts. Main size15,944→42,804; other three sizes match. Contents unread;
+size changes do not prove exact edits/retained behavior/assertion preservation. Package init
+absent. Unfinished inference usage unknown, not zero.
+
+Retry03 terminal failed Rupi screen:216,151 recorded work/3,404,776ms authoring/47 completed/
+one failed/zero Unknown tools. Four watchdogs/one runtime completed/one budget-exhausted turn.
+Every project-test/acceptance gate fails, all help passes. Public tests and README listed but
+unread; full public-task completeness unproven. Exec41676 exits0, runner33728/wrapper36344 gone.
+All six saved prompt/control/copied SPEC/three acceptance hash audits pass; actual config/
+binary/model/relay unchanged. Pi not run; this is not a paired win or lower-work success.
+
+### Existing window12 control: next screen
+
+Keep shared single-module/discoverable-TestCase prompts, source92d2b269/harness86F04AA7...5AD98,
+binary8159F875...77F24 and all selected settings fixed. Change only the existing Case10
+progress request window3→12 for a fresh screen, using the control already implemented. This
+relaxes the configured interval within cap12; it does not establish a cause or benefit.
+All-case selected/capitalized window12 guards and actual fresh config/SPEC/three reference
+hash probes pass. Root usage56% five-hour/39% weekly remains below95/99 limits. Six maximum
+600s/grace6 Rupi attempts, Pi conditional on acceptance with frozen guidance/configuration.
+No new Rust/runtime source, domain policy or solver is added. Final paired evidence, required
+checks/startup/review/exact-head CI remain pending. Cases01–09 remain skipped.
