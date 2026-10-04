@@ -1794,3 +1794,21 @@ replay. Turn2 is live under Rupi PID36180, runner12644/exec84321. Its saved prom
 retains full SPEC, repair/fencing/assertion guidance and no prescribed store-module
 stage. No oracle resolution or matched result yet; PR141 stays draft and Cases08
 through10 remain open.
+
+## Retry09 Rupi second attempt verified (2026-10-04)
+
+Turn2 reaches the 600,264 ms watchdog with 48,711 recorded work tokens (44,658
+uncached input, 4,053 output), six usage records and nine completed tools: six reads
+and three writes. Request/completion counters include an earlier abandoned request;
+unfinished unrecorded inference remains unknown. Failed/Unknown counts are zero.
+Tests exit5, oracle exits1 and help passes without verification timeouts. Exit5 alone
+does not establish the failure cause; diagnostics remain unread by the parent.
+Manifest adds server4,272 bytes, worker5,286 and test initializer40, but no test
+module or README. Other sizes match turn1; sizes do not establish unchanged contents
+or exact edit targets, and file presence does not establish correct behavior.
+
+Across two turns: 79,326 recorded work tokens, 1,200,669 ms call time excluding
+verification and21 completed tools, zero failed/Unknown. Selected controls persist.
+Turn3 is live under Rupi PID27400, runner12644/exec84321. Its saved prompt retains
+full SPEC, repair/fencing/assertion guidance and no prescribed module stage. No
+oracle resolution or matched result yet; PR141 stays draft and Cases08 through10 stay open.
