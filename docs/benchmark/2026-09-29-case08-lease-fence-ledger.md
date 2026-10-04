@@ -1907,3 +1907,51 @@ config is unused by Pi. Turn2 is live under node PID26728, runner12644/exec84321
 Its saved prompt retains full SPEC, repair/fencing/assertion guidance and no prescribed
 module stage. Rupi is unresolved after six; the matched result is pending and PR141
 stays draft. Cases08 through10 remain open.
+
+## Retry09 terminal: configured Pi turn2 win (2026-10-04)
+
+Pi turn2 reaches the 600,173 ms watchdog with 15,439 recorded work tokens (5,352
+uncached input, 10,087 output), ten requests/completions/usage records and eleven
+completed native tool events: ls, read, seven writes, edit and grep. Failed/Unknown
+counts are unavailable, not zero; unfinished unrecorded inference remains unknown.
+Independent oracle and all help checks pass. Project tests exit5 without timeout;
+do not infer a failure cause from that code. Manifest lists entry point1,785 bytes,
+app3,571, store9,276, validation6,392, worker7,332, initializer53 and test initializer32.
+No test module or README is listed. Contents remain unread; oracle success does not
+establish complete public tests/documentation or default-runtime superiority.
+
+Pi resolves acceptance on turn2; Rupi is unresolved after six. This is a configured
+Pi win, not an inconclusive pair. Pi totals 38,151 recorded work tokens, 1,200,453 ms
+call time excluding verification and17 completed native tool events; failed/Unknown
+counts are unavailable. Rupi totals 219,122 work tokens, 3,406,936 ms,52 completed,
+three failed and zero Unknown. Rupi final project tests/help pass and oracle fails;
+Pi final oracle/help pass and project tests exit5. Unrecorded inference stays unknown.
+
+Exec84321 exits zero; runner12644, wrapper28168 and final Pi26728 are absent.
+All eight saved prompts retain full SPEC; initial prompts are byte-equal. Recovery
+prompts retain repair/fencing/assertion guidance. Copied SPEC and both acceptance
+hashes match references for both agents, with no extra non-cache acceptance files.
+Selected per-turn controls and copied recurring/window3/cap12/low/native config pass.
+Binary SHA256 remains 39829D0D62129F4138C449EC4FC913DE4EF81B028527B649EEDFEA1D3EE3D1C9.
+The same singular Qwen alias, model server PID27356 and budget2,048 relay PID33028
+persist. No concurrent model comparison or local build ran during this pair.
+Generated source, model output, oracle diagnostics and aggregate results remain unread.
+
+Baseline/retries01 through06 and08 remain inconclusive; retries07 and09 are configured
+Pi turn2 wins. Window3 does not establish a Rupi win or actual cache/speed improvement.
+PR141 remains draft; Cases08 through10 stay open. Next bounded candidate selects
+window12 with the existing cap12, delaying ordinary recurring narrowing within the
+bounded turn while retaining the first-mutation completion guard. Keep the same
+shared guidance, gates, model, binary, six-turn/600s controls and native replay.
+No new core behavior or benefit is claimed; measure the fresh matched outcome.
+
+Window12 candidate validation: all ten dry-run guards pass with low/budget2,048/
+recurring/window12/cap12/six turns/600s/grace6. The existing selector keeps default1
+and other cases unchanged; Pi's window remains null. No harness/Rust source change
+or binary rebuild is required. Author configuration/invariant review passes, with
+no independent-agent review claimed. Availability, approval and tool budgets still
+control exposed tools; delaying the progress boundary does not advertise unavailable
+tools. The initial text-only completion guard still requires a qualifying mutation.
+The longer window can allow more inspection before recurring narrowing; its cache
+effect and task benefit are unproven. Shared guidance and all public/independent
+gates are retained. PR141 remains draft pending a verified matched Rupi win.
