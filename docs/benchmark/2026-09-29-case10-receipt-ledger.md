@@ -359,3 +359,11 @@ runner23564/wrapper29924. Same binary/model/relay/low2048/cap12/six600s/grace6. 
 window3→12 changes; mode remains Recurring. Slots idle before launch; actual config passes,
 initial prompt byte-identical to retry03. No builds or parallel inference during the screen.
 Pi conditional on Rupi acceptance with frozen guidance/settings; outcome remains pending.
+
+Retry04 Rupi turn1 reaches its watchdog at600,386ms, unresolved:15,181 recorded work
+(10,885 input+4,296 output), four starts/three completions/three usage records. Four requested
+tools/two complete/two failed/zero Unknown (grep/read/read/read), no mutating tool request.
+Tests1/all four help1/oracle1, no verification timeouts. Complete snapshot lists only SPEC,
+.gitignore and four configs; no application/tests/README. Unfinished inference usage unknown.
+Lower recorded work on this failed attempt is not a win. No prompt compliance or causal window
+benefit claim. Turn2 active with unchanged shared repair guidance/window12 controls; Pi not run.
