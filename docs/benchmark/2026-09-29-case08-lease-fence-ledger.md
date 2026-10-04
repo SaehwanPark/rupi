@@ -190,3 +190,46 @@ Turn 4 is live (PID 33212 under runner 2844) with the same fixed source/settings
 Pi has not started; no matched result exists yet. The full Case 08 gate remains
 open. CI passed all platforms at `550aaf3`:
 [CI run](https://github.com/SaehwanPark/rupi/actions/runs/37166549179).
+
+## First retry: Rupi terminal, Pi active (October 4)
+
+Rupi turn 4 exited 1 after 496,429 ms with a provider-timeout status rather than
+an outer watchdog timeout. It recorded 3,479 work tokens (3,399 input, 80 output),
+two started/three completion counters, one usage record, and two completed reads.
+There were no failed or Unknown tools. Completion counters include `abandoned`;
+they are not successful current-turn request counts. The file snapshot was unchanged.
+Tests and all help commands passed; the oracle failed in every Rupi turn.
+
+Rupi's terminal totals are 73,794 recorded work tokens and 1,958,537 ms call time,
+27 requested/26 completed tools, one failed tool, and zero Unknown. Verification
+time and unrecorded inference are excluded. Rupi did not resolve in four turns.
+
+Pi began at 2026-10-04 01:13:58 UTC (node PID 9676 under runner 2844).
+The two saved initial prompts have identical SHA-256 hashes. The run remains fixed
+at launch source `465ef6c`; no full comparison outcome exists until Pi finishes.
+All-platform CI passed at docs head `803a03d`:
+[CI run](https://github.com/SaehwanPark/rupi/actions/runs/37167171934).
+
+## Next-retry candidate: discoverable workflow tests before repair
+
+Rupi added only sink fixtures after its implementation grew to 23,360 bytes, while
+the discovered test module stayed unchanged. The next shared recovery revision
+requires `tests/test_workflow.py` after foundation checks pass. Its first write must
+contain real public-command/HTTP tests; tiny sink fixtures live inside that module's
+temporary directory, preventing fixture-only writes from consuming the attempt.
+Tests cover signed admission, declared data flow, ordered fan-in, retry/blocking,
+restart persistence, and a bounded fresh-process stale-worker race. Local failures
+then route to implementation repair without weakening the failing workflow tests.
+
+This is a prepared candidate, not the code running retry01. The live PowerShell
+interpreter already loaded its launch functions and does not reload this script;
+only public specs, configs, local verification output, and metric files are read
+from disk. Those inputs remain unchanged. Confirm the old recovery guidance in
+Pi's saved prompts before reporting retry01 as a matched comparison.
+
+The candidate passed all-case low/budget-2,048 and off/no-budget dry runs. Checks
+cover missing workflow-test routing, later workflow routing, repair routing, full
+spec preservation, and oracle-diagnostic exclusion. Diff/column checks passed.
+File presence selects a phase; it does not prove test coverage or case completion.
+The oracle remains unchanged and no acceptance diagnostics were used to design
+this revision. Launch a fresh pair only after retry01 is terminal and usage is checked.

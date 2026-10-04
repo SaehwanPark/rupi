@@ -563,8 +563,13 @@ function Get-Case08Prompt(
       $helpPassed = @($verification.help).Count -eq 3 -and @(
         $verification.help | Where-Object { $_.timed_out -or $_.exit_code -ne 0 }
       ).Count -eq 0
+      $workflowTestsPresent = Test-Path -LiteralPath (
+        Join-Path $ProjectPath "tests/test_workflow.py"
+      )
       $phase = if (-not $helpPassed -or $verification.project_tests.timed_out -or
-        $verification.project_tests.exit_code -ne 0) { "repair" } else { "workflow" }
+        $verification.project_tests.exit_code -ne 0) {
+        "repair"
+      } elseif (-not $workflowTestsPresent) { "workflow_tests" } else { "workflow" }
     }
   }
   $guidance = switch ($phase) {
@@ -584,11 +589,34 @@ public contract, and exact checks. Yield after these four foundation writes.
       @'
 Repair the earliest failing local test or help gate using the harness diagnostics.
 Preserve existing service and worker behavior. Remove imports of missing local modules.
-Keep application code in leasefence/__main__.py and tests in tests/test_leasefence.py.
+Keep application code in leasefence/__main__.py; preserve both CLI and workflow tests.
 If tests are missing, write an importable unittest.TestCase with real test_* methods,
 then tests/__init__.py. Do not replace failing workflow tests with help-only checks.
 Use public commands and HTTP in tests; do not assume private function or class names.
 After repairing the local failure, continue missing specification behavior in small edits.
+'@
+    }
+    "workflow_tests" {
+      @'
+Foundation tests and all help commands pass, but the workflow test module is missing.
+First write: tests/test_workflow.py with a real unittest.TestCase and test_* methods.
+Do not write only sink fixtures or repeatedly revise the existing CLI help tests.
+Keep the test module self-contained: write tiny sink scripts inside its temporary directory.
+Test only the documented commands and HTTP routes; do not import private application APIs.
+Cover raw-body HMAC rejection without mutation, signed admission, duplicate/conflicting
+pipelines, original job order, and restart persistence through fresh server processes.
+Test worker --once through sys.executable and direct argv, with deterministic sink responses.
+Cover declared input_refs, reversed dependency-order selected-field fan_in, missing selected
+fields without a barrier sink call, blocked dependents, and retry on a later worker invocation.
+Add a bounded fresh-process stale-worker race: block worker A's sink, expire its one-second
+lease, let worker B finish a new claim, then release A and require its non-zero stale exit.
+Assert A changes none of B's public status, output, attempts, lease, or last_error.
+Ensure private claim tokens never appear in HTTP responses or sink requests.
+Use explicit deadlines and subprocess timeouts; close all responses, pipes, and processes.
+Use only the embedded public specification, never the external oracle or its diagnostics.
+Keep the first workflow test write compact; helper scripts belong inside that test module.
+After writing the discovered test module, yield for harness feedback. Do not implement
+the whole workflow in the same attempt; repair the public-test failures in the next attempt.
 '@
     }
     "workflow" {
@@ -2506,12 +2534,23 @@ if ($DryRun) {
       )
       $dryRunPackage = Join-Path $dryRunProject "leasefence"
       $dryRunEntry = Join-Path $dryRunPackage "__main__.py"
+      $dryRunTests = Join-Path $dryRunProject "tests"
+      $dryRunWorkflow = Join-Path $dryRunTests "test_workflow.py"
       $oracleDiagnostic = Join-Path $dryRunProject "oracle-diagnostic.txt"
       try {
         New-Item -ItemType Directory -Path $dryRunPackage -Force | Out-Null
         Write-Text $dryRunEntry "# dry-run entry point marker"
         Write-Text $oracleDiagnostic "CASE08_PRIVATE_ORACLE_DIAGNOSTIC"
         $dryRunVerification.oracle.stdout_path = $oracleDiagnostic
+        $testsPrompt = Get-RecoveryPrompt $_ $dryRunVerification $dryRunProject
+        if (-not $testsPrompt.Contains($spec) -or
+            -not $testsPrompt.Contains('First write: tests/test_workflow.py') -or
+            -not $testsPrompt.Contains('block worker A') -or
+            $testsPrompt.Contains('CASE08_PRIVATE_ORACLE_DIAGNOSTIC')) {
+          throw "Case 08 missing workflow tests must select public-spec test authoring."
+        }
+        New-Item -ItemType Directory -Path $dryRunTests -Force | Out-Null
+        Write-Text $dryRunWorkflow "# dry-run workflow test marker"
         $workflowPrompt = Get-RecoveryPrompt $_ $dryRunVerification $dryRunProject
         if (-not $workflowPrompt.Contains($spec) -or
             -not $workflowPrompt.Contains('Foundation tests and all help commands pass.') -or
@@ -2529,10 +2568,10 @@ if ($DryRun) {
           throw "Case 08 missing entry point must select foundation recovery."
         }
       } finally {
-        foreach ($file in @($dryRunEntry, $oracleDiagnostic)) {
+        foreach ($file in @($dryRunEntry, $dryRunWorkflow, $oracleDiagnostic)) {
           if (Test-Path -LiteralPath $file) { Remove-Item -LiteralPath $file -Force }
         }
-        foreach ($directory in @($dryRunPackage, $dryRunProject)) {
+        foreach ($directory in @($dryRunPackage, $dryRunTests, $dryRunProject)) {
           if (Test-Path -LiteralPath $directory) {
             if (@(Get-ChildItem -LiteralPath $directory -Force).Count -ne 0) {
               throw "Dry-run directory contains unexpected files: $directory"
