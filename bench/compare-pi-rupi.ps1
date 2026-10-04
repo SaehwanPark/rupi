@@ -20,6 +20,8 @@ param(
   [int]$Case07ReasoningBudgetTokens = 0,
   [ValidateRange(0, 16384)]
   [int]$Case08ReasoningBudgetTokens = 0,
+  [ValidateSet("one_shot", "recurring")]
+  [string]$Case08ProgressBoundaryMode = "one_shot",
   [switch]$DryRun
 )
 
@@ -1866,6 +1868,12 @@ function Get-BenchmarkReasoningBudget([hashtable]$case) {
   return 0
 }
 
+function Set-BenchmarkProgressBoundary([hashtable]$case, [object]$limits) {
+  if ($case.Id -ne "08-lease-fence") { return }
+  $limits | Add-Member -MemberType NoteProperty -Name progress_boundary_mode -Force `
+    -Value $Case08ProgressBoundaryMode
+}
+
 function Get-BenchmarkEndpoint([hashtable]$case) {
   if ((Get-BenchmarkReasoningBudget $case) -gt 0) {
     return "http://127.0.0.1:8001/v1"
@@ -1946,6 +1954,7 @@ function New-BenchmarkWorkspace([hashtable]$case, [string]$agentRoot, [string]$t
     if ($null -eq $config.limits) {
       $config | Add-Member -MemberType NoteProperty -Name limits -Value ([pscustomobject]@{})
     }
+    Set-BenchmarkProgressBoundary $case $config.limits
     if ($null -eq $config.limits.PSObject.Properties["max_model_requests_per_turn"]) {
       $config.limits | Add-Member -MemberType NoteProperty -Name max_model_requests_per_turn -Value $MaxModelRequestsPerTurn
     } else {
@@ -2225,6 +2234,11 @@ function Invoke-AgentCase([hashtable]$case, [string]$agent, [string]$root, [stri
       $turnRecord["harness_model_request_cap"] = if ($agent -eq "rupi") {
         $MaxModelRequestsPerTurn
       } else { $null }
+      if ($case.Id -eq "08-lease-fence") {
+        $turnRecord["configured_progress_boundary_mode"] = if ($agent -eq "rupi") {
+          $Case08ProgressBoundaryMode
+        } else { $null }
+      }
       $turnRecord["configured_thinking_control"] = [ordered]@{
         level = $thinkingLevel
         dialect = "reasoning_effort"
@@ -2272,6 +2286,15 @@ if ($DryRun) {
   Write-Host "Recovery feedback scope: $recoveryFeedbackScope"
   $cases | ForEach-Object {
     [void](Get-InitialPrompt $_)
+    $progressLimits = [pscustomobject]@{ max_model_requests_without_progress = 1 }
+    Set-BenchmarkProgressBoundary $_ $progressLimits
+    if ($_.Id -eq "08-lease-fence") {
+      if ($progressLimits.progress_boundary_mode -cne $Case08ProgressBoundaryMode) {
+        throw "Case 08 Rupi must use the selected progress boundary mode."
+      }
+    } elseif ($null -ne $progressLimits.PSObject.Properties["progress_boundary_mode"]) {
+      throw "The Case 08 progress mode must not change other cases."
+    }
     $expectedEndpoint = if ((Get-BenchmarkReasoningBudget $_) -gt 0) {
       "http://127.0.0.1:8001/v1"
     } else { "http://127.0.0.1:8000/v1" }
@@ -2749,6 +2772,7 @@ $summary = [ordered]@{
   case08_reasoning_budget_tokens = if ($Case08ReasoningBudgetTokens -gt 0) {
     $Case08ReasoningBudgetTokens
   } else { $null }
+  case08_rupi_progress_boundary_mode = $Case08ProgressBoundaryMode
   max_turns = $MaxTurns
   turn_timeout_seconds = $TurnTimeoutSeconds
   provider_timeout_grace_seconds = $script:providerTimeoutGraceSeconds

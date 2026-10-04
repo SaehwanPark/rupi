@@ -868,3 +868,34 @@ can now begin without overlapping this pair. Usage is 46% five-hour and 85% week
 below both soft stops. Verify/merge that generic runtime slice before integrating it
 into this branch and selecting recurring mode in a fresh matched comparison.
 Baseline and four guided retries are inconclusive; Cases08 through 10 remain open.
+
+## Recurring-progress candidate prepared (2026-10-04)
+
+PR #143 passed final-head CI on Linux, macOS and Windows at a8edd208 and was
+squash-merged as ab3dc33. Its required local checks, startup budgets and author
+invariant review passed; the source tree was unchanged by the final documentation
+commit. The merged local and remote branches were removed after exact-head audit.
+This Case08 branch integrated main in f134c36 without conflicts.
+
+The harness now accepts `-Case08ProgressBoundaryMode recurring`; its default is
+`one_shot`. Only Case08's Rupi limits receive this selector. Pi receives no equivalent
+mode, and per-turn metadata records null for Pi rather than suggesting parity.
+Both agents retain the same public prompts, model, low effort, configured 2,048-token
+reasoning budget, tool profiles, native replay and 600-second watchdog. Rupi retains
+its request cap of 12; Pi retains its uncapped native policy. These runtime controls
+are disclosed asymmetries, not evidence that default Rupi outperforms default Pi.
+
+All-case dry-run guards passed with low effort/budget 2,048/recurring mode and with
+off/no budget/default mode. They verify mode scope, specification preservation,
+repair test preservation and exclusion of oracle diagnostic sentinels. Author review
+found no blocking invariant issue: the selector changes runtime configuration only,
+adds no diagnostic feedback, leaves shared guidance unchanged and preserves the
+default. This is an author review, not an independent agent review.
+
+A fresh debug binary built from the integrated Rust source passed its `--help`
+smoke check. Its SHA256 is
+`39829D0D62129F4138C449EC4FC913DE4EF81B028527B649EEDFEA1D3EE3D1C9`.
+The source agrees with merged ab3dc33; this branch changes harness and evidence only.
+Usage before launch was 58% five-hour and 87% weekly, below both soft stops.
+Run matched retry05 before evaluating this candidate.
+No Case08 win or broader stage gate is established by these runtime checks.
