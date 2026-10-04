@@ -878,8 +878,10 @@ commit. The merged local and remote branches were removed after exact-head audit
 This Case08 branch integrated main in f134c36 without conflicts.
 
 The harness now accepts `-Case08ProgressBoundaryMode recurring`; its default is
-`one_shot`. Only Case08's Rupi limits receive this selector. Pi receives no equivalent
-mode, and per-turn metadata records null for Pi rather than suggesting parity.
+`one_shot`. Only Case08's benchmark Rupi config receives this selector. Workspace
+setup writes that config in both agent directories, but only Rupi consumes it;
+Pi uses its separate native config and receives no equivalent runtime mode.
+Per-turn metadata records null for Pi rather than suggesting parity.
 Both agents retain the same public prompts, model, low effort, configured 2,048-token
 reasoning budget, tool profiles, native replay and 600-second watchdog. Rupi retains
 its request cap of 12; Pi retains its uncapped native policy. These runtime controls
@@ -976,3 +978,20 @@ Pi turn 1 is live under node PID 10248, runner 14912/exec session 85505.
 Finish Pi before recording a matched comparison result or launching another pair.
 Recurring enforcement is verified by separate fixtures; this unresolved half-run
 does not prove a Case08 win or default-runtime superiority.
+
+## Retry05 Pi foundation verified (2026-10-04)
+
+Pi turn 1 completed in 157,372 ms with 7,905 recorded work tokens (5,423 uncached
+input, 2,482 output), five requests/completions/usage records and four completed
+writes. Failed/Unknown tool counters are unavailable. Project tests and all help
+checks pass without timeouts; the oracle fails without a timeout. Per-turn metadata
+confirms low effort, budget 2,048, endpoint 8001 and native replay; recurring mode
+and harness request cap are null for Pi, preserving its native policy.
+Turn 2 is live under node PID 6592, runner 14912/exec session 85505.
+The paired comparison remains pending.
+
+Pi's entry point is 2,563 bytes, foundation test 1,221, empty test initializer and
+README 2,169; generated contents remain unread. Turn 2's saved prompt contains the
+full specification and public workflow-test instructions, and is byte-equal to Rupi's
+turn 2 prompt. The recurring property in Pi's unused copied Rupi config does not
+configure Pi; its selected native settings remain separate.
