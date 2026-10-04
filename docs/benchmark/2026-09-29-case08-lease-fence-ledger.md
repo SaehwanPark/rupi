@@ -1116,3 +1116,21 @@ prompt retains full SPEC, selects store/worker/server implementation before work
 tests, and includes the transactional fencing contract. It does not select the
 test-first phase. This verifies delivery of the revised sequence, not workflow
 correctness or a comparison win. The matched outcome remains pending.
+
+## Retry06 Rupi implementation delivery verified (2026-10-04)
+
+Turn 2 reached the 600,204 ms outer watchdog with 41,168 recorded work tokens
+(31,832 uncached input, 9,336 output), five started requests and four completions/
+usage records. Six tools completed: three writes, two edits and one read;
+Failed/Unknown counts are zero. Unfinished inference work remains unknown.
+Tests and all help checks pass without verification timeouts; the oracle fails
+without a timeout. Manifest now lists store 10,587 bytes, worker 9,912, server 2,345
+and entry point 3,640. Prior test/README sizes remain unchanged. Contents remain
+unread; module presence and passing foundation tests do not establish full workflow.
+
+Across two turns Rupi recorded 48,339 work tokens and 754,436 ms call time excluding
+verification. Selected recurring/cap12/low/budget2,048/endpoint8001/native replay
+controls are retained. Turn 3 is live under Rupi PID 32068, runner 30660/session
+62809. Its saved prompt retains full SPEC and correctly selects public workflow tests
+after module delivery, including the bounded stale-worker race. No oracle resolution
+or matched comparison result yet; Cases08 through 10 remain open.
