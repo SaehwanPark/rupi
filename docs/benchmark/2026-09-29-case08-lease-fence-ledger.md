@@ -423,7 +423,7 @@ required local checks, 29 transport fixtures, startup budgets and author invaria
 review. Its completed local/remote branch was removed. Root main is synchronized;
 the user's uncommitted usage-policy edit is preserved. Only main and this active
 Case 08 branch remain. See the merged provider ledger for evidence:
-[provider idle fix](2026-10-03-provider-stream-idle.md).
+[provider idle fix](https://github.com/SaehwanPark/rupi/pull/142).
 
 Continue this fixed original-binary pair to terminal state. Then verify all saved
 prompts and reference hashes, record the outcome, integrate main into this branch,
