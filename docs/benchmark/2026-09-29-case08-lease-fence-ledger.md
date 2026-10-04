@@ -1453,3 +1453,17 @@ independent-agent review is claimed. Added lines meet 100 columns and diff check
 No Rust, application, acceptance, config, model, timeout or tool-policy change is made.
 A larger first source write may still reach the watchdog; the result remains unproven.
 The next fresh pair will retain retry07's six-turn model/runtime controls.
+
+## Fresh complete-workflow-first pair launched (2026-10-04)
+
+Retry08 launched from b6c4200 as
+`bench-20261004-case08-complete-first-budget2048-low-retry08-rupi12-matched6-600s`.
+Continuation: exec session 79760, runner PID 36808 under wrapper 29776; first Rupi
+PID 33836. Prior session 72703 is terminal and must not be reused. No concurrent
+pair or local build runs. Same model/relay, binary, six turns, 600-second watchdog,
+low effort, configured budget2,048 and runtime/tool controls are retained.
+Written Rupi limits confirm recurring/progress1/cap12 and endpoint timeout 594,000 ms.
+Saved initial prompt retains full SPEC and fencing, requests complete first-write
+behavior and contains neither the former partial yield nor prescribed store stage.
+Binary hash remains unchanged. Usage before launch was five-hour30%/weekly98%,
+below the root policy thresholds95%/99%. No result yet; Cases08 through 10 remain open.
