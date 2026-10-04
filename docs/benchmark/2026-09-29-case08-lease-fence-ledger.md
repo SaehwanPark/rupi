@@ -318,3 +318,18 @@ fresh workspaces, retaining the same local model, pinned Pi, low/budget 2,048, f
 600-second turns, six-second grace, and Rupi cap 12/Pi native request policy. The
 parent's usage check at 01:48 UTC reported 51% five-hour and 73% weekly usage.
 The relay remains task-owned and healthy; no other comparison is running.
+
+## Retry02 launched (2026-10-04 01:49 UTC)
+
+Run: `bench-20261003-case08-workflow-tests-budget2048-low-retry02-rupi12-matched4-600s`.
+Launch source: `3f478a5`, including candidate `82b0b12`. Fresh workspaces were created.
+Pinned Pi reports 0.86.1. The active Rupi config confirms local `qwen3.8-flash-next`,
+relay endpoint 8001, low effort, native reasoning replay on declared native exposure,
+request cap 12, timeout 594,000 ms, and read/write/edit/grep only. The relay is healthy
+with budget 2,048 and content logging disabled. Four 600-second turns/six-second grace
+remain unchanged. Pi retains its native request policy and file-tool allowlist.
+
+Rupi turn 1 is live (PID 37440 under runner 24108; exec session 76232).
+Its saved prompt preserves the complete specification and selects foundation.
+Pi has not started. No result exists yet. Finish this pair before changing live inputs
+or launching another comparison. Earlier retry01 artifacts remain untouched.
