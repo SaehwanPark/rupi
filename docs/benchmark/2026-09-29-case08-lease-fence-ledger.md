@@ -1176,3 +1176,19 @@ remains active and has no matched result yet; do not reuse terminal retry05's ha
 The implementation-first sequence delivered modules and workflow tests by turn 3,
 leaving one outer repair attempt in this four-turn comparison. Module/test delivery
 is verified, while oracle resolution and full public-project completion remain unproven.
+
+## Retry06 Pi foundation and implementation routing verified (2026-10-04)
+
+Pi turn 1 completed in 183,136 ms with 8,546 recorded work tokens (5,423 uncached
+input, 3,123 output), five requests/completions/usage records and four completed
+writes. Failed/Unknown counters remain unavailable. Tests and help pass without
+timeouts; the oracle fails without a timeout. Entry point is 2,215 bytes, foundation
+test 1,255, test initializer 16 and README 2,613. Contents remain unread.
+Per-turn controls retain low effort, budget 2,048, endpoint 8001 and native replay;
+mode/request cap are null for Pi's native policy.
+
+Turn 2 is live under node PID 32320, runner 30660/exec session 62809. Its saved
+prompt retains full SPEC and the implementation-first/fencing guidance, and is
+byte-equal to Rupi's turn 2 prompt. Both agents received the revised shared sequence.
+The matched result remains pending. Usage before this observation was 91% five-hour
+and 92% weekly, below both soft stops. Cases08 through 10 remain open.
