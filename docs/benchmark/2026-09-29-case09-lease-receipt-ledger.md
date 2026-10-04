@@ -487,3 +487,25 @@ Rupi5 PID33836 is live under original exec25019/runner23092/wrapper36544; saved 
 SPEC/assertion/stable-key/private-fencing/lost-ack repair requirements pass. Continue
 the unchanged original pair without local builds or concurrent inference. PR144 stays
 draft; Cases09/10 open and Cases01 through08 configured wins stay skipped.
+## Retry02 Rupi fifth attempt: tests listed but acceptance unresolved (2026-10-04)
+
+Turn5 reaches600,238 ms watchdog; runtime status is unavailable. Nine requests start,
+eight complete/eight usage records and54,663 recorded work tokens (49,333 uncached
+input,5,330 output). Unfinished unrecorded inference remains unknown,not zero. Eleven
+tools complete: two writes/nine reads,zero failed/Unknown. Tests and acceptance exit1;
+all help checks pass without verification timeouts. Manifest adds tests/test_http.py
+4,177 bytes,lists sink_helper3,153; other sizes match turn4,no README listed. Contents/
+model output/diagnostics remain unread; presence/sizes do not establish full behavior,
+exact edits,unchanged contents or the failure cause.
+
+Cumulative through five turns:140,130 recorded work tokens,2,851,512 ms authoring time
+excluding verification,35 completed tools,one failed/zero Unknown,four watchdogs and
+one request-budget-exhausted attempt. Interim audit passes all five saved prompts/
+selected controls,copied SPEC/two acceptance hashes/no extra non-cache reference files.
+Actual window3/cap12/low/native replay and binary/model/relay remain unchanged.
+Pi has not started; no matched win or causal window/cache/token improvement established.
+
+Rupi6 PID37284 is live under original exec25019/runner23092/wrapper36544; saved full-
+SPEC/assertion/stable-key/private-fencing/lost-ack repair requirements pass. Keep the
+original pair unchanged without local builds or concurrent inference. PR144 stays
+draft; Cases09/10 remain open and Cases01 through08 configured wins stay skipped.
