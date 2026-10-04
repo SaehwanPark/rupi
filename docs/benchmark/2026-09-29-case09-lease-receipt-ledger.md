@@ -415,3 +415,27 @@ exec25019/runner23092/wrapper36544. Saved repair full-SPEC/assertion/stable-key/
 fencing/lost-ack requirements pass. Continue this original pair unchanged; Pi has not
 started and no matched outcome exists. No builds or concurrent inference. PR144 stays
 draft; Cases09/10 remain open. This result establishes no window/cache/token speedup.
+## Retry02 Rupi second attempt reaches watchdog; partial files listed (2026-10-04)
+
+Turn2 reaches600,266 ms watchdog; runtime status is unavailable. Three request starts/
+completion events, two usage records and18,859 recorded work tokens (11,132 uncached
+input,7,727 output). Completion events include an abandoned request; unfinished
+unrecorded inference remains unknown. Three writes complete,zero failed/Unknown.
+Tests, acceptance and all help checks fail without verification timeouts. Manifest
+adds initializer78 bytes/server4,019/store19,052; no entry point,worker,tests or README
+are listed. Generated contents/model output/diagnostics remain unread; file presence/
+sizes do not establish full behavior or the failure cause.
+
+Cumulative through two turns:27,210 recorded work tokens,1,200,525 ms call time
+excluding verification,six completed tools,one failed/zero Unknown,two watchdogs.
+Interim audit passes both saved prompts/selected controls,copied SPEC/two acceptance
+hashes/no extra non-cache reference files. Actual window3/cap12/low/native replay and
+binary/model/relay remain unchanged. No matched win or token/window/cache improvement
+is established; Pi has not started. Before this update,headba578b1 passes all three CI
+platforms; this establishes repository checks rather than benchmark success.
+
+Rupi3 PID30076 is live under original exec25019/runner23092/wrapper36544; saved full-
+SPEC/assertion/stable-key/private-fencing/lost-ack repair requirements pass. Continue
+the unchanged original pair with no local builds or concurrent inference. PR144 stays
+draft; Cases09/10 open. Fetch/prune confirms only main and this active branch locally/
+remotely; detached prior artifacts and unrelated root usage-policy edit are preserved.

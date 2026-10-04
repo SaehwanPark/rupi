@@ -1549,7 +1549,10 @@ TUI rendering passed all budgets (3.31–3.90 µs/unit); checkpointed restore me
   gates unchanged; actual configuration/reference hashes and initial prompt equality
   pass. Rupi1 hits600,259 ms watchdog without a recorded mutation; tests/acceptance/
   help fail. Recorded work8,351 excludes the unfinished third request, which is unknown.
-  Rupi2 is live; Pi has not started. No matched result or improvement is claimed.
+  Rupi2 also hits600,266 ms watchdog:18,859 work tokens,three writes; tests/acceptance/
+  help fail. Manifest lacks entry point/worker/tests/README; contents remain unread.
+  Both completed-turn prompt/control/reference audits pass; binary/model unchanged.
+  Rupi3 is live; Pi has not started. No matched result or improvement is claimed.
   PR144 remains draft. Neither candidate changes runtime or acceptance contracts.
   Preserve stable public delivery keys, distinct private fencing, lost-ack retry and
   accepted receipt persistence. No acceptance fixtures or manually generated solution
