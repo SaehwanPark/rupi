@@ -149,3 +149,42 @@ zero failures/Unknown. Tests5/oracle1/all four help0, no verification timeouts. 
 listed file sizes match turn4, without proving unchanged contents; no test_*.py listed.
 Unfinished second-request inference usage remains unknown, not zero. Cumulative recorded
 work180,554/authoring2,965,010ms. Turn6 active, the final planned Rupi attempt; Pi not started.
+
+Rupi turn6 reaches its watchdog at600,235ms, unresolved:17,761 recorded work (13,930 input+
+3,831 output), five starts/five completions including an earlier abandoned request, four usage
+records. Five tools complete/zero fail/zero Unknown (write/read/grep/read/read). Tests5/oracle1/
+all four help0, no verification timeouts. Store size changes17,721→4,845; other six sizes match.
+No test_*.py listed. Contents unread; metadata proves neither exact edits nor unchanged files.
+
+Retry01 Rupi is terminal non-winning:198,315 recorded work/3,565,245ms authoring/48 completed
+four failed/zero Unknown tools; five watchdogs/one budget-exhausted turn. All six saved prompts,
+controls, copied SPEC and three acceptance hashes pass; actual config/source/binary/model/relay
+match. Initial Rupi/Pi prompt hashes are equal. Rupi failed every acceptance/test gate; final
+help passes, README listed but unread. Unrecorded unfinished inference usage remains unknown.
+
+Pi had just begun turn1 when the candidate became unable to yield a configured Rupi win.
+Stopped the owned runner33224/tree (Pi30660 and child29908) to avoid spending another six
+attempts on an already unsuccessful candidate. Wrapper exec61233 exits1; no Pi turn summary
+exists. Pi usage, completion, tool failures/Unknown and acceptance are unavailable, never zero.
+This is an incomplete comparison, not a matched terminal pair or a win. Artifacts retained;
+no uncertain mutation replayed. All four model slots report is_processing:false after stop.
+
+### Revised guidance and Rupi-first screening
+
+Recorded summaries show repeated reads and no public test cases, including thirteen reads
+in turn4. Revise shared Case10 guidance using only those public gates/metadata: read with
+explicit offset/limit ≤120 lines; at most one targeted read/grep before the next application
+mutation; preserve complete modules with focused edits. When help passes but tests are absent,
+first write real public-command/HTTP tests, preserve assertions and never empty placeholders.
+All public audit/receipt/fencing requirements and the full SPEC remain unchanged. No private
+oracle details or generated content are inspected or supplied. No runtime feature is added.
+
+Revised default/selected guards, fake-oracle/native-exposure isolation, all18 unchanged other
+prompt hashes and fresh configuration/SPEC/three reference probes pass. Harness SHA256:
+`7D2FB1C85748497850F6BD98BD61F4B01BC90EBA6FEE21A65B7817F140BE519C`.
+Binary8159F875...77F24 and model27356/relay33028 remain unchanged. Usage21% five-hour/33% weekly,
+below root95/99 soft stops. Screen a fresh Rupi candidate first with unchanged controls and six
+maximum600s/grace6 attempts. If Rupi resolves, freeze guidance/binary and run fresh Pi0.86.1
+on the same RunId, prompt and public gates. If Rupi does not resolve, do not spend Pi inference
+on a candidate that cannot win. Each rejected screen stays explicitly non-winning/incomplete.
+Final paired evidence, required checks/startup, review and exact-head CI remain pending.

@@ -742,7 +742,7 @@ First tool call: write receiptledger/__main__.py with the complete public workfl
 Implement the CLI, authenticated admission, durable graph, worker, fencing, receipts and audit now.
 Keep related behavior together; a compact single module or a few compact modules are allowed.
 Do not import absent local modules or start a partial health-only foundation stage.
-Use the embedded SPEC instead of rereading it; keep reads bounded.
+Use the embedded SPEC instead of rereading it; read with offset/limit, at most 120 lines.
 Then write public-command/HTTP unittest tests, tests/__init__.py and an honest README.
 Complete service, worker, audit, tests and documentation in the same attempt.
 '@
@@ -753,7 +753,14 @@ Implement missing public behavior before revising test fixtures; remove absent l
 Preserve passing service/worker behavior, public assertions and all four help paths.
 Change a test fixture only when it misuses the documented public contract; preserve assertions.
 Use public commands/HTTP in tests, without assuming private function or class names.
-Use one focused application edit per response, at most 100 new lines; keep reads bounded.
+When help passes but public test cases are absent, first write tests/test_receiptledger.py.
+Write real public-command/HTTP workflow assertions, never placeholders or an empty test suite.
+Then repair the earliest failing assertion; preserve passing checks and complete audit/receipts.
+Use one focused application edit per response, at most 100 new lines; preserve other behavior.
+Before the next application mutation, use at most one targeted read or grep.
+Read with offset/limit, at most 120 lines; do not reread entire modules or repeatedly inspect them.
+Do not replace a complete module with a partial rewrite; edit only the failing behavior.
+After a completed change, continue to the next repair instead of inspecting the same region.
 Continue the next source edit in the same attempt, then complete missing tests and honest README.
 File presence and passing help alone do not establish workflow completeness.
 '@
@@ -3036,6 +3043,13 @@ if ($DryRun) {
               -not $prompt.Contains('preserve assertions') -or
               -not $prompt.Contains('at most 100 new lines')) {
             throw "Case 10 repair must preserve assertions and bounded application edits."
+          }
+          if (-not $prompt.Contains('first write tests/test_receiptledger.py') -or
+              -not $prompt.Contains('never placeholders or an empty test suite') -or
+              -not $prompt.Contains('at most one targeted read or grep') -or
+              -not $prompt.Contains('Do not replace a complete module with a partial rewrite') -or
+              -not $prompt.Contains('Read with offset/limit, at most 120 lines')) {
+            throw "Case 10 repair must prioritize real tests and bounded reads/edits."
           }
         }
         $dryRunVerification.help[0].exit_code = 0

@@ -1554,7 +1554,9 @@ TUI rendering passed all budgets (3.31–3.90 µs/unit); checkpointed restore me
   merged as8ba8010 after exact-head three-platform CI; its local/remote branches are removed.
   Cases01–09 configured wins are skipped; Case10 remains the sole comparison target.
   Case10 audit/receipt guidance and isolated controls are active onfix/case10-audit-ledger;
-  the fresh comparison and delivery checks are pending. Broader project gates remain active.
+  retry01 Rupi remains unresolved after6; Pi was stopped as an incomplete comparison.
+  Revised bounded-read/public-test guidance is active; Rupi-first screening and paired
+  evidence/delivery checks remain pending. Broader project gates remain active.
   Preserve stable public delivery keys, distinct private fencing, lost-ack retry and
   accepted receipt persistence. No acceptance fixtures or manually generated solution
   are changed. See the Case08/Case09 ledgers for evidence; broader project gates remain active.
