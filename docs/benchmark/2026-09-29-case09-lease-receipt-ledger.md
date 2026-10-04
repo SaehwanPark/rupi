@@ -694,3 +694,43 @@ d2e5ac7 passes all three CI platforms; required final local checks/startup/autho
 and exact-final-head CI remain pending. PR144 stays draft until those checks pass.
 Case09 now has a verified configured comparison win and is skipped in further trials;
 its delivery remains pending. Case10 is the sole remaining comparison target.
+## Final local verification and author review pass (2026-10-04)
+
+Required checks pass with stable routing matching the repository's verified pin:
+`rustc1.98.1 (48a229cea 2026-09-01)`. Exact commands:
+
+- `cargo +stable fmt --all --check`
+- `cargo +stable check -p rupi-core --all-features`
+- `cargo +stable clippy --workspace --all-targets -- -D warnings`
+- `cargo +stable test --workspace`
+- `cargo +stable doc --workspace --no-deps`
+- Git Bash `bench/startup.sh --json bench/results/startup-ci.json`
+
+Startup:156.009 ms cold,8.134 ms warm median,9.077 ms warm maximum,ten warm samples;
+within250/100 ms budgets. No local model inference overlaps these checks. Rust/startup
+sources remain identical to checked headac8795f; final harness revisions only correct
+Case09 mode capitalization and an isolated-discovery error label after the pair ends.
+No winning-run artifact,application,acceptance fixture or model-visible prompt changes.
+
+Author invariant review: **pass**, no blocking findings after one bounded revision.
+Public SPEC/domain guidance remains in the benchmark,not Rust core. Native exposure
+is checked before mutation,unrelated endpoint settings survive,Pi unavailable metrics
+stay null,oracle feedback excludes diagnostics and generated content stays unread.
+Shared Case08/09 selector routing preserves other profiles. No independent-agent review
+is claimed; the change owner performs source/consumer review and final verification.
+
+PowerShell ValidateSet accepts capitalization but runtime JSON uses lowercase enum
+names. Case09 now canonicalizes the input before config/metadata construction and
+its dry-run guard rejects non-canonical output. All-case default and capitalized
+selected Recurring/window3/cap12/low2,048 guards pass. All18 non-Case09 prompt hashes
+stay unchanged; final initial prompt is byte-identical to the winning run. Fresh
+actual workspace config/copied SPEC/two acceptance hashes pass. The discovery error
+now names Case09 alongside07/08. Final harness SHA:
+`71F7005BC460F8DA7AAF8B9B783ACE0317EA7559A14A6A4409217680B93F0515`.
+The winning comparison ran source5637c80/harness F2F6A528...B54AD0; lowercase selected
+controls remain unchanged by the final casing correction. The original comparison
+is not rerun: Case09 already has its verified configured win.
+
+Required local checks/startup/author review are complete; exact-final-head three-
+platform CI remains pending before authorized merge and local/remote branch cleanup.
+Case10 remains the sole comparison target; broader project stage gates stay active.

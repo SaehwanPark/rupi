@@ -34,6 +34,7 @@ param(
 )
 
 $ErrorActionPreference = "Stop"
+$Case09ProgressBoundaryMode = $Case09ProgressBoundaryMode.ToLowerInvariant()
 $script:providerTimeoutGraceSeconds = [int][math]::Min(
   $ProviderTimeoutGraceSeconds,
   [math]::Max(1, [math]::Floor($TurnTimeoutSeconds / 10))
@@ -2401,7 +2402,7 @@ if ($DryRun) {
     if ($piEnvironment.Count -ne 0 -or
         ($_.Id -notin @("07-lease-cascade", "08-lease-fence", "09-lease-receipt") -and
           $rupiEnvironment.Count -ne 0)) {
-      throw "Only Case 07/08 Rupi may receive an isolated discovery profile."
+      throw "Only Case 07/08/09 Rupi may receive an isolated discovery profile."
     }
     if ($_.Id -eq "07-lease-cascade") {
       if ($rupiEnvironment.Count -ne 2 -or -not $rupiEnvironment.ContainsKey("HOME") -or
@@ -2611,6 +2612,9 @@ if ($DryRun) {
         throw "Case 08 must preserve its specification and oracle boundary."
       }
     } elseif ($_.Id -eq "09-lease-receipt") {
+      if ($progressLimits.progress_boundary_mode -cnotin @("one_shot", "recurring")) {
+        throw "Case 09 progress mode must use canonical lowercase runtime JSON names."
+      }
       if ($rupiEnvironment.Count -ne 2 -or $null -ne $rupiEnvironment.HOME -or
           $rupiEnvironment.USERPROFILE -ne (Join-Path $environmentRoot "discovery-profile") -or
           (@(Get-BenchmarkTools $_ "rupi") -join ",") -ne "read,write,edit,grep" -or
