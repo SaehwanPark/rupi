@@ -105,3 +105,12 @@ A provider's context refusal proves that the exact request was too large; switch
 not a substitute for compacting history. Only an uncommitted refusal may trigger one local
 prefix compaction and reissue, and committed reasoning, text, or decoded tool calls must make
 the refusal terminal.
+
+## Check the status of the command that actually ran
+
+An in-process PowerShell script can succeed while LASTEXITCODE retains an earlier native
+failure. Use terminating errors and check `$?` immediately after script or cmdlet calls;
+check `$LASTEXITCODE` explicitly after native programs, including `pwsh -File`. A stale
+native status incorrectly rejected a successful synthetic template probe. Immediate script
+status checks verified two ordered-fixture invocations with identical output. Keep these
+checks next to the command, before another operation replaces its status.

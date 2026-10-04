@@ -1557,7 +1557,7 @@ Observed token counts: full tools 2,962, narrowed tools 2,884, stable tools with
 conversation 2,984. Shared prefix is 58 tokens after narrowing, versus 2,961 with stable
 tools and appended conversation. This isolates schema changes, not the actual case payload.
 
-The [pinned llama.cpp server documentation](https://github.com/ggml-org/llama.cpp/blob/a2878d30d/tools/server/README.md)
+The [docs](https://github.com/ggml-org/llama.cpp/blob/a2878d30d/tools/server/README.md)
 describes common-prefix cache reuse and the inference-free template endpoint. Together
 with runtime source and the rendered fixture, this establishes possible prefix churn.
 It does not measure actual cache hits, prove that boundaries caused benchmark failures,
@@ -1566,3 +1566,29 @@ approval/provenance/Unknown contracts and the live pair remain unchanged.
 A later bounded candidate may test a less aggressive configured progress window;
 no setting or runtime source change is made here. The small formatting/tokenization
 probe overlapped turn 5; no local build or concurrent inference/pair ran.
+
+The probe initially used unordered PowerShell maps, so equivalent tool JSON could
+render with different property order across processes. Ordered tool definitions now
+reproduce identical results in two invocations: 2,966 full tokens, 2,886 narrowed,
+2,988 appended; shared prefixes 58 versus 2,965. No inference was performed.
+A successful in-process script was incorrectly rejected by a stale native exit-code
+check; immediate script-status checks verified both invocations. The prevention is
+recorded in LESSONS.md. This does not change the benchmark or prove a speedup.
+
+## Retry08 Rupi fifth attempt verified (2026-10-04)
+
+Turn 5 reached the 600,253 ms watchdog with 27,875 recorded work tokens (18,905
+uncached input, 8,970 output), two usage records and four completed tools: two reads,
+one write and one edit. Failed/Unknown counts are zero. Completion counters include
+an earlier abandoned request; unfinished unrecorded inference remains unknown.
+Tests and oracle fail without verification timeouts; all help checks pass.
+Manifest lists store 21,463 bytes and workflow tests 18,065. Other sizes match turn 4;
+no README is listed. Contents and diagnostic details remain unread; sizes do not
+identify exact edit targets or establish unchanged content.
+
+Across five turns: 134,777 recorded work tokens, 3,001,349 ms call time excluding
+verification, 33 completed tools, one failed and zero Unknown. Selected controls persist.
+Turn 6 is live under Rupi PID 32176, runner 36808/exec session 79760. Its saved
+prompt retains full SPEC, repair/fencing/assertion guidance and no prescribed module
+stage. This is Rupi's last attempt in the six-turn pair; Pi has not started.
+No oracle resolution or matched win yet; Cases08 through 10 remain open.

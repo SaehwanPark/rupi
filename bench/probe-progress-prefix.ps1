@@ -2,12 +2,12 @@ param([string]$BaseUri = 'http://127.0.0.1:8000')
 
 $ErrorActionPreference = 'Stop'
 $tools = @('read', 'write', 'edit', 'grep' | ForEach-Object {
-  @{
+  [ordered]@{
     type = 'function'
-    function = @{
+    function = [ordered]@{
       name = $_
       description = "Synthetic $_ fixture"
-      parameters = @{ type = 'object'; properties = @{} }
+      parameters = [ordered]@{ type = 'object'; properties = [ordered]@{} }
     }
   }
 })
