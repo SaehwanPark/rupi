@@ -941,8 +941,10 @@ input, 5,097 output), three requests/completions/usage records and two successfu
 edits. Failed/Unknown tool counts are zero. Tests and the oracle fail without
 verification timeouts; all help checks pass. The workflow-test module changed to
 21,484 bytes; application, foundation tests and README sizes remain unchanged.
-Generated contents remain unread. This is test-file repair, not verified application
-implementation progress. Across three turns, Rupi recorded 40,896 work tokens and
+Generated contents remain unread. The manifest shows a test-module size change;
+unchanged application sizes do not prove unchanged contents or identify edit targets.
+Application implementation progress remains unverified. Across three turns,
+Rupi recorded 40,896 work tokens and
 1,020,964 ms call time excluding verification.
 
 Turn 4 is live under Rupi PID 18940, runner 14912/session 85505. Its saved prompt
