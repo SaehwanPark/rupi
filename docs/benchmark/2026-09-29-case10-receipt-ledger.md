@@ -288,3 +288,13 @@ no tests or README. Generated contents unread; file presence/passing help do not
 behavior. Actual first requested tool is grep despite first-write guidance; no compliance or
 causal claim is inferred from the prompt. Turn2 active with public-TestCase repair guidance.
 No Pi run. Evidence/controls remain frozen; missing test/README requirements are preserved.
+
+Retry03 Rupi turn2 reaches its watchdog at600,307ms, unresolved:40,966 recorded work
+(32,985 input+7,981 output), eight starts/eight completions including earlier abandoned
+request, seven usage records. Nine requested/completed tools/zero failed/Unknown (three
+writes, four grep, two reads). Tests1/oracle1/all four help0, no verification timeouts.
+README6,673/tests-init73/test_receiptledger10,399 now listed; main36,906 size matches prior
+turn without proving unchanged contents. Package init absent. Generated contents unread;
+file presence does not prove discovered/passing tests, documentation completeness or exact edits.
+Cumulative work72,236/authoring1,200,722ms. Turn3 active with unchanged public repair guidance;
+no Pi inference or acceptance/comparative win claim.
