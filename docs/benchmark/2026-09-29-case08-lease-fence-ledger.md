@@ -446,3 +446,36 @@ remains fixed on its original launch controls and copied binary. Wait for this
 final turn before integrating the merged provider fix and launching a fresh pair.
 All-platform CI passed at 752459f:
 [CI run](https://github.com/SaehwanPark/rupi/actions/runs/37171496578).
+
+## Retry02 terminal comparison (2026-10-04 02:56 UTC)
+
+Pi turn 4 reached its 600,242 ms outer timeout with 16,350 recorded work tokens
+(7,719 input, 8,631 output), six requests/usage records and six completed tools.
+Project tests timed out at the harness limit; the oracle failed without timing out.
+All help checks passed. Its entry point is 28,373 bytes, workflow tests 25,290;
+foundation tests/README remain unchanged. Contents and diagnostics remain unread.
+The runner exited 0 and its process/verification children are gone.
+
+| Agent | Oracle resolution | Recorded work | Call time | Final tests / help |
+| --- | --- | ---: | ---: | --- |
+| Rupi | none in 4 turns | 34,758 | 1,615,835 ms | failed / all pass |
+| Pi | none in 4 turns | 62,220 | 2,049,201 ms | timed out / all pass |
+
+This is inconclusive. Lower recorded Rupi work/call time does not establish a
+resolution win. Missing Rupi usage means actual inference work remains unknown;
+call time excludes verification and was not isolated from earlier local builds.
+Rupi requested/completed seven tools with zero failures/Unknown. Pi requested and
+completed 17; its failure and Unknown counters remain unavailable.
+
+Both copied two-file acceptance suites and public specs still match source hashes.
+All eight saved prompts preserve the complete spec; every turn retains low effort,
+budget 2,048 and relay endpoint 8001. Rupi cap remains 12, Pi native policy uncapped.
+Selected configs identify the same qwen3.8-flash-next model. Initial and turn-2
+recovery prompts match across agents. Launch source/binary stayed fixed throughout.
+All-platform CI passed at a10e913:
+[CI run](https://github.com/SaehwanPark/rupi/actions/runs/37171952325).
+
+Next: integrate main's merged provider idle fix, rebuild the binary and verify the
+unchanged adapter prompts/controls. Check usage, then launch retry03 in fresh
+workspaces with the same model, prompts and matched settings. Finish all local
+checks/builds first. Cases 08 through 10 remain open; keep this PR draft.
