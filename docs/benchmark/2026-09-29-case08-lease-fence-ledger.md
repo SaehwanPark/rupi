@@ -429,3 +429,20 @@ Continue this fixed original-binary pair to terminal state. Then verify all save
 prompts and reference hashes, record the outcome, integrate main into this branch,
 check usage, rebuild/copy the corrected binary, and launch a fresh matched pair.
 Do all local checks/builds before that launch. Cases 08 through 10 remain open.
+
+## Retry02 Pi turn 3 verified (2026-10-04 02:43 UTC)
+
+Pi turn 3 reached its 600,252 ms outer timeout with 12,506 recorded work tokens
+(3,530 input, 8,976 output), one request/usage record and one completed write.
+Project tests and the oracle failed; all help commands passed. Failure/Unknown
+counters are unavailable. The entry point grew to 28,242 bytes; workflow tests,
+foundation tests and README are unchanged. Contents/diagnostics remain unread.
+Across three turns, Pi recorded 45,870 work tokens and 1,448,959 ms call time,
+excluding verification. No oracle resolution exists for either agent.
+
+Pi turn 4 is live (node PID 24148 under runner 24108; exec session 76232), selecting
+repair with preserved CLI/workflow tests and the complete specification. The run
+remains fixed on its original launch controls and copied binary. Wait for this
+final turn before integrating the merged provider fix and launching a fresh pair.
+All-platform CI passed at 752459f:
+[CI run](https://github.com/SaehwanPark/rupi/actions/runs/37171496578).
