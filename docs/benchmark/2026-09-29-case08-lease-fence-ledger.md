@@ -1467,3 +1467,23 @@ Saved initial prompt retains full SPEC and fencing, requests complete first-writ
 behavior and contains neither the former partial yield nor prescribed store stage.
 Binary hash remains unchanged. Usage before launch was five-hour30%/weekly98%,
 below the root policy thresholds95%/99%. No result yet; Cases08 through 10 remain open.
+
+## Retry08 Rupi first attempt verified (2026-10-04)
+
+Turn 1 reached the 600,219 ms watchdog with 26,211 recorded work tokens (16,526
+uncached input, 9,685 output), 11 started requests and ten completions/usage records.
+Eleven tools completed: nine writes, one read and one grep; failed/Unknown counts
+are zero. Unrecorded unfinished inference remains unknown. Tests and oracle fail
+without verification timeouts; all three help checks pass.
+
+Manifest lists entry point 171 bytes, CLI 3,084, server 4,569, store 21,314, worker
+5,824 and package initializer 126, plus a one-byte file named x. No tests or README
+are listed. Generated contents remain unread; names/sizes do not establish complete
+behavior, correctness or the purpose of x. This is not a first-turn resolution.
+Selected recurring/cap12/low/budget2,048/endpoint8001/native replay controls persist.
+
+Turn 2 is live under Rupi PID 23500, runner 36808/exec session 79760. Its saved
+prompt retains full SPEC, repair priority, fencing and assertion preservation,
+without prescribing the former store/module stage. No matched outcome yet.
+The usage monitor now reports five-hour1%/weekly0%; no cause for the changed quota
+report is inferred. Cases08 through 10 remain open and PR141 remains draft.
