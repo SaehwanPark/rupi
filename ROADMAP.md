@@ -1541,7 +1541,14 @@ TUI rendering passed all budgets (3.31–3.90 µs/unit); checkpointed restore me
   `qwen3.8-flash-next` and pinned Pi 0.86.1.
   Cases 01 through 08 have verified configured comparison wins and are skipped.
   Cases09 and10 remain open. Case09's new slice adds shared full-spec receipt-recovery
-  guidance and explicit isolated benchmark controls, then runs a fresh matched pair.
+  guidance and explicit isolated benchmark controls. Retry01 is terminal: neither
+  resolves acceptance in six turns. Rupi records166,364 work tokens/2,696,841 ms call
+  time; Pi74,371/1,965,799 ms. Final Rupi tests fail/help passes; Pi tests/help pass.
+  All twelve prompt/control/reference audits pass. This is inconclusive, not a win.
+  Retry02 selects existing Recurring/window3/cap12 with all other prompts/settings/
+  gates unchanged; actual configuration/reference hashes and initial prompt equality
+  pass. Its first Rupi attempt is live; no completed result or improvement is claimed.
+  PR144 remains draft. Neither candidate changes runtime or acceptance contracts.
   Preserve stable public delivery keys, distinct private fencing, lost-ack retry and
   accepted receipt persistence. No acceptance fixtures or manually generated solution
   are changed. See the Case08/Case09 ledgers for evidence; broader project gates remain active.
