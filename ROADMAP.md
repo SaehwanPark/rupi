@@ -1521,7 +1521,8 @@ TUI rendering passed all budgets (3.31–3.90 µs/unit); checkpointed restore me
   recurring progress window of three requests instead of one; no runtime change or
   cache speedup is established. PR141 remains draft.
   The Case08-only selector keeps default1; default/selected3 all-case guards and
-  author harness review pass. A fresh matched comparison is pending.
+  author harness review pass. Fresh retry09 from c52f79e is live with Rupi window3;
+  its initial prompt matches retry08's, binary/model/other controls are unchanged.
   Fresh pairs retain the same local
   `qwen3.8-flash-next` and pinned Pi 0.86.1.
   Cases 01 through 07 have verified comparison wins and are skipped. Cases 08 through

@@ -1761,3 +1761,19 @@ cases' window. Added lines are within100 columns; `git diff --check` passes.
 Rust source remains identical to main; no binary rebuild is needed for this selector.
 Author harness/invariant review passes; no independent-agent review is claimed.
 PR141 remains draft pending a verified matched Rupi win; Cases08 through 10 stay open.
+
+## Retry09 progress-window3 pair launched (2026-10-04)
+
+Run `bench-20261004-case08-window3-budget2048-low-retry09-rupi12-matched6-600s`
+launches from source c52f79e with exec84321, runner12644/wrapper28168; Rupi turn1
+is live under PID14880. Written config confirms recurring/window3/cap12, four file
+tools, low effort, endpoint8001, 594,000 ms provider deadline and native replay.
+The first saved prompt retains full SPEC and is byte-equal to retry08's initial
+prompt: only the Rupi progress window changes. Binary SHA256 remains
+39829D0D62129F4138C449EC4FC913DE4EF81B028527B649EEDFEA1D3EE3D1C9.
+
+Same local Qwen model/server/relay and pinned Pi0.86.1 controls persist. This is a
+fresh six-turn matched pair, not continuation of retry08. No result is available;
+do not restart live authoring merely because an observation wait times out. Hidden
+outputs, application sources, acceptance sources and aggregate results remain unread.
+PR141 stays draft; Cases01 through07 are skipped and Cases08 through10 remain open.
