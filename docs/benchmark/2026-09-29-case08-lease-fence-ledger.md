@@ -840,3 +840,31 @@ corrected without relaxing runtime validation or assertions. The CLI fixture als
 requires a canonical Completed turn after an actual file change. New CI is pending;
 local runtime checks and startup verification remain deferred until retry04 is
 terminal. Its binary still matches the corrected SHA256; recurring mode is absent.
+
+## Retry04 terminal audit (2026-10-04 05:13 UTC)
+
+Pi turn 4 reached its 600,237 ms outer timeout with 16,306 recorded work tokens
+(7,732 input, 8,574 output), 12 requests/completions/usage records and 13 completed
+tools. Failure/Unknown counters remain unavailable. Entry point is 23,158 bytes,
+server/worker 81 each; test and README sizes remain unchanged. Contents remain unread.
+Final project tests and oracle fail without verification timeouts; help passes.
+
+Neither agent resolved in four turns. Rupi recorded 68,337 work tokens,
+1,649,256 ms call time and 27 completed tools; Pi recorded 61,380 work tokens,
+1,945,682 ms and 32 completed tools. Call time excludes verification. Unrecorded
+Rupi inference is unknown; recorded totals are not actual total-work claims.
+Both final test gates fail and help gates pass. The comparison is inconclusive.
+
+Both copied specifications and both two-file acceptance sets match reference
+hashes, with no extra non-cache acceptance files. All eight saved prompts retain
+the full specification; every repair prompt contains the shared bound and preserves
+tests. All per-turn metadata retains low effort, budget 2,048, endpoint 8001,
+native replay and Rupi cap 12/Pi native policy. The corrected binary hash is unchanged.
+Exec session 54053 exited 0 and runner 35136 is gone. The attempt is terminal;
+no timeout was treated as proof that an active process had stopped.
+
+PR #143 passed all-platform CI at fdbdb79. Local required checks/startup measurement
+can now begin without overlapping this pair. Usage is 46% five-hour and 85% weekly,
+below both soft stops. Verify/merge that generic runtime slice before integrating it
+into this branch and selecting recurring mode in a fresh matched comparison.
+Baseline and four guided retries are inconclusive; Cases08 through 10 remain open.
