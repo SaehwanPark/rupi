@@ -1542,3 +1542,27 @@ persist; a direct copied-config audit confirms recurring/progress1/cap12, timeou
 Turn 5 is live under Rupi PID 24240, runner 36808/exec session 79760. Its saved
 prompt retains full SPEC, repair/fencing/assertion guidance and no prescribed module
 stage. Rupi remains unresolved; Pi has not started and the matched outcome is pending.
+
+## Read-only tool-schema prefix investigation (2026-10-04)
+
+While retry08 turn 5 remains live, runtime source confirms active progress boundaries
+filter read-only tool declarations, require a mutation tool and rebuild availability
+instructions in the request system message. Successful mutation reopens the full list.
+The local model template renders tool definitions in its initial system block.
+
+The owned `bench/probe-progress-prefix.ps1` fixture uses synthetic messages and tool
+definitions with server apply-template/tokenize endpoints only; it performs no inference
+and does not access benchmark application/model/diagnostic data or mutate server settings.
+Observed token counts: full tools 2,962, narrowed tools 2,884, stable tools with appended
+conversation 2,984. Shared prefix is 58 tokens after narrowing, versus 2,961 with stable
+tools and appended conversation. This isolates schema changes, not the actual case payload.
+
+The [pinned llama.cpp server documentation](https://github.com/ggml-org/llama.cpp/blob/a2878d30d/tools/server/README.md)
+describes common-prefix cache reuse and the inference-free template endpoint. Together
+with runtime source and the rendered fixture, this establishes possible prefix churn.
+It does not measure actual cache hits, prove that boundaries caused benchmark failures,
+establish a speedup or authorize advertising unavailable tools. Existing filtering,
+approval/provenance/Unknown contracts and the live pair remain unchanged.
+A later bounded candidate may test a less aggressive configured progress window;
+no setting or runtime source change is made here. The small formatting/tokenization
+probe overlapped turn 5; no local build or concurrent inference/pair ran.
