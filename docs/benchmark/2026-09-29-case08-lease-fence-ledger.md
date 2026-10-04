@@ -1848,3 +1848,22 @@ verification, 42 completed tools, three failed and zero Unknown. Selected contro
 persist. Turn5 is live under Rupi PID32916, runner12644/exec84321. Its saved prompt
 retains full SPEC, repair/fencing/assertion guidance and no prescribed module stage.
 No oracle resolution or matched result yet; PR141 stays draft and Cases08 through10 stay open.
+
+## Retry09 Rupi fifth attempt fails with runtime timeout (2026-10-04)
+
+Turn5 exits1 after 405,519 ms with recorded turn failure kind `timeout`; the outer
+watchdog does not time out. The summary does not identify the timeout phase or cause.
+Recorded work is 6,594 tokens (6,125 uncached input, 469 output), one usage record
+and one completed read, zero failed/Unknown tools. Request/completion counters include
+earlier abandoned work and do not establish three successful current completions.
+Unfinished unrecorded inference remains unknown; lower recorded work is not a speedup.
+Tests and oracle fail without verification timeouts; all help checks pass.
+Manifest sizes match turn4, including the listed README. Contents/diagnostics remain
+unread; matching sizes do not prove unchanged content or README completeness.
+
+Across five turns: 176,715 recorded work tokens, 2,806,621 ms call time excluding
+verification, 43 completed tools, three failed and zero Unknown. Selected controls
+persist. Final Rupi turn6 is live under PID29652, runner12644/exec84321. Its saved
+prompt retains full SPEC, repair/fencing/assertion guidance and no prescribed module
+stage. The pair is not terminal; do not restart it after an observation timeout.
+No oracle resolution or matched result yet; PR141 stays draft and Cases08 through10 stay open.
