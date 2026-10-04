@@ -462,3 +462,28 @@ Rupi4 PID32632 is live under original exec25019/runner23092/wrapper36544; saved 
 SPEC/assertion/stable-key/private-fencing/lost-ack repair requirements pass. Continue
 the original pair unchanged without local builds or concurrent inference. PR144 stays
 draft; Cases09/10 remain open and Cases01 through08 configured wins stay skipped.
+## Retry02 Rupi fourth attempt exhausts request budget (2026-10-04)
+
+Turn4 exits0 after450,557 ms with status `budget_exhausted`, no outer watchdog.
+Eleven request starts/twelve completion events including earlier abandonment,eleven
+usage records,39,470 recorded work tokens (35,021 uncached input,4,449 output).
+Thirteen tools complete: four greps/seven reads/two writes,zero failed/Unknown.
+Unfinished unrecorded inference remains unknown. Tests exit5 and acceptance exits1;
+all help checks pass without verification timeouts. Manifest adds tests/__init__.py49
+bytes/tests/sink_helper.py6,136; application sizes match turn3,no test_*.py or README
+listed. Generated contents/model output/diagnostics remain unread; sizes do not prove
+unchanged contents,complete behavior,exact edit targets or the test/acceptance cause.
+Runtime exit0 and a shorter call are not task completion or a matched improvement.
+
+Cumulative through four turns:85,467 recorded work tokens,2,251,274 ms authoring time
+excluding verification,24 completed tools,one failed/zero Unknown,three watchdogs and
+one request-budget-exhausted attempt. Interim audit passes all four saved prompts/
+selected controls,copied SPEC/two acceptance hashes/no extra non-cache reference files.
+Actual window3/cap12/low/native replay and binary/model/relay remain unchanged.
+Before this update,headd4a67ef passes all three CI platforms. Pi has not started;
+no matched win or causal window/cache/token improvement is established.
+
+Rupi5 PID33836 is live under original exec25019/runner23092/wrapper36544; saved full-
+SPEC/assertion/stable-key/private-fencing/lost-ack repair requirements pass. Continue
+the unchanged original pair without local builds or concurrent inference. PR144 stays
+draft; Cases09/10 open and Cases01 through08 configured wins stay skipped.

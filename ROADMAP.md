@@ -1540,23 +1540,16 @@ TUI rendering passed all budgets (3.31–3.90 µs/unit); checkpointed restore me
   Fresh pairs retain the same local
   `qwen3.8-flash-next` and pinned Pi 0.86.1.
   Cases 01 through 08 have verified configured comparison wins and are skipped.
-  Cases09 and10 remain open. Case09's new slice adds shared full-spec receipt-recovery
-  guidance and explicit isolated benchmark controls. Retry01 is terminal: neither
-  resolves acceptance in six turns. Rupi records166,364 work tokens/2,696,841 ms call
-  time; Pi74,371/1,965,799 ms. Final Rupi tests fail/help passes; Pi tests/help pass.
-  All twelve prompt/control/reference audits pass. This is inconclusive, not a win.
-  Retry02 selects existing Recurring/window3/cap12 with all other prompts/settings/
-  gates unchanged; actual configuration/reference hashes and initial prompt equality
-  pass. Rupi1 hits600,259 ms watchdog without a recorded mutation; tests/acceptance/
-  help fail. Recorded work8,351 excludes the unfinished third request, which is unknown.
-  Rupi2 also hits600,266 ms watchdog:18,859 work tokens,three writes; tests/acceptance/
-  help fail. Manifest lacks entry point/worker/tests/README; contents remain unread.
-  Both completed-turn prompt/control/reference audits pass; binary/model unchanged.
-  Rupi3 hits600,192 ms watchdog:18,787 work tokens,five completed writes/edits; tests/
-  acceptance fail,help passes. Entry point/worker now listed,no tests/README. All
-  three prompt/control/reference audits pass. Rupi4 is live; Pi has not started.
-  No matched result or improvement is claimed.
-  PR144 remains draft. Neither candidate changes runtime or acceptance contracts.
+  Cases09 and10 remain open. Case09 adds shared full-spec receipt-recovery guidance
+  and isolated benchmark controls. Retry01 is terminal,inconclusive: neither resolves
+  acceptance in six turns; all twelve prompt/control/reference audits pass.
+  Retry02 selects existing Recurring/window3/cap12,all other prompts/settings/gates
+  unchanged. Rupi remains unresolved after four attempts:85,467 recorded work tokens/
+  2,251,274 ms authoring time,three watchdogs/one request-budget exhaustion. Latest
+  tests exit5/acceptance fails/help passes; test initializer/sink helper listed,no
+  test_*.py or README. Contents remain unread; unfinished inference remains unknown.
+  All four completed-turn prompt/control/reference audits pass; binary/model unchanged.
+  Rupi5 is live; Pi has not started. PR144 remains draft,no matched improvement claimed.
   Preserve stable public delivery keys, distinct private fencing, lost-ack retry and
   accepted receipt persistence. No acceptance fixtures or manually generated solution
   are changed. See the Case08/Case09 ledgers for evidence; broader project gates remain active.
