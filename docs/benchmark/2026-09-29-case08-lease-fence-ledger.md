@@ -1890,3 +1890,20 @@ Pi turn1 is live under node PID20672, runner12644/exec84321. Its saved prompt re
 full SPEC and is byte-equal to Rupi's initial prompt. The matched result is pending;
 Pi keeps its native uncapped/six-tool policy, with no Rupi progress window assigned.
 The pair remains live; PR141 stays draft and Cases08 through10 stay open.
+
+## Retry09 Pi first attempt verified (2026-10-04)
+
+Turn1 reaches the 600,280 ms watchdog with 22,712 recorded work tokens (11,557
+uncached input, 11,155 output), five requests/completions/usage records and six
+completed tool events: ls, read and four writes. Failed/Unknown counts are unavailable,
+not zero; completed native events do not establish successful write effects. Unfinished
+unrecorded inference remains unknown. Tests, oracle and all help checks fail without
+verification timeouts. Manifest lists only SPEC and four Rupi config files: no application,
+tests or README. Contents and diagnostics remain unread; no failure cause is inferred.
+
+Selected controls verify Pi's native uncapped/six-tool policy, null Rupi mode/window,
+low effort, configured budget2,048, endpoint8001 and native replay. The copied Rupi
+config is unused by Pi. Turn2 is live under node PID26728, runner12644/exec84321.
+Its saved prompt retains full SPEC, repair/fencing/assertion guidance and no prescribed
+module stage. Rupi is unresolved after six; the matched result is pending and PR141
+stays draft. Cases08 through10 remain open.
