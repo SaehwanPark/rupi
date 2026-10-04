@@ -403,3 +403,29 @@ Local Rust verification/builds ran alongside parts of Rupi's later turns and Pi'
 early turns. Call time is therefore an observation on this host, not an isolated
 performance measurement. Finish provider PR #142 and all builds before launching
 any fresh corrected-binary pair. This live pair's binary and controls stay fixed.
+
+## Retry02 Pi turn 2 and provider-fix handoff (2026-10-04 02:32 UTC)
+
+Pi turn 2 reached its 600,267 ms outer timeout with 22,928 recorded work tokens
+(12,329 input, 10,599 output), four requests/usage records and four completed tools
+(write and three edits). Project tests and the oracle failed; all help checks
+passed. Failure/Unknown counters remain unavailable. Its snapshot contains a
+24,111-byte workflow test module, 3,157-byte entry point, 1,493-byte foundation tests
+and 4,620-byte README. Code and diagnostics remain unread. Across two turns, Pi
+recorded 33,364 work tokens and 848,707 ms call time, excluding verification.
+
+Pi turn 3 is live (node PID 11116 under runner 24108; exec session 76232). Its saved
+prompt selects repair, preserves both discovered test modules and the full spec.
+The pair is still unresolved, with no matched winner. Launch source remains 3f478a5.
+
+Provider PR #142 merged as 4174c1e after final-head CI passed on all platforms,
+required local checks, 29 transport fixtures, startup budgets and author invariant
+review. Its completed local/remote branch was removed. Root main is synchronized;
+the user's uncommitted usage-policy edit is preserved. Only main and this active
+Case 08 branch remain. See the merged provider ledger for evidence:
+[provider idle fix](2026-10-03-provider-stream-idle.md).
+
+Continue this fixed original-binary pair to terminal state. Then verify all saved
+prompts and reference hashes, record the outcome, integrate main into this branch,
+check usage, rebuild/copy the corrected binary, and launch a fresh matched pair.
+Do all local checks/builds before that launch. Cases 08 through 10 remain open.
