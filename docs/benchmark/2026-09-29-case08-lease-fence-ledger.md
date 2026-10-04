@@ -1382,3 +1382,21 @@ initial prompt contains full SPEC and is byte-equal to Rupi's initial prompt.
 The matched result remains pending. All three platform CI checks passed for
 3e7aa9302b9900192cfa8e7e1a5ca471d4403801 before this evidence-only commit.
 PR141 remains draft; Cases08 through 10 remain open.
+
+## Retry07 Pi first turn verified (2026-10-04)
+
+Pi turn 1 reached the 600,293 ms watchdog with 16,259 recorded work tokens
+(5,612 uncached input, 10,647 output), nine requests/completions/usage records and
+nine completed tools: three ls calls and six writes. Failed/Unknown counters are
+unavailable, not zero; unrecorded unfinished inference remains unknown.
+Tests and oracle fail without verification timeouts; all help checks pass.
+Manifest lists entry point 2,665 bytes, server 10,589, worker 10,015, package
+initializer 69, foundation tests 12,335 and empty test initializer. No README or
+store module is listed. Contents remain unread; module presence does not prove behavior.
+
+Pi's native uncapped policy, six file tools, low effort, endpoint8001, configured
+budget2,048 and native reasoning replay are verified from its per-turn summary.
+The unused copied Rupi config does not configure Pi's progress policy.
+Turn 2 is live under node PID 36712, runner 11996/exec session 72703. Its saved
+prompt retains full SPEC, repair priority, fencing, both test sets and assertions.
+The matched six-turn outcome remains pending; Rupi's six-turn half is unresolved.
