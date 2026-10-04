@@ -735,3 +735,27 @@ response, at most 100 new lines. It retains the full specification, CLI/workflow
 test preservation and the instruction against large replacement/helper modules.
 The bound is now verified as active. Model, binary, relay and controls remain fixed.
 Parent usage is 23% five-hour and 82% weekly, below both soft stops.
+
+## Retry04 Rupi bounded-repair delivery verified (2026-10-04 04:36 UTC)
+
+Turn 3 reached its 600,248 ms outer timeout with 29,588 recorded work tokens
+(21,298 input, 8,290 output), 12 started/completion counters and 11 usage records.
+Completion counters include an abandoned prior request; they do not prove 12
+successful current requests. It completed 13 tools: two edits, one write and ten
+reads, with zero failed/Unknown. Application changes were delivered: entry point
+11,983 bytes, server 178 and worker 188. Foundation/workflow test and README sizes
+remain unchanged. Contents remain unread; neither bound compliance nor complete
+workflow behavior can be inferred from the manifest. Tests/oracle fail, help passes.
+
+Across three turns, Rupi recorded 60,038 work tokens, 1,540,333 ms call time
+excluding verification and 27 completed tools. Unrecorded inference remains unknown.
+Turn 4 is live (PID 38812 under runner 35136; exec session 54053). Its saved prompt
+confirms repair, the full specification, bounded edit guidance and preservation of
+both test sets. Pi has not started; no comparison result exists.
+
+All-platform CI passed at c819fb0. Remote audit confirms only main and the active
+Case08 branch remain, with root main's unrelated usage-policy edit preserved.
+Read-only source inspection explains the post-write reads: the existing opt-in
+progress boundary is intentionally one-shot per turn; a Changed mutating result
+satisfies it for the rest of that turn. This is documented behavior, not a runtime
+bug. No enforcement mode or binary changed during the pair.
