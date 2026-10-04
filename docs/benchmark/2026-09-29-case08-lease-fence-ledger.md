@@ -504,3 +504,18 @@ usage at 03:00 UTC is 79% five-hour and 77% weekly, below the active soft stops.
 Launch a fresh four-turn pair with the same low effort, 600-second limits,
 six-second grace and Rupi cap 12/Pi native policy. Prompts, model and fixtures stay
 fixed; the provider idle correction is the runtime change being tested.
+
+## Retry03 launched (2026-10-04 03:02 UTC)
+
+Run: `bench-20261003-case08-provider-idle-fix-budget2048-low-retry03-rupi12-matched4-600s`.
+Launch source: 7178f5d, incorporating merged provider fix 4174c1e. Fresh workspaces
+were created. Pinned Pi reports 0.86.1. The corrected selected binary has the hash
+recorded above; no local check/build overlaps this pair's launch.
+
+Rupi turn 1 is live (PID 6740 under runner 8524; exec session 12652). Its selected
+config confirms local qwen3.8-flash-next, low effort, endpoint 8001, 594,000 ms
+request timeout, native replay on declared exposure, request cap 12 and file tools
+only. The saved prompt selects foundation, preserves the full specification and
+matches retry02's initial prompt byte-for-byte. Budget remains 2,048 through the
+unchanged relay; four 600-second turns/six-second grace and Pi native request policy
+remain fixed. Pi has not started. No resolution or comparison outcome exists yet.
