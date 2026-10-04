@@ -198,3 +198,11 @@ binary as retry01, revised shared guidance only. All model slots idle before lau
 or parallel inference during the screen. Saved initial prompt matches own revised harness.
 If this screen resolves acceptance, run fresh Pi with the same frozen guidance/configuration.
 No outcome/paired/default/causal claim is available yet.
+
+Retry02 Rupi turn1 reaches its watchdog at600,183ms, unresolved:26,271 recorded work
+(16,132 input+10,139 output), eight starts/seven completions/seven usage records. Eight
+requested tools/seven complete/one failed/zero Unknown; names write/grep/grep/read/write/
+read/read/read. Tests1/all four help1/oracle1, no verification timeouts. Snapshot lists
+main835/storage30,722 bytes, no tests or README. File presence does not prove complete
+behavior; generated contents remain unread. The complete shared prompt preserves public
+requirements and first-write guidance. Turn2 active; no Pi run and no win/causal claim.
