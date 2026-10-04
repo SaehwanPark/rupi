@@ -298,3 +298,12 @@ turn without proving unchanged contents. Package init absent. Generated contents
 file presence does not prove discovered/passing tests, documentation completeness or exact edits.
 Cumulative work72,236/authoring1,200,722ms. Turn3 active with unchanged public repair guidance;
 no Pi inference or acceptance/comparative win claim.
+
+Retry03 Rupi turn3 exits0/runtime completed at409,380ms, unresolved:38,773 recorded work
+(34,536 input+4,237 output), nine starts/ten completions including earlier abandoned request,
+nine usage records. Nine tools requested/complete/zero failed/Unknown (four reads, three
+edits, two grep). Tests1/oracle1/all four help0, no verification timeouts. Main size37,054/
+public-test10,387 differ; README6,673/test-init73 match sizes, without proving unchanged
+content or exact edits/assertion preservation. Package init absent. Generated contents unread.
+Cumulative work111,009/authoring1,610,102ms. Two watchdogs/one runtime completed so far;
+turn4 active, no Pi inference. Runtime completion is not acceptance or full-task completion.
