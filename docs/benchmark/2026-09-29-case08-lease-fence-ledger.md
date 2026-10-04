@@ -1359,3 +1359,26 @@ Turn 6 is live under Rupi PID 36148, runner 11996/exec session 72703. Its saved
 prompt retains full SPEC, repair priority, detailed fencing guidance, both test sets
 and assertion preservation. This is Rupi's last attempt in the six-turn pair;
 the Pi half has not started and the matched result remains pending.
+
+## Retry07 Rupi six-turn half terminal; Pi live (2026-10-04)
+
+Turn 6 completed in 546,409 ms without an authoring timeout, ending at the runtime
+budget boundary. It recorded 41,846 work tokens (37,416 uncached input, 4,430 output),
+12 requests/completions/usage records, ten completed tools, one failed and zero Unknown.
+Tests and oracle fail without verification timeouts; all help checks pass.
+Manifest lists package initializer 132 bytes and test initializer 49; other sizes
+match turn 5. Contents remain unread; sizes do not establish unchanged contents.
+Selected recurring/cap12/low/budget2,048/endpoint8001/native replay controls persist.
+
+Rupi remains unresolved after six turns: 167,131 recorded work tokens, 2,939,691 ms
+call time excluding verification, 42 completed tools, two failed and zero Unknown.
+Earlier unfinished inference remains unknown and excluded from recorded totals.
+This is not a win or evidence that recurring mode solves the public task.
+The copied binary still hashes to
+`39829D0D62129F4138C449EC4FC913DE4EF81B028527B649EEDFEA1D3EE3D1C9`.
+
+Pi turn 1 is live under node PID 11960, runner 11996/exec session 72703. Its saved
+initial prompt contains full SPEC and is byte-equal to Rupi's initial prompt.
+The matched result remains pending. All three platform CI checks passed for
+3e7aa9302b9900192cfa8e7e1a5ca471d4403801 before this evidence-only commit.
+PR141 remains draft; Cases08 through 10 remain open.
