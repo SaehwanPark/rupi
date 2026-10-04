@@ -28,13 +28,13 @@ Project-test discovery could not import the `tests` start directory.
 | Pi turn | Elapsed | Input / output | Work tokens | Requests | Tools | Result |
 | --- | ---: | ---: | ---: | ---: | ---: | --- |
 | 1 | 600,301 ms | 7,413 / 548 | 7,961 | 6 | 6 | outer timeout |
-| 2 | 600,306 ms | 0 / 0 | 0 | 0 | 0 | outer timeout; no model request |
+| 2 | 600,306 ms | 0 / 0 | 0 | 0 | 0 | outer timeout; no recorded model request |
 | 3 | 600,311 ms | 1,053 / 188 | 1,241 | 2 | 2 | outer timeout |
-| 4 | 600,232 ms | 0 / 0 | 0 | 0 | 0 | outer timeout; no model request |
+| 4 | 600,232 ms | 0 / 0 | 0 | 0 | 0 | outer timeout; no recorded model request |
 
 Pi did not resolve in four turns. It used 9,202 work tokens over 2,401,150 ms, with eight
 requests and eight tools. Every turn timed out. All oracle, project-test, and help checks failed
-on every turn. On turns 2 and 4, the recorded request and tool counts were zero. On the final
+on every turn. On turns 2 and 4, the recorded request and tool counts were zero; unfinished inference usage is unknown. On the final
 turn, Python could not import `receiptledger`, so the service and help commands failed.
 Project-test discovery could not import the `tests` start directory.
 
@@ -307,3 +307,11 @@ public-test10,387 differ; README6,673/test-init73 match sizes, without proving u
 content or exact edits/assertion preservation. Package init absent. Generated contents unread.
 Cumulative work111,009/authoring1,610,102ms. Two watchdogs/one runtime completed so far;
 turn4 active, no Pi inference. Runtime completion is not acceptance or full-task completion.
+
+Retry03 Rupi turn4 reaches its watchdog at600,266ms, unresolved:34,527 recorded work
+(29,243 input+5,284 output), seven starts/six completions/six usage records. Six requested/
+completed tools/zero failed/Unknown (two grep, three reads, one edit). Tests1/oracle1/all four
+help0, no verification timeouts. Main size37,002 differs; other three generated file sizes
+match, without proving unchanged contents or exact edits. Package init absent; contents unread.
+Cumulative work145,536/authoring2,210,368ms. Turn5 active with frozen controls/guidance;
+no Pi run. Unfinished model request usage unknown, never zero; no win claim.
