@@ -2094,3 +2094,27 @@ Selected controls persist. Turn3 is live under node PID22536, runner16344/exec28
 Its saved prompt retains full SPEC, repair/fencing/assertion guidance and no prescribed
 module stage. Rupi resolved on turn4; matched outcome remains pending, PR141 draft,
 conditional candidate unimplemented and Cases08 through10 open.
+
+## Retry10 Pi third attempt verified (2026-10-04)
+
+Turn3 exits0 after 584,130 ms with recorded status `stop`, six requests/completions/
+usage records and 14,078 recorded work tokens (4,189 uncached input,9,889 output).
+Five completed native edit events are recorded. Failed/Unknown remain unavailable,
+not zero; completed events do not establish successful effects. Tests and oracle
+fail without verification timeouts; all help checks pass. Manifest lists the test
+module at23,546 bytes; other sizes match turn2 and no README is listed. Generated
+contents/diagnostics remain unread; sizes do not prove unchanged content or edit targets.
+
+Across three Pi turns: 40,062 recorded work tokens,1,784,696 ms call time excluding
+verification and16 completed native events. Two authoring watchdogs expired; turn3
+returned before its watchdog but did not resolve acceptance. Unrecorded unfinished
+inference remains unknown. Interim audit passes all seven completed-turn controls,
+saved full-SPEC/repair prompts, initial prompt equality, copied SPEC and two unchanged
+acceptance-file hashes/no extra non-cache files. Binary hash and singular model alias/
+relay controls remain unchanged. This is an interim audit while Pi continues.
+
+Pi turn4 is observed live under node PID34992, runner16344/exec28157. Rupi resolved
+on turn4 with106,173 recorded work tokens, but the matched outcome remains pending.
+PR141 stays draft, the conditional candidate stays unimplemented and Cases08 through10
+remain open. Fetch/prune confirms only main and the active141 branch locally/remotely;
+detached worktrees and comparison artifacts remain preserved.
