@@ -39,10 +39,10 @@ use rupi_core::{
   MAX_TOOL_REJECTION_REASON_BYTES, MAX_TOOL_REJECTION_REASON_BYTES_TOTAL, Message, MessageOrigin,
   ModelCapabilities, ModelEpoch, ModelEpochStarted, ModelFailover, ModelFailure, ModelFailureKind,
   ModelProvider, ModelRef, ModelRequest, ModelRequestCompleted, ModelRequestStarted, ModelRetry,
-  ReasoningChunk, ReasoningDelta, ReasoningProvenance, ReconciliationStatus, ReductionReason, Role,
-  RuntimeControlInjected, RuntimeControlKind, SessionEndReason, SessionEnded, SessionId,
-  SessionStarted, SinkError, ThinkingLevel, ToolCallBlock, ToolChoice, ToolCompleted,
-  ToolExecutionState, ToolFailed, ToolMetadata, ToolOutcome, ToolProgress,
+  ProgressBoundaryMode, ReasoningChunk, ReasoningDelta, ReasoningProvenance, ReconciliationStatus,
+  ReductionReason, Role, RuntimeControlInjected, RuntimeControlKind, SessionEndReason,
+  SessionEnded, SessionId, SessionStarted, SinkError, ThinkingLevel, ToolCallBlock, ToolChoice,
+  ToolCompleted, ToolExecutionState, ToolFailed, ToolMetadata, ToolOutcome, ToolProgress,
   ToolReconciliationObserved, ToolReconciliationSource, ToolRequested, ToolResultBlock,
   ToolStarted, ToolUnknown, TraceId, TurnCompleted, TurnId, TurnStatus, UnresolvedSideEffect,
   UserMessage,
@@ -591,6 +591,7 @@ pub struct TurnLoop<'a> {
   /// Optional boundary for coding turns that must make a named kind of
   /// progress instead of spending the request budget on inspection alone.
   progress_request_limit: Option<usize>,
+  progress_boundary_mode: ProgressBoundaryMode,
   /// Explicit progress tools, or an empty list meaning every permitted
   /// mutating tool when the boundary is active.
   progress_tool_names: Vec<String>,
@@ -690,6 +691,7 @@ impl<'a> TurnLoop<'a> {
       tool_calls_started: 0,
       prompt_calibration: BTreeMap::new(),
       progress_request_limit: None,
+      progress_boundary_mode: ProgressBoundaryMode::OneShot,
       progress_tool_names: Vec::new(),
       progress_requests_without_progress: 0,
       progress_boundary_active: false,
@@ -821,8 +823,8 @@ impl<'a> TurnLoop<'a> {
   /// Require a configured kind of tool progress after a bounded number of
   /// tool-bearing requests without it. While active, the next provider request
   /// exposes only the named tools; an empty name list exposes all permitted
-  /// mutating tools. A successful configured progress tool satisfies the
-  /// boundary for the rest of that turn. The boundary is opt-in because
+  /// mutating tools. By default, a successful configured progress tool satisfies
+  /// the boundary for the rest of that turn. The boundary is opt-in because
   /// read-only turns are valid.
   pub fn with_progress_boundary(
     mut self,
@@ -831,6 +833,13 @@ impl<'a> TurnLoop<'a> {
   ) -> Self {
     self.progress_request_limit = max_requests_without_progress.filter(|limit| *limit > 0);
     self.progress_tool_names = progress_tool_names;
+    self
+  }
+
+  /// Select recurring windows without enabling a boundary for read-only callers.
+  /// A progress limit must also be configured; defaults remain one-shot.
+  pub fn with_progress_boundary_mode(mut self, mode: ProgressBoundaryMode) -> Self {
+    self.progress_boundary_mode = mode;
     self
   }
 
@@ -1677,11 +1686,15 @@ impl<'a> TurnLoop<'a> {
         }
         Err(TurnFailure::Sink(error)) => return Err(TurnError::from(error)),
       };
-      let rejected_completion = self.progress_boundary_active && response.calls.is_empty();
+      let rejected_completion = response.calls.is_empty()
+        && (self.progress_boundary_active || self.progress_required_before_completion());
       let recorded = self.record_response(response, &mut report, !rejected_completion)?;
 
       if recorded.calls.is_empty() {
         if rejected_completion {
+          if let Some(reason) = self.activate_progress_boundary(&turn_id)? {
+            return self.finish_unsatisfied_progress(report, reason, clock, turn_id.clone());
+          }
           self.append_progress_retry_instruction(&turn_id)?;
           self.diagnostic(
             Some(turn_id.clone()),
@@ -1761,26 +1774,15 @@ impl<'a> TurnLoop<'a> {
         );
       }
       if let Some(reason) = self.observe_progress(&turn_id, batch.progress_succeeded)? {
-        if self.tool_budget_blocks_progress_boundary() {
-          report.tool_budget_exhausted = true;
-          self.diagnostic(
-            Some(turn_id.clone()),
-            DiagnosticLevel::Warn,
-            "tool-call budget exhausted before the required progress boundary could be satisfied",
-          )?;
-          return self.finish(
-            report,
-            TurnStatus::ToolBudgetExhausted,
-            clock,
-            Some(turn_id.clone()),
-          );
-        }
-        let failure =
-          ModelFailure::new(ModelFailureKind::Semantic, FailurePhase::PreRequest, reason);
-        return self.finish_failure(report, failure, clock, turn_id.clone());
+        return self.finish_unsatisfied_progress(report, reason, clock, turn_id.clone());
       }
     }
 
+    if self.progress_required_before_completion() {
+      if let Some(reason) = self.activate_progress_boundary(&turn_id)? {
+        return self.finish_unsatisfied_progress(report, reason, clock, turn_id.clone());
+      }
+    }
     if self.progress_boundary_active {
       report.budget_exhausted = true;
       self.diagnostic(
@@ -3788,35 +3790,82 @@ impl<'a> TurnLoop<'a> {
       self.progress_boundary_used = true;
       return Ok(None);
     }
-    if self.progress_boundary_used {
+    if self.progress_boundary_used && self.progress_boundary_mode == ProgressBoundaryMode::OneShot {
       return Ok(None);
     }
     self.progress_requests_without_progress =
       self.progress_requests_without_progress.saturating_add(1);
-    if self.progress_requests_without_progress >= limit && !self.progress_boundary_active {
-      self.progress_boundary_active = true;
-      let available = self.effective_progress_tools();
-      if available.is_empty() {
-        let reason = "progress boundary cannot be satisfied: configured progress tools are unavailable under the current model, tool, or approval policy".to_string();
-        self.diagnostic(
-          Some(turn_id.clone()),
-          DiagnosticLevel::Error,
-          reason.clone(),
-        )?;
-        return Ok(Some(reason));
-      }
-      self.append_progress_instruction(turn_id)?;
-      self.diagnostic(
-        Some(turn_id.clone()),
-        DiagnosticLevel::Info,
-        format!(
-          "progress boundary active after {} model request(s) without a configured progress tool; next request exposes {}",
-          self.progress_requests_without_progress,
-          available.join(", ")
-        ),
-      )?;
+    if self.progress_requests_without_progress >= limit {
+      return self.activate_progress_boundary(turn_id);
     }
     Ok(None)
+  }
+
+  fn progress_required_before_completion(&self) -> bool {
+    self.tools_enabled
+      && self.progress_request_limit.is_some()
+      && self.progress_boundary_mode == ProgressBoundaryMode::Recurring
+      && !self.progress_boundary_used
+  }
+
+  fn activate_progress_boundary(&mut self, turn_id: &TurnId) -> Result<Option<String>, TurnError> {
+    if self.progress_boundary_active {
+      return Ok(None);
+    }
+    self.progress_boundary_active = true;
+    let available = self.effective_progress_tools();
+    if available.is_empty() {
+      let reason = concat!(
+        "progress boundary cannot be satisfied: configured progress tools are unavailable ",
+        "under the current model, tool, or approval policy"
+      )
+      .to_string();
+      self.diagnostic(
+        Some(turn_id.clone()),
+        DiagnosticLevel::Error,
+        reason.clone(),
+      )?;
+      return Ok(Some(reason));
+    }
+    self.append_progress_instruction(turn_id)?;
+    self.diagnostic(
+      Some(turn_id.clone()),
+      DiagnosticLevel::Info,
+      format!(
+        concat!(
+          "progress boundary active after {} tool-bearing request(s) without configured progress; ",
+          "next request exposes {}"
+        ),
+        self.progress_requests_without_progress,
+        available.join(", ")
+      ),
+    )?;
+    Ok(None)
+  }
+
+  fn finish_unsatisfied_progress(
+    &mut self,
+    mut report: TurnReport,
+    reason: String,
+    clock: Instant,
+    turn_id: TurnId,
+  ) -> Result<TurnReport, TurnError> {
+    if self.tool_budget_blocks_progress_boundary() {
+      report.tool_budget_exhausted = true;
+      self.diagnostic(
+        Some(turn_id.clone()),
+        DiagnosticLevel::Warn,
+        "tool-call budget exhausted before the required progress boundary could be satisfied",
+      )?;
+      return self.finish(
+        report,
+        TurnStatus::ToolBudgetExhausted,
+        clock,
+        Some(turn_id),
+      );
+    }
+    let failure = ModelFailure::new(ModelFailureKind::Semantic, FailurePhase::PreRequest, reason);
+    self.finish_failure(report, failure, clock, turn_id)
   }
 
   /// Correct a response that tried to complete without satisfying the boundary.
@@ -3849,9 +3898,26 @@ impl<'a> TurnLoop<'a> {
     } else {
       self.progress_tool_names.join(", ")
     };
-    let text = format!(
-      "Runtime progress boundary: this implementation turn has spent the configured inspection budget without calling a progress tool. In your next response, call one of {tools} to make the requested change. Do not spend another request reading, probing, or planning; the turn remains incomplete until the change is attempted."
-    );
+    let text = match self.progress_boundary_mode {
+      ProgressBoundaryMode::OneShot => format!(
+        concat!(
+          "Runtime progress boundary: this implementation turn has spent the configured ",
+          "inspection budget without calling a progress tool. In your next response, call one ",
+          "of {} to make the requested change. Do not spend another request reading, probing, ",
+          "or planning; the turn remains incomplete until the change is attempted."
+        ),
+        tools
+      ),
+      ProgressBoundaryMode::Recurring => format!(
+        concat!(
+          "Runtime progress boundary: the configured progress requirement remains unsatisfied. ",
+          "In your next response, call one of {} to make the requested change. Do not spend ",
+          "another request reading, probing, or planning; the turn remains incomplete until ",
+          "a successful change is observed."
+        ),
+        tools
+      ),
+    };
     let kind = RuntimeControlKind::ProgressBoundary;
     let message = Message::runtime_control(text.clone(), kind);
     let envelope = self.emit_message(
@@ -11406,6 +11472,272 @@ mod tests {
           .unwrap_or_default()
           .contains("progress boundary active")
     }));
+  }
+
+  fn run_recurring_progress_fixture(
+    responses: Vec<Vec<ProviderEvent>>,
+    outcome: ToolOutcome,
+    inspection_limit: usize,
+    request_limit: usize,
+  ) -> (TurnReport, Vec<ModelRequest>, Recorder, usize) {
+    let writes = Arc::new(Mutex::new(Vec::new()));
+    let tools = registry_with(vec![
+      Box::new(Spy(Arc::new(Mutex::new(Vec::new())))),
+      Box::new(MutatingSpy {
+        seen: Arc::clone(&writes),
+        outcome,
+      }),
+    ]);
+    let provider = Scripted::new("recurring-progress", responses);
+    let mut trace = Recorder::default();
+    let policy = rupi_core::ProfilePolicy::new(
+      rupi_core::ContextProfile::Balanced,
+      provider.capabilities().context_window,
+    );
+    let report = TurnLoop::new(
+      &provider,
+      &tools,
+      &policy,
+      &mut trace,
+      SessionId::new(),
+      TraceId::new(),
+    )
+    .with_progress_boundary(Some(inspection_limit), vec!["write_probe".into()])
+    .with_progress_boundary_mode(ProgressBoundaryMode::Recurring)
+    .with_max_requests(request_limit)
+    .run_turn(
+      "implement the change",
+      &CancelToken::new(),
+      &mut SilentProgress,
+    )
+    .unwrap();
+    let write_count = writes.lock().unwrap().len();
+    (report, provider.requests(), trace, write_count)
+  }
+
+  #[test]
+  fn recurring_progress_rearms_after_each_observed_change() {
+    let (report, requests, trace, writes) = run_recurring_progress_fixture(
+      vec![
+        tool_call("spy", json!({})),
+        tool_call("write_probe", json!({"step": 1})),
+        tool_call("spy", json!({})),
+        tool_call("write_probe", json!({"step": 2})),
+        text("done"),
+      ],
+      ToolOutcome::succeeded("changed").with_effect(rupi_core::ToolEffectDisposition::Changed),
+      1,
+      6,
+    );
+    assert_eq!(report.status, TurnStatus::Completed);
+    assert_eq!(report.text, "done");
+    assert_eq!(writes, 2);
+    assert_eq!(requests.len(), 5);
+    for index in [1, 3] {
+      assert_eq!(requests[index].tool_choice, ToolChoice::Required);
+      assert_eq!(requests[index].tools.len(), 1);
+      assert_eq!(requests[index].tools[0].name, "write_probe");
+    }
+    for index in [0, 2, 4] {
+      assert_eq!(requests[index].tool_choice, ToolChoice::Auto);
+      assert_eq!(requests[index].tools.len(), 2);
+    }
+    assert_eq!(
+      trace
+        .diagnostics()
+        .iter()
+        .filter(|m| m.contains("progress boundary active"))
+        .count(),
+      2
+    );
+  }
+
+  #[test]
+  fn recurring_progress_rejects_initial_text_but_keeps_canonical_evidence() {
+    let (report, requests, trace, writes) = run_recurring_progress_fixture(
+      vec![
+        text("premature success"),
+        tool_call("write_probe", json!({})),
+        text("done"),
+      ],
+      ToolOutcome::succeeded("changed").with_effect(rupi_core::ToolEffectDisposition::Changed),
+      5,
+      4,
+    );
+    assert_eq!(report.status, TurnStatus::Completed);
+    assert_eq!(report.text, "done");
+    assert_eq!(writes, 1);
+    assert_eq!(requests.len(), 3);
+    assert_eq!(requests[1].tool_choice, ToolChoice::Required);
+    assert_eq!(requests[1].tools.len(), 1);
+    assert!(
+      requests[2]
+        .messages
+        .iter()
+        .all(|m| !m.text().contains("premature success"))
+    );
+    assert_eq!(trace.count("assistant_delta"), 2);
+  }
+
+  #[test]
+  fn recurring_progress_does_not_accept_failed_unchanged_or_unknown_mutations() {
+    for (outcome, status, expected_requests) in [
+      (
+        ToolOutcome::failed("rejected").with_effect(rupi_core::ToolEffectDisposition::None),
+        TurnStatus::BudgetExhausted,
+        3,
+      ),
+      (
+        ToolOutcome::succeeded("unchanged").with_effect(rupi_core::ToolEffectDisposition::None),
+        TurnStatus::BudgetExhausted,
+        3,
+      ),
+      (
+        ToolOutcome::unknown("completion uncertain"),
+        TurnStatus::NeedsReconciliation,
+        1,
+      ),
+    ] {
+      let (report, requests, _, writes) = run_recurring_progress_fixture(
+        vec![
+          tool_call("write_probe", json!({})),
+          text("unearned"),
+          text("unearned"),
+        ],
+        outcome,
+        1,
+        4,
+      );
+      assert_eq!(report.status, status);
+      assert!(report.text.is_empty());
+      assert_eq!(requests.len(), expected_requests);
+      assert_eq!(writes, 1, "uncertain effects must never be replayed");
+    }
+  }
+
+  #[test]
+  fn recurring_progress_cannot_use_finalization_to_bypass_an_unreached_inspection_limit() {
+    let (report, requests, _, writes) = run_recurring_progress_fixture(
+      vec![tool_call("spy", json!({})), text("unearned finalization")],
+      ToolOutcome::succeeded("changed").with_effect(rupi_core::ToolEffectDisposition::Changed),
+      10,
+      2,
+    );
+    assert_eq!(report.status, TurnStatus::BudgetExhausted);
+    assert!(report.text.is_empty());
+    assert_eq!(requests.len(), 1);
+    assert_eq!(writes, 0);
+  }
+
+  #[test]
+  fn recurring_progress_fails_before_an_impossible_initial_correction_request() {
+    let provider = Scripted::new("unavailable-recurring", vec![text("unearned")]);
+    let tools = registry_with(vec![Box::new(Spy(Arc::new(Mutex::new(Vec::new()))))]);
+    let mut trace = Recorder::default();
+    let policy = rupi_core::ProfilePolicy::new(
+      rupi_core::ContextProfile::Balanced,
+      provider.capabilities().context_window,
+    );
+    let error = TurnLoop::new(
+      &provider,
+      &tools,
+      &policy,
+      &mut trace,
+      SessionId::new(),
+      TraceId::new(),
+    )
+    .with_progress_boundary(Some(5), vec!["write_probe".into()])
+    .with_progress_boundary_mode(ProgressBoundaryMode::Recurring)
+    .run_turn(
+      "implement the change",
+      &CancelToken::new(),
+      &mut SilentProgress,
+    )
+    .unwrap_err();
+    assert!(matches!(error, TurnError::Unavailable(f) if f.kind == ModelFailureKind::Semantic));
+    assert_eq!(provider.requests().len(), 1);
+    assert_eq!(trace.count("assistant_delta"), 1);
+    assert_eq!(trace.count("turn_completed"), 1);
+  }
+
+  #[test]
+  fn recurring_progress_reactivation_respects_exhausted_mutation_capacity() {
+    let writes = Arc::new(Mutex::new(Vec::new()));
+    let tools = registry_with(vec![
+      Box::new(Spy(Arc::new(Mutex::new(Vec::new())))),
+      Box::new(MutatingSpy {
+        seen: Arc::clone(&writes),
+        outcome: ToolOutcome::succeeded("changed")
+          .with_effect(rupi_core::ToolEffectDisposition::Changed),
+      }),
+    ]);
+    let provider = Scripted::new(
+      "recurring-capacity",
+      vec![
+        tool_call("write_probe", json!({})),
+        tool_call("spy", json!({})),
+        text("unearned"),
+      ],
+    );
+    let mut trace = Recorder::default();
+    let policy = rupi_core::ProfilePolicy::new(
+      rupi_core::ContextProfile::Balanced,
+      provider.capabilities().context_window,
+    );
+    let report = TurnLoop::new(
+      &provider,
+      &tools,
+      &policy,
+      &mut trace,
+      SessionId::new(),
+      TraceId::new(),
+    )
+    .with_progress_boundary(Some(1), vec!["write_probe".into()])
+    .with_progress_boundary_mode(ProgressBoundaryMode::Recurring)
+    .with_tool_call_budgets(4, 1)
+    .run_turn(
+      "implement the change",
+      &CancelToken::new(),
+      &mut SilentProgress,
+    )
+    .unwrap();
+    assert_eq!(report.status, TurnStatus::ToolBudgetExhausted);
+    assert!(report.tool_budget_exhausted);
+    assert_eq!(provider.requests().len(), 2);
+    assert_eq!(writes.lock().unwrap().len(), 1);
+  }
+
+  #[test]
+  fn recurring_progress_does_not_force_mutation_without_a_limit_or_during_finalization() {
+    for finalization in [false, true] {
+      let tools = registry_with(vec![Box::new(Spy(Arc::new(Mutex::new(Vec::new()))))]);
+      let provider = Scripted::new("read-only-recurring", vec![text("assessment")]);
+      let mut trace = Recorder::default();
+      let policy = rupi_core::ProfilePolicy::new(
+        rupi_core::ContextProfile::Balanced,
+        provider.capabilities().context_window,
+      );
+      let mut runtime = TurnLoop::new(
+        &provider,
+        &tools,
+        &policy,
+        &mut trace,
+        SessionId::new(),
+        TraceId::new(),
+      )
+      .with_progress_boundary(finalization.then_some(1), vec![])
+      .with_progress_boundary_mode(ProgressBoundaryMode::Recurring);
+      let report = if finalization {
+        runtime.run_finalization("assess", &CancelToken::new(), &mut SilentProgress)
+      } else {
+        runtime.run_turn("answer", &CancelToken::new(), &mut SilentProgress)
+      }
+      .unwrap();
+      assert_eq!(report.status, TurnStatus::Completed);
+      assert_eq!(report.text, "assessment");
+      assert_eq!(provider.requests().len(), 1);
+      assert_eq!(report.tool_calls, 0);
+    }
   }
 
   #[test]

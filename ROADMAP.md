@@ -927,6 +927,12 @@ unfinished Round-4 requirements:
 - [x] Enforce the progress boundary as a runtime postcondition, not only prompt/tool filtering.
       Required tool choice is sent as a provider hint; rejected text-only completion is omitted
       from model-visible history and final report text, and unsatisfied budget ends incomplete.
+- [x] Add an explicit recurring progress-boundary mode while keeping one-shot behavior the
+      default. Reapply the inspection limit after successful changes and correct text-only
+      completion before any observed change. Config/runtime/CLI fixtures, required local checks
+      and author invariant review pass. Startup measures 143.30 ms cold and 8.12 ms warm median,
+      within 250/100 ms budgets. This proves the runtime contract, not a Case08 win. See
+      [the slice brief](docs/benchmark/2026-10-04-recurring-progress.md).
 - [x] Make same-model retry eligibility depend on request replay safety as well as failure kind.
       `ModelFailure` distinguishes safe dispatch, ambiguous POST boundaries, and committed output;
       the runtime retries only safe requests. Explicit retry-safe HTTP responses and known
