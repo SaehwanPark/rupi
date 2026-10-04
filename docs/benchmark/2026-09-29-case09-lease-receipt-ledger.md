@@ -304,3 +304,28 @@ assertion/stable-key/private-fencing/lost-ack repair requirements pass. Let retr
 finish unchanged. Rupi remains unresolved after six; this candidate cannot win, but
 the final Pi classification is pending. Validated window3 trial waits until terminal;
 no source/config changes, local builds or concurrent inference. PR144 stays draft.
+## Retry01 Pi third and fourth attempts verified (2026-10-04)
+
+Pi3 exits0 after193,752 ms with status `stop`, six requests/completions/usage records
+and8,487 recorded work tokens (5,971 uncached input,2,516 output). Five native events
+complete: ls/three reads/edit. Tests exit5 and acceptance exits1; all help checks pass
+without verification timeouts. Manifest lists entry point27,178 bytes/test initializer16;
+no test module or README is listed. Generated contents and diagnostics remain unread.
+
+Pi4 exits0 after239,960 ms with status `stop`, six requests/completions/usage records
+and7,584 recorded work tokens (4,369 uncached input,3,215 output). Six native events
+complete: two ls/two reads/grep/write. Tests and all help checks pass; acceptance fails,
+without verification timeouts. Manifest adds tests/test_http.py7,235 bytes; other sizes
+match turn3 and no README is listed. Sizes/presence do not establish unchanged contents,
+complete behavior, exact edit targets or the acceptance failure cause. Native completion
+events do not establish successful effects; failed/Unknown remain unavailable, not zero.
+Unrecorded unfinished inference remains unknown.
+
+Pi cumulative through four turns:44,041 recorded work tokens,1,230,676 ms call time
+excluding verification,21 completed native events and one watchdog expiry. Rupi remains
+unresolved after six and this candidate cannot win; the final Pi classification is pending.
+Pi5 is observed live under node PID26784, original runner19500/exec47054. Its saved
+full-SPEC/assertion/stable-key/private-fencing/lost-ack repair requirements pass. Keep
+retry01 unchanged until terminal; validated window3 waits. No local builds or concurrent
+inference. PR144 remains draft and Cases09/10 open. Branch inventory remains main plus
+this active Case09 branch locally/remotely; detached earlier artifacts are preserved.
