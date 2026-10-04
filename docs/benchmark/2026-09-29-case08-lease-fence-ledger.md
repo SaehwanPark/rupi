@@ -1014,3 +1014,21 @@ This differs from the shared instruction to yield after a self-contained test wr
 No assertion about their correctness follows from file names or sizes.
 Turn 3's saved prompt retains the full specification, shared focused-edit bound and
 preservation of both test sets. Pi has not yet resolved the oracle.
+
+## Retry05 Pi first repair verified (2026-10-04)
+
+Pi turn 3 reached the 600,258 ms outer watchdog with 19,545 recorded work tokens
+(10,026 uncached input, 9,519 output), seven requests/completions/usage records and
+seven completed tools: five reads, one write and one edit. Failed/Unknown counters
+remain unavailable. Tests and oracle fail without verification timeouts; all help
+checks pass. Store and worker sizes are now 9,018 and 5,430 bytes respectively;
+other manifest sizes remain unchanged. Contents remain unread and sizes do not
+establish unchanged contents or correct implementation.
+
+Across three turns Pi recorded 42,450 work tokens and 1,357,925 ms call time,
+excluding verification. Per-turn metadata retains low effort, budget 2,048,
+endpoint 8001, native replay and null mode/request cap for Pi's native policy.
+Turn 4 is live under node PID 31772, runner 14912/exec session 85505. Its saved
+prompt retains full SPEC, shared focused-edit bound and both test-set preservation.
+Finish this final attempt and reference/control audit before recording the matched
+result or selecting a new candidate. Cases08 through 10 remain open.
