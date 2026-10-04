@@ -1630,3 +1630,20 @@ and native replay are verified from its summary. The copied Rupi config is unuse
 Turn 2 is live under node PID 5908, runner 36808/exec session 79760. Its saved
 prompt retains full SPEC, repair/fencing/assertion guidance and no prescribed module
 stage. Rupi's six-turn half is unresolved and the matched outcome remains pending.
+
+## Retry08 Pi second attempt verified (2026-10-04)
+
+Turn 2 reached the 600,289 ms watchdog with 7,471 recorded work tokens (4,241
+uncached input, 3,230 output), three requests/completions/usage records and three
+completed tools: one edit and two writes. Failed/Unknown counts are unavailable,
+not zero; unfinished unrecorded inference remains unknown. Project tests exit 5,
+oracle exits 1 and all help checks pass; no verification timed out.
+Manifest adds worker 9,736 bytes and test initializer 27, lists server 3,689 and no
+test module or README. Other sizes match turn 1. Contents/diagnostics remain unread;
+these sizes do not establish unchanged contents, exact edits or correct behavior.
+
+Across two Pi turns: 26,519 recorded work tokens, 1,200,536 ms call time excluding
+verification and ten completed tools. Selected native/low/budget2,048/endpoint8001/
+replay controls persist. Turn 3 is live under node PID 34856, runner 36808/exec
+session 79760. Its saved prompt retains full SPEC, repair/fencing/assertion guidance
+and no prescribed module stage. Rupi remains unresolved after six; matched result pending.
