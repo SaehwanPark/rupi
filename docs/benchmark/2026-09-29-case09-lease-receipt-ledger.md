@@ -173,3 +173,27 @@ Its saved repair prompt retains full SPEC/assertions/stable key/private fencing/
 retry/oracle isolation. No code/config changes or builds/concurrent inference during
 the original pair. Pi has not started; no matched outcome yet. PR144 stays draft;
 Cases09 through10 remain open.
+
+## Retry01 Rupi third attempt verified (2026-10-04)
+
+Turn3 reaches the600,302 ms watchdog with27,502 recorded work tokens (18,500 uncached
+input,9,002 output), eight starts/seven completions and seven usage records. Ten tools
+are requested: four greps/five reads/one write; nine complete, one fails and zero are
+Unknown. The individual failed target/cause remains unread. Unfinished unrecorded
+inference remains unknown. Acceptance and tests fail, all help checks pass, with no
+verification timeouts. No acceptance resolution is established.
+
+Manifest adds server5,954 bytes; other sizes match turn2. No worker file, tests or
+README are listed. Generated contents/diagnostics remain unread; presence/sizes do
+not establish complete behavior, unchanged content or the failure cause. Cumulative
+through three turns:98,947 recorded work tokens,1,709,050 ms call time excluding
+verification,30 completed tools, one failed/zero Unknown. Two watchdog expiries and
+one request-budget-exhausted attempt.
+
+Selected controls persist. Turn4 is live under Rupi PID31072, runner19500/exec47054;
+saved full-SPEC/assertion/stable-key/private-fencing/lost-ack repair requirements pass.
+No source/config changes, local builds or concurrent inference during this original
+pair. Pi has not started; no matched result yet. PR144 stays draft and Cases09/10 open.
+Before this evidence update, headc90dfcd passes Linux/macOS/Windows CI; this proves
+repository checks rather than a model-comparison win. Fetch/prune confirms only main
+and the active Case09 branch locally/remotely; detached prior artifacts are preserved.
