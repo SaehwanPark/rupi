@@ -1222,3 +1222,41 @@ Retry06 is independently live: Pi turn 3, node PID 38688, runner 30660 under wra
 requested. The latest authoritative observation confirms this process/session live.
 Recheck that same handle and per-turn summaries after reset; if terminal, audit
 the matched outcome before another pair. Rupi remains unresolved after four turns.
+
+## Retry06 terminal audit after reset (2026-10-04 08:22 UTC)
+
+The parent waited until 08:22 UTC without polling usage. Fresh usage is 0% five-hour
+and 94% weekly, below both soft stops. The same exec session 62809 returned exit 0;
+runner 30660 and wrapper 31684 are gone. Retry06 is terminal.
+
+Pi turn 3 reached the 600,319 ms watchdog with 17,254 recorded work tokens
+(9,186 uncached input, 8,068 output), five requests/completions/usage records and
+eight completed tools: seven reads and one write. Tests/oracle fail without
+verification timeouts; help passes. The workflow-test module is 22,923 bytes.
+Pi turn 4 reached the 600,325 ms watchdog with 17,447 recorded work tokens
+(9,685 input, 7,762 output), six requests/completions/usage records and six completed
+tools: four edits and two greps. Tests/oracle fail without verification timeouts;
+help passes. Server size is now 3,423 and workflow tests 23,531; other sizes remain
+unchanged. Contents remain unread; sizes do not prove unchanged contents or correctness.
+
+Neither agent resolved in four turns. Rupi recorded 101,345 work tokens and
+1,954,890 ms call time; Pi recorded 63,660 tokens and 1,984,022 ms. Time excludes
+verification. Both completed 24 tools; Rupi reports one failed/zero Unknown, while
+Pi's failure/Unknown counters are unavailable. Unrecorded unfinished inference is
+unknown. Both final test gates fail, all help checks pass, and both oracles fail.
+The matched result is inconclusive, not a Rupi win.
+
+Both copied SPECs and both two-file acceptance copies match source hashes with no
+extra non-cache acceptance files. All eight prompts retain full SPEC; repair prompts
+retain fencing, both test sets and assertions. The first three prompts match between
+agents. All per-turn controls retain low effort, budget 2,048, endpoint 8001 and
+native replay, with Rupi recurring/cap12 versus Pi native null mode/cap. Model and
+binary provenance are unchanged. No generated/model/oracle diagnostic contents were read.
+
+Baseline and six guided retries remain inconclusive. The shared sequence delivered
+foundation, application and workflow tests by turn 3, leaving one repair attempt.
+A fresh matched six-turn pair will retain this harness, model and runtime controls
+while giving both agents up to three repair attempts. This is a new six-turn
+comparison, not an extension or reinterpretation of retry06's four-turn result.
+The existing MaxTurns range supports six; all public requirements/gates stay intact.
+Cases08 through 10 remain open.
