@@ -640,3 +640,32 @@ repair prompt preserves the full specification and excludes the prepared 100-lin
 bound, confirming the launch definitions stayed fixed after the on-disk edit.
 Neither agent has resolved the oracle. Finish this final turn before reference hash
 checks, terminal outcome recording and a fresh bounded-repair candidate pair.
+
+## Retry03 terminal audit (2026-10-04 04:07 UTC)
+
+Pi turn 4 reached its 600,226 ms outer timeout with 14,896 recorded work tokens
+(5,144 input, 9,752 output), 11 requests/usage records and 11 completed tools.
+Project tests and oracle failed without verification timeouts; all help checks
+passed. Failure/Unknown counters remain unavailable. The entry point is 23,599
+bytes, foundation tests 1,198, workflow tests 13,666 and README 2,549. Contents and
+diagnostics remain unread; file sizes do not establish coverage or completeness.
+
+Neither agent resolved in four turns. Rupi recorded 33,909 work tokens,
+1,963,422 ms call time and 14 completed tools; Pi recorded 42,512 work tokens,
+1,625,367 ms and 20 completed tools. Call time excludes verification. Unrecorded
+Rupi inference is unknown, so lower recorded work is not an actual total-work
+claim. Both final project-test gates fail and help gates pass. This is an
+inconclusive comparison, not a win or full public-spec completion.
+
+All eight saved prompts retain the full public specification and exclude the
+future repair bound, proving the loaded retry03 definitions stayed fixed. Both
+copied specifications and both two-file acceptance sets match reference hashes.
+Every turn records low effort, budget 2,048, endpoint 8001 and native reasoning
+replay. Rupi's request cap is 12; Pi retains its native policy. Both selected model
+configs name qwen3.8-flash-next. The binary still matches the corrected SHA256.
+Exec session 12652 exited 0 and runner 8524 is gone; no live attempt is restarted.
+
+The next fresh pair will load candidate 5ecff6f's shared one-edit/100-line repair
+guidance. Its all-case low/budget and off/no-budget dry runs already pass, and no
+runtime source changed after verified main 4174c1e. Usage at 04:06 UTC is 16%
+five-hour and 81% weekly, below both soft stops. Cases 08 through 10 remain open.
