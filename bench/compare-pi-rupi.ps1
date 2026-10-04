@@ -590,6 +590,9 @@ public contract, and exact checks. Yield after these four foundation writes.
 Repair the earliest failing local test or help gate using the harness diagnostics.
 Preserve existing service and worker behavior. Remove imports of missing local modules.
 Keep application code in leasefence/__main__.py; preserve both CLI and workflow tests.
+For application changes, use one focused edit per response, at most 100 new lines.
+Do not replace __main__.py with one large write or create application helper modules.
+Continue the next source edit in the same attempt; use bounded reads only when needed.
 If tests are missing, write an importable unittest.TestCase with real test_* methods,
 then tests/__init__.py. Do not replace failing workflow tests with help-only checks.
 Use public commands and HTTP in tests; do not assume private function or class names.
@@ -2561,6 +2564,10 @@ if ($DryRun) {
         $dryRunVerification.project_tests.exit_code = 1
         $repairPrompt = Get-RecoveryPrompt $_ $dryRunVerification $dryRunProject
         if (-not $repairPrompt.Contains('Repair the earliest failing local test or help gate') -or
+            -not $repairPrompt.Contains('one focused edit per response, at most 100 new lines') -or
+            -not $repairPrompt.Contains('preserve both CLI and workflow tests') -or
+            -not $repairPrompt.Contains($spec) -or
+            $repairPrompt.Contains('CASE08_PRIVATE_ORACLE_DIAGNOSTIC') -or
             $repairPrompt.Contains('Foundation tests and all help commands pass.')) {
           throw "Case 08 failing local checks must select repair rather than workflow."
         }

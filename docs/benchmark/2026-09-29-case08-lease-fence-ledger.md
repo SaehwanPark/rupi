@@ -556,3 +556,33 @@ started. Binary and controls remain fixed. Parent usage at 03:17 UTC is 86% five
 and 78% weekly, below soft stops; the five-hour window resets shortly.
 All-platform CI passed at d9e560a:
 [CI run](https://github.com/SaehwanPark/rupi/actions/runs/37173170972).
+
+## Retry03 Rupi turn 3 and next-retry repair bound (2026-10-04 03:34 UTC)
+
+Turn 3 reached its 600,201 ms outer timeout. It records 3,706 work tokens
+(3,531 input, 175 output), two started requests, one completion/usage record and
+one completed read. No failed or Unknown tools were recorded. The second request's
+actual inference is unrecorded, not zero. The project snapshot hash matches turn 2:
+no application change was delivered. Tests/oracle fail; all help checks pass.
+Across three turns, recorded work is 33,909 tokens and call time 1,367,992 ms,
+excluding verification. Pi has not started; no matched outcome exists.
+
+Turn 4 is live (PID 35812 under runner 8524; exec session 12652). The selected
+binary still matches the corrected hash above. Its saved prompt preserves the full
+specification and original repair guidance, excluding the candidate bound below.
+
+The next-retry candidate extends repair's vague small-edit instruction with the
+100-line bound already used by workflow guidance: one focused application edit per
+response, no whole-file replacement or helper modules, then continue editing in the
+same attempt. Necessary bounded reads and test-helper repair remain permitted;
+failing workflow assertions must still be preserved. This addresses missing source
+delivery without inspecting generated code, model traces or oracle diagnostics.
+
+All-case low/budget and off/no-budget dry runs pass, including repair bounds, full
+spec preservation, test preservation and oracle-sentinel exclusion. Diff/column
+checks pass. Author invariant review finds no blocking issue: policy stays in the
+adapter, shared across agents, with no runtime, fixture or provenance changes.
+This candidate is not active in retry03: its interpreter loaded launch definitions
+once and does not reload the script. Recheck Pi's saved prompts before reporting the
+pair. Launch a fresh candidate pair only after retry03 is terminal and usage checked.
+At 03:34 UTC, usage is 4% five-hour after reset and 79% weekly, below soft stops.
