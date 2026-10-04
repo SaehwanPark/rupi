@@ -42,3 +42,44 @@ The result is inconclusive because neither agent resolved the oracle. Pi used 24
 tokens and finished 405 ms sooner, while making more model requests and tool calls. Rupi's
 service could not initialize its SQLite schema; Pi's oracle requests ended in remote
 disconnects. Case 10 is next.
+
+## Active improvement slice (2026-10-04)
+
+Cases01 through08 already have configured comparison wins and are skipped. Case09's
+baseline per-turn summaries confirm neither agent resolved in four turns. This new
+slice starts from mainf150e39, after Case08 PR141's exact-head three-platform CI/merge.
+The completed Case08 branch is removed locally/remotely; its detached artifacts remain.
+
+Boundary: benchmark adapter in `bench/compare-pi-rupi.ps1`, this ledger and ROADMAP.
+Generate all application/tests/README only through the same local Qwen model in fresh
+workspaces. Preserve the actual public SPEC and untouched acceptance files. The parent
+does not inspect generated source/model output/oracle diagnostics/aggregate results.
+Historical diagnostic descriptions above are not supplied to the new authoring prompts.
+
+Plan:
+
+1. Add Case09 shared initial/repair prompts embedding the complete public SPEC. Request
+   complete authenticated graph/worker behavior from the first source write, including
+   stable `pipeline_id + ":" + job_id` delivery keys, distinct private claim tokens,
+   matching receipts and lost-ack retry/recovery. Preserve public assertions and cleanup.
+2. Add optional Case09 reasoning-budget/progress-mode/request-window selectors with
+   defaults0/one_shot/1. Reuse existing endpoint/progress/tool/discovery adapters, isolated
+   to Case09. Record actual selected controls; Pi cap/mode/window remain null.
+3. Add guards for full SPEC, receipt/fencing requirements and hidden-oracle sentinel
+   isolation on initial/repair/help failure paths. Verify all non-Case09 profiles/prompts
+   retain their behavior. Run default/off and selected all-case dry runs and diff checks.
+4. Author invariant review, then push before a fresh matched six-turn-maximum pair:
+   local `qwen3.8-flash-next`, Pi0.86.1, low/configured budget2,048/native replay,
+   600s turns/grace6s, Rupi Recurring/window12/cap12/four file tools versus native
+   uncapped Pi/six file tools. Reuse verified binary39829D0D...D1C9; no parallel inference/build.
+5. Audit saved prompts, selected controls, copied SPEC/acceptance hashes and model/binary
+   identity. Win requires acceptance in fewer turns or fewer recorded work tokens at the
+   same resolution turn. Report tests/help/docs, unavailable metrics and unknown inference
+   separately. Both unresolved is inconclusive; no default/full-task/causal speedup claim.
+6. Merge only after a verified Rupi win, required local checks/performance budgets,
+   author review and exact-final-head three-platform CI. Keep draft until then; then
+   remove the completed branch and proceed to Case10.
+
+No runtime/schema/provider changes, new dependencies, manual solution, hidden-oracle
+prompt feedback, weakened tests or speculative orchestration are part of this slice.
+Plan and WIP handoff are prepared; implementation and comparison remain pending.

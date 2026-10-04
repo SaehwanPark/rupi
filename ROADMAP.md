@@ -1535,11 +1535,16 @@ TUI rendering passed all budgets (3.31–3.90 µs/unit); checkpointed restore me
   Retry10 is terminal with a configured Rupi fewer-turn win,4 versus5. All nine saved
   prompts/control/reference audits pass; binary/model remain unchanged. Required local
   Rust checks pass; startup151.749 ms cold/7.801 ms warm median meets250/100 ms budgets.
-  Exact-final-head CI and PR141 handoff remain pending. PR141 stays draft.
+  Final head2e7e8e7 passes Linux/macOS/Windows CI; PR141 merges asf150e39 after author
+  review and all checks. Its completed local/remote branch is removed; artifacts remain.
   Fresh pairs retain the same local
   `qwen3.8-flash-next` and pinned Pi 0.86.1.
-  Cases 01 through 07 have verified comparison wins and are skipped. Cases 08 through
-  10 remain open; see the [Case 08 ledger](docs/benchmark/2026-09-29-case08-lease-fence-ledger.md).
+  Cases 01 through 08 have verified configured comparison wins and are skipped.
+  Cases09 and10 remain open. Case09's new slice adds shared full-spec receipt-recovery
+  guidance and explicit isolated benchmark controls, then runs a fresh matched pair.
+  Preserve stable public delivery keys, distinct private fencing, lost-ack retry and
+  accepted receipt persistence. No acceptance fixtures or manually generated solution
+  are changed. See the Case08/Case09 ledgers for evidence; broader project gates remain active.
 
   Case 10 used the pinned Pi 0.86.1 run `bench-20260929-case10-pi0861-low-matched4-600s`.
   Neither agent resolved in four turns. Rupi used 89,125 work tokens over 2,337,401 ms; Pi used
