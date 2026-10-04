@@ -333,3 +333,18 @@ Rupi turn 1 is live (PID 37440 under runner 24108; exec session 76232).
 Its saved prompt preserves the complete specification and selects foundation.
 Pi has not started. No result exists yet. Finish this pair before changing live inputs
 or launching another comparison. Earlier retry01 artifacts remain untouched.
+
+## Retry02 Rupi turn 1 verified (2026-10-04 01:55 UTC)
+
+Turn 1 completed with exit 0 after 259,694 ms. It recorded 9,497 work tokens
+(4,591 input, 4,906 output), four requests/usage records, and four completed writes.
+There were no failed or Unknown tools. Project tests and all three help checks
+passed; the oracle failed. The entry point is 2,874 bytes, foundation tests 1,568,
+README 4,647, and test package marker 42. Contents remain unread.
+
+Turn 2 is live (PID 20600 under runner 24108; exec session 76232). Its saved prompt
+selects the new workflow-test-first phase, preserves the complete specification,
+includes the bounded stale-worker race, and asks the model to yield for feedback.
+Oracle diagnostics remain hidden. Pi has not started; no matched result exists.
+CI passed all three platforms at f9c619f:
+[CI run](https://github.com/SaehwanPark/rupi/actions/runs/37169245011).
