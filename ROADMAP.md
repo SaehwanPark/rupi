@@ -1547,7 +1547,9 @@ TUI rendering passed all budgets (3.31–3.90 µs/unit); checkpointed restore me
   All twelve prompt/control/reference audits pass. This is inconclusive, not a win.
   Retry02 selects existing Recurring/window3/cap12 with all other prompts/settings/
   gates unchanged; actual configuration/reference hashes and initial prompt equality
-  pass. Its first Rupi attempt is live; no completed result or improvement is claimed.
+  pass. Rupi1 hits600,259 ms watchdog without a recorded mutation; tests/acceptance/
+  help fail. Recorded work8,351 excludes the unfinished third request, which is unknown.
+  Rupi2 is live; Pi has not started. No matched result or improvement is claimed.
   PR144 remains draft. Neither candidate changes runtime or acceptance contracts.
   Preserve stable public delivery keys, distinct private fencing, lost-ack retry and
   accepted receipt persistence. No acceptance fixtures or manually generated solution

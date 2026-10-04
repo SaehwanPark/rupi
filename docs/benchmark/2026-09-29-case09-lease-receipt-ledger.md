@@ -397,3 +397,21 @@ full-SPEC/stable-key/private-fencing/lost-ack prompt booleans pass. Pi initial e
 and terminal all-turn audits remain pending until its workspace/finished turns exist.
 No resolution/work totals yet; unfinished inference is unknown. PR144 stays draft and
 Cases09/10 open. Only main and the active Case09 branch remain locally/remotely.
+## Retry02 Rupi first attempt reaches watchdog without recorded mutation (2026-10-04)
+
+Turn1 reaches600,259 ms watchdog; runtime status is unavailable. Three requests start,
+two complete/two usage records,8,351 recorded work tokens (7,902 uncached input,449
+output). Four tool requests name two greps/two reads; three complete/one fails/zero
+Unknown. No mutating tool is recorded. Individual failure target/cause is unread;
+request composition is not attributed solely to completed tools. The unfinished third
+request is unmeasured, not zero; low recorded work does not establish low actual work.
+Tests, acceptance and all help checks fail without verification timeouts. Manifest
+lists only SPEC/four harness configurations; no application/tests/README are listed.
+Contents/model output/diagnostics remain unread; no failure cause is inferred.
+
+Selected turn controls retain Recurring/window3/cap12,four tools,low/configured2,048/
+endpoint8001/native replay/empty discovery. Rupi2 PID36036 is live under original
+exec25019/runner23092/wrapper36544. Saved repair full-SPEC/assertion/stable-key/private-
+fencing/lost-ack requirements pass. Continue this original pair unchanged; Pi has not
+started and no matched outcome exists. No builds or concurrent inference. PR144 stays
+draft; Cases09/10 remain open. This result establishes no window/cache/token speedup.
