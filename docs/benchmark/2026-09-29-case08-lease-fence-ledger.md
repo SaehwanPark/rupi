@@ -363,3 +363,18 @@ again selects workflow-test-first and preserves the full specification. No input
 settings changed. Pi has not started; keep the pair running before evaluating the
 candidate. All-platform CI passed at fdae641:
 [CI run](https://github.com/SaehwanPark/rupi/actions/runs/37169486236).
+
+## Retry02 Rupi turn 3 verified (2026-10-04 02:09 UTC)
+
+Turn 3 completed after 474,196 ms with 19,350 recorded work tokens (10,983 input,
+8,367 output), three requests/usage records, and two completed tools (write/edit).
+There were no failed or Unknown tools. The new discovered workflow test module is
+19,971 bytes; the entry point, foundation tests, and README are unchanged. This
+establishes module delivery, not complete coverage. Project tests and the oracle
+failed; all three help commands passed. Code and diagnostics remain unread.
+
+Turn 4 is live (PID 17732 under runner 24108; exec session 76232). Its saved prompt
+selects local repair, preserves both CLI/workflow tests and the full specification.
+Pi has not started. The launch binary/settings remain fixed. A separate isolated
+provider transport investigation is reproducing whether active buffered tool
+arguments can trigger the decoded-event idle timer; it does not change this trial.
