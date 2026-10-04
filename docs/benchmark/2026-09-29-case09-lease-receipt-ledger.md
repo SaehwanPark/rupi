@@ -219,3 +219,25 @@ Its saved prompt retains full SPEC/assertions/stable key/private fencing/lost-ac
 retry/oracle isolation. Continue the original matched pair without source/config
 changes, local builds or parallel inference. Pi has not started; matched outcome
 remains pending, PR144 draft and Cases09 through10 open.
+
+## Retry01 Rupi fifth attempt ends without acceptance resolution (2026-10-04)
+
+Turn5 exits0 after508,913 ms with runtime status `completed`, not budget exhaustion
+or outer watchdog expiry. Recorded work25,986 tokens (18,751 uncached input,7,235
+output), eight starts/completions/usage records. Seven tools complete: write/three
+edits/three reads, zero failed/Unknown. Tests and acceptance fail, all help checks
+pass, without verification timeouts. A completed runtime turn is not project-task
+completion; unfinished inference from prior attempts remains unknown.
+
+Manifest adds worker6,896 bytes and lists store22,752. Other sizes match turn4;
+no tests or README are listed. Contents/diagnostics remain unread; presence/sizes
+do not establish complete behavior, exact edit targets or unchanged content.
+Cumulative through five turns:141,701 recorded work tokens,2,415,971 ms call time
+excluding verification,48 completed tools, one failed/zero Unknown. Two watchdog
+expiries, two budget-exhausted attempts and one completed runtime turn.
+
+Selected controls persist. Rupi turn6 is live under PID14644, runner19500/exec47054.
+Saved full-SPEC/assertion/stable-key/private-fencing/lost-ack repair requirements pass.
+No source/config changes, local builds or concurrent inference during this original
+pair. Pi has not started; matched result remains pending and PR144 stays draft.
+Before this update, headf0d8c90 passes Linux/macOS/Windows CI. Cases09/10 remain open.
