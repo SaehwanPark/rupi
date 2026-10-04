@@ -1734,3 +1734,30 @@ PR141 stays draft and Cases08 through 10 stay open. Next bounded candidate: expo
 a Case08-only progress-window selector with default1 and test3 using the existing
 recurring runtime contract. Keep shared guidance, gates, model, binary and other
 controls unchanged; measure the fresh matched result rather than infer a cache cause.
+
+## Candidate: Case08 configurable recurring request window (2026-10-04)
+
+Owned scope is the comparison harness and this evidence ledger/roadmap. Add
+`-Case08ProgressRequestWindow` (positive1 through100, default1), apply it only to
+Case08's `max_model_requests_without_progress`, and record the selected Rupi value
+in every turn summary. Pi's selected-window field is null; the copied Rupi config
+in Pi's project is unused by Pi. Other cases and the default Case08 window remain
+unchanged. The next fresh pair selects3, retaining recurring mode/cap12/six turns/
+600s/low/configured budget2,048/native replay and the same b6c4200 shared guidance.
+
+The existing runtime counts requests without qualifying observed mutation, resets
+after Succeeded plus Changed, and narrows only at the selected threshold. Its
+first-mutation completion requirement remains active independently of this window.
+Allowing three requests may permit short inspections between mutations and reduce
+repeated schema changes, but no actual cache effect, speedup or winning behavior
+is established. No core policy, tool availability, approval, replay or Unknown
+semantics change; no generated code, hidden diagnostics or acceptance sources read.
+
+Verification: all ten dry-run routing/SPEC/feedback/tool/native-replay guards pass
+with off/default settings, with low/budget2,048/recurring/default1, and with
+low/budget2,048/recurring/selected3/six turns/600s/grace6/cap12. Zero is rejected
+before execution. New guards check selected Case08 mode/window and preserve other
+cases' window. Added lines are within100 columns; `git diff --check` passes.
+Rust source remains identical to main; no binary rebuild is needed for this selector.
+Author harness/invariant review passes; no independent-agent review is claimed.
+PR141 remains draft pending a verified matched Rupi win; Cases08 through 10 stay open.

@@ -22,6 +22,8 @@ param(
   [int]$Case08ReasoningBudgetTokens = 0,
   [ValidateSet("one_shot", "recurring")]
   [string]$Case08ProgressBoundaryMode = "one_shot",
+  [ValidateRange(1, 100)]
+  [int]$Case08ProgressRequestWindow = 1,
   [switch]$DryRun
 )
 
@@ -1835,6 +1837,8 @@ function Set-BenchmarkProgressBoundary([hashtable]$case, [object]$limits) {
   if ($case.Id -ne "08-lease-fence") { return }
   $limits | Add-Member -MemberType NoteProperty -Name progress_boundary_mode -Force `
     -Value $Case08ProgressBoundaryMode
+  $limits | Add-Member -MemberType NoteProperty -Name max_model_requests_without_progress -Force `
+    -Value $Case08ProgressRequestWindow
 }
 
 function Get-BenchmarkEndpoint([hashtable]$case) {
@@ -2201,6 +2205,9 @@ function Invoke-AgentCase([hashtable]$case, [string]$agent, [string]$root, [stri
         $turnRecord["configured_progress_boundary_mode"] = if ($agent -eq "rupi") {
           $Case08ProgressBoundaryMode
         } else { $null }
+        $turnRecord["configured_progress_request_window"] = if ($agent -eq "rupi") {
+          $Case08ProgressRequestWindow
+        } else { $null }
       }
       $turnRecord["configured_thinking_control"] = [ordered]@{
         level = $thinkingLevel
@@ -2255,8 +2262,15 @@ if ($DryRun) {
       if ($progressLimits.progress_boundary_mode -cne $Case08ProgressBoundaryMode) {
         throw "Case 08 Rupi must use the selected progress boundary mode."
       }
+      if ($progressLimits.max_model_requests_without_progress -ne $Case08ProgressRequestWindow) {
+        throw "Case 08 Rupi must use the selected progress request window."
+      }
     } elseif ($null -ne $progressLimits.PSObject.Properties["progress_boundary_mode"]) {
       throw "The Case 08 progress mode must not change other cases."
+    }
+    if ($_.Id -ne "08-lease-fence" -and
+        $progressLimits.max_model_requests_without_progress -ne 1) {
+      throw "The Case 08 progress request window must not change other cases."
     }
     $expectedEndpoint = if ((Get-BenchmarkReasoningBudget $_) -gt 0) {
       "http://127.0.0.1:8001/v1"
@@ -2744,6 +2758,7 @@ $summary = [ordered]@{
     $Case08ReasoningBudgetTokens
   } else { $null }
   case08_rupi_progress_boundary_mode = $Case08ProgressBoundaryMode
+  case08_rupi_progress_request_window = $Case08ProgressRequestWindow
   max_turns = $MaxTurns
   turn_timeout_seconds = $TurnTimeoutSeconds
   provider_timeout_grace_seconds = $script:providerTimeoutGraceSeconds

@@ -1520,6 +1520,8 @@ TUI rendering passed all budgets (3.31–3.90 µs/unit); checkpointed restore me
   unfinished inference remains unknown. The next bounded candidate tests an existing
   recurring progress window of three requests instead of one; no runtime change or
   cache speedup is established. PR141 remains draft.
+  The Case08-only selector keeps default1; default/selected3 all-case guards and
+  author harness review pass. A fresh matched comparison is pending.
   Fresh pairs retain the same local
   `qwen3.8-flash-next` and pinned Pi 0.86.1.
   Cases 01 through 07 have verified comparison wins and are skipped. Cases 08 through
