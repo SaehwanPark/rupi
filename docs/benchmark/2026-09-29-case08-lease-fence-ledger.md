@@ -519,3 +519,17 @@ only. The saved prompt selects foundation, preserves the full specification and
 matches retry02's initial prompt byte-for-byte. Budget remains 2,048 through the
 unchanged relay; four 600-second turns/six-second grace and Pi native request policy
 remain fixed. Pi has not started. No resolution or comparison outcome exists yet.
+
+## Retry03 Rupi turn 1 verified (2026-10-04 03:06 UTC)
+
+Turn 1 completed after 235,378 ms with 9,098 recorded work tokens (4,706 input,
+4,392 output), four requests/usage records and five completed tools (four writes
+and one edit). No failed or Unknown tools were recorded. Project tests and all
+help commands passed; the oracle failed. The entry point is 2,307 bytes, foundation
+tests 1,059 and README 3,818. Contents remain unread. This is foundation validation,
+not full workflow completion or evidence of a comparison win.
+
+Turn 2 is live (PID 15012 under runner 8524; exec session 12652). Its saved prompt
+selects workflow-test-first, preserves the full specification and matches retry02's
+turn-2 recovery prompt byte-for-byte. The corrected binary and fixed controls remain
+unchanged. Pi has not started; the matched result is pending.
