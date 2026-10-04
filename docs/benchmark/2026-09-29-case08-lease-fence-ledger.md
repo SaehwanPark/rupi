@@ -247,3 +247,22 @@ Pi's turn-2 prompt retains the original complete-workflow guidance, excludes the
 new test-module-first candidate, and preserves the full specification. Thus the
 on-disk next-retry revision did not change this live control's recovery behavior.
 Recheck later saved prompts when the pair finishes; no matched winner exists yet.
+
+## Retry01 Pi turn 2 verified (2026-10-04 01:30 UTC)
+
+Pi turn 2 reached its 600,213 ms outer timeout with 15,946 recorded work tokens
+(4,241 input, 11,705 output), four requests/usage records, and four completed tools.
+Project tests and the oracle failed; all three help checks passed. Pi failure and
+Unknown counters are unavailable, not zero. Across two turns it recorded 23,735
+work tokens and 736,119 ms call time, excluding verification.
+
+Pi's snapshot contains a 20,588-byte entry point and a new 21,945-byte
+`tests/test_workflow.py`, alongside the 1,221-byte foundation tests and 2,275-byte
+README. Coverage and failure cause remain unproven; neither source nor diagnostics
+were inspected. This contrasts with Rupi's unchanged discovered test module and
+supports requiring a discoverable workflow-test write in the next shared retry.
+
+Pi turn 3 is live (node PID 37364 under runner 2844). Its saved prompt selects the
+original local-repair guidance, retains the full specification, and excludes both
+candidate repair wording and the new test-authoring phase. The fixed control remains
+valid. Both agents are still unresolved; finish Pi before starting the next pair.
