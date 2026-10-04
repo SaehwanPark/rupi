@@ -53,5 +53,30 @@ quiet-stream expiry, total timeout, cancellation and delayed headers. Formatting
 passes. Active partial SSE frames and one-shot bodies preserve exact output; active
 input still expires at the total deadline without synthetic model events. Core
 check, Clippy, workspace tests and documentation passed before these extra fixtures.
-Final formatting/Clippy pass; final workspace tests, startup and invariant review
-remain active. Keep the PR draft until they pass.
+All required local checks and author invariant review now pass. CI and merge remain
+pending; the Case 08 comparison objective is not completed by this runtime fix.
+
+## Final verification and author invariant review
+
+Passed on the final Rust sources using the installed exact Rust/Cargo 1.98.1 stable
+route: formatting, core all-features check, workspace all-target Clippy with warnings
+denied, workspace tests, and workspace documentation without dependencies. After
+adding framing/body fixtures, formatting, Clippy and workspace tests passed again.
+All 29 transport cases pass. Startup from this checkout's release build measured
+188.58 ms cold, 11.98 ms warm median and 16.00 ms warm maximum, within 250/100 ms.
+The release target was shared through a checkout-local junction; no executable was
+copied into the live Case 08 worktree. Its selected binary remains unchanged.
+
+Author invariant-review verdict: pass, no blocking findings. Review checked actual
+HTTP timeout configuration, blocking SSE/one-shot reads, worker result handling,
+cancellation relay shutdown, quarantine and request replay-safety classification,
+and decoder buffering/completion. The change removes only event-based idle expiry.
+Transport quiet expiry still fails with an ambiguous POST boundary and quarantines
+the adapter; continuous active input still fails the absolute total deadline.
+No decoded tool is dispatched early, no unknown operation is replayed, and no new
+model/usage/reasoning/journal event or core schema is introduced. Startup remains
+lazy with no added allocation, dependency or subsystem activation.
+
+No model-backed child or independent-agent review was used. The exact cause of
+Case 08's model timeout remains unproven; this is a fixture-backed runtime fix.
+A fresh corrected-binary comparison is still required after retry02 is terminal.
