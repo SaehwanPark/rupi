@@ -2035,3 +2035,26 @@ stage. No oracle resolution or matched result; PR141 stays draft, Cases08 throug
 The conditional initial-write-only plan now selects existing window3/cap12, because
 window12 has allowed a complete read-only budget-exhausted attempt. This plan is
 unimplemented and waits for retry10's matched outcome; current live controls remain unchanged.
+
+## Retry10 Rupi resolves acceptance on turn4; Pi live (2026-10-04)
+
+Turn4 reaches the 600,216 ms watchdog with 19,316 recorded work tokens (9,605
+uncached input, 9,711 output), three completion/usage records and three completed
+tools: one edit and two writes, zero failed/Unknown. Unfinished unrecorded inference
+remains unknown. Independent acceptance and all help checks pass. Project tests
+exit1 without timeout. Manifest adds test module26,964 bytes and test initializer0,
+and lists store20,671. Other sizes match turn3; no README is listed. Generated
+contents/diagnostics remain unread; sizes do not prove unchanged content or exact edits.
+
+Rupi's half stops after acceptance resolution on turn4. Totals: 106,173 recorded
+work tokens, 2,264,548 ms call time excluding verification,31 completed tools,
+two failed and zero Unknown. Three authoring watchdog expiries and one read-only
+budget-exhausted attempt. This proves the configured acceptance result, not full
+public tests/documentation, a matched win or default-runtime superiority.
+Selected controls persist; binary SHA256 remains
+39829D0D62129F4138C449EC4FC913DE4EF81B028527B649EEDFEA1D3EE3D1C9.
+
+Pi turn1 is live under node PID19392, runner16344/exec28157. Its saved initial
+prompt retains full SPEC and is byte-equal to Rupi's. Matched outcome is pending;
+PR141 stays draft and Cases08 through10 remain open. The conditional write-only
+candidate stays unimplemented while this comparison proceeds.

@@ -1529,6 +1529,9 @@ TUI rendering passed all budgets (3.31–3.90 µs/unit); checkpointed restore me
   existing cap12 and first-mutation completion requirement, with other controls kept.
   All-case window12 guards and author configuration review pass. Fresh retry10 from
   39f402f is live; its initial prompt matches retry09, binary/model are unchanged.
+  Rupi resolves acceptance on turn4 with 106,173 recorded work tokens; final help
+  passes, project tests fail and no README is listed. Pi's matched half is live,
+  so a comparison win remains unproven and PR141 stays draft.
   Fresh pairs retain the same local
   `qwen3.8-flash-next` and pinned Pi 0.86.1.
   Cases 01 through 07 have verified comparison wins and are skipped. Cases 08 through
