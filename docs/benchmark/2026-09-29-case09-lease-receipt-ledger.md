@@ -281,3 +281,26 @@ window3 dry-run guards and actual fresh-workspace configuration/reference-hash p
 pass. No inference or source change occurs in these probes, and no benefit is proven.
 Do not launch this candidate concurrently or change the active window12 pair.
 PR144 stays draft; Case09 remains unresolved and Case10 has not begun.
+
+## Retry01 Pi second attempt verified (2026-10-04)
+
+Pi2 reaches the600,228 ms watchdog with15,749 recorded work tokens (4,634 uncached
+input,11,115 output), five requests/completions/usage records and five completed
+native events: two writes/three edits. Failed/Unknown remain unavailable, not zero;
+completed events do not establish successful effects. Unrecorded unfinished inference
+remains unknown. Tests exit5, acceptance exits1 and all help checks pass without
+verification timeouts. Manifest adds entry point27,226 bytes/test initializer16;
+no test module or README is listed. Generated contents/diagnostics remain unread;
+sizes do not establish unchanged content, complete behavior or the test failure cause.
+
+Pi cumulative through two turns:27,970 recorded work tokens,796,964 ms call time
+excluding verification,10 completed native events and one watchdog expiry; failed/
+Unknown unavailable. All eight completed-turn prompt/control/reference audits pass;
+initial equality and binary/model/relay remain unchanged. Selected Pi controls remain
+native uncapped/six tools/null progress mode/window, low/budget2,048/native replay.
+
+Pi3 is observed live under node PID38056, runner19500/exec47054; saved full-SPEC/
+assertion/stable-key/private-fencing/lost-ack repair requirements pass. Let retry01
+finish unchanged. Rupi remains unresolved after six; this candidate cannot win, but
+the final Pi classification is pending. Validated window3 trial waits until terminal;
+no source/config changes, local builds or concurrent inference. PR144 stays draft.
