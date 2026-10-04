@@ -1429,3 +1429,27 @@ aggregate results or runner log were inspected. No local build or concurrent pai
 PR141 remains draft and unmerged. Baseline/retries01 through 06 remain inconclusive;
 retry07 is a decisive Pi win. Cases08 through 10 remain open. The next bounded
 candidate must improve the unresolved Rupi result without weakening the public task.
+
+## Complete workflow from the first attempt candidate (2026-10-04)
+
+Retry07 delivered Rupi's foundation, modules and workflow tests across three turns,
+then remained unresolved across three repairs. Pi resolved on turn 2. These metrics
+and manifests support testing an earlier complete implementation opportunity; they
+do not identify the generated defect or prove that staging caused Rupi's failure.
+
+Shared Case08 initial guidance now requests the complete service/worker in the first
+source write, then public-command/HTTP tests and honest README in the same attempt.
+A compact single module or a few modules are allowed. The forced health-only phase,
+four-write partial yield and required store/server/worker file-presence routing are
+removed. Recovery uses local diagnostics with focused edits and complete public-spec
+behavior; existing CLI/workflow assertions must be preserved. Full SPEC and explicit
+fencing/data-flow/bounded-worker/resource/test-race guidance remain in every prompt.
+
+All-case guards pass with off/default settings and low/budget2,048/recurring/six turns.
+They verify complete first-attempt guidance, workspace-independent recovery, full
+SPEC, test/assertion preservation, fencing and exclusion of synthetic oracle output
+from both diagnostic streams. Author invariant review found no blocking issue; no
+independent-agent review is claimed. Added lines meet 100 columns and diff check passes.
+No Rust, application, acceptance, config, model, timeout or tool-policy change is made.
+A larger first source write may still reach the watchdog; the result remains unproven.
+The next fresh pair will retain retry07's six-turn model/runtime controls.

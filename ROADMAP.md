@@ -1513,6 +1513,8 @@ TUI rendering passed all budgets (3.31–3.90 µs/unit); checkpointed restore me
   help pass; Rupi's tests/oracle fail and help passes. Reference/prompt/control audits
   pass; unfinished inference remains unknown. This is a configured Pi win and PR141
   remains draft. The next candidate must improve Rupi without weakening public gates.
+  Shared full-workflow-first guidance now removes partial foundation yields and required
+  module-name staging. All-case guards and author review pass; live comparison is pending.
   Fresh pairs retain the same local
   `qwen3.8-flash-next` and pinned Pi 0.86.1.
   Cases 01 through 07 have verified comparison wins and are skipped. Cases 08 through
