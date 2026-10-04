@@ -1988,3 +1988,50 @@ replay. Turn2 is live under Rupi PID34964, runner16344/exec28157. Its saved prom
 retains full SPEC, repair/fencing/assertion guidance and no prescribed module stage.
 The longer-window candidate has not established a win or cache/speed improvement.
 No oracle resolution or matched result yet; PR141 stays draft and Cases08 through10 stay open.
+
+## Retry10 Rupi second attempt verified (2026-10-04)
+
+Turn2 reaches the 600,345 ms watchdog with 17,296 recorded work tokens (8,864
+uncached input, 8,432 output), four usage records and four completed tools: three
+writes and one edit. Failed/Unknown counts are zero. Completion counters include
+an earlier abandoned request; unfinished unrecorded inference remains unknown.
+Tests and oracle fail without verification timeouts; all help checks now pass.
+Manifest adds entry point3,451 bytes, server4,345 and worker6,374, and lists store20,644.
+Other sizes match turn1; no tests or README are listed. Contents remain unread;
+sizes do not establish unchanged content or exact edit targets, and help is not
+proof of complete workflow behavior.
+
+Across two turns: 57,725 recorded work tokens, 1,200,589 ms call time excluding
+verification,17 completed tools, two failed and zero Unknown. Selected controls
+persist. Turn3 is live under Rupi PID21344, runner16344/exec28157. Its saved prompt
+retains full SPEC, repair/fencing/assertion guidance and no prescribed module stage.
+No oracle resolution or matched result yet; PR141 stays draft and Cases08 through10 stay open.
+
+A conditional next-candidate plan is recorded in
+`2026-10-04-case08-initial-write-only-plan.md`. It uses write-only tools for both
+agents on the fresh first attempt and restores normal profiles later, with all
+public requirements/gates retained. Implementation waits until retry10 is terminal
+and has not won; no current configuration/source changes are made during the live pair.
+Plan-designer quality review passes; the candidate is neither implemented nor verified.
+
+## Retry10 Rupi third attempt exhausts budget without recorded mutation (2026-10-04)
+
+Turn3 exits0 after 463,743 ms with recorded status `budget_exhausted`; the outer
+watchdog does not expire. Recorded work is 29,132 tokens (23,782 uncached input,
+5,350 output), eleven usage records and eleven completed tools: eight reads/three
+greps. No mutating tools are recorded; failed/Unknown counts are zero. Completion
+counters include an earlier abandoned request; unfinished unrecorded inference
+remains unknown. Exit0 and lower call time do not establish successful task completion.
+Tests/oracle fail and help passes without verification timeouts. Manifest sizes
+match turn2 with no tests/README; contents remain unread and sizes do not prove
+unchanged content or complete behavior.
+
+Across three turns: 86,857 recorded work tokens, 1,664,332 ms call time excluding
+verification,28 completed tools, two failed and zero Unknown. Selected controls
+persist. Turn4 is observed live under Rupi PID13084, runner16344/exec28157. Its saved
+prompt retains full SPEC, repair/fencing/assertion guidance and no prescribed module
+stage. No oracle resolution or matched result; PR141 stays draft, Cases08 through10 open.
+
+The conditional initial-write-only plan now selects existing window3/cap12, because
+window12 has allowed a complete read-only budget-exhausted attempt. This plan is
+unimplemented and waits for retry10's matched outcome; current live controls remain unchanged.
