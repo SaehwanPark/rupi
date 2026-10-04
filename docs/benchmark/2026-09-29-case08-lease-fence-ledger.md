@@ -171,3 +171,22 @@ workflow, preserves the full specification and fencing guidance, and includes on
 oracle status. Source/settings remain fixed at `465ef6c`; Pi has not started.
 There is no matched result yet. CI also passed on all three platforms at docs head
 `0acb3c3`: [CI run](https://github.com/SaehwanPark/rupi/actions/runs/37166190348).
+
+## First retry: Rupi turn 3 verified (2026-10-04 01:06 UTC)
+
+Turn 3 reached its 600,192 ms outer timeout with 33,298 recorded work tokens
+(27,611 input, 5,687 output). Counters record ten started/completed requests,
+nine usage records, and nine completed tools with zero failures or Unknown.
+Completion counters do not establish successful current-turn inference when usage
+is absent. Project tests and all help checks passed; the oracle failed again.
+
+The entry point is 23,360 bytes. Two sink fixtures appeared under `tests/sinks/`,
+while `tests/test_leasefence.py` remains 1,267 bytes and README remains 4,146 bytes.
+Fixture presence does not prove discovered workflow-test coverage. Source contents,
+model output, and oracle details remain unread. Across three turns, Rupi recorded
+70,315 work tokens and 1,462,108 ms call time, excluding verification.
+
+Turn 4 is live (PID 33212 under runner 2844) with the same fixed source/settings.
+Pi has not started; no matched result exists yet. The full Case 08 gate remains
+open. CI passed all platforms at `550aaf3`:
+[CI run](https://github.com/SaehwanPark/rupi/actions/runs/37166549179).
