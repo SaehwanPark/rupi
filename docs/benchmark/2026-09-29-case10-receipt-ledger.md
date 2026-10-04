@@ -142,3 +142,10 @@ two writes). Tests5/oracle1/all four help0; no verification timeouts. tests/__in
 is now listed, but no test_*.py. All six earlier file sizes match, without proving unchanged
 contents. No generated content inspected. Cumulative recorded work170,074. Turn5 active;
 Pi has not started. Three authoring watchdogs and one budget-exhausted turn so far; no win.
+
+Rupi turn5 reaches its watchdog at600,161ms, unresolved:10,480 recorded work (8,275 input+
+2,205 output), two request starts/one completion/one usage record. One read tool completes,
+zero failures/Unknown. Tests5/oracle1/all four help0, no verification timeouts. All seven
+listed file sizes match turn4, without proving unchanged contents; no test_*.py listed.
+Unfinished second-request inference usage remains unknown, not zero. Cumulative recorded
+work180,554/authoring2,965,010ms. Turn6 active, the final planned Rupi attempt; Pi not started.
