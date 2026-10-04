@@ -1100,3 +1100,19 @@ concurrently. Written Rupi config confirms recurring mode/progress limit 1/cap 1
 low effort and endpoint 8001. The first prompt retains full SPEC and is byte-equal
 to retry05's initial prompt. Usage before launch was 78% five-hour and 90% weekly,
 below both soft stops. No result yet; Cases08 through 10 remain open.
+
+## Retry06 Rupi foundation and implementation routing verified (2026-10-04)
+
+Rupi turn 1 completed in 154,232 ms with 7,171 recorded work tokens (4,580 uncached
+input, 2,591 output), three requests/completions/usage records and four successful
+writes. Failed/Unknown tool counts are zero. Tests and all help checks pass without
+timeouts; the oracle fails without a timeout. Entry point is 2,539 bytes, foundation
+test 1,372, test initializer 48 and README 2,382. Contents remain unread.
+Per-turn metadata confirms recurring mode/cap 12, low effort, budget 2,048,
+endpoint 8001 and native replay.
+
+Turn 2 is live under Rupi PID 34600, runner 30660/exec session 62809. Its saved
+prompt retains full SPEC, selects store/worker/server implementation before workflow
+tests, and includes the transactional fencing contract. It does not select the
+test-first phase. This verifies delivery of the revised sequence, not workflow
+correctness or a comparison win. The matched outcome remains pending.
