@@ -40,3 +40,22 @@ failed on every turn. On turn 4, its stale-worker claim did not appear before th
 The result is inconclusive because neither agent resolved the oracle. Pi used 5,078 more work
 tokens and finished 142 ms sooner. Pi passed help throughout and project tests on its final
 turn, but its acceptance oracle still failed. Case 09 is next.
+
+## Active improvement slice (October 3)
+
+Cases 01 through 07 already have verified Rupi comparison wins and are skipped.
+Case 08 remains unresolved for both agents in the pinned baseline. This slice improves
+the shared Case 08 authoring and recovery guidance, then repeats the comparison with
+local `qwen3.8-flash-next` and pinned Pi 0.86.1. Reference source and acceptance fixtures
+remain unchanged; generated code must come from the local model in fresh workspaces.
+
+The target is an independently verified oracle resolution with fewer turns than Pi,
+or fewer recorded work tokens when both resolve in the same turn. Project tests,
+help, README completeness, failures, and unrecorded inference are reported separately.
+Preserve the full public specification, especially conditional finalization with a
+private token, expired-lease reclaim, and stale-worker rejection across fresh processes.
+Recovery may use public-spec project tests and help diagnostics; oracle diagnostics
+must remain hidden from both model runs. No case is complete based on timing alone.
+
+Next: prepare shared bounded prompts, verify harness dry runs, and run the matched
+four-turn comparison. Keep this slice open until current evidence establishes a win.
