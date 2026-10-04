@@ -43,3 +43,38 @@ Project-test discovery could not import the `tests` start directory.
 The result is inconclusive because neither agent resolved the oracle. Rupi used 79,923 more work
 tokens and finished 63,749 ms sooner. Both attempts failed to provide an importable service, and
 both failed project-test discovery and all help checks. This completes the ten-case comparison.
+
+## Active improvement slice: public audit and receipt guidance
+
+Base: `8ba8010257d9114b9d780ca46b0bb76b9a726931` (merged Case09 PR144).
+Branch: `fix/case10-audit-ledger`. Owner: parent agent, single writer; no delegation.
+Cases01–09 have recorded configured wins and are skipped. Case10 remains unresolved.
+
+Implement shared initial/repair prompts containing the complete actual Case10 public SPEC.
+Preserve authenticated atomic DAG admission, ordered declared data flow, bounded workers,
+private claim-token fencing, stable delivery keys and lost-ack receipt recovery. Emphasize
+same-transaction audit appends, safe bounded events, the exact public hash expression, and
+read-only full-chain verification/tail. Request public command/HTTP tests and an honest README.
+
+Add isolated Case10 reasoning-budget and progress-mode/window selectors using the existing
+runtime. Defaults remain zero budget, one_shot and window1; normalize mode capitalization.
+Both agents receive the same complete public requirements and oracle pass/fail only. Rupi
+uses four file tools and empty discovery; Pi0.86.1 uses six native file tools and disabled
+discovery. Pi request/progress limits remain unavailable, never represented as zero.
+
+Verify default/selected guards, non-native rejection before mutation, oracle isolation,
+all18 non-Case10 initial/repair prompt hashes, copied SPEC/acceptance hashes, actual configs,
+metadata and byte-identical shared initial prompts. Run a fresh same-Qwen paired comparison
+with low/configured2048, Recurring/window3/cap12, matched six attempts of600s/grace6. Record
+per-turn summaries and file metadata only; no generated source, model output, oracle source,
+diagnostics or aggregate comparison results are inspected. No manual solution is supplied.
+
+Acceptance remains unchanged. A failed cheaper run is inconclusive. A win requires fewer
+acceptance-resolution turns or less recorded work at equal resolution turns. Recorded work
+excludes cache-read tokens; unfinished inference is unknown. Keep public-test/help/README
+limitations explicit and do not claim full-task completion or default/causal superiority.
+
+Before delivery, perform author invariant review, required Rust checks and startup budget
+verification; wait for exact-head three-platform CI before autonomous merge. Push progress
+regularly. Verify the squash tree/remote main, detach artifacts, and delete merged branches.
+Broader roadmap gates remain active. Status: plan committed; implementation/verification pending.
