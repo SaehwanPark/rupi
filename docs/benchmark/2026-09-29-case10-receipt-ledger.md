@@ -374,3 +374,12 @@ Project tests1/oracle1/all four help0, no verification timeouts. Main19,999 is l
 and README absent. Generated contents unread; passing help does not prove complete behavior.
 Cumulative work29,736/authoring1,201,066ms. Turn3 active with frozen guidance/window12 controls.
 Pi not run; unfinished inference usage unknown and no comparative win claimed.
+Retry04 Rupi turn3 reaches its watchdog at600,296ms, unresolved:33,406 recorded work
+(28,615 input+4,791 output), twelve starts/twelve completions including an earlier abandoned
+request, eleven usage records. Twelve requested/completed tools, zero failed/Unknown (two
+writes, one edit, four grep, five reads). Tests1/oracle1/all four help0, no verification
+timeouts. Main27,737/tests-init0/test_help991 listed; README absent. Contents unread; file
+presence does not prove assertion preservation or discovered/passing tests. Cumulative
+work63,142/authoring1,801,362ms. Turn4 active, controls frozen; Pi not run. Branch audit after
+fetch/prune: only main and active fix/case10-audit-ledger remain locally/remotely; historical
+worktrees detached with artifacts retained. No failed-screen win claim.
