@@ -229,3 +229,12 @@ all four help now0; no verification timeouts. app size12,150→36,984, other fou
 without proving unchanged contents or exact edits. No test_*.py or README. Contents unread.
 Cumulative work117,393/authoring2,400,888ms. Turn5 active with the shared guidance to write
 missing public tests when help passes. No Pi inference or win claim; controls remain unchanged.
+
+Retry02 Rupi turn5 exits0 with runtime budget_exhausted at578,279ms, unresolved:46,056 work
+(39,434 input+6,622 output), eleven starts/twelve completions including earlier abandoned
+request, eleven usage records. Twelve tools complete/zero fail/zero Unknown (five grep,
+five reads, two writes). Tests5/oracle1/all four help0, no verification timeouts. Public
+test_receiptledger.py6,298 now listed; package init1,522, other four file sizes match prior
+turn without proving unchanged contents. File presence does not establish discovered/passing
+tests. No README; generated contents remain unread. Cumulative work163,449/authoring2,979,167ms.
+Final Rupi attempt6 active; no Pi inference or win claim. Harness/controls remain unchanged.
