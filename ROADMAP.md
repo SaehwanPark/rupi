@@ -1499,9 +1499,11 @@ TUI rendering passed all budgets (3.31–3.90 µs/unit); checkpointed restore me
   tokens versus 42,512 Pi tokens; both failed final project tests and passed help.
   Unrecorded Rupi inference remains unknown. Retry04 used the shared repair bound
   and recorded 68,337 Rupi work tokens versus 61,380 Pi tokens; both failed final
-  tests and passed help. A separate recurring progress-boundary runtime slice is
-  drafted in PR #143; its local verification remains pending. Fresh comparisons
-  retain the same local `qwen3.8-flash-next` and pinned Pi 0.86.1.
+  tests and passed help. The recurring progress-boundary runtime slice passed local
+  checks, startup budgets, author review and final-head CI, then merged in PR #143.
+  Retry05 is live with recurring mode explicitly selected for Rupi; Pi retains its
+  native runtime policy. No outcome yet. Fresh comparisons retain the same local
+  `qwen3.8-flash-next` and pinned Pi 0.86.1.
   Cases 01 through 07 have verified comparison wins and are skipped. Cases 08 through
   10 remain open; see the [Case 08 ledger](docs/benchmark/2026-09-29-case08-lease-fence-ledger.md).
 
