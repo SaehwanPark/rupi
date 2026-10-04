@@ -83,3 +83,34 @@ Plan:
 No runtime/schema/provider changes, new dependencies, manual solution, hidden-oracle
 prompt feedback, weakened tests or speculative orchestration are part of this slice.
 Plan and WIP handoff are prepared; implementation and comparison remain pending.
+
+## First candidate prepared and verified (2026-10-04)
+
+Draft PR144 is opened before implementation on `fix/case09-receipt-recovery`. The
+harness now supplies shared Case09 initial/repair prompts with full public SPEC and
+receipt/fencing/lost-ack requirements. New Case09 selectors default to budget0,
+one_shot mode/window1; the candidate explicitly selects low/budget2,048/Recurring12.
+Existing benchmark adapters provide file tools, isolated Rupi discovery, native
+reasoning replay and nullable Pi progress/cap metadata. Core/runtime defaults stay intact.
+
+Verified before launch:
+
+- All ten cases pass default/off and selected low/budget2,048/Recurring/window12,
+  six-turn/600s/grace6/cap12 dry-run guards. Case09 guards cover full SPEC, receipt/
+  fencing assertions, initial/repair/help failures and oracle diagnostic sentinel isolation.
+- Distinct Case08 recurring/window3 versus Case09 one_shot/window12 guards pass;
+  Case09 window0 is rejected. All18 non-Case09 initial/recovery prompt hashes remain
+  equal to pre-edit snapshots, including already-winning Case08 guidance.
+- A synthetic fresh workspace verifies Qwen/low/native replay, cap12/window12,
+  four tools, endpoint8001/deadline594,000 ms/output16,384 and untouched copied
+  SPEC/two acceptance-file hashes. No inference or oracle execution occurs in this probe.
+- Diff/100-column checks pass after wrapping two long helper declarations. Author
+  invariant review passes: case isolation, public-spec-only guidance, native exposure
+  validation before mutation, hidden oracle diagnostics and unknown/null measurements.
+  No independent-agent review is claimed. Rust/source/acceptance fixtures are unchanged.
+- Shared debug binary SHA256 is
+  39829D0D62129F4138C449EC4FC913DE4EF81B028527B649EEDFEA1D3EE3D1C9.
+  Singular Qwen server27356 and content-free budget relay33028 remain live.
+
+Push the candidate before inference. No comparison win is claimed; the matched pair,
+per-turn/terminal audits and final required checks/CI remain pending.
