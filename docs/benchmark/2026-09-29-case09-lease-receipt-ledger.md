@@ -151,3 +151,25 @@ retains full SPEC, assertions, stable delivery key, private fencing, lost-ack re
 and no external-oracle access. Let the same six-turn-maximum pair continue without
 source/configuration changes, local builds or parallel inference. Pi has not started;
 no matched outcome is available. PR144 stays draft and Cases09 through10 remain open.
+
+## Retry01 Rupi second attempt exhausts its request budget (2026-10-04)
+
+Turn2 exits0 after508,238 ms with recorded status `budget_exhausted`; the outer watchdog
+does not expire. Work43,517 tokens (37,687 uncached input,5,830 output), twelve usage
+records, twelve requests started and thirteen completion events including an earlier
+abandoned request. Thirteen tools complete: twelve reads and one write; recorded
+failed/Unknown are zero. Unfinished unrecorded inference remains unknown. Acceptance
+and project tests fail without verification timeouts; all help checks now pass. Exit0
+and lower call time do not establish successful task completion.
+
+Manifest adds cli3,296 bytes; other sizes match turn1. No tests or README are listed.
+Generated contents/diagnostics remain unread; sizes do not establish unchanged content,
+edit targets or complete service/worker behavior. Cumulative through two turns:
+71,445 recorded work tokens,1,108,748 ms call time excluding verification,21 completed
+tools, zero recorded failed/Unknown. One watchdog expiry and one budget-exhausted attempt.
+
+Selected controls persist. Rupi turn3 is live under PID20016, runner19500/exec47054.
+Its saved repair prompt retains full SPEC/assertions/stable key/private fencing/lost-ack
+retry/oracle isolation. No code/config changes or builds/concurrent inference during
+the original pair. Pi has not started; no matched outcome yet. PR144 stays draft;
+Cases09 through10 remain open.
