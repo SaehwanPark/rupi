@@ -906,3 +906,15 @@ Continuation: exec session 85505, runner PID 14912 under wrapper 32740; first Ru
 PID 7332. Model PID 27356 and content-free relay PID 33028 were preserved. The
 written Rupi config confirms recurring mode, progress limit 1, request cap 12,
 low effort and endpoint 8001. The pair is live and no result is claimed.
+
+## Retry05 Rupi foundation verified (2026-10-04 05:45 UTC)
+
+Turn 1 completed in 264,547 ms with 9,736 recorded work tokens (4,580 uncached
+input, 5,156 output), three requests/completions/usage records and four successful
+writes. Failed and Unknown tool counts are zero. Project tests and all help checks
+pass without timeouts; the oracle fails without a timeout. The entry point is
+2,870 bytes, foundation test 1,511, test initializer 35 and README 4,267. Generated
+contents remain unread. Turn 1 metadata confirms the selected controls and recurring
+mode; saved turns 1 and 2 both contain the full specification. Turn 2 contains the
+public workflow-test path and is live under Rupi PID 22688, runner 14912/session 85505.
+There is no comparison result yet.
