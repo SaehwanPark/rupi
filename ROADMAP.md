@@ -434,6 +434,12 @@ Open in this area, in order:
 
 - [x] Implement retryable transport failures (`ModelFailureKind::Transport` in `crates/rupi-core/src/failure.rs`).
 - [x] Implement timeout classification (`ModelFailureKind::Timeout`, 408 / socket timeout).
+- [x] Keep idle expiry at the HTTP/SSE transport boundary while tool arguments or response
+      bodies are buffered. The reproduced false timeout is fixed; 29 transport fixtures pass,
+      including quiet expiry, active partial frames/bodies, total deadlines and cancellation.
+      Required local checks and author invariant review pass for PR #142; startup measures
+      188.58 ms cold and 11.98 ms warm median. Case 08's live retry retains its original binary
+      and settings; comparison gates remain open.
 - [x] Implement rate-limit classification (`ModelFailureKind::RateLimited`, 429 with retry-after header parsing).
 - [x] Implement provider-unavailable classification (`ModelFailureKind::ProviderUnavailable`, 5xx, missing endpoint).
 - [x] Implement authentication classification (`ModelFailureKind::Authentication`, 401/403).

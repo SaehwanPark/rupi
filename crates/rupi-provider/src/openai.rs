@@ -413,10 +413,11 @@ impl OpenAiCompat {
     });
 
     let mut emitted = false;
-    let idle_budget = Duration::from_millis(self.config.read_timeout_ms.max(1));
     let total_budget = self.config.request_timeout_ms.map(Duration::from_millis);
     let request_started = Instant::now();
-    let mut last_activity = Instant::now();
+    // The blocking HTTP/SSE reader enforces transport inactivity. A decoded
+    // event can be delayed by active tool-argument or response-body fragments,
+    // so event silence must not become a second idle timeout here.
     loop {
       if cancel.is_cancelled() {
         request_cancel.cancel();
@@ -466,7 +467,6 @@ impl OpenAiCompat {
       match receiver.recv_timeout(Duration::from_millis(50)) {
         Ok(WorkerMessage::Event(event)) => {
           emitted = true;
-          last_activity = Instant::now();
           sink.emit(&event);
         }
         Ok(WorkerMessage::Done(result)) => {
@@ -506,23 +506,6 @@ impl OpenAiCompat {
                 rupi_core::RequestReplaySafety::AmbiguousPostBoundary
               })
               .with_model(model),
-          );
-        }
-        Err(mpsc::RecvTimeoutError::Timeout) if last_activity.elapsed() >= idle_budget => {
-          request_cancel.cancel();
-          self.quarantined.store(true, Ordering::Release);
-          relay.stop();
-          let _ = worker_handle.join();
-          drain_worker_events(&receiver, sink, &mut emitted);
-          self.active_request.store(false, Ordering::Release);
-          return Err(
-            ModelFailure::new(
-              ModelFailureKind::Timeout,
-              FailurePhase::WaitingForResponse,
-              "provider response exceeded its configured idle timeout",
-            )
-            .with_model(model)
-            .with_partial_output(emitted),
           );
         }
         Err(mpsc::RecvTimeoutError::Timeout) => {}

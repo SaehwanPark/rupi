@@ -58,6 +58,31 @@ impl FakeServer {
     self.handle.expect("handle").join().expect("server thread")
   }
 
+  fn answer_slowly(raw: String) -> Self {
+    let listener = TcpListener::bind("127.0.0.1:0").expect("bind loopback");
+    let addr = listener.local_addr().expect("local addr");
+    let handle = thread::spawn(move || {
+      let (mut socket, _) = listener.accept().expect("accept");
+      let request = drain_request(&mut socket);
+      let bytes = raw.as_bytes();
+      let header_end = find(bytes, b"\r\n\r\n").expect("header boundary") + 4;
+      if socket.write_all(&bytes[..header_end]).is_err() {
+        return request;
+      }
+      for part in bytes[header_end..].chunks(8) {
+        if socket.write_all(part).is_err() || socket.flush().is_err() {
+          break;
+        }
+        thread::sleep(Duration::from_millis(80));
+      }
+      request
+    });
+    Self {
+      addr,
+      handle: Some(handle),
+    }
+  }
+
   fn base_url(&self) -> String {
     format!("http://{}/v1", self.addr)
   }
@@ -675,6 +700,143 @@ fn a_quiet_stream_retries_socket_polls_without_losing_a_partial_sse_line() {
       .any(|event| matches!(event, ProviderEvent::TextDelta(text) if text == "quiet"))
   );
   server.join().expect("server");
+}
+
+#[test]
+fn active_tool_argument_fragments_do_not_expire_as_idle() {
+  let listener = TcpListener::bind("127.0.0.1:0").expect("bind");
+  let addr = listener.local_addr().expect("addr");
+  let server = thread::spawn(move || {
+    let (mut socket, _) = listener.accept().expect("accept");
+    let _ = drain_request(&mut socket);
+    let headers = b"HTTP/1.1 200 OK\r\ncontent-type: text/event-stream\r\n\r\n";
+    socket.write_all(headers).expect("headers");
+    let mut fragments = vec![serde_json::json!({
+      "index": 0, "id": "active_write",
+      "function": {"name": "write", "arguments": "{\"contents\":\""}
+    })];
+    fragments.extend((0..15).map(|_| {
+      serde_json::json!({
+        "index": 0, "function": {"arguments": "x"}
+      })
+    }));
+    fragments.push(serde_json::json!({
+      "index": 0, "function": {"arguments": "\"}"}
+    }));
+    for fragment in fragments {
+      let event = serde_json::json!({"choices": [{"delta": {"tool_calls": [fragment]}}]});
+      if write!(socket, "data: {event}\n\n").is_err() || socket.flush().is_err() {
+        return;
+      }
+      thread::sleep(Duration::from_millis(80));
+    }
+    let _ = socket.write_all(
+      b"data: {\"choices\":[{\"delta\":{},\"finish_reason\":\"tool_calls\"}]}\n\n\
+        data: [DONE]\n\n",
+    );
+    let _ = socket.flush();
+  });
+  let mut config = ProviderConfig::local(
+    "local-vulkan",
+    "qwen3.8-flash",
+    format!("http://{addr}/v1"),
+    8_192,
+  );
+  // The wire remains active for over a second, but no complete tool call can
+  // be emitted until the last fragment. Idle measures transport inactivity.
+  config.read_timeout_ms = 500;
+  config.request_timeout_ms = Some(5_000);
+  let adapter = OpenAiCompat::new(config).expect("adapter");
+  let (result, collector) = stream(&adapter, &request("assemble the active tool call"));
+  server.join().expect("server");
+  result.expect("active fragmented arguments must not time out as idle");
+  let calls: Vec<_> = collector
+    .events()
+    .iter()
+    .filter_map(|event| match event {
+      ProviderEvent::ToolCall(call) => Some(call),
+      _ => None,
+    })
+    .collect();
+  assert_eq!(calls.len(), 1);
+  assert_eq!(calls[0].name, "write");
+  assert_eq!(
+    calls[0].arguments,
+    serde_json::json!({"contents": "x".repeat(15)})
+  );
+}
+
+#[test]
+fn an_active_partial_sse_frame_does_not_expire_as_idle() {
+  assert_active_response_completes(true);
+}
+
+#[test]
+fn an_active_one_shot_body_does_not_expire_as_idle() {
+  assert_active_response_completes(false);
+}
+
+fn active_response(streaming: bool) -> FakeServer {
+  let body = if streaming {
+    complete_sse("data: {\"choices\":[{\"delta\":{\"content\":\"hello\"}}]}\n\n")
+  } else {
+    let body = serde_json::json!({"choices": [{
+      "message": {"content": "x".repeat(80)}, "finish_reason": "stop"
+    }]})
+    .to_string();
+    status(200, "OK", &body, "")
+  };
+  FakeServer::answer_slowly(body)
+}
+
+fn assert_active_response_completes(streaming: bool) {
+  let server = active_response(streaming);
+  let mut config = ProviderConfig::local("local-vulkan", "qwen3.8-flash", server.base_url(), 8_192);
+  config.stream = streaming;
+  config.read_timeout_ms = 500;
+  config.request_timeout_ms = Some(5_000);
+  let adapter = OpenAiCompat::new(config).expect("adapter");
+  let (result, collector) = stream(&adapter, &request("wait for the active response"));
+  let _ = server.request();
+  result.expect("active body fragments must not expire as idle");
+  let text: String = collector
+    .events()
+    .iter()
+    .filter_map(|event| match event {
+      ProviderEvent::TextDelta(text) => Some(text.as_str()),
+      _ => None,
+    })
+    .collect();
+  assert_eq!(
+    text,
+    if streaming {
+      "hello".into()
+    } else {
+      "x".repeat(80)
+    }
+  );
+}
+
+#[test]
+fn an_active_partial_frame_still_obeys_the_total_deadline() {
+  let server = active_response(true);
+  let mut config = ProviderConfig::local("local-vulkan", "qwen3.8-flash", server.base_url(), 8_192);
+  config.read_timeout_ms = 500;
+  config.request_timeout_ms = Some(250);
+  let adapter = OpenAiCompat::new(config).expect("adapter");
+  let (result, collector) = stream(&adapter, &request("bound active input"));
+  let _ = server.request();
+  let failure = result.expect_err("active input must not extend the total deadline");
+  assert_eq!(failure.kind, ModelFailureKind::Timeout);
+  assert!(failure.message.contains("total timeout"), "{failure:?}");
+  assert_eq!(
+    failure.replay_safety,
+    rupi_core::RequestReplaySafety::AmbiguousPostBoundary
+  );
+  assert!(
+    collector.events().is_empty(),
+    "partial bytes are not model output"
+  );
 }
 
 #[test]

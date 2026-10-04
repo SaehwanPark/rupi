@@ -150,6 +150,13 @@ pub enum ModelFailureKind {
 
 Only explicit categories should qualify for automatic failover.
 
+OpenAI-compatible idle timeouts are enforced by the HTTP/SSE reader. Active transport input
+may remain buffered as tool arguments, a partial SSE frame, or a one-shot body without emitting
+a normalized model event. Event silence therefore does not establish transport inactivity.
+The outer request loop still enforces the total deadline and cancellation; ambiguous failures
+retain adapter quarantine and replay-safety classification. Transport activity creates no
+synthetic model output, usage, reasoning, or journal events.
+
 OpenAI-compatible endpoint quirks travel through `ModelEndpoint.openai_compat`, not provider
 adapter defaults that the CLI cannot reach. Streaming, usage inclusion, token-limit field,
 thinking-control dialect and safe extra headers are endpoint-scoped. An explicit thinking-off
