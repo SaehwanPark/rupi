@@ -632,3 +632,28 @@ Pi5 PID29600 is observed live under original exec25019/runner23092/wrapper36544;
 saved repair full-SPEC/assertion/stable-key/private-claim/lost-ack requirements pass.
 Continue the unchanged original pair without builds or parallel inference. PR144 stays
 draft and Cases09/10 open; Rupi README/full-public-task limitation remains explicit.
+## Retry02 Pi fifth attempt: tests/help pass,acceptance unresolved (2026-10-04)
+
+Pi5 reaches600,164 ms watchdog with native status `toolUse`,four requests/completions/
+usage records and15,935 recorded work tokens (8,824 uncached input,7,111 output).
+Four native events complete: two reads/two edits. Failed/Unknown remain unavailable,
+not zero; completion events do not establish successful effects. Unrecorded unfinished
+inference remains unknown. Tests and all three help checks pass; acceptance exits1,
+without verification timeouts. Manifest lists store16,449 bytes; other sizes match
+turn4 and README4,847 is listed. Generated contents/model output/diagnostics remain
+unread; presence/sizes do not establish complete behavior,unchanged contents,exact
+edit targets,README correctness or the acceptance failure cause.
+
+Pi cumulative through five turns:88,555 recorded work tokens,3,001,300 ms authoring
+time excluding verification,33 completed native events,five watchdogs,failed/Unknown
+unavailable. Rupi resolves at6 with tests/help passing; Pi remains unresolved after5.
+The matched winner is unproven: Pi could resolve at6 with fewer recorded work tokens,
+or remain unresolved and establish Rupi's fewer-turn win. Interim audit passes all
+eleven completed-turn prompts/controls,both copied SPEC/two acceptance-file hashes/
+no extra non-cache files,initial equality and unchanged actual config/binary/model/
+relay. Selected native Pi controls persist. Prior head429f6db passes all three CI.
+
+Pi6 PID11228 is observed live under original exec25019/runner23092/wrapper36544;
+saved repair full-SPEC/assertion/stable-key/private-claim/lost-ack requirements pass.
+Continue the unchanged original pair without builds or parallel inference. PR144 stays
+draft and Cases09/10 open; Rupi README/full-public-task limitation remains explicit.
