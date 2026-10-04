@@ -626,3 +626,17 @@ repair prompt preserves CLI/workflow tests and the full specification, but exclu
 the candidate's one-edit/100-line bound. This confirms that the on-disk candidate
 did not replace the live interpreter's launch definitions. Recheck the final saved
 prompt and reference hashes when terminal. Neither agent has resolved yet.
+
+## Retry03 Pi turn 3 verified (October 4)
+
+Pi turn 3 reached its 600,261 ms outer timeout with 10,746 recorded work tokens
+(3,641 input, 7,105 output), three requests/usage records and three completed tools
+(read and two writes). Project tests and the oracle failed; all help checks passed.
+Failure/Unknown counters remain unavailable. Across three turns, Pi recorded 27,616
+work tokens and 1,025,141 ms call time, excluding verification.
+
+Pi turn 4 is live (node PID 17648 under runner 8524; exec session 12652). Its saved
+repair prompt preserves the full specification and excludes the prepared 100-line
+bound, confirming the launch definitions stayed fixed after the on-disk edit.
+Neither agent has resolved the oracle. Finish this final turn before reference hash
+checks, terminal outcome recording and a fresh bounded-repair candidate pair.
