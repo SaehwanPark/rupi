@@ -59,3 +59,37 @@ must remain hidden from both model runs. No case is complete based on timing alo
 
 Next: prepare shared bounded prompts, verify harness dry runs, and run the matched
 four-turn comparison. Keep this slice open until current evidence establishes a win.
+
+## First retry preparation
+
+The shared prompt embeds the full public specification in initial and recovery turns.
+It starts with a compact CLI/health entry point, help tests, and honest README, then
+adds signed admission, durable ordered jobs, direct-argv worker execution, and private
+claim-token fencing in the existing entry point. Local test/help failures select repair
+rather than more workflow expansion. All oracle details remain hidden; only status is
+included. The reference implementation and acceptance suite are unchanged.
+
+Both agents use file tools, explicit low reasoning, and the same 2,048-token thinking
+budget through the existing content-free loopback relay. Native reasoning replay is
+enabled only for an endpoint explicitly declaring native exposure. Rupi receives an
+empty child discovery profile; Pi retains disabled context/skill/extension flags.
+Rupi's request cap is 12; Pi retains its native request policy. These are configured
+comparison controls, not proof of default-runtime superiority or equal request policies.
+Use four 600-second turns and six seconds of provider timeout grace with Pi 0.86.1.
+
+Verified before launch:
+
+- All ten cases passed `bench/compare-pi-rupi.ps1 -DryRun` with low reasoning and
+  Case 08 budget 2,048, and again with reasoning off and no budget relay.
+- Dry-run checks cover Case 08 foundation, workflow, and local-repair selection,
+  preservation of the complete specification, and exclusion of an oracle diagnostic
+  sentinel from model-visible recovery. Existing Case 07 guards also passed.
+- `git diff --check` passed. Case 08 changes stay in the benchmark adapter.
+- `cargo +stable build --bin rupi --target-dir C:/Users/saehwan/repos/rupi/target`
+  passed. The installed stable route reports the exact pinned Rust and Cargo 1.98.1;
+  the named 1.98.1 route lacks its cargo component on this machine.
+- Author invariant review: no blocking findings. Workflow policy stays outside core;
+  no uncertain tools are replayed, no hidden reasoning is inferred, and no acceptance
+  diagnostics or reference implementation are added to authoring context.
+
+The run result is pending. Keep the Case 08 comparison objective active.

@@ -18,6 +18,8 @@ param(
   [string]$ThinkingLevel = "low",
   [ValidateRange(0, 16384)]
   [int]$Case07ReasoningBudgetTokens = 0,
+  [ValidateRange(0, 16384)]
+  [int]$Case08ReasoningBudgetTokens = 0,
   [switch]$DryRun
 )
 
@@ -540,7 +542,101 @@ workspace files, including `dir /s`, `find`, `findstr`, `grep`, or `ls`.
 '@
 }
 
+function Get-Case08Prompt(
+  [hashtable]$case,
+  [object]$verification = $null,
+  [string]$ProjectPath = ""
+) {
+  $spec = [IO.File]::ReadAllText((Join-Path (Join-Path $repoRoot $case.Source) "SPEC.md"))
+  $feedback = ""
+  $phase = "foundation"
+  if ($null -ne $verification) {
+    $feedback = Get-RecoveryFeedback $verification
+    $oracleStatus = if ($verification.oracle.timed_out) { "timed out" } elseif (
+      $verification.oracle.exit_code -eq 0
+    ) { "passed" } else { "failed" }
+    $feedback = "Independent acceptance oracle: $oracleStatus (diagnostic details hidden).`n" +
+      $feedback
+    $entrypointPresent = -not [string]::IsNullOrWhiteSpace($ProjectPath) -and
+      (Test-Path -LiteralPath (Join-Path $ProjectPath "leasefence/__main__.py"))
+    if ($entrypointPresent) {
+      $helpPassed = @($verification.help).Count -eq 3 -and @(
+        $verification.help | Where-Object { $_.timed_out -or $_.exit_code -ne 0 }
+      ).Count -eq 0
+      $phase = if (-not $helpPassed -or $verification.project_tests.timed_out -or
+        $verification.project_tests.exit_code -ne 0) { "repair" } else { "workflow" }
+    }
+  }
+  $guidance = switch ($phase) {
+    "foundation" {
+      @'
+First tool call: write a compact runnable CLI in leasefence/__main__.py.
+Review the embedded specification before writing; do not reread SPEC.md.
+Use standard-library imports and a main guard; do not import absent local modules.
+Keep the first write under 90 lines with top-level, serve, and worker help.
+Implement serve with GET /healthz; keep workflow behavior for the next attempt.
+Second write: tests/test_leasefence.py with real subprocess tests for all three help paths.
+Third write: tests/__init__.py. Fourth write: README.md with honest implemented status,
+public contract, and exact checks. Yield after these four foundation writes.
+'@
+    }
+    "repair" {
+      @'
+Repair the earliest failing local test or help gate using the harness diagnostics.
+Preserve existing service and worker behavior. Remove imports of missing local modules.
+Keep application code in leasefence/__main__.py and tests in tests/test_leasefence.py.
+If tests are missing, write an importable unittest.TestCase with real test_* methods,
+then tests/__init__.py. Do not replace failing workflow tests with help-only checks.
+Use public commands and HTTP in tests; do not assume private function or class names.
+After repairing the local failure, continue missing specification behavior in small edits.
+'@
+    }
+    "workflow" {
+      @'
+Foundation tests and all help commands pass. Add the complete durable workflow now.
+First source edit: implement signed admission, SQLite state, worker --once, and retrieval
+in existing leasefence/__main__.py. Keep application code there; do not create helper modules.
+Use focused edits of at most 100 new lines each; continue edits in the same attempt.
+Validate the full graph before atomic insertion; persist original pipeline/job order.
+Resolve only declared input_refs from successful dependencies. Build barrier fan_in in
+depends_on order using only collect.field, with job_id/value items under the declared as key.
+Fail missing inputs/selections locally; block dependents and never invoke a failed barrier sink.
+Claim in a short transaction, increment attempts, persist a fresh private unguessable token
+and lease, then commit BEFORE spawning the sink. Never hold a transaction while it runs.
+Every success, retryable failure, and terminal failure finalization must condition its UPDATE
+on pipeline_id, job_id, status == leased, and the exact claim token; accept only one updated row.
+Reclaim expiry by clearing the old token and returning pending with a diagnostic.
+Reject stale completion with non-zero exit, changing no state from the newer claim.
+Never expose the private token through HTTP or sink requests. This is not exactly-once delivery.
+worker --once attempts each job at most once per invocation and never polls for new work.
+Invoke the sink with direct argv; close SQLite and subprocess resources on all paths.
+Add public-spec workflow tests, including a bounded fresh-process stale-worker race,
+then update README truthfully. Preserve passing tests and all three help paths.
+'@
+    }
+  }
+  @"
+Implement the complete dependency-free Python 3 leasefence project in the current workspace.
+The project root already contains SPEC.md; use leasefence/ and tests/ paths directly.
+Use only Python standard-library modules. Create README.md and focused unittest tests.
+Work only here; do not edit SPEC.md, any rupi config, or files outside the workspace.
+Do not inspect or run the external acceptance oracle. Oracle diagnostics stay hidden.
+Do not run commands, tests, help checks, service, worker, or oracle; no exec or shell calls.
+Use native read/write/edit tools and delegate execution and verification to the harness.
+The harness runs project tests, three help commands, and the independent oracle each attempt.
+Report verification only when the harness supplies it; preserve all public requirements.
+
+$feedback
+
+$guidance
+
+The complete Case 08 specification follows:
+$spec
+"@
+}
+
 function Get-InitialPrompt([hashtable]$case) {
+  if ($case.Id -eq "08-lease-fence") { return Get-Case08Prompt $case }
   $guidance = Get-CaseGuidance $case
   $toolingGuidance = Get-WindowsToolGuidance
   $embeddedSpec = ""
@@ -1046,6 +1142,9 @@ function Get-RecoveryPrompt(
   [object]$verification,
   [string]$ProjectPath = ""
 ) {
+  if ($case.Id -eq "08-lease-fence") {
+    return Get-Case08Prompt $case $verification $ProjectPath
+  }
   $feedback = Get-RecoveryFeedback $verification
   $case04Phase = $null
   $case05Phase = $null
@@ -1730,15 +1829,21 @@ function Invoke-External {
   }
 }
 
+function Get-BenchmarkReasoningBudget([hashtable]$case) {
+  if ($case.Id -eq "07-lease-cascade") { return $Case07ReasoningBudgetTokens }
+  if ($case.Id -eq "08-lease-fence") { return $Case08ReasoningBudgetTokens }
+  return 0
+}
+
 function Get-BenchmarkEndpoint([hashtable]$case) {
-  if ($case.Id -eq "07-lease-cascade" -and $Case07ReasoningBudgetTokens -gt 0) {
+  if ((Get-BenchmarkReasoningBudget $case) -gt 0) {
     return "http://127.0.0.1:8001/v1"
   }
   return "http://127.0.0.1:8000/v1"
 }
 
 function Get-BenchmarkTools([hashtable]$case, [string]$agent) {
-  if ($case.Id -eq "07-lease-cascade") {
+  if ($case.Id -in @("07-lease-cascade", "08-lease-fence")) {
     if ($agent -eq "rupi") { return @("read", "write", "edit", "grep") }
     return @("read", "write", "edit", "grep", "find", "ls")
   }
@@ -1749,7 +1854,9 @@ function Get-BenchmarkTools([hashtable]$case, [string]$agent) {
 }
 
 function Get-BenchmarkEnvironment([hashtable]$case, [string]$agent, [string]$agentRoot) {
-  if ($case.Id -ne "07-lease-cascade" -or $agent -ne "rupi") { return @{} }
+  if ($case.Id -notin @("07-lease-cascade", "08-lease-fence") -or $agent -ne "rupi") {
+    return @{}
+  }
   return @{
     HOME = $null
     USERPROFILE = (Join-Path $agentRoot "discovery-profile")
@@ -1757,10 +1864,11 @@ function Get-BenchmarkEnvironment([hashtable]$case, [string]$agent, [string]$age
 }
 
 function Set-BenchmarkReasoningCompatibility([hashtable]$case, [object]$endpoint) {
-  if ($case.Id -ne "07-lease-cascade") { return }
+  if ($case.Id -notin @("07-lease-cascade", "08-lease-fence")) { return }
   if ($null -eq $endpoint.capabilities -or
       $endpoint.capabilities.exposed_reasoning -cne "native") {
-    throw "Case 07 reasoning replay requires an explicit native exposure claim."
+    $caseName = if ($case.Id -eq "07-lease-cascade") { "Case 07" } else { "Case 08" }
+    throw "$caseName reasoning replay requires an explicit native exposure claim."
   }
   if ($null -eq $endpoint.PSObject.Properties["openai_compat"] -or
       $null -eq $endpoint.openai_compat) {
@@ -1796,7 +1904,7 @@ function New-BenchmarkWorkspace([hashtable]$case, [string]$agentRoot, [string]$t
     $config = Get-Content -Raw $configSourcePath | ConvertFrom-Json
     $config.thinking = $thinkingLevel
     $config.state_dir = ".rupi-state"
-    if ($case.Id -eq "07-lease-cascade") {
+    if ($case.Id -in @("07-lease-cascade", "08-lease-fence")) {
       if ($null -eq $config.tools) {
         $config | Add-Member -MemberType NoteProperty -Name tools -Value ([pscustomobject]@{})
       }
@@ -1814,7 +1922,7 @@ function New-BenchmarkWorkspace([hashtable]$case, [string]$agentRoot, [string]$t
     }
     if ($config.endpoints -and $config.endpoints.Count -gt 0) {
       Set-BenchmarkReasoningCompatibility $case $config.endpoints[0]
-      if ($case.Id -eq "07-lease-cascade" -and $Case07ReasoningBudgetTokens -gt 0) {
+      if ((Get-BenchmarkReasoningBudget $case) -gt 0) {
         $config.endpoints[0].base_url = Get-BenchmarkEndpoint $case
       }
       if ($config.endpoints[0].capabilities) {
@@ -2081,7 +2189,7 @@ function Invoke-AgentCase([hashtable]$case, [string]$agent, [string]$root, [stri
     $verification = Invoke-Verification $case $agentRoot $workspace.project $turn
     $lastVerification = $verification
     $turnRecord = [ordered]@{ turn = $turn; call = $call; metrics = $metrics; verification = $verification; session_id = $sessionId }
-    if ($case.Id -eq "07-lease-cascade") {
+    if ($case.Id -in @("07-lease-cascade", "08-lease-fence")) {
       $turnRecord["configured_tool_allowlist"] = @(Get-BenchmarkTools $case $agent)
       $turnRecord["harness_model_request_cap"] = if ($agent -eq "rupi") {
         $MaxModelRequestsPerTurn
@@ -2092,8 +2200,9 @@ function Invoke-AgentCase([hashtable]$case, [string]$agent, [string]$root, [stri
         off_value = "none"
       }
       $turnRecord["configured_model_endpoint"] = Get-BenchmarkEndpoint $case
-      $turnRecord["configured_reasoning_budget_tokens"] = if ($Case07ReasoningBudgetTokens -gt 0) {
-        $Case07ReasoningBudgetTokens
+      $budget = Get-BenchmarkReasoningBudget $case
+      $turnRecord["configured_reasoning_budget_tokens"] = if ($budget -gt 0) {
+        $budget
       } else { $null }
       $turnRecord["configured_native_reasoning_replay"] = $true
       $turnRecord["configured_skill_discovery"] = if ($agent -eq "rupi") {
@@ -2124,24 +2233,27 @@ if (@($cases | Where-Object { $_.Id -eq "05-batch-relay" }).Count -gt 0) {
 if (@($cases | Where-Object { $_.Id -eq "07-lease-cascade" }).Count -gt 0) {
   $recoveryFeedbackScope += ";case07_oracle_status_only"
 }
+if (@($cases | Where-Object { $_.Id -eq "08-lease-fence" }).Count -gt 0) {
+  $recoveryFeedbackScope += ";case08_oracle_status_only"
+}
 if ($DryRun) {
   Write-Host "Thinking level: $ThinkingLevel"
   Write-Host "Recovery feedback scope: $recoveryFeedbackScope"
   $cases | ForEach-Object {
     [void](Get-InitialPrompt $_)
-    $expectedEndpoint = if ($_.Id -eq "07-lease-cascade" -and
-        $Case07ReasoningBudgetTokens -gt 0) {
+    $expectedEndpoint = if ((Get-BenchmarkReasoningBudget $_) -gt 0) {
       "http://127.0.0.1:8001/v1"
     } else { "http://127.0.0.1:8000/v1" }
     if ((Get-BenchmarkEndpoint $_) -cne $expectedEndpoint) {
-      throw "The reasoning relay must only change Case 07's configured endpoint."
+      throw "The reasoning relay must match the selected case's explicit budget."
     }
     $environmentRoot = Join-Path ([IO.Path]::GetTempPath()) "rupi-case07-environment"
     $rupiEnvironment = Get-BenchmarkEnvironment $_ "rupi" $environmentRoot
     $piEnvironment = Get-BenchmarkEnvironment $_ "pi" $environmentRoot
     if ($piEnvironment.Count -ne 0 -or
-        ($_.Id -ne "07-lease-cascade" -and $rupiEnvironment.Count -ne 0)) {
-      throw "Only Case 07 Rupi may receive an isolated discovery profile."
+        ($_.Id -notin @("07-lease-cascade", "08-lease-fence") -and
+          $rupiEnvironment.Count -ne 0)) {
+      throw "Only Case 07/08 Rupi may receive an isolated discovery profile."
     }
     if ($_.Id -eq "07-lease-cascade") {
       if ($rupiEnvironment.Count -ne 2 -or -not $rupiEnvironment.ContainsKey("HOME") -or
@@ -2324,6 +2436,29 @@ if ($DryRun) {
           throw "Case 07 workflow guidance is missing: $instruction"
         }
       }
+    } elseif ($_.Id -eq "08-lease-fence") {
+      if ($rupiEnvironment.Count -ne 2 -or $null -ne $rupiEnvironment.HOME -or
+          $rupiEnvironment.USERPROFILE -ne (Join-Path $environmentRoot "discovery-profile") -or
+          (@(Get-BenchmarkTools $_ "rupi") -join ",") -ne "read,write,edit,grep" -or
+          (@(Get-BenchmarkTools $_ "pi") -join ",") -ne "read,write,edit,grep,find,ls") {
+        throw "Case 08 requires file tools and isolated Rupi skill discovery."
+      }
+      $endpoint = [pscustomobject]@{
+        capabilities = [pscustomobject]@{ exposed_reasoning = "native" }
+      }
+      Set-BenchmarkReasoningCompatibility $_ $endpoint
+      if ($endpoint.openai_compat.thinking_input -ne "reasoning_effort" -or
+          $endpoint.openai_compat.thinking_disable -ne "reasoning_effort_none" -or
+          $endpoint.openai_compat.preserve_reasoning -ne $true) {
+        throw "Case 08 must use explicit reasoning controls and native replay."
+      }
+      $initialPrompt = Get-InitialPrompt $_
+      $spec = [IO.File]::ReadAllText((Join-Path (Join-Path $repoRoot $_.Source) "SPEC.md"))
+      if (-not $initialPrompt.Contains($spec) -or
+          -not $initialPrompt.Contains('First tool call: write a compact runnable CLI') -or
+          -not $initialPrompt.Contains('Do not inspect or run the external acceptance oracle.')) {
+        throw "Case 08 must preserve its specification and oracle boundary."
+      }
     } else {
       $unchangedEndpoint = [pscustomobject]@{
         openai_compat = [pscustomobject]@{ thinking_input = "none" }
@@ -2365,6 +2500,48 @@ if ($DryRun) {
       help = $dryRunHelp
     }
     $dryRunRecovery = Get-RecoveryPrompt $_ $dryRunVerification
+    if ($_.Id -eq "08-lease-fence") {
+      $dryRunProject = Join-Path ([IO.Path]::GetTempPath()) (
+        "rupi-case08-dryrun-" + [Guid]::NewGuid().ToString("N")
+      )
+      $dryRunPackage = Join-Path $dryRunProject "leasefence"
+      $dryRunEntry = Join-Path $dryRunPackage "__main__.py"
+      $oracleDiagnostic = Join-Path $dryRunProject "oracle-diagnostic.txt"
+      try {
+        New-Item -ItemType Directory -Path $dryRunPackage -Force | Out-Null
+        Write-Text $dryRunEntry "# dry-run entry point marker"
+        Write-Text $oracleDiagnostic "CASE08_PRIVATE_ORACLE_DIAGNOSTIC"
+        $dryRunVerification.oracle.stdout_path = $oracleDiagnostic
+        $workflowPrompt = Get-RecoveryPrompt $_ $dryRunVerification $dryRunProject
+        if (-not $workflowPrompt.Contains($spec) -or
+            -not $workflowPrompt.Contains('Foundation tests and all help commands pass.') -or
+            -not $workflowPrompt.Contains('exact claim token; accept only one updated row.') -or
+            $workflowPrompt.Contains('CASE08_PRIVATE_ORACLE_DIAGNOSTIC')) {
+          throw "Case 08 recovery must preserve fencing and hide oracle diagnostics."
+        }
+        $dryRunVerification.project_tests.exit_code = 1
+        $repairPrompt = Get-RecoveryPrompt $_ $dryRunVerification $dryRunProject
+        if (-not $repairPrompt.Contains('Repair the earliest failing local test or help gate') -or
+            $repairPrompt.Contains('Foundation tests and all help commands pass.')) {
+          throw "Case 08 failing local checks must select repair rather than workflow."
+        }
+        if (-not $dryRunRecovery.Contains('First tool call: write a compact runnable CLI')) {
+          throw "Case 08 missing entry point must select foundation recovery."
+        }
+      } finally {
+        foreach ($file in @($dryRunEntry, $oracleDiagnostic)) {
+          if (Test-Path -LiteralPath $file) { Remove-Item -LiteralPath $file -Force }
+        }
+        foreach ($directory in @($dryRunPackage, $dryRunProject)) {
+          if (Test-Path -LiteralPath $directory) {
+            if (@(Get-ChildItem -LiteralPath $directory -Force).Count -ne 0) {
+              throw "Dry-run directory contains unexpected files: $directory"
+            }
+            Remove-Item -LiteralPath $directory -Force
+          }
+        }
+      }
+    }
     if ($_.Id -eq "07-lease-cascade") {
       $case07SpecPath = Join-Path (Join-Path $repoRoot $_.Source) "SPEC.md"
       $case07Spec = [IO.File]::ReadAllText($case07SpecPath)
@@ -2462,14 +2639,13 @@ if ($DryRun) {
   }
   exit 0
 }
-if ($Case07ReasoningBudgetTokens -gt 0 -and
-    @($cases | Where-Object Id -eq "07-lease-cascade").Count -gt 0) {
+foreach ($budgetCase in @($cases | Where-Object { (Get-BenchmarkReasoningBudget $_) -gt 0 })) {
   $relay = Invoke-RestMethod "http://127.0.0.1:8001/healthz" -TimeoutSec 5
   if ($ThinkingLevel -ne "low" -or
-      $relay.reasoning_budget_tokens -ne $Case07ReasoningBudgetTokens -or
+      $relay.reasoning_budget_tokens -ne (Get-BenchmarkReasoningBudget $budgetCase) -or
       $relay.upstream -cne "http://127.0.0.1:8000/v1" -or
       $relay.content_logging -ne $false) {
-    throw "Case 07 relay configuration differs from the requested low-budget experiment."
+    throw "$($budgetCase.Id) relay differs from the requested low-budget experiment."
   }
 }
 if ($Agent -ne "rupi") {
@@ -2523,6 +2699,9 @@ $summary = [ordered]@{
   } else { "http://127.0.0.1:8000/v1" }
   case07_reasoning_budget_tokens = if ($Case07ReasoningBudgetTokens -gt 0) {
     $Case07ReasoningBudgetTokens
+  } else { $null }
+  case08_reasoning_budget_tokens = if ($Case08ReasoningBudgetTokens -gt 0) {
+    $Case08ReasoningBudgetTokens
   } else { $null }
   max_turns = $MaxTurns
   turn_timeout_seconds = $TurnTimeoutSeconds
