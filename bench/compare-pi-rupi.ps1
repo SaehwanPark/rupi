@@ -740,10 +740,12 @@ function Get-Case10Prompt([hashtable]$case, [object]$verification = $null) {
     @'
 First tool call: write receiptledger/__main__.py with the complete public workflow.
 Implement the CLI, authenticated admission, durable graph, worker, fencing, receipts and audit now.
-Keep related behavior together; a compact single module or a few compact modules are allowed.
-Do not import absent local modules or start a partial health-only foundation stage.
+Keep CLI, HTTP, SQLite, worker and audit behavior together in receiptledger/__main__.py.
+Use a compact complete module; do not create separate app/store/storage/worker modules.
+Do not import local application modules or start a partial health-only foundation stage.
 Use the embedded SPEC instead of rereading it; read with offset/limit, at most 120 lines.
-Then write public-command/HTTP unittest tests, tests/__init__.py and an honest README.
+Then write an empty receiptledger/__init__.py, public-command/HTTP unittest tests,
+tests/__init__.py and an honest README. Test helpers may live beside the public tests.
 Complete service, worker, audit, tests and documentation in the same attempt.
 '@
   } else {
@@ -751,6 +753,7 @@ Complete service, worker, audit, tests and documentation in the same attempt.
 Repair the earliest failing local test or help gate using the harness diagnostics.
 Implement missing public behavior before revising test fixtures; remove absent local imports.
 Preserve passing service/worker behavior, public assertions and all four help paths.
+Keep the complete application in receiptledger/__main__.py; do not split or add local imports.
 Change a test fixture only when it misuses the documented public contract; preserve assertions.
 Use public commands/HTTP in tests, without assuming private function or class names.
 When help passes but public test cases are absent, first write tests/test_receiptledger.py.
@@ -828,6 +831,7 @@ safe fields/no private tokens or raw argv, stable delivery keys across reclaims/
 lost-ack outcome:unknown and stale rejection with unchanged newer public state. Tamper one row
 in a disposable database and require read-only verify failure without repairing/truncating it.
 Test bounded tail output and all four help paths. Preserve all workflow assertions.
+Use unittest.TestCase subclasses with test_ methods; helper functions alone are not tests.
 
 The complete Case 10 specification follows:
 $spec
@@ -3023,6 +3027,7 @@ if ($DryRun) {
           'audit --tail COUNT reads only'
           'outcome:unknown'
           'all four help paths'
+          'Use unittest.TestCase subclasses with test_ methods'
         )
         foreach ($prompt in @($initialPrompt, $dryRunRecovery, $oracleFailurePrompt,
             $repairPrompt, $helpRepairPrompt)) {
@@ -3037,6 +3042,11 @@ if ($DryRun) {
         }
         if (-not $initialPrompt.Contains('First tool call: write receiptledger/__main__.py')) {
           throw "Case 10 initial prompt must request complete application behavior first."
+        }
+        if (-not $initialPrompt.Contains(
+            'do not create separate app/store/storage/worker modules') -or
+            -not $initialPrompt.Contains('Do not import local application modules')) {
+          throw "Case 10 initial prompt must request one complete application module."
         }
         foreach ($prompt in @($repairPrompt, $helpRepairPrompt)) {
           if (-not $prompt.Contains('Repair the earliest failing local test or help gate') -or

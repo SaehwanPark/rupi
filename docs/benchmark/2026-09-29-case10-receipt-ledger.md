@@ -238,3 +238,36 @@ test_receiptledger.py6,298 now listed; package init1,522, other four file sizes 
 turn without proving unchanged contents. File presence does not establish discovered/passing
 tests. No README; generated contents remain unread. Cumulative work163,449/authoring2,979,167ms.
 Final Rupi attempt6 active; no Pi inference or win claim. Harness/controls remain unchanged.
+
+Retry02 Rupi turn6 reaches its watchdog at600,229ms, unresolved:16,662 recorded work
+(13,593 input+3,069 output), four starts/three completions/three usage records. Four tools
+complete/zero fail/zero Unknown (read/grep/read/read). Tests5/oracle1/all four help0, no
+verification timeouts. Six generated file sizes match prior turn without proving unchanged
+content. No README; generated code/test content unread. Unfinished request usage unknown.
+
+Retry02 is a terminal failed Rupi screen:180,111 recorded work/3,579,396ms authoring/41 complete/
+four failed/zero Unknown tools. Five watchdogs/one budget-exhausted turn; no acceptance or
+project-test gate passes. Final all-help passes, test file listed, README absent. Exec35467
+exits0; runner9740/wrapper34732 gone. All six saved prompt/control/copied SPEC/three acceptance
+hash audits pass, actual config/binary/model/relay match. Pi not run; no comparative win,
+full-public-task or causal improvement claim. Screening is not a completed paired comparison.
+
+### Single-module and discoverable-test revision
+
+Try one bounded shared-guidance revision from public metadata/gates, without claiming a root
+cause: keep CLI/HTTP/SQLite/worker/audit together in receiptledger/__main__.py, with no separate
+application modules or local application imports. Then empty package init, public tests,
+test init and honest README. Preserve all full-SPEC audit/receipt/fencing/data-flow requirements.
+Explicitly require unittest.TestCase subclasses with test_ methods; helper functions alone
+are not tests. Repair preserves complete code, public assertions and bounded reads/edits.
+No application solution is supplied, and generated/oracle/model contents remain unread.
+
+Default/all-case selected/capitalized guards, native-exposure and fake-oracle isolation,
+all18 unchanged non-Case10 prompts, fresh config/SPEC/three reference probes and diff checks
+pass. An overlong guard line was wrapped and the final Case10 selected guard passes.
+Harness SHA256:
+`86F04AA70643CD8020EE348D5CE16A230C037D195B4D655966985EB37745AD98`.
+Binary8159F875...77F24 unchanged; same model27356/relay33028/low2048/window3/cap12/six600s/grace6.
+Root usage44% five-hour/37% weekly, below95/99 soft stops. Fresh Rupi-first screen next;
+Pi remains conditional on Rupi acceptance with frozen guidance/binary/controls. Final paired
+win evidence, required Rust checks/startup/review and exact-head CI are still pending.
