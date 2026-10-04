@@ -2142,3 +2142,57 @@ six-turn maximum pair finish without changing its configuration. Terminal audit,
 required final checks, author review and exact-head CI remain before PR141 merge.
 The conditional write-only plan stays unimplemented because retry10 has met the win
 criterion. PR141 remains draft and Cases08 through10 remain open pending delivery.
+
+## Retry10 terminal: Rupi turn4 versus Pi turn5 acceptance win (2026-10-04)
+
+Run: `bench-20261004-case08-window12-budget2048-low-retry10-rupi12-matched6-600s`.
+Exec28157 exits0; runner16344, wrapper25888 and final Pi17976 are absent. Pi resolves
+on turn5, so no sixth attempt is needed. The existing pair ends without intervention.
+
+Pi5 reaches the600,192 ms authoring watchdog with15,041 recorded work tokens (7,770
+uncached input,7,271 output), nine usage records and nine completed native tool events:
+six reads/two edits/one write. Tests, independent acceptance and all help checks pass
+without verification timeouts. Manifest adds README5,596 bytes and lists store14,377/
+worker5,959; other sizes match turn4. Contents remain unread; README presence does not
+verify its completeness and sizes do not establish unchanged content or exact edit targets.
+
+| Terminal result | Rupi | Pi0.86.1 |
+| --- | ---: | ---: |
+| Acceptance resolution turn | 4 | 5 |
+| Recorded work tokens | 106,173 | 72,205 |
+| Call time ms, excluding verification | 2,264,548 | 2,985,111 |
+| Completed tool events | 31 | 32 |
+| Failed / Unknown | 2 / 0 | unavailable / unavailable |
+| Authoring watchdog expiries | 3 | 4 |
+| Final project tests / help | fail / pass | pass / pass |
+| README listed | no | yes, contents unread |
+
+Rupi wins the configured fewer-turn criterion. Its larger recorded work is not a
+token improvement; Pi's lower work is at a later resolution turn. Unrecorded unfinished
+inference remains unknown. Completed Pi native events do not establish successful
+effects. Rupi also has one read-only budget-exhausted attempt. This does not establish
+default-runtime/full-public-task superiority or a causal window/cache/latency improvement.
+
+Terminal audit passes all nine saved full-SPEC/repair prompts, initial equality, copied
+SPEC and both acceptance-file hashes/no extra non-cache files. Low effort, configured
+budget2,048, endpoint8001 and native replay persist. Rupi uses four file tools and
+Recurring/window12/cap12; Pi uses six file tools and its native uncapped request policy.
+Mode/window/cap metadata remain null for Pi; its copied Rupi config is unused.
+No model comparison or local build overlapped retry10. Debug binary remains SHA256
+39829D0D62129F4138C449EC4FC913DE4EF81B028527B649EEDFEA1D3EE3D1C9.
+The singular Qwen alias/server27356 and content-free budget relay33028 persist.
+
+Author invariant review: pass, no blocking findings. Checked case isolation, shared
+full-spec guidance, pass/fail-only oracle feedback, explicit native exposure requirement,
+tool/discovery controls and nullable measurement semantics. No Rust/runtime source differs
+from main; the conditional write-only plan is retired without implementation. No independent
+agent review is claimed.
+
+Required final local checks pass with the stable route: `cargo fmt --all --check`,
+`cargo check -p rupi-core --all-features`, workspace/all-target Clippy with warnings
+denied, workspace tests and workspace/no-deps rustdoc. Git Bash startup check passes:
+cold151.749 ms, warm median7.801 ms/max11.501 ms, within250/100 ms budgets. Checks
+ran after the model pair was terminal. Same harness sourcec52f79e previously passed
+all-case default/off and selected low/budget2,048/Recurring/window12 dry-run guards;
+no harness changes followed. `git diff --check` passes. Exact-final-head CI and PR
+handoff remain before merge; no project stage gate is marked complete by this benchmark.

@@ -1530,10 +1530,12 @@ TUI rendering passed all budgets (3.31–3.90 µs/unit); checkpointed restore me
   All-case window12 guards and author configuration review pass. Fresh retry10 from
   39f402f is live; its initial prompt matches retry09, binary/model are unchanged.
   Rupi resolves acceptance on turn4 with 106,173 recorded work tokens; final help
-  passes, project tests fail and no README is listed. Pi remains unresolved after
-  turn4 with57,164 recorded work tokens, establishing the configured fewer-turn
-  criterion. Its remaining attempts are live; terminal audit, final checks and PR141
-  handoff remain pending. PR141 stays draft.
+  passes, project tests fail and no README is listed. Pi resolves on turn5 with72,205
+  recorded work tokens; its final tests/help pass and a README is listed but unread.
+  Retry10 is terminal with a configured Rupi fewer-turn win,4 versus5. All nine saved
+  prompts/control/reference audits pass; binary/model remain unchanged. Required local
+  Rust checks pass; startup151.749 ms cold/7.801 ms warm median meets250/100 ms budgets.
+  Exact-final-head CI and PR141 handoff remain pending. PR141 stays draft.
   Fresh pairs retain the same local
   `qwen3.8-flash-next` and pinned Pi 0.86.1.
   Cases 01 through 07 have verified comparison wins and are skipped. Cases 08 through
