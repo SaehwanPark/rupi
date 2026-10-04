@@ -3833,7 +3833,7 @@ impl<'a> TurnLoop<'a> {
       DiagnosticLevel::Info,
       format!(
         concat!(
-          "progress boundary active after {} model request(s) without a configured progress tool; ",
+          "progress boundary active after {} tool-bearing request(s) without configured progress; ",
           "next request exposes {}"
         ),
         self.progress_requests_without_progress,

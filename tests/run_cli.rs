@@ -122,7 +122,7 @@ fn configured_recurring_progress_rejects_completion_until_a_file_change_is_obser
     tool_response(
       "write1",
       "write",
-      r#"{"path":"app.txt","content":"changed"}"#,
+      r#"{"path":"app.txt","contents":"changed"}"#,
       None,
     ),
     text_response("done"),
