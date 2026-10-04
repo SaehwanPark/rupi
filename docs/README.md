@@ -79,13 +79,17 @@ These documents serve as the authoritative sources of truth for the codebase:
 | [`ROADMAP.md`](../ROADMAP.md) | Staged milestone roadmap and active tracking of project phases. |
 | [`AGENTS.md`](../AGENTS.md) | Operational guidelines, invariant requirements, and usage policies for autonomous coding agents. |
 | [`LESSONS.md`](../LESSONS.md) | Durable architectural lessons, edge cases encountered, and rationale for key design choices. |
-| [`docs/codexbar.md`](codexbar.md) | Subscription quota monitoring rules and loop boundary policies. |
+| [`docs/ai-usage-policy.md`](ai-usage-policy.md) | Subscription quota monitoring rules and loop boundary policies. |
 | [`docs/subagents_policy.md`](subagents_policy.md) | Subagent delegation topologies, memory conservation, and handoff protocols. |
 | [`docs/harness/rupi-development/team-spec.md`](harness/rupi-development/team-spec.md) | Delivery harness specification and specialist agent roles. |
 
 ---
 
 ## 4. Historical Archive (`docs/archive/`)
+
+For current work, use [ROADMAP.md](../ROADMAP.md) and the current user task.
+The [Case07 completion record](benchmark/2026-10-02-case07-handoff.md) documents its
+strict Rupi oracle win and merged PR #139; that slice has no pending resume action.
 
 Historical development artifacts from early bootstrapping and intermediate phases
 are preserved for provenance and auditing:
@@ -94,11 +98,12 @@ are preserved for provenance and auditing:
   validation contracts from Phases 1 through 11 (e.g., `SLICE_CLI.md`,
   `SLICE_EPOCH.md`, `SLICE_STATUSLINE.md`, `SLICE_WARM_START.md`).
 - [`docs/archive/handoffs/`](archive/handoffs/): Milestone handoff reports from
-  prior development sessions.
+  prior development sessions. Goal states, blockers, commands, process IDs, and usage
+  reset windows inside them are historical snapshots, not current workflow instructions.
 - [`docs/archive/proposals/`](archive/proposals/): Initial project proposal,
   early MVP validation reports, and compaction event audit records.
 - [`audits/`](../audits/): Completed audit rounds, explicitly marked as historical and
   retained for provenance; they are not current implementation instructions.
 
-The former root-level [`HANDOFF.md`](../HANDOFF.md) is now a short pointer. Its resolved
-historical record lives in [`docs/archive/handoffs/`](archive/handoffs/).
+The root-level [`HANDOFF.md`](../HANDOFF.md) points to current status and historical records.
+Archiving a record does not imply that every residual risk described in it was resolved.

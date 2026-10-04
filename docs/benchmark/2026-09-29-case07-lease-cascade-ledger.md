@@ -1,5 +1,13 @@
 # Case 07 lease cascade comparison ledger
 
+**Terminal status (2026-10-03):** retry29 achieved the strict Rupi oracle win against
+Pi 0.86.1; [PR #139](https://github.com/SaehwanPark/rupi/pull/139) is merged.
+See the [completion record](2026-10-02-case07-handoff.md) for the final configuration,
+CI, merge commit, and process closeout. No further Case07 action is pending.
+
+Everything below records experiment history. Running statuses, next-attempt suggestions,
+quota windows, and pending decisions describe their original checkpoints, not current tasks.
+
 This ledger records the matched `07-lease-cascade` run with local `qwen3.8-flash-next` and
 Pi 0.86.1.
 
@@ -7,8 +15,9 @@ Timing totals sum agent call.elapsed_ms; verification/harness time is separate a
 
 Request-budget clarification: `MaxModelRequestsPerTurn=8` configures Rupi's runtime.
 The harness leaves Pi's native request behavior intact. Historical references to eight
-requests per turn in this ledger mean the Rupi cap. These comparisons share model,
-configured thinking level, turn count, and outer time limits with different request policies.
+requests per turn in this ledger mean the Rupi cap; retry29 raised it to 12. These comparisons
+share model, configured thinking level, turn count, and outer time limits with different
+request policies.
 Retry 18 Pi turn 3 recorded nine completed model requests; baseline Pi also exceeded eight.
 
 Thinking-control clarification from source review during retry 21: at configured `off`,
@@ -17,7 +26,8 @@ field. Pi's harness thinkingLevelMap maps off to none; its provider sends
 `reasoning_effort: "none"`. Historical off runs therefore share the configured label,
 not equivalent wire controls. The observed llama process declares default effort low;
 past request behavior and timeout causes are not established. Low-thinking baseline
-results are not reclassified by this off-mode finding. A fresh pair must follow correction.
+results are not reclassified by this off-mode finding. This finding prompted correction
+before subsequent fresh comparisons.
 
 ## Matched baseline
 
@@ -1630,7 +1640,8 @@ Usage 56% five-hour and 58% weekly; next reset 06:16 PM ET. Case 07 remains acti
 Server help/pinned source separate effort hint from numeric thinking budget. Live CLI has
 low/on/preserve and no explicit budget; default -1, historical/environment behavior unknown.
 Pinned defaults use native extraction. /props generation fields are a fresh task object,
-not proof of actual chat response format. Source links are in the Case 07 handoff.
+not proof of actual chat response format. Source-review details are retained in the
+pre-cleanup handoff snapshot linked from the Case07 completion record.
 Automatic approval review rejected preparation of a server restart script with only
 "blocked by policy". Nothing executed/created; retain the shared server.
 
@@ -1766,5 +1777,13 @@ is forwarding metadata, not completion/total-inference evidence. CI passed all j
 5d16ed7. All permitted per-turn summaries/files and selected configuration were checked;
 winning help stdout also inspected. Logs, payloads, acceptance source, oracle/project-test
 diagnostics, generated code/tests, and aggregate results stayed unread. No standalone tests.
-ROADMAP records the verified Case07 objective only. Final CI/PR139 merge handoff remains;
-no Case08 expansion is authorized by this slice.
+ROADMAP records the verified Case07 objective only. Case08 was outside this slice.
+
+## Delivery closeout: completed and merged
+
+Final [CI](https://github.com/SaehwanPark/rupi/actions/runs/37158459841) passed on Ubuntu,
+macOS, and Windows at `ba72a8c03612974ea2a697a817f184c09cfcdf9e`.
+PR139 merged on 2026-10-03 at 22:33:31 UTC, at
+`64c9ada05d637d603b1c3ac11b2c28cd25b9ae53`. The task-owned relay was stopped and
+verified gone after merge; the shared model server was preserved. Earlier live statuses and
+quota windows in this ledger are historical. No run, quota wait, or merge step remains.
