@@ -350,3 +350,12 @@ hash probes pass. Root usage56% five-hour/39% weekly remains below95/99 limits. 
 600s/grace6 Rupi attempts, Pi conditional on acceptance with frozen guidance/configuration.
 No new Rust/runtime source, domain policy or solver is added. Final paired evidence, required
 checks/startup/review/exact-head CI remain pending. Cases01–09 remain skipped.
+
+### Retry04 window12 screen: launched
+
+Run: `bench-20261004-case10-monolith-window12-budget2048-low-retry04-rupi12-screen6-600s`.
+Source code92d2b269/harness86F04AA7...5AD98; control checkpointb65b96b; exec7815/
+runner23564/wrapper29924. Same binary/model/relay/low2048/cap12/six600s/grace6. Only existing
+window3→12 changes; mode remains Recurring. Slots idle before launch; actual config passes,
+initial prompt byte-identical to retry03. No builds or parallel inference during the screen.
+Pi conditional on Rupi acceptance with frozen guidance/settings; outcome remains pending.
