@@ -1548,7 +1548,9 @@ TUI rendering passed all budgets (3.31–3.90 µs/unit); checkpointed restore me
   work tokens/3,305,226 ms authoring time,43 completed tools/one failed/zero Unknown.
   README absent; generated contents unread,unrecorded unfinished inference unknown.
   Six completed Rupi-turn audits,both reference copies and initial equality pass;
-  config/binary/model unchanged. Pi1 is live; matched winner remains unproven.
+  config/binary/model unchanged. Pi1 hits600,333 ms watchdog:21,912 work tokens,eight
+  native completions,failed/Unknown unavailable; tests/acceptance fail,help passes.
+  All seven completed-turn audits pass. Pi2 is live; matched winner remains unproven.
   PR144 stays draft. No full-public-task or causal window/cache/token improvement claimed.
   Preserve stable public delivery keys, distinct private fencing, lost-ack retry and
   accepted receipt persistence. No acceptance fixtures or manually generated solution

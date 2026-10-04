@@ -536,3 +536,26 @@ and actual Rupi config/binary/model/relay. There are no completed Pi usage recor
 its live work is unknown,not zero. Pi controls await its per-turn summary. Continue
 the original sequential pair without source/config changes,builds or parallel inference.
 PR144 stays draft; Cases09/10 open. No causal window/cache/token speedup is claimed.
+## Retry02 Pi first attempt reaches watchdog; comparison pending (2026-10-04)
+
+Pi1 reaches600,333 ms watchdog with native status `toolUse`,seven requests/completions/
+usage records and21,912 recorded work tokens (11,486 uncached input,10,426 output).
+Eight native events complete: two reads/ls/five writes. Failed/Unknown counts remain
+unavailable,not zero; completion events do not establish successful effects.
+Unrecorded unfinished inference remains unknown. Tests and acceptance exit1; all
+three help checks pass without verification timeouts. Manifest lists initializer70
+bytes/entry point2,043/server3,267/store15,123/validation7,261; no worker,tests or
+README listed. Generated contents/model output/diagnostics remain unread; presence/
+sizes do not establish complete behavior or the failure cause.
+
+Selected Pi controls confirm six native tools/null cap/progress mode/window,
+low/configured2,048/endpoint8001/native replay/discovery disabled flags. Interim audit
+passes all seven completed-turn prompts/controls,both copied SPEC/two acceptance-file
+hashes/no extra non-cache reference files,byte-identical initial prompts and unchanged
+Rupi actual config/binary/model/relay. Rupi resolves at turn6 with tests/help passing;
+Pi remains unresolved after one. The matched winner is still unproven.
+
+Pi2 PID33112 is live under original exec25019/runner23092/wrapper36544; saved repair
+full-SPEC/assertion/stable-key/private-claim/lost-ack requirements pass. Continue the
+original pair unchanged without builds or parallel inference. PR144 stays draft and
+Cases09/10 open. Rupi's absent README/full-public-task limitation remains explicit.
