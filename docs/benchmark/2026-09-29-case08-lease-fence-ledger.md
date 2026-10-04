@@ -378,3 +378,28 @@ selects local repair, preserves both CLI/workflow tests and the full specificati
 Pi has not started. The launch binary/settings remain fixed. A separate isolated
 provider transport investigation is reproducing whether active buffered tool
 arguments can trigger the decoded-event idle timer; it does not change this trial.
+
+## Retry02 Rupi terminal, Pi turn 1 verified (2026-10-04 02:22 UTC)
+
+Rupi turn 4 exited 1 with provider-timeout status after 474,533 ms; no outer
+watchdog fired. Recorded work is 5,911 tokens (3,550 input, 2,361 output), with two
+started/completed request counters but one usage record, and one completed edit.
+There were no failed or Unknown tools. Workflow tests grew to 20,019 bytes; all
+other named project files are unchanged. Project tests/oracle fail; help all passes.
+Missing usage and completion counters do not establish successful inference.
+
+Rupi is unresolved in four turns: 34,758 recorded work tokens, 1,615,835 ms call time,
+and seven completed tools with zero failures/Unknown. Turn 2 has no usage record;
+its actual inference work is unknown, not zero. Verification time is excluded.
+
+Pi turn 1 completed after 248,440 ms with 10,436 work tokens (5,845 input, 4,591
+output), seven requests/usage records, and six completed tools. Failure/Unknown
+counters are unavailable. Project tests/help pass; the oracle fails. Pi turn 2 is
+live (node PID 12644 under runner 24108; exec session 76232), selecting the new test
+phase. Initial prompts and turn-2 recovery prompts match byte-for-byte across agents.
+The full specification remains in both. No matched comparison result exists yet.
+
+Local Rust verification/builds ran alongside parts of Rupi's later turns and Pi's
+early turns. Call time is therefore an observation on this host, not an isolated
+performance measurement. Finish provider PR #142 and all builds before launching
+any fresh corrected-binary pair. This live pair's binary and controls stay fixed.
