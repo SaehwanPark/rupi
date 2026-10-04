@@ -93,3 +93,39 @@ Verified before launch:
   diagnostics or reference implementation are added to authoring context.
 
 The run result is pending. Keep the Case 08 comparison objective active.
+
+## First retry in progress (2026-10-04 00:47 UTC)
+
+Run: `bench-20261003-case08-budget2048-low-retry01-rupi12-matched4-600s`.
+Source and launch head: `465ef6c`; settings remain fixed for the complete pair.
+The configured local model is `qwen3.8-flash-next`; Pi version check reported 0.86.1.
+
+Rupi turn 1 completed in 261,665 ms with 8,651 recorded work tokens (5,156 input,
+3,495 output). Five model requests started/completed; six tools were requested,
+five completed, one failed, and zero were Unknown. Project tests and all three
+help checks passed; oracle failed. The file snapshot contains the entry point,
+package/test initializers, one test module, and README. Contents and coverage
+were not inspected; presence and passing help tests do not prove the workflow.
+
+Turn 2 selected workflow recovery from the passing local gates. Its prompt embeds
+the complete specification and includes only oracle pass/fail, not diagnostic output.
+The runner remains live; Pi has not started. There is no matched result or winner yet.
+
+All local checks passed using the installed stable route reporting pinned 1.98.1:
+formatting, independent core compilation, workspace Clippy with warnings denied,
+workspace tests, and workspace documentation. The startup script passed against the
+same unchanged Rust sources: cold 197.31 ms, warm median 10.20 ms, maximum 13.22 ms,
+within the 250/100 ms budgets. CI passed on Ubuntu, macOS, and Windows at `465ef6c`:
+[CI run](https://github.com/SaehwanPark/rupi/actions/runs/37165656761).
+
+Continuation handles: execution session 32004; runner PID 2844; wrapper PID 17976;
+task-owned budget relay PID 33028; shared model server PID 27356. Revalidate those
+handles and process command lines before relying on this historical observation.
+Worktree: `C:/Users/saehwan/repos/rupi-case10-receipt-ledger`, branch
+`fix/case08-lease-fence`. The worktree directory name predates selecting Case 08.
+Artifacts are under `.benchmark/runs/<run-id>/08-lease-fence/`; read per-turn
+`summary.json` and `files.json`, not model logs, generated code, or oracle details.
+Do not restart a live pair or change its prompts/settings mid-run. Finish the matched
+pair, record the result, and merge PR #141 only after a verified win and final checks.
+Cases 09 and 10 remain in scope afterward. The main checkout is current with the
+user's usage-policy edit intact; only main and the active slice branches remain.
