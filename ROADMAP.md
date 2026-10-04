@@ -1506,7 +1506,8 @@ TUI rendering passed all budgets (3.31–3.90 µs/unit); checkpointed restore me
   Rupi failed final tests, Pi passed them, and both passed help. The next shared candidate
   moves workflow implementation before workflow-test authoring and permits compact
   application modules. All-case routing/oracle-isolation guards and author review pass;
-  a fresh matched comparison is pending. Fresh pairs retain the same local
+  retry06 is live from 764972b with unchanged initial prompt/runtime controls. Its
+  matched outcome is pending. Fresh pairs retain the same local
   `qwen3.8-flash-next` and pinned Pi 0.86.1.
   Cases 01 through 07 have verified comparison wins and are skipped. Cases 08 through
   10 remain open; see the [Case 08 ledger](docs/benchmark/2026-09-29-case08-lease-fence-ledger.md).

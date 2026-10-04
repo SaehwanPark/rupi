@@ -1090,3 +1090,13 @@ changes neither the verifier nor its acceptance criteria, does not expose oracle
 diagnostics, does not weaken public tests, and stays outside core runtime.
 No independent agent review is claimed. A fresh matched retry06 must establish any
 comparison improvement; baseline and retries01 through 05 remain inconclusive.
+
+Retry06 launched from 764972b as
+`bench-20261004-case08-implementation-first-budget2048-low-retry06-rupi12-matched4-600s`.
+Continuation: exec session 62809, runner PID 30660 under wrapper 31684; first Rupi
+PID 22220. The prior session 85505 is terminal and must not be reused. Model PID
+27356 and relay 33028 were preserved; no second benchmark pair or local build runs
+concurrently. Written Rupi config confirms recurring mode/progress limit 1/cap 12,
+low effort and endpoint 8001. The first prompt retains full SPEC and is byte-equal
+to retry05's initial prompt. Usage before launch was 78% five-hour and 90% weekly,
+below both soft stops. No result yet; Cases08 through 10 remain open.
