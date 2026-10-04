@@ -439,3 +439,26 @@ SPEC/assertion/stable-key/private-fencing/lost-ack repair requirements pass. Con
 the unchanged original pair with no local builds or concurrent inference. PR144 stays
 draft; Cases09/10 open. Fetch/prune confirms only main and this active branch locally/
 remotely; detached prior artifacts and unrelated root usage-policy edit are preserved.
+## Retry02 Rupi third attempt: help passes, acceptance unresolved (2026-10-04)
+
+Turn3 reaches600,192 ms watchdog; runtime status is unavailable. Six request starts/
+completion events, five usage records and18,787 recorded work tokens (9,250 uncached
+input,9,537 output). Completion events include an abandoned request; unrecorded
+unfinished inference remains unknown. Five tools complete: two writes/three edits,
+zero failed/Unknown. Tests and acceptance fail; all three help checks pass without
+verification timeouts. Manifest adds entry point4,388 bytes/worker7,507; server4,262/
+store19,399/initializer78 are listed, no tests or README. Generated contents/model
+output/diagnostics remain unread; presence/sizes do not establish complete behavior,
+exact edit targets, unchanged content or the acceptance failure cause.
+
+Cumulative through three turns:45,997 recorded work tokens,1,800,717 ms authoring time
+excluding verification,eleven completed tools,one failed/zero Unknown,three watchdogs.
+Interim audit passes all three saved prompts/selected controls,copied SPEC/two acceptance
+hashes/no extra non-cache reference files. Actual window3/cap12/low/native replay and
+binary/model/relay remain unchanged. Pi has not started; no matched improvement is
+established. Before this update,head4404957 passes all three CI platforms.
+
+Rupi4 PID32632 is live under original exec25019/runner23092/wrapper36544; saved full-
+SPEC/assertion/stable-key/private-fencing/lost-ack repair requirements pass. Continue
+the original pair unchanged without local builds or concurrent inference. PR144 stays
+draft; Cases09/10 remain open and Cases01 through08 configured wins stay skipped.
