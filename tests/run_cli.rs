@@ -113,6 +113,47 @@ fn run(config: &Path, cwd: &Path, prompt: &str) -> Output {
 }
 
 #[test]
+fn configured_recurring_progress_rejects_completion_until_a_file_change_is_observed() {
+  let temp = TempDir::new().unwrap();
+  let workspace = temp.path().join("workspace");
+  fs::create_dir(&workspace).unwrap();
+  let server = FakeServer::answer(vec![
+    text_response("premature success"),
+    tool_response(
+      "write1",
+      "write",
+      r#"{"path":"app.txt","content":"changed"}"#,
+      None,
+    ),
+    text_response("done"),
+  ]);
+  let path = write_config(temp.path(), &server.base_url(), true);
+  let mut config = RuntimeConfig::parse(&fs::read_to_string(&path).unwrap()).unwrap();
+  config.limits.max_model_requests_without_progress = Some(5);
+  config.limits.progress_boundary_mode = rupi_core::ProgressBoundaryMode::Recurring;
+  config.limits.progress_tool_names = vec!["write".into()];
+  config.limits.max_model_requests_per_turn = 4;
+  fs::write(&path, config.to_json_string().unwrap()).unwrap();
+
+  let output = run(&path, &workspace, "create app.txt");
+  assert!(
+    output.status.success(),
+    "{}",
+    String::from_utf8_lossy(&output.stderr)
+  );
+  assert_eq!(
+    fs::read_to_string(workspace.join("app.txt")).unwrap(),
+    "changed"
+  );
+  let requests = server.requests();
+  assert_eq!(requests.len(), 3);
+  let correction: serde_json::Value = serde_json::from_str(&requests[1].body).unwrap();
+  assert_eq!(correction["tools"].as_array().unwrap().len(), 1);
+  assert_eq!(correction["tools"][0]["function"]["name"], "write");
+  assert!(!requests[2].body.contains("premature success"));
+}
+
+#[test]
 fn streamed_partial_answer_is_not_followed_by_an_output_limit_retry() {
   let temp = TempDir::new().unwrap();
   let workspace = temp.path().join("workspace");

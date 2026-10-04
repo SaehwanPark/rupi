@@ -929,8 +929,8 @@ unfinished Round-4 requirements:
       from model-visible history and final report text, and unsatisfied budget ends incomplete.
 - [-] Add an explicit recurring progress-boundary mode while keeping one-shot behavior the
       default. Reapply the inspection limit after successful changes and correct text-only
-      completion before any observed change. Contract/fixture design is drafted; implementation,
-      required checks, startup budgets and invariant review remain pending. See
+      completion before any observed change. Implementation and behavioral fixtures are drafted;
+      local execution, required checks, startup budgets and invariant review remain pending. See
       [the slice brief](docs/benchmark/2026-10-04-recurring-progress.md).
 - [x] Make same-model retry eligibility depend on request replay safety as well as failure kind.
       `ModelFailure` distinguishes safe dispatch, ambiguous POST boundaries, and committed output;

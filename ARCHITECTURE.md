@@ -458,8 +458,12 @@ as `BudgetExhausted`, never `Completed`. With no allowlist, all permitted mutati
 are exposed. The normal `Requested`/`Started`/`Succeeded`/`Failed`/`Unknown` lifecycle still
 decides whether completion was observed. Progress requires a successful configured
 mutating tool with `effect == Changed`; success or mutating metadata alone is not evidence
-of progress. A qualifying tool satisfies the one-shot boundary for the rest of that turn,
-and callers must verify the workspace independently. When activating the boundary and before each later request, the runtime resolves
+of progress. A qualifying tool satisfies the default one-shot boundary for the rest of
+that turn. Explicit `progress_boundary_mode: recurring` starts a fresh inspection window
+after each qualifying change and rejects text-only completion before any change in the
+turn. It also prevents the reserved finalization request from bypassing that requirement.
+No-tool recovery assessments remain available; callers must verify the workspace
+independently. When activating the boundary and before each later request, the runtime resolves
 the effective executable mutating-tool set using the active model's tool support, registry policy,
 and current approval availability. An empty set emits a durable error diagnostic and fails before
 another provider request, including after a failover changes capabilities. The default is disabled

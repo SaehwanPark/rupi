@@ -1,6 +1,6 @@
 # Recurring progress boundary
 
-Status: design draft; implementation and verification pending.
+Status: implementation draft; local execution and verification pending.
 
 Case08 retry04 delivered two edits and a write, then ten reads in Rupi turn 3.
 Turn 4 completed without any tool call while independent project checks still failed.
@@ -52,6 +52,14 @@ projected completion handling and retain existing one-shot regression expectatio
 Before merge: required repository Rust checks, startup budget measurement and author
 invariant review. Independent-agent review is not claimed. No model-backed child is
 needed. Test evidence and residual risks must replace this pending status.
+
+The draft implements the enum/config/CLI path, recurring reactivation and rejection
+of an unearned initial completion. It preserves default one-shot guidance verbatim.
+Fixtures cover repeated windows, canonical versus projected text, failed/unchanged/
+Unknown tools, unavailable tools, exhausted mutation capacity, finalization bypass,
+explicit no-tool assessment and disabled enforcement. A fake-server CLI fixture
+checks that configuration reaches the live runtime and narrows subsequent schemas.
+These fixtures are authored, not locally executed yet.
 
 The active Case08 retry04 retains its original binary, relay and loaded definitions.
 Prepare source in this isolated checkout; defer builds until that pair is terminal.

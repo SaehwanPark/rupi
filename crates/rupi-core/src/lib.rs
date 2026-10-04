@@ -51,7 +51,7 @@ pub use config::{
   MAX_CONFIGURED_MODEL_REQUESTS_PER_TURN, MAX_CONFIGURED_MUTATING_TOOL_CALLS_PER_TURN,
   MAX_CONFIGURED_TOOL_CALLS_PER_TURN, McpServerConfig, ModelEndpoint, OpenAiCompatOptions,
   OpenAiMaxTokensField, OpenAiStrictToolSchemaSupport, OpenAiThinkingDisable, OpenAiThinkingInput,
-  RuntimeConfig, RuntimeLimits, ToolPolicy, UiConfig,
+  ProgressBoundaryMode, RuntimeConfig, RuntimeLimits, ToolPolicy, UiConfig,
 };
 pub use context::{
   ArchivedPayloadRef, CAPSULE_SCHEMA_VERSION, CapsuleArtifact, CapsuleDecision, ContextAction,
