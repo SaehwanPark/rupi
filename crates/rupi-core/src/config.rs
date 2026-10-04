@@ -384,6 +384,22 @@ impl Default for UiConfig {
   }
 }
 
+/// Whether observed progress satisfies the boundary once or starts a new window.
+#[derive(Debug, Clone, Copy, PartialEq, Eq, Default, Serialize, Deserialize)]
+#[serde(rename_all = "snake_case")]
+pub enum ProgressBoundaryMode {
+  #[default]
+  OneShot,
+  /// Require an observed change before completion and bound later inspection again.
+  Recurring,
+}
+
+impl ProgressBoundaryMode {
+  fn is_one_shot(&self) -> bool {
+    *self == Self::OneShot
+  }
+}
+
 /// Safety limits that apply to one runtime turn.
 #[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize)]
 #[serde(deny_unknown_fields)]
@@ -401,6 +417,9 @@ pub struct RuntimeLimits {
   /// configured progress before the next request is narrowed to progress tools.
   #[serde(default, skip_serializing_if = "Option::is_none")]
   pub max_model_requests_without_progress: Option<u32>,
+  /// Recurring enforcement is explicit; omitted mode preserves the one-shot contract.
+  #[serde(default, skip_serializing_if = "ProgressBoundaryMode::is_one_shot")]
+  pub progress_boundary_mode: ProgressBoundaryMode,
   /// Tool names that count as progress when the progress boundary is active.
   /// An empty list uses every permitted mutating tool instead.
   #[serde(default, skip_serializing_if = "Vec::is_empty")]
@@ -414,6 +433,7 @@ impl Default for RuntimeLimits {
       max_tool_calls_per_turn: DEFAULT_MAX_TOOL_CALLS_PER_TURN,
       max_mutating_tool_calls_per_turn: DEFAULT_MAX_MUTATING_TOOL_CALLS_PER_TURN,
       max_model_requests_without_progress: None,
+      progress_boundary_mode: ProgressBoundaryMode::OneShot,
       progress_tool_names: Vec::new(),
     }
   }
@@ -656,6 +676,11 @@ impl RuntimeConfig {
     } else if !self.limits.progress_tool_names.is_empty() {
       return Err(ConfigError(
         "limits.progress_tool_names requires max_model_requests_without_progress".into(),
+      ));
+    } else if self.limits.progress_boundary_mode == ProgressBoundaryMode::Recurring {
+      return Err(ConfigError(
+        "limits.progress_boundary_mode recurring requires max_model_requests_without_progress"
+          .into(),
       ));
     }
     let mut progress_tool_names = HashSet::new();
@@ -1106,6 +1131,48 @@ mod tests {
     config.limits.max_model_requests_without_progress = Some(2);
     config.limits.progress_tool_names = vec!["write".into(), "write".into()];
     assert!(config.validate().unwrap_err().0.contains("duplicate tool"));
+  }
+
+  #[test]
+  fn recurring_progress_mode_requires_a_limit_and_round_trips() {
+    let mut config = sample_config();
+    let default_json = serde_json::to_value(&config).unwrap();
+    assert!(
+      default_json["limits"]
+        .get("progress_boundary_mode")
+        .is_none()
+    );
+    assert_eq!(
+      RuntimeConfig::parse(&default_json.to_string())
+        .unwrap()
+        .limits
+        .progress_boundary_mode,
+      ProgressBoundaryMode::OneShot
+    );
+
+    config.limits.progress_boundary_mode = ProgressBoundaryMode::Recurring;
+    assert!(
+      config
+        .validate()
+        .unwrap_err()
+        .0
+        .contains("requires max_model_requests")
+    );
+    config.limits.max_model_requests_without_progress = Some(2);
+    let json = config.to_json_string().unwrap();
+    let parsed = RuntimeConfig::parse(&json).unwrap();
+    assert_eq!(
+      parsed.limits.progress_boundary_mode,
+      ProgressBoundaryMode::Recurring
+    );
+    assert_eq!(
+      serde_json::to_value(parsed).unwrap()["limits"]["progress_boundary_mode"],
+      "recurring"
+    );
+
+    let invalid = json.replace("\"recurring\"", "\"sometimes\"");
+    let error = RuntimeConfig::parse(&invalid).unwrap_err().to_string();
+    assert!(error.contains("limits.progress_boundary_mode"), "{error}");
   }
 
   #[test]

@@ -1252,7 +1252,12 @@ followed by a corrective request. Exhausting the request budget without a succes
 configured progress tool is `BudgetExhausted`, never `Completed`. The normal `Requested`,
 `Started`, `Succeeded`, `Failed`, or `Unknown` lifecycle remains authoritative; an
 attempt or a failed tool does not satisfy the boundary. A successful configured progress
-tool satisfies the one-shot boundary for the rest of that turn. At activation and before each
+tool satisfies the default one-shot boundary for the rest of that turn. Explicit recurring
+mode instead resets the inspection window after each observed change and rejects text-only
+completion before any change in the turn, including bypass through reserved finalization.
+No-tool recovery assessments remain separate. Recurring mode requires a configured progress
+limit; it does not enable progress enforcement for unconfigured callers.
+At activation and before each
 later request, the runtime resolves the effective executable set under current model capabilities,
 tool policy, and approval availability; an empty set is a durable semantic failure before another
 request, not a retry loop (including when failover changes capabilities). The default remains
