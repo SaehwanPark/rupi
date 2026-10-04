@@ -819,3 +819,24 @@ Formatting/diff checks pass at 2b06e63; compilation, runtime tests, startup budg
 and author invariant review remain pending. No local build has overlapped retry04.
 Its source preparation does not alter this interpreter or the corrected benchmark
 binary. Future recurring mode is not active in this pair.
+
+## Retry04 Pi repair delivery verified (2026-10-04 05:04 UTC)
+
+Pi turn 3 reached its 600,300 ms outer timeout with 15,468 recorded work tokens
+(7,289 input, 8,179 output), five requests/completions/usage records and five
+completed edits. Failure/Unknown counters remain unavailable. Entry point size is
+14,375 bytes; prior helper, test and README sizes remain unchanged. Contents remain
+unread. Tests/oracle fail without verification timeouts; all help checks pass.
+
+Across three turns, Pi recorded 45,074 work tokens and 1,345,445 ms call time,
+excluding verification. Turn 4 is live (node PID 13268 under runner 35136; exec
+session 54053). Its saved prompt preserves the full specification, bounded edit
+guidance and both test sets. Rupi is unresolved after four turns. Finish Pi and the
+reference/control audit before recording the matched outcome or launching a new pair.
+
+Separate PR #143 is pushed at fdbdb79. Remote CI caught a fake CLI write request
+using `content` instead of the built-in's required `contents`; the fixture was
+corrected without relaxing runtime validation or assertions. The CLI fixture also
+requires a canonical Completed turn after an actual file change. New CI is pending;
+local runtime checks and startup verification remain deferred until retry04 is
+terminal. Its binary still matches the corrected SHA256; recurring mode is absent.
