@@ -329,3 +329,20 @@ full-SPEC/assertion/stable-key/private-fencing/lost-ack repair requirements pass
 retry01 unchanged until terminal; validated window3 waits. No local builds or concurrent
 inference. PR144 remains draft and Cases09/10 open. Branch inventory remains main plus
 this active Case09 branch locally/remotely; detached earlier artifacts are preserved.
+## Retry01 Pi fifth attempt verified (2026-10-04)
+
+Pi5 exits0 after265,352 ms with status `stop`, six requests/completions/usage records
+and11,279 recorded work tokens (8,337 uncached input,2,942 output). Five native read
+events complete; no recorded mutation. Tests and help checks pass; acceptance fails,
+without verification timeouts. Manifest sizes match turn4, with no README listed;
+contents/diagnostics remain unread and sizes do not prove unchanged content. Failed/
+Unknown remain unavailable, not zero; events do not establish successful effects and
+unrecorded unfinished inference remains unknown. Pi cumulative through five turns:
+55,320 recorded work tokens,1,496,028 ms call time excluding verification,26 completed
+native events and one watchdog expiry. Neither agent has resolved acceptance.
+
+Pi6 is observed live under node PID18332, original runner19500/exec47054. Saved full
+SPEC/assertion/stable-key/private-fencing/lost-ack repair requirements pass. Preserve
+this pair unchanged until terminal, then consider the already-validated window3 profile.
+Rupi's six attempts remain unresolved; final matched classification is pending. PR144
+stays draft, Cases09/10 open, no source/config changes, builds or parallel inference.
