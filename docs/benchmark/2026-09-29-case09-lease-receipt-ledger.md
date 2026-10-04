@@ -241,3 +241,43 @@ Saved full-SPEC/assertion/stable-key/private-fencing/lost-ack repair requirement
 No source/config changes, local builds or concurrent inference during this original
 pair. Pi has not started; matched result remains pending and PR144 stays draft.
 Before this update, headf0d8c90 passes Linux/macOS/Windows CI. Cases09/10 remain open.
+
+## Retry01 Rupi unresolved after six; Pi first attempt verified (2026-10-04)
+
+Rupi6 exits0 after280,870 ms with status `completed`, seven requests/completions/
+usage records and24,663 recorded work tokens (21,599 uncached input,3,064 output).
+Nine tools complete: grep/seven reads/edit, zero failed/Unknown. Acceptance and tests
+fail, all help checks pass, without verification timeouts. Manifest lists store23,130
+bytes; other sizes match turn5 and no tests/README are listed. Contents/diagnostics
+remain unread; sizes do not establish exact edits, unchanged content or full behavior.
+
+Rupi's half is terminal and unresolved after all six attempts:166,364 recorded work
+tokens,2,696,841 ms call time excluding verification,57 completed tools, one failed/
+zero Unknown. Two watchdog expiries, two budget-exhausted attempts and two completed
+runtime turns. Unfinished unrecorded inference remains unknown. This candidate cannot
+meet the Rupi win criterion; the final Pi outcome is still pending.
+
+Pi1 exits0 after196,736 ms with status `stop`, six requests/completions/usage records,
+12,221 recorded work tokens (9,311 uncached input,2,910 output) and five completed
+native events: two writes/three reads. Failed/Unknown counts remain unavailable, not
+zero; completed events do not establish successful effects. Tests, acceptance and all
+help checks fail without verification timeouts. Manifest lists only initializer70
+bytes among application files; no entry point/tests/README are listed. Contents and
+diagnostics remain unread; presence/sizes do not establish behavior or the failure cause.
+
+Pi2 is observed live under node PID26392, runner19500/exec47054. Its saved repair
+prompt preserves full SPEC/assertions/stable key/private fencing/lost-ack/oracle
+isolation. Interim audit passes all seven completed-turn controls/prompts, copied
+SPEC/two acceptance-file hashes/no extra non-cache files and initial prompt equality.
+Binary/model/relay remain unchanged. The audit helper initially retained Case08's
+lowercase repair check; it now checks the exact Case09 instruction and passes. No
+benchmark prompt, configuration, gate or reference file was changed by that correction.
+
+Next candidate selects existing Recurring/window3/cap12 after retry01 is terminal.
+Window12 permitted a complete read-only budget-exhausted attempt; the smaller window
+narrows available tools earlier under the already-verified runtime contract. All other
+controls, shared full-spec prompts and complete gates stay unchanged. All-case selected
+window3 dry-run guards and actual fresh-workspace configuration/reference-hash probe
+pass. No inference or source change occurs in these probes, and no benefit is proven.
+Do not launch this candidate concurrently or change the active window12 pair.
+PR144 stays draft; Case09 remains unresolved and Case10 has not begun.
