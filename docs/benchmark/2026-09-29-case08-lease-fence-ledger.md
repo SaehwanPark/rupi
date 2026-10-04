@@ -1272,3 +1272,16 @@ unchanged from 764972b; only the shared outer limit changes from four to six.
 Written Rupi config confirms recurring/progress1/cap12, low effort, endpoint 8001
 and provider timeout 594,000 ms. The initial prompt retains full SPEC and is byte-equal
 to retry06's. The six-turn all-case guards pass. No result yet; Cases08 through 10 stay open.
+
+## Retry07 Rupi foundation verified (2026-10-04)
+
+Rupi turn 1 completed in 266,961 ms with 12,489 recorded work tokens (7,583 uncached
+input, 4,906 output), three requests/completions/usage records and four successful
+writes. Failed/Unknown tool counts are zero. Tests and help pass without timeouts;
+the oracle fails without a timeout. Entry point is 3,542 bytes, foundation test 1,153,
+test initializer 48 and README 3,483. Generated contents remain unread.
+Selected recurring/cap12/low/budget2,048/endpoint8001/native replay controls persist.
+
+Turn 2 is live under Rupi PID 38792, runner 11996/exec session 72703. Its saved
+prompt contains full SPEC and implementation-first/fencing guidance, and is byte-equal
+to retry06's turn 2 prompt. The six-turn pair has no matched outcome yet.
