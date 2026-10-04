@@ -1209,3 +1209,16 @@ mode/cap remain null for native Pi policy. Turn 3 is live under node PID 38688,
 runner 30660/exec session 62809. Its saved prompt contains full SPEC and selects
 public workflow tests including the bounded stale-worker race. It is byte-equal to
 Rupi's turn 3 prompt. The matched outcome remains pending; finish Pi before another pair.
+
+## Subscription soft-stop wait (2026-10-04 07:35 UTC)
+
+Parent usage reached 97% five-hour and 93% weekly. The preserved local usage policy
+sets the five-hour soft stop at 95%; parent work will wait until 08:22 UTC, allowing
+more than two minutes after the reported 08:19 UTC reset. Do not poll usage during
+this wait or start another slice/pair. The goal remains active.
+
+Retry06 is independently live: Pi turn 3, node PID 38688, runner 30660 under wrapper
+31684; continue exec session 62809 after the wait. No restart or cancellation is
+requested. The latest authoritative observation confirms this process/session live.
+Recheck that same handle and per-turn summaries after reset; if terminal, audit
+the matched outcome before another pair. Rupi remains unresolved after four turns.
