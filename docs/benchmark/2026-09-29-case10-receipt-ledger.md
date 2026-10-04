@@ -34,7 +34,8 @@ Project-test discovery could not import the `tests` start directory.
 
 Pi did not resolve in four turns. It used 9,202 work tokens over 2,401,150 ms, with eight
 requests and eight tools. Every turn timed out. All oracle, project-test, and help checks failed
-on every turn. On turns 2 and 4, the recorded request and tool counts were zero; unfinished inference usage is unknown. On the final
+on every turn. On turns 2 and 4, the recorded request and tool counts were zero; unfinished inference usage is unknown.
+On the final
 turn, Python could not import `receiptledger`, so the service and help commands failed.
 Project-test discovery could not import the `tests` start directory.
 
@@ -315,3 +316,11 @@ help0, no verification timeouts. Main size37,002 differs; other three generated 
 match, without proving unchanged contents or exact edits. Package init absent; contents unread.
 Cumulative work145,536/authoring2,210,368ms. Turn5 active with frozen controls/guidance;
 no Pi run. Unfinished model request usage unknown, never zero; no win claim.
+
+Retry03 Rupi turn5 exits0/runtime budget_exhausted at594,221ms, unresolved:45,623 work
+(38,489 input+7,134 output), eleven starts/twelve completions including earlier abandoned
+request, eleven usage records. Eleven requested tools/ten complete/one failed/zero Unknown
+(grep, seven reads, write, two edits). Tests1/oracle1/all four help0, no verification timeouts.
+Main size37,002→15,944; other three sizes match. Contents unread: size reduction proves neither
+exact edits nor retained/lost behavior. Package init absent. Cumulative work191,159/authoring
+2,804,589ms. Final Rupi attempt6 active; no Pi run or comparative win. No inference/build overlap.
