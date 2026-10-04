@@ -1485,6 +1485,14 @@ TUI rendering passed all budgets (3.31–3.90 µs/unit); checkpointed restore me
   its native request policy. This closes the Case 07 comparison objective for PR #139;
   the remaining comparison series and broader live-project gates remain active.
 
+  Case 08's baseline and two guided retries remain inconclusive: neither agent resolved
+  the stale-worker fencing oracle in four turns. Retry01 recorded 73,794 Rupi work tokens
+  versus 59,600 Pi tokens; both passed final project tests and help. The next shared
+  recovery revision requires discoverable public workflow tests before implementation
+  repair, using the same local `qwen3.8-flash-next` and pinned Pi 0.86.1.
+  Cases 01 through 07 have verified comparison wins and are skipped. Cases 08 through
+  10 remain open; see the [Case 08 ledger](docs/benchmark/2026-09-29-case08-lease-fence-ledger.md).
+
   Case 10 used the pinned Pi 0.86.1 run `bench-20260929-case10-pi0861-low-matched4-600s`.
   Neither agent resolved in four turns. Rupi used 89,125 work tokens over 2,337,401 ms; Pi used
   9,202 over 2,401,150 ms. Both failed all oracle and project-test checks, and every help check.
