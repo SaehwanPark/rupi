@@ -678,6 +678,70 @@ fn a_quiet_stream_retries_socket_polls_without_losing_a_partial_sse_line() {
 }
 
 #[test]
+fn active_tool_argument_fragments_do_not_expire_as_idle() {
+  let listener = TcpListener::bind("127.0.0.1:0").expect("bind");
+  let addr = listener.local_addr().expect("addr");
+  let server = thread::spawn(move || {
+    let (mut socket, _) = listener.accept().expect("accept");
+    let _ = drain_request(&mut socket);
+    let headers = b"HTTP/1.1 200 OK\r\ncontent-type: text/event-stream\r\n\r\n";
+    socket.write_all(headers).expect("headers");
+    let mut fragments = vec![serde_json::json!({
+      "index": 0, "id": "active_write",
+      "function": {"name": "write", "arguments": "{\"contents\":\""}
+    })];
+    fragments.extend((0..15).map(|_| {
+      serde_json::json!({
+        "index": 0, "function": {"arguments": "x"}
+      })
+    }));
+    fragments.push(serde_json::json!({
+      "index": 0, "function": {"arguments": "\"}"}
+    }));
+    for fragment in fragments {
+      let event = serde_json::json!({"choices": [{"delta": {"tool_calls": [fragment]}}]});
+      if write!(socket, "data: {event}\n\n").is_err() || socket.flush().is_err() {
+        return;
+      }
+      thread::sleep(Duration::from_millis(80));
+    }
+    let _ = socket.write_all(
+      b"data: {\"choices\":[{\"delta\":{},\"finish_reason\":\"tool_calls\"}]}\n\n\
+        data: [DONE]\n\n",
+    );
+    let _ = socket.flush();
+  });
+  let mut config = ProviderConfig::local(
+    "local-vulkan",
+    "qwen3.8-flash",
+    format!("http://{addr}/v1"),
+    8_192,
+  );
+  // The wire remains active for over a second, but no complete tool call can
+  // be emitted until the last fragment. Idle measures transport inactivity.
+  config.read_timeout_ms = 500;
+  config.request_timeout_ms = Some(5_000);
+  let adapter = OpenAiCompat::new(config).expect("adapter");
+  let (result, collector) = stream(&adapter, &request("assemble the active tool call"));
+  server.join().expect("server");
+  result.expect("active fragmented arguments must not time out as idle");
+  let calls: Vec<_> = collector
+    .events()
+    .iter()
+    .filter_map(|event| match event {
+      ProviderEvent::ToolCall(call) => Some(call),
+      _ => None,
+    })
+    .collect();
+  assert_eq!(calls.len(), 1);
+  assert_eq!(calls[0].name, "write");
+  assert_eq!(
+    calls[0].arguments,
+    serde_json::json!({"contents": "x".repeat(15)})
+  );
+}
+
+#[test]
 fn a_quiet_stream_expires_at_the_logical_idle_timeout() {
   let listener = TcpListener::bind("127.0.0.1:0").expect("bind");
   let addr = listener.local_addr().expect("addr");
