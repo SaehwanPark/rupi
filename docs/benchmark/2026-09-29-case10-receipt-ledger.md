@@ -367,3 +367,10 @@ Tests1/all four help1/oracle1, no verification timeouts. Complete snapshot lists
 .gitignore and four configs; no application/tests/README. Unfinished inference usage unknown.
 Lower recorded work on this failed attempt is not a win. No prompt compliance or causal window
 benefit claim. Turn2 active with unchanged shared repair guidance/window12 controls; Pi not run.
+Retry04 Rupi turn2 reaches its watchdog at600,680ms, unresolved:14,555 recorded work
+(5,764 input+8,791 output), three starts/three completions including an earlier abandoned
+request, two usage records. Two requested/completed tools (write/edit), zero failed/Unknown.
+Project tests1/oracle1/all four help0, no verification timeouts. Main19,999 is listed; tests
+and README absent. Generated contents unread; passing help does not prove complete behavior.
+Cumulative work29,736/authoring1,201,066ms. Turn3 active with frozen guidance/window12 controls.
+Pi not run; unfinished inference usage unknown and no comparative win claimed.
