@@ -950,3 +950,29 @@ Rupi recorded 40,896 work tokens and
 Turn 4 is live under Rupi PID 18940, runner 14912/session 85505. Its saved prompt
 retains the full specification, shared focused-edit bound and preservation of both
 test sets. The oracle remains unresolved and the paired result is pending.
+
+## Retry05 Rupi terminal, Pi live (2026-10-04 06:08 UTC)
+
+Rupi turn 4 reached the 600,333 ms outer watchdog with 55,437 recorded work tokens
+(51,921 uncached input, 3,516 output), nine started requests and eight completions/
+usage records. Eight tools completed: four reads alternating with four edits;
+Failed/Unknown counts are zero. The final unfinished inference has unknown work.
+Tests and oracle fail without verification timeouts; all help checks pass.
+Entry point size increased to 9,524 bytes; prior test and README sizes remain
+unchanged. These manifest sizes do not establish contents or complete implementation.
+Generated contents remain unread.
+
+Rupi is unresolved after four turns, with 96,333 recorded work tokens, 1,621,297 ms
+call time excluding verification and 15 completed tools. Recorded work excludes
+unknown unfinished inference. All four turn records confirm recurring mode,
+progress limit configuration/request cap 12, low effort, budget 2,048, endpoint 8001
+and native replay. The binary SHA256 still matches the prepared candidate.
+All four Rupi saved prompts retain the full specification; repair turns preserve
+the shared edit bound and both test sets. Both copied specifications match reference
+hashes; initial Rupi/Pi prompts are byte-equal. Both two-file acceptance copies match
+source hashes with no extra non-cache files.
+
+Pi turn 1 is live under node PID 10248, runner 14912/exec session 85505.
+Finish Pi before recording a matched comparison result or launching another pair.
+Recurring enforcement is verified by separate fixtures; this unresolved half-run
+does not prove a Case08 win or default-runtime superiority.
