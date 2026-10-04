@@ -11588,8 +11588,7 @@ mod tests {
         3,
       ),
       (
-        ToolOutcome::succeeded("unchanged")
-          .with_effect(rupi_core::ToolEffectDisposition::None),
+        ToolOutcome::succeeded("unchanged").with_effect(rupi_core::ToolEffectDisposition::None),
         TurnStatus::BudgetExhausted,
         3,
       ),
