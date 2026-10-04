@@ -759,3 +759,22 @@ Read-only source inspection explains the post-write reads: the existing opt-in
 progress boundary is intentionally one-shot per turn; a Changed mutating result
 satisfies it for the rest of that turn. This is documented behavior, not a runtime
 bug. No enforcement mode or binary changed during the pair.
+
+## Retry04 Rupi terminal, Pi foundation live (2026-10-04 04:40 UTC)
+
+Rupi turn 4 completed in 108,923 ms with 8,299 recorded work tokens (6,811 input,
+1,488 output), one started request and one usage record. Two completion counters
+include a prior abandoned request, not two successful current requests. No tools
+or failed/Unknown tools were recorded. The manifest matches turn 3 byte-for-byte;
+no file change was delivered. Tests/oracle fail without verification timeouts;
+all help checks pass. Completed runtime status does not establish project completion.
+
+Rupi remains unresolved after four turns: 68,337 recorded work tokens,
+1,649,256 ms call time excluding verification and 27 completed tools. Unrecorded
+inference remains unknown. The corrected binary hash is unchanged.
+
+Pi turn 1 is live (node PID 28748 under runner 35136; exec session 54053). Its saved
+initial prompt retains the full specification and matches Rupi byte-for-byte.
+The selected model config names qwen3.8-flash-next and endpoint 8001. No comparison
+result exists until Pi finishes; verify its later saved repair guidance and final
+reference hashes. The candidate remains active only in this fresh interpreter.
