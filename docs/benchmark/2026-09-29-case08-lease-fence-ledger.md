@@ -918,3 +918,18 @@ contents remain unread. Turn 1 metadata confirms the selected controls and recur
 mode; saved turns 1 and 2 both contain the full specification. Turn 2 contains the
 public workflow-test path and is live under Rupi PID 22688, runner 14912/session 85505.
 There is no comparison result yet.
+
+## Retry05 Rupi workflow tests delivered (2026-10-04)
+
+Turn 2 completed in 454,367 ms, without authoring timeout, with 19,851 recorded
+work tokens (11,357 uncached input, 8,494 output), two requests/completions/usage
+records and one successful write. Failed/Unknown tool counts are zero. Project tests
+and the oracle fail without verification timeouts; all help checks pass. Across two
+turns, Rupi recorded 29,587 work tokens and 718,914 ms call time excluding verification.
+The comparison remains pending. Turn 3 is live under Rupi PID 37700; continue runner
+14912/exec session 85505 rather than launching another pair.
+
+The workflow-test module is 21,145 bytes; prior application, foundation tests and
+README sizes are unchanged. Contents remain unread. Turn 3's saved prompt retains
+the full specification, shared 100-line focused-edit bound and instruction to preserve
+both CLI and workflow tests. Literal test paths are not required by that instruction.
