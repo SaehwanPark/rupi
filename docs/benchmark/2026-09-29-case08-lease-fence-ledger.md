@@ -129,3 +129,27 @@ Do not restart a live pair or change its prompts/settings mid-run. Finish the ma
 pair, record the result, and merge PR #141 only after a verified win and final checks.
 Cases 09 and 10 remain in scope afterward. The main checkout is current with the
 user's usage-policy edit intact; only main and the active slice branches remain.
+
+## Skip audit (October 4)
+
+The parent rechecked each winning run's per-turn `summary.json` and selected model
+configurations from the retained case worktrees. Every pair configured the same
+`qwen3.8-flash-next`. This confirms the skip decisions from current local evidence;
+no new model calls or source inspection were used. Turn counts below are oracle
+resolution counts, not assertions of complete public-spec coverage.
+
+| Case | Rupi resolution | Pi resolution | Recorded work tokens Rupi / Pi | Evidence |
+| --- | --- | --- | ---: | --- |
+| 01 | turn 4 | none in 4 | 13,590 / 9,631 | [ledger](2026-09-28-case01-task-ledger.md) |
+| 02 | turn 1 | turn 2 | 22,020 / 30,974 | [ledger](2026-09-29-case02-reading-queue-ledger.md) |
+| 03 | turn 2 | none in 4 | 25,140 / 59,136 | [ledger](2026-09-29-case03-event-outbox-ledger.md) |
+| 04 | turn 2 | none in first 2 | 24,126 / 5,366 | [ledger](2026-09-29-case04-webhook-inbox-ledger.md) |
+| 05 | turn 4 | none in 4 | 87,534 / 48,570 | [ledger](2026-09-29-case05-batch-relay-ledger.md) |
+| 06 | turn 2 | none in 4 | 31,406 / 25,848 | [ledger](2026-09-29-case06-artifact-pipeline-ledger.md) |
+| 07 | turn 3 | none in 4 | 89,208 / 61,382 | [ledger](2026-09-29-case07-lease-cascade-ledger.md) |
+
+Cases 01, 02, 03, and 06 have failing final Rupi project-test checks despite
+oracle wins. Case 04's Pi run stopped once its earliest possible resolution would
+require more turns than Rupi. Recorded work excludes unknown or unrecorded inference.
+These are configured comparison wins, not a claim of default-runtime superiority.
+Cases 08, 09, and 10 remain incomplete; do not close the full objective yet.
