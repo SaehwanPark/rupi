@@ -131,6 +131,6 @@ Rupi turn3 reaches its watchdog at600,222ms:50,398 recorded work (43,363 input+7
 eleven starts/eleven completions including abandoned-request completion, ten usage records.
 Fourteen tool requests/thirteen complete/one failed/zero Unknown; request names include eight
 reads, four grep, one edit and one write. Tests1/oracle1/all four help0, no verification timeouts.
-README8,720 bytes and init110 now listed; other five application sizes match turn2, which
+README8,720 bytes and init110 now listed; other four application sizes match turn2, which
 proves neither exact edits nor unchanged contents. No tests listed. README/generated content
 unread. Cumulative work94,241; turn4 active with unchanged source/controls. Pi not started.
