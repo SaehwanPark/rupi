@@ -1777,3 +1777,20 @@ fresh six-turn matched pair, not continuation of retry08. No result is available
 do not restart live authoring merely because an observation wait times out. Hidden
 outputs, application sources, acceptance sources and aggregate results remain unread.
 PR141 stays draft; Cases01 through07 are skipped and Cases08 through10 remain open.
+
+## Retry09 Rupi first attempt verified (2026-10-04)
+
+Turn1 reaches the 600,405 ms watchdog with 30,615 recorded work tokens (21,244
+uncached input, 9,371 output), ten requests started, nine completion/usage records
+and twelve completed tools: five writes, five reads and two greps. Failed/Unknown
+counts are zero; unfinished unrecorded inference remains unknown. Tests and oracle
+fail without verification timeouts; all help checks pass.
+Manifest lists entry point 3,942 bytes, initializer98, common1,757, store14,970 and
+validation5,418; no server/worker module, tests or README is listed. Contents remain
+unread; presence and sizes do not prove correct or complete behavior.
+
+Per-turn controls verify recurring/window3/cap12/low/budget2,048/endpoint8001/native
+replay. Turn2 is live under Rupi PID36180, runner12644/exec84321. Its saved prompt
+retains full SPEC, repair/fencing/assertion guidance and no prescribed store-module
+stage. No oracle resolution or matched result yet; PR141 stays draft and Cases08
+through10 remain open.
