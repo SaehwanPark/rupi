@@ -1579,6 +1579,10 @@ TUI rendering passed all budgets (3.31–3.90 µs/unit); checkpointed restore me
   Retry13 applies existing static file-tool reconciliation guidance to both agents'
   initial and recovery Case10 prompts. Failed-tool causes remain unproven; inspect
   Unknown state before retry and preserve already-applied changes. Other controls stay fixed.
+  Retry13 also fails acceptance6 (300,171 recorded work); local tests fail1–5 and
+  time out6. Next retry14 uses existing thinking-off/native8000 without a relay budget,
+  retaining guidance/binary/window3/cap24/six1200s. This profile has configured wins
+  in Cases04/06; Case10 benefit is unproven. Fresh Pi remains conditional on Rupi acceptance.
   Rupi-first screening and paired
   evidence/delivery checks remain pending. Broader project gates remain active.
   Preserve stable public delivery keys, distinct private fencing, lost-ack retry and

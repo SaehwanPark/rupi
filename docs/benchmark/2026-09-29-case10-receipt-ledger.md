@@ -1323,3 +1323,34 @@ Contents unread; no assertion/correctness claims follow from successful tools/fi
 Cumulative246,253 recorded work/5,258,510ms/74 completed/two failed/zero Unknown.
 Full-SPEC/prompt/control/reference/binary/model/relay/deadline audits all pass.
 Attempt6 is the final screen attempt; no acceptance resolution or Pi half exists.
+
+### Retry13 terminal failed screen and bounded retry14 profile
+
+Rupi-only retry13 terminates exit0 with all six acceptance attempts failing.
+Attempts1–5 project tests fail; attempt6 project tests time out after180,146ms
+(exit unavailable/null). Attempt6 acceptance fails exit1 in2,205ms without timeout,
+all four help paths pass, outer watchdog1,200,270ms, recorded work53,918
+(input35,302/output18,616), 11 model starts/completions but10 usage records.
+Unrecorded inference unknown. Ten completed tools/zero failed/recorded Unknown.
+Final filtered metadata: main36,419bytes, tests init75bytes/public test33,276bytes;
+contents unread; README/application init absent from filtered records.
+
+Terminal totals300,171 recorded work/6,458,780ms/84 completed tools/two failed/
+zero recorded Unknown; four outer watchdogs, one completed runtime, one runtime timeout.
+Compared failed screens are not controlled causal evidence; fewer recorded failures
+do not establish reconciliation effectiveness. No acceptance win or Pi half exists.
+All six prompt/full-SPEC/control/reference/binary/model/relay/deadline audits pass;
+server slots0–3 are idle. Sources and binary unchanged, no rebuild during inference.
+
+The next bounded candidate is existing native thinking-off (reasoning_effort:none),
+direct8000, no configured relay budget/deadline (metadata null). Cases04/06 have
+recorded configured acceptance wins using off; benefit for Case10 remains unproven.
+The low-effort relay rejects non-low requests, so off must use the existing direct route.
+This profile intentionally changes thinking and bypasses budget injection/relay;
+it is not a single-variable or causal comparison with retry13.
+Shared prompt, binary/model, recurring/window3/cap24, maxoutput16384, six1200s,
+provider1194s/grace6 and verification policy remain fixed for fresh retry14.
+Fresh matched Pi0.86.1 remains conditional on Rupi acceptance.
+
+Parent quota1% five-hour/55% weekly, below root95%/99%; reset18:44ET/Oct11 05:45ET.
+Case10, paired handoff/exact-head CI and broader project gates remain active.
