@@ -1623,3 +1623,17 @@ All generated contents and diagnostics remain unread.
 Cumulative216,961 recorded work/5,400,795ms/38 completed/four failed/zero Unknown.
 All full-SPEC/prompt/native-output/control/config/reference/binary/model audits pass.
 Attempt4 continues; no acceptance resolution or Pi half.
+
+### Retry16 attempt4 checkpoint
+
+Runtime budget_exhausted after1,203,020ms; outer watchdog false.
+Recorded work86,146(input71,439/output14,707),24 model starts/25 completions/
+24 usage records. An extra completion may include prior abandoned-request closure;
+unrecorded inference remains unknown, and counts do not imply concurrent models.
+25 requested tools/23 completed/two failed/zero recorded Unknown; first tool grep.
+Metadata: main62,774bytes, public test51,135bytes, test init82bytes, README5,643bytes.
+Same sizes do not prove unchanged contents or preserved assertions; contents unread.
+Project tests/acceptance fail exit1, all four help paths pass, no verification timeout.
+Cumulative303,107 recorded work/6,603,815ms/61 completed/six failed/zero Unknown.
+All prompt/full-SPEC/native-output/control/config/reference/fixed-binary/model audits pass.
+Attempt5 continues; no acceptance resolution, causal win or Pi half.
