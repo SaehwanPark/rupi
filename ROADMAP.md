@@ -1559,8 +1559,11 @@ TUI rendering passed all budgets (3.31–3.90 µs/unit); checkpointed restore me
   guidance also fails retry03 after6; Pi not run. Existing window12 retry04 fails6
   (113,076 recorded work); window1 retry05 fails6 (38,465 recorded work), Pi not run.
   Existing window12/1,200s retry06 fails6 (173,574 recorded work), Pi not run.
-  cap24/window12/1,200s retry07 fails6 (359,256 recorded work), Pi not run. Next screen
-  selects existing window3 with cap24/1,200s and unchanged prompts/binary.
+  cap24/window12/1,200s retry07 fails6 (359,256 recorded work), Pi not run.
+  window3/cap24/1,200s retry08 fails6 (314,780 recorded work); local tests/help pass
+  on turns5–6, but acceptance fails throughout. Pi not run. Generic CLI prompt
+  clarification for supplied context/new files/delegated verification is active;
+  required checks/startup and a fresh same-profile screen with the rebuilt binary follow.
   Rupi-first screening and paired
   evidence/delivery checks remain pending. Broader project gates remain active.
   Preserve stable public delivery keys, distinct private fencing, lost-ack retry and

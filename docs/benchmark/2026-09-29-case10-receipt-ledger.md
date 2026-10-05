@@ -737,3 +737,18 @@ fresh same-profile Rupi screen; paired Pi conditional on acceptance. Case10 rema
 
 Fetch/prune confirms only main and active fix/case10-audit-ledger local/remote branches;
 historical benchmark worktrees remain detached with artifacts retained.
+
+### Generic CLI workflow prompt clarification: implemented and reviewed
+
+src/run.rs now permits sufficient supplied context to guide requested new-file creation,
+respects delegated verification and distinguishes supplied results from checks actually run.
+Existing-file/project-instruction inspection and implementation/repair guidance remain.
+Explicit sentence breaks also prevent Rust continuation whitespace from joining words.
+The benchmark harness/shared user guidance remain byte-identical (86F04AA7...5AD98).
+
+Parent source-only invariant review: pass, no blocking findings. Scope is static first-party
+CLI prompt copy; skills append/runtime.with_system/tool-approval wiring unchanged. No core
+state, replay, Unknown handling, provenance serialization, failover, model activation,
+trust gate, dependencies, network discovery or hydration changes. No domain-specific
+core workflow added. This is not a guarantee of model compliance or acceptance improvement.
+Required Cargo/startup verification and updated debug binary remain pending.
