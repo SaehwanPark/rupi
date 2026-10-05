@@ -826,3 +826,15 @@ Cumulative work172,735/authoring3,599,470ms/50 completed tools/three failed/zero
 Unfinished inference unknown. All saved prompt/control/SPEC/acceptance hashes and
 debug7C18C860/model27356/relay33028 audits pass. Turn4 active with frozen settings;
 Pi not run, no acceptance/comparative win.
+
+Retry09 Rupi turn4 reaches watchdog1,200,184ms unresolved:56,783 recorded work
+(41,131 input+15,652 output), twenty-one starts/completions/twenty usage records.
+Twenty-five tool requests/twenty-four completed/one failed/zero Unknown; first tool grep.
+Project-test command1/all four help0/oracle1, no verification timeout. Newly listed
+tests/test_audit_cli.py6,536/main49,019 differs; README8,237/tests-README1,550/public-test
+9,560/sink-support5,888 sizes match without proving unchanged content. Contents unread;
+the new test filename does not prove coverage or the particular cause of the test failure.
+Cumulative work229,518/authoring4,799,654ms/74 completed tools/four failed/zero Unknown.
+Unfinished inference unknown. All saved prompt/control/SPEC/acceptance hashes and
+debug7C18C860/model27356/relay33028 audits pass. Turn5 active with frozen settings;
+Pi not run, no acceptance/comparative win.
