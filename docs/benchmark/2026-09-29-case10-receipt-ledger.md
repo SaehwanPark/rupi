@@ -1042,3 +1042,30 @@ prove removed assertions or a particular defect. Cumulative work243,419/authorin
 4,979,979ms/75 completed tools/three failed/zero Unknown; unrecorded inference unknown.
 Saved prompt/control/SPEC/acceptance hashes and debug/model4096-relay audits pass.
 Final turn6 active with frozen settings; Pi not run, no acceptance/comparative win.
+
+### Retry11 terminal evidence and bounded transport-deadline slice
+
+Retry11 turn6 reaches watchdog1,200,277ms unresolved:64,399 recorded work
+(46,957 input+17,442 output), fourteen starts/completions/thirteen usage records.
+Seventeen tool requests/fifteen completed/two failed/zero Unknown; first tool edit.
+Project-test command5/all four help0/oracle1, no verification timeout. Public-test11,650/
+note1,624 sizes differ; main35,184/tests-init54 match without proving unchanged content.
+README absent in filtered metadata; generated contents unread.
+
+All six attempts fail acceptance/local tests (codes1,1,5,1,5,5); help fails at1 and passes
+2–6. Total307,818 recorded work/6,180,256ms/90 completed tools/five failed/zero Unknown.
+Four watchdogs, one runtime completion, one transport failure. Unrecorded inference
+unknown, including first-turn work0/no usage. Exec90668 exits0; slots idle.
+All six saved prompts/controls/SPEC/three acceptance hashes and debug7C18C860/
+model27356/4096-relay20516 audits pass. Pi not run; no comparative win.
+
+Next bounded slice adds configurable response timeout to the owned benchmark relay
+(default650s preserved), exposes it in health metadata and requires an explicit Case10
+deadline when requested. New separate relay/port8003 will use configured4096/1194s,
+matching the existing provider1194s inside outer1200s/grace6. Existing relays untouched.
+The source650s cap is proven; its specific contribution to failures remains unproven.
+Pin changed helper/transport controls; keep same runtime binary/shared guidance/Qwen/
+window3/cap24/time controls. Behavioral relay guards and native config/reference/prompt
+checks precede fresh retry12 Rupi screening and conditional matched Pi. No solver/acceptance
+change or raw model/oracle-content inspection. Case10 and broad project gates active.
+Parent usage11%five-hour/51%weekly below soft stops before next slice.
