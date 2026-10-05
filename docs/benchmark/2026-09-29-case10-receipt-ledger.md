@@ -1175,3 +1175,13 @@ preservation or public completeness. Cumulative work204,221/authoring3,963,212ms
 tools/twelve failed/zero Unknown. All prompt/control/SPEC/acceptance hashes, requested/
 health1194s and debug/model/relay audits pass. Turn5 active with frozen settings;
 Pi not run, no acceptance/comparative win or causal claim.
+
+Retry12 Rupi turn5 exits0/runtime completed at287,807ms unresolved:27,651 recorded
+work (25,175 input+2,476 output), five starts/completions/usage records.
+Four requested/completed tools/zero failed/Unknown (read, grep, read, edit).
+Project-test command1/all four help0/oracle1, no verification timeout. Main56,086 differs;
+README6,279/app-init108/tests-init60/public-test17,923 sizes match without proving unchanged
+content. Generated contents unread; successful edit/completion does not prove correctness.
+Cumulative work231,872/authoring4,251,019ms/55 completed tools/twelve failed/zero Unknown.
+Saved prompt/control/SPEC/acceptance hashes, requested/health1194s and debug/model/relay
+audits pass. Final turn6 active with frozen settings; Pi not run, no win or causal claim.
