@@ -429,3 +429,10 @@ Exec34949/runner4600/wrapper620; same model/relay/low2048/cap12/six600s/grace6.
 Only existing window12→1 changes, mode remains recurring; actual run controls pass and
 initial prompt is byte-identical to retry04. No builds or parallel inference. Pi conditional
 on Rupi acceptance with frozen source/settings; outcome pending.
+
+Retry05 Rupi turn1 reaches watchdog600,492ms unresolved:6,104 recorded work (5,915
+input+189 output), two starts/one completion/one usage record. Two requested/completed tools
+(grep/read), zero failed/Unknown, no mutating request. Tests1/all four help1/oracle1,
+no verification timeouts. Filtered application/test/README metadata empty; no generated
+contents inspected. Unfinished inference work unknown, not zero. Lower work is not success.
+Turn2 active with frozen recurring/window1 controls; Pi not run, no comparative win.
