@@ -1119,3 +1119,17 @@ Prior relays33028/8001 and20516/8002 remain untouched. Fetch/prune shows only ma
 active Case10 local/remote branches, fully pushed. Fresh Pi conditional on Rupi acceptance
 with the same new relay/guidance/common settings; Pi native request/progress caps unavailable.
 Outcome pending, no comparative/causal/full-public-task claim. Broader gates and Case10 active.
+
+Retry12 Rupi turn1 reaches watchdog1,200,202ms unresolved:41,780 recorded work
+(20,564 input+21,216 output), twelve starts/eleven completions/usage records.
+Fourteen tool requests/seven completed/seven failed/zero Unknown; first tool read.
+Project-test command1/all four help0/oracle1, no verification timeout.
+App-init108/main55,762 listed; tests/README absent in filtered metadata, contents unread.
+Failed tool counts do not establish the particular failure cause; presence/size does not
+prove completeness, bounded edits or assertion preservation. Unfinished inference unknown.
+
+Saved prompts/controls/SPEC/three acceptance hashes pass; per-turn relay deadline1194
+and health1194 explicitly match. Debug7C18C860/model27356/relay23732 unchanged.
+No causal improvement inferred from first-turn recorded usage vs retry11's unrecorded
+transport failure. Turn2 active with frozen4096/window3/cap24/1194s relay profile;
+Pi not run, no acceptance/comparative win.
