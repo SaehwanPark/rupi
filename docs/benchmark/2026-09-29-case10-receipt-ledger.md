@@ -680,7 +680,7 @@ controls; Pi not run, no paired win.
 
 Retry08 Rupi turn3 exits0/budget_exhausted at1,069,475ms unresolved:69,446 recorded work
 (56,847 input+12,599 output), twenty-three starts/twenty-four completions including an
- earlier abandoned request, twenty-three usage records. Thirty-one tool requests/twenty-nine
+earlier abandoned request, twenty-three usage records. Thirty-one tool requests/twenty-nine
 completed/two failed/zero Unknown (ten grep, three writes, eleven reads, seven edits).
 Tests1/oracle1/all four help0, no verification timeouts. README9,242/tests-init45/public-test
 12,530 newly listed/main25,480 size matches without proving unchanged content. Contents
@@ -693,3 +693,12 @@ harness-only verification. Get-Case10Prompt initial/repair branches are separate
 whether generic clarification of supplied context/new files/delegated verification would
 better respect user workflows after terminal evidence. This is not an established cause
 of these failures. No source edit or new domain-specific runtime policy during this screen.
+
+Retry08 Rupi turn4 reaches watchdog1,200,174ms unresolved:42,822 recorded work (29,863
+input+12,959 output), fifteen starts/fourteen completions/usage records. Nineteen requested/
+completed tools/zero failed/Unknown (nine edits, seven grep, three reads); first tool is edit.
+Tests1/oracle1/all four help0, no verification timeouts. Main42,237/public-test12,691 differ;
+README9,242/tests-init45 sizes match without proving unchanged content. Generated contents
+unread; tool completion/size changes do not prove exact edits, assertion preservation or
+complete behavior. Unfinished inference unknown. Cumulative work203,854/authoring4,299,162ms.
+Turn5 active with frozen controls; Pi not run, no acceptance/comparative win.
