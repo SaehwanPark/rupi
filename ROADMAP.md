@@ -1583,6 +1583,11 @@ TUI rendering passed all budgets (3.31–3.90 µs/unit); checkpointed restore me
   time out6. Next retry14 uses existing thinking-off/native8000 without a relay budget,
   retaining guidance/binary/window3/cap24/six1200s. This profile has configured wins
   in Cases04/06; Case10 benefit is unproven. Fresh Pi remains conditional on Rupi acceptance.
+  Retry14 stopped early after3 verified failed attempts (67,610 recorded work), with
+  attempt4 abandoned/unverified. Attempts2–3 each record one16,384-token response,
+  semantic failure and no tools. No six-attempt or causal claim. Retry15 will test
+  a matched Case10 output allowance32,768 and outer1800s/provider1794s/grace6;
+  default16,384 and incomplete-response/no-dispatch runtime semantics stay intact.
   Rupi-first screening and paired
   evidence/delivery checks remain pending. Broader project gates remain active.
   Preserve stable public delivery keys, distinct private fencing, lost-ack retry and

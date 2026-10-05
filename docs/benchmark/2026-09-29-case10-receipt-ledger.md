@@ -1402,3 +1402,32 @@ Filtered generated metadata empty; contents and diagnostics remain unread.
 Cumulative45,364 recorded work/1,637,400ms/two completed tools, no resolution.
 All native-off/prompt/full-SPEC/control/reference/binary/model audits pass.
 Attempt3 continues; no Pi half exists.
+
+### Retry14 early stopped; three verified failures, incomplete fourth attempt
+
+Attempt3 repeats attempt2: one model start/completion/usage record, semantic runtime
+failure873,450ms, work22,246(input5,862/output16,384), zero requested/completed tools.
+Tests/all four help/acceptance fail exit1, no verification timeout. Single recorded
+response again equals configured16,384 output ceiling. Contents/finish reason unread.
+Three verified attempts total67,610 recorded work/2,510,850ms/two completed grep calls/
+zero failed or recorded Unknown, all acceptance/project/help fail. Audits pass.
+
+To avoid repeating the same bounded failure pattern, parent stops only owned runner
+22328 and its exact child34460 after checking process names/parent IDs/creation timestamps.
+Runner session exits-1; attempt4 is abandoned/unverified and its inference work unknown.
+This is an incomplete/early-stopped six-attempt screen, not failed6, a win, or a Pi pair.
+Artifacts retained; server27356 and all three relays33028/20516/23732 preserved;
+all four model slots idle after stop.
+
+Owned runtime source confirms output-limit finish reasons length/max_tokens classify
+as semantic (crates/rupi-runtime/src/turn.rs completion_failure), and incomplete tool
+calls are not dispatched. Existing native tests assert this contract.
+It supports an output-capacity candidate but does not prove these actual finish reasons.
+Core truncation/replay/Unknown/provenance/failover semantics must remain unchanged.
+
+Next bounded retry15 will introduce a shared Case10 output-limit control default16,384,
+select32,768 for both agents, and outer1800s/provider1794s/grace6 to allow the larger
+response. Initial prompt/native-off/model/binary/window3/cap24/six attempts unchanged.
+Output allowance and deadline intentionally change together; no causal single-variable
+claim. Guards must verify default/selected/Pi config, metadata, invalid limits and
+unchanged other-case prompts before fresh Rupi screen; Pi conditional on acceptance.
