@@ -1697,3 +1697,15 @@ Fetch/prune confirms only main plus activeCase10 actual local/remote heads.
 Root unrelated policy SHA3CEE11E5 preserved. No acceptance or efficiency benefit claimed;
 more configured headroom is a bounded candidate, not proof of repaired public behavior.
 Parent invariant review passes; required Rust/startup/restore checks apply to unchanged source.
+
+### Retry17 attempt1: request headroom has not yet helped
+The cap40, native-thinking-off, output32768 screen completed attempt1 with a
+1,800,387 ms runner watchdog. Configured acceptance, project tests, and all four
+help commands failed (exit1). Recorded work was18,278 tokens (16,935 uncached input,
+1,343 output), with four model starts, three completions and usage records, and
+six completed read/grep calls; zero failed or Unknown calls. The filtered
+files inventory was empty. These metadata do not establish that the whole
+workspace was empty or that unfinished inference used no tokens.
+The frozen source/binary/model, prompt, reference, and native configuration audit
+passed. This attempt neither reached the cap40 request limit nor demonstrated
+an acceptance benefit. Remaining attempts are running; Pi remains unrun.
