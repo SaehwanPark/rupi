@@ -37,6 +37,7 @@ class Relay(BaseHTTPRequestHandler):
         requests = self.server.injected_requests
       self.json_response(200, {
         "reasoning_budget_tokens": self.server.budget,
+        "response_timeout_seconds": self.server.response_timeout,
         "upstream": "http://127.0.0.1:8000/v1",
         "injected_requests": requests,
         "content_logging": False,
@@ -93,7 +94,7 @@ class Relay(BaseHTTPRequestHandler):
         if injected:
           with self.server.counter_lock:
             self.server.injected_requests += 1
-        deadline = time.monotonic() + 650
+        deadline = time.monotonic() + self.server.response_timeout
         while time.monotonic() < deadline:
           ready, _, _ = select.select([self.connection, upstream], [], [], 1)
           if self.connection in ready:
@@ -118,12 +119,16 @@ def main():
   parser = argparse.ArgumentParser(description=__doc__)
   parser.add_argument("--port", type=int, default=8001)
   parser.add_argument("--budget", type=int, default=2048)
+  parser.add_argument("--response-timeout-seconds", type=int, default=650)
   args = parser.parse_args()
   if not 1 <= args.port <= 65535 or args.port == 8000 or args.budget < 1:
     parser.error("use a positive budget and a distinct valid loopback port")
+  if not 1 <= args.response_timeout_seconds <= 3600:
+    parser.error("response timeout must be between 1 and 3600 seconds")
   server = QuietServer(("127.0.0.1", args.port), Relay)
   server.daemon_threads = True
   server.budget = args.budget
+  server.response_timeout = args.response_timeout_seconds
   server.injected_requests = 0
   server.counter_lock = threading.Lock()
   server.serve_forever()

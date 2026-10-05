@@ -35,6 +35,8 @@ param(
   [ValidateRange(1024, 65535)]
   [ValidateScript({ $_ -ne 8000 })]
   [int]$Case10ReasoningRelayPort = 8001,
+  [ValidateRange(0, 3600)]
+  [int]$Case10RelayResponseTimeoutSeconds = 0,
   [ValidateSet("one_shot", "recurring")]
   [string]$Case10ProgressBoundaryMode = "one_shot",
   [ValidateRange(1, 100)]
@@ -2472,6 +2474,11 @@ function Invoke-AgentCase([hashtable]$case, [string]$agent, [string]$root, [stri
       $turnRecord["configured_reasoning_budget_tokens"] = if ($budget -gt 0) {
         $budget
       } else { $null }
+      $turnRecord["configured_relay_response_timeout_seconds"] = if (
+          $case.Id -eq "10-receipt-ledger" -and $budget -gt 0 -and
+          $Case10RelayResponseTimeoutSeconds -gt 0) {
+        $Case10RelayResponseTimeoutSeconds
+      } else { $null }
       $turnRecord["configured_native_reasoning_replay"] = $true
       $turnRecord["configured_skill_discovery"] = if ($agent -eq "rupi") {
         "empty_child_profile"
@@ -2509,6 +2516,11 @@ if (@($cases | Where-Object { $_.Id -eq "09-lease-receipt" }).Count -gt 0) {
 }
 if (@($cases | Where-Object { $_.Id -eq "10-receipt-ledger" }).Count -gt 0) {
   $recoveryFeedbackScope += ";case10_oracle_status_only"
+}
+if (@($cases | Where-Object { $_.Id -eq "10-receipt-ledger" }).Count -gt 0 -and
+    $Case10ReasoningBudgetTokens -gt 0 -and
+    ($Case10RelayResponseTimeoutSeconds * 1000) -gt $script:providerRequestTimeoutMs) {
+  throw "Case 10 relay response deadline must fit within the provider deadline."
 }
 if ($DryRun) {
   Write-Host "Thinking level: $ThinkingLevel"
@@ -3189,6 +3201,11 @@ foreach ($budgetCase in @($cases | Where-Object { (Get-BenchmarkReasoningBudget 
       $relay.content_logging -ne $false) {
     throw "$($budgetCase.Id) relay differs from the requested low-budget experiment."
   }
+  if ($budgetCase.Id -eq "10-receipt-ledger" -and
+      $Case10RelayResponseTimeoutSeconds -gt 0 -and
+      $relay.response_timeout_seconds -ne $Case10RelayResponseTimeoutSeconds) {
+    throw "Case 10 relay response deadline differs from the requested experiment."
+  }
 }
 if ($Agent -ne "rupi") {
   $piLauncher = if ([string]::IsNullOrWhiteSpace($PiExecutable)) {
@@ -3256,6 +3273,9 @@ $summary = [ordered]@{
     $Case10ReasoningBudgetTokens
   } else { $null }
   case10_rupi_progress_boundary_mode = $Case10ProgressBoundaryMode
+  case10_relay_response_timeout_seconds = if ($Case10RelayResponseTimeoutSeconds -gt 0) {
+    $Case10RelayResponseTimeoutSeconds
+  } else { $null }
   case10_rupi_progress_request_window = $Case10ProgressRequestWindow
   max_turns = $MaxTurns
   turn_timeout_seconds = $TurnTimeoutSeconds

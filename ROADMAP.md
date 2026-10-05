@@ -1570,6 +1570,11 @@ TUI rendering passed all budgets (3.31–3.90 µs/unit); checkpointed restore me
   budget4,096 instead of2,048 with unchanged CLI binary/guidance/window3/cap24/1,200s.
   An isolated Case10 relay-port control selects a separate loopback relay on8002;
   the existing2,048 relay remains on8001. Configuration/prompt-isolation guards pass.
+  Retry11 configured4,096/port8002 fails6 (307,818 recorded work), Pi not run.
+  The owned relay's650s response deadline is shorter than provider1194s; its causal
+  contribution is unproven. Configurable/health-visible relay deadlines and explicit
+  Case10 deadline validation are active; seven transport behavior tests pass.
+  Next screen aligns relay1194s/provider1194s inside outer1200s/grace6 on separate8003.
   Rupi-first screening and paired
   evidence/delivery checks remain pending. Broader project gates remain active.
   Preserve stable public delivery keys, distinct private fencing, lost-ack retry and

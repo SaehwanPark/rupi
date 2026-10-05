@@ -4,3 +4,6 @@
 
 # Ignored local artifacts from the Pi vs rupi benchmark.
 /.benchmark/
+
+# Python benchmark-helper bytecode.
+__pycache__/

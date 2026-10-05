@@ -1069,3 +1069,36 @@ window3/cap24/time controls. Behavioral relay guards and native config/reference
 checks precede fresh retry12 Rupi screening and conditional matched Pi. No solver/acceptance
 change or raw model/oracle-content inspection. Case10 and broad project gates active.
 Parent usage11%five-hour/51%weekly below soft stops before next slice.
+
+### Explicit relay deadline: implemented, reviewed and verified
+
+Owned relay accepts --response-timeout-seconds1..3600, preserves default650s, uses the
+configured monotonic deadline and reports response_timeout_seconds in health. Source
+and controls remain outside core; upstream forwarding still issues one request only.
+Case10RelayResponseTimeoutSeconds defaults0/unverified, checks requested deadline fits
+provider timeout, requires matching health when explicit, and records nullable per-turn/
+aggregate control metadata. Legacy/other-case behavior preserved; unavailable stays null.
+
+python -m unittest discover -s bench/tests -p test_*.py -v passes seven owned transport
+behavior tests: short expiry/no replay, delayed response under longer deadline, expiry
+after partial bytes without fabricated second response, client disconnect/no replay,
+health evidence, default650 compatibility and invalid deadline before socket binding.
+No model, generated solution or oracle content used. Ignore standard Python bytecode.
+
+Parent separate invariant-review phase: pass, no blocking findings. No retry/replay added;
+partial failure/cancellation semantics preserved. Health contains controls/counters only,
+no request/response content. Loopback, model/budget validation and explicit matching
+Rupi/Pi controls retained. Core tool Unknown/provenance/single-model/startup wiring unchanged.
+
+Native4096/port8003 config/SPEC/three acceptance hashes, selected/all-case/capitalized
+dry-runs and eighteen other prompt hashes pass. Initial Case10 prompt exactly matches
+retry11. Mismatched/unreported relay deadline rejects before inference; requested1200s
+exceeding provider1194s rejects. Model slots idle throughout guards.
+
+Fresh relayPID23732/port8003 reports4096/1194s/upstream8000/content_loggingfalse; prior
+relays33028/8001 and20516/8002 untouched. New helperSHAA0BCAE689139BFD281CB91C209D5D8F6CF9EA42FD7EFF256BE02D97A871387C7;
+harnessSHA08C69DB214804E0B892345D8E43094E19C5748F87508090D0348F750272FF234.
+Runtime source2c8ee6b/debug7C18C860 unchanged, prior Rust/startup checks applicable.
+Fresh same-guidance/model/window3/cap24/4096/6x1200s/grace6 screen12 pending; common relay
+deadline1194 is an intentional control change. Fresh Pi conditional on acceptance.
+No configured/causal/full-public-task win yet; broad project gates and Case10 active.
