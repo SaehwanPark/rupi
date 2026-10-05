@@ -965,3 +965,20 @@ model activation, lazy discovery or startup change. Runtime source2c8ee6b/debug7
 still covered by recorded Rust/startup checks. HarnessSHA27EECA11D646D70E039BBD9B7F40CE08268A816B76642FA8EBB7F41F0704737A.
 Fresh retry11 pins the intentional4096 budget/new relay route, same model and other controls.
 No acceptance/manual solver change; outcome and fresh matched Pi remain pending.
+
+### Retry11 configured native4,096 screen: launched
+
+Run: bench-20261005-case10-separator-window3-budget4096-low-retry11-rupi24-screen6-1200s.
+Harness source287f0ba6bbd7287f12240ba732baf9cda4bea05a/SHA27EECA11...4737A;
+runtime source2c8ee6b/debug7C18C860...80E46. Exec90668/runner36608/wrapper25564.
+Model27356 unchanged; configured4096 relay20516/port8002 (legacy2048 relay33028/8001 idle).
+Shared initial user prompt hashes equal retry10 exactly (B888E63C...7F7D6). Existing
+recurring/window3/cap24/six1200s/grace6/provider1194000/maxoutput16384/low controls fixed.
+Only intended profile changes are configured reasoning cap and isolated relay route;
+actual native-reasoning length is not proven by the configured budget. Source/binary/
+servers remain frozen during inference; no builds or parallel inference.
+
+Fetch/prune again shows only main and active Case10 local/remote branches, fully pushed.
+Fresh Pi conditional on Rupi acceptance using the exact same guidance/new relay/budget
+and common time controls, native Pi request/progress limits unavailable. No win yet;
+Case10 and broader project gates remain active.
