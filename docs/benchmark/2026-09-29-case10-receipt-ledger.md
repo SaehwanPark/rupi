@@ -1722,3 +1722,17 @@ are18,278 work tokens, 2,909,015 ms, and six completed tools with zero failed
 or Unknown tool calls. No acceptance benefit is established; Pi remains unrun.
 Current PR145 CI passes on Linux, macOS, and Windows; final-head CI will be
 required again before merge.
+
+### Retry17 attempt3: application files present, acceptance still failing
+Attempt3 reached the 1,800,288 ms runner watchdog. Configured acceptance and
+project tests failed (exit1); all four help commands passed (exit0), with no
+verification timeout. Recorded work was74,159 tokens (48,620 uncached input,
+25,539 output), with eleven model starts, ten completions/usage records,
+and ten completed calls: write, grep, grep, grep, write, and five edits.
+No failed or Unknown tool calls were recorded.
+Filtered files now include receiptledger/__init__.py (134bytes) and
+receiptledger/__main__.py (55,805bytes). Contents remain unread; file presence
+and successful help checks do not establish contract correctness.
+The frozen-input audit passes. Three-attempt recorded totals are92,437 work
+tokens, 4,709,303 ms, sixteen completed tools, and zero failed/Unknown calls.
+Remaining attempts continue; Pi remains unrun and Case10 remains unresolved.
