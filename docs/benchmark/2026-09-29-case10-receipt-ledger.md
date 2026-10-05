@@ -507,3 +507,11 @@ oracle1/all four help0, no verification timeouts. Main44,366 listed; tests/READM
 contents unread. First request is grep despite first-write guidance; no compliance claimed.
 More authoring time does not establish causal benefit or acceptance. Turn2 active with
 frozen source/window12/1200 controls; Pi not run, no paired win.
+
+Retry06 Rupi turn2 exits0/budget_exhausted at392,518ms unresolved:32,840 recorded work
+(28,908 input+3,932 output), twelve starts/completions/usage records. Thirteen tool requests/
+eleven completed/two failed/zero Unknown (four grep, eight reads, one write). Tests1/oracle1/
+all four help0, no verification timeouts. Package init272 newly listed/main44,366 size matches
+without proving unchanged contents; tests/README absent, generated contents unread. Prompt
+presence does not prove adherence to missing-public-TestCase guidance. Cumulative work79,452/
+authoring1,380,764ms. Turn3 active with frozen controls; Pi not run, no win claimed.
