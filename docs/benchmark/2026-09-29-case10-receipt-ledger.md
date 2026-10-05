@@ -795,3 +795,15 @@ this does not establish the cause. File size and tool completion do not prove be
 Saved prompt/controls/SPEC/three acceptance hashes pass, debug7C18C860...80E46 and
 model27356/relay33028 unchanged. Unfinished inference unknown. Turn2 active with frozen
 settings; Pi not run, no acceptance/comparative win.
+
+Retry09 Rupi turn2 exits0/runtime completed at1,199,026ms unresolved:76,019 recorded
+work (58,777 input+17,242 output), eighteen starts/nineteen completions including an
+earlier abandoned request/eighteen usage records. Twenty-four requested/completed tools/
+zero failed/Unknown; first tool write. Project-test command0/all four help0/oracle1,
+no verification timeout. README8,237/public-test9,560/tests-README1,220/sink-support5,888
+newly listed; main48,041 size matches without proving unchanged content. Contents unread;
+test-command success and file presence do not prove meaningful coverage, preserved
+assertions or all public requirements. Local gates pass earlier than retry08 without a
+causal/statistical claim. Cumulative work104,773/authoring2,399,296ms/29 completed tools.
+Saved prompt/controls/SPEC/three acceptance hashes and debug/model/relay audits pass.
+Turn3 active with frozen settings; Pi not run, acceptance/comparative win absent.
