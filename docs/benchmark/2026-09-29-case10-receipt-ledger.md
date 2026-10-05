@@ -815,3 +815,14 @@ shared guidance already requests the exact public expression. This may support a
 clarification if retry09 fails; it is not an observed implementation defect or a proven
 acceptance cause. No generated solution/test/trace or oracle source/diagnostic inspected;
 no source/guidance/binary change during the current screen.
+
+Retry09 Rupi turn3 reaches watchdog1,200,174ms unresolved:67,962 recorded work
+(55,280 input+12,682 output), eighteen starts/seventeen completions/usage records.
+Twenty-two tool requests/twenty-one completed/one failed/zero Unknown; first tool grep.
+Project-test command0/all four help0/oracle1, no verification timeout. Main48,616 and
+tests-README1,550 sizes differ; README8,237/public-test9,560/sink-support5,888 sizes match
+without proving unchanged content or assertion preservation. Generated contents unread.
+Cumulative work172,735/authoring3,599,470ms/50 completed tools/three failed/zero Unknown.
+Unfinished inference unknown. All saved prompt/control/SPEC/acceptance hashes and
+debug7C18C860/model27356/relay33028 audits pass. Turn4 active with frozen settings;
+Pi not run, no acceptance/comparative win.
