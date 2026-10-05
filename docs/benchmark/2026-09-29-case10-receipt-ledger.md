@@ -499,3 +499,11 @@ Exec40371/runner29200/wrapper20372; same model/relay/low2048/window12/cap12 as r
 Six attempts1,200s/grace6/provider1,194,000ms. Actual run controls pass; initial prompt
 byte-identical to retry04. Slots idle before launch; no builds/parallel inference. Pi
 conditional on Rupi acceptance with frozen source/guidance/time controls; outcome pending.
+
+Retry06 Rupi turn1 exits0/budget_exhausted at988,246ms, unresolved:46,612 recorded work
+(30,529 input+16,083 output), twelve starts/completions/usage records. Sixteen tool requests/
+thirteen completed/three failed/zero Unknown (ten grep, five reads, one write). Tests1/
+oracle1/all four help0, no verification timeouts. Main44,366 listed; tests/README absent,
+contents unread. First request is grep despite first-write guidance; no compliance claimed.
+More authoring time does not establish causal benefit or acceptance. Turn2 active with
+frozen source/window12/1200 controls; Pi not run, no paired win.
