@@ -1649,3 +1649,32 @@ Project tests/acceptance fail exit1, all four help paths pass, no verification t
 Cumulative397,260 recorded work/7,921,860ms/93 completed/six failed/zero Unknown.
 All saved full-SPEC/prompt/native-output/control/config/reference/fixed-binary/model audits pass.
 Attempt6 is the final screen attempt; no acceptance resolution or Pi half.
+
+### Retry16 terminal failed screen and bounded request-headroom candidate
+
+Runner exits0; all six acceptance/project-test attempts fail (local tests5 on
+attempt2,1 otherwise), all four help paths pass throughout. No verification timeout.
+Attempt6 runtime completed484,620ms, work37,982(input32,986/output4,996),
+12 model starts/completions/usage records,15 completed tools/zero failed/recorded Unknown.
+Final metadata: main63,234bytes/public test51,577/test init82/README4,074;
+application init entry absent. Contents unread; no public completeness/assertion claim.
+
+Terminal totals435,242 recorded work/8,406,480ms/108 completed/six failed/
+zero recorded Unknown; three outer watchdogs, two request-budget exhaustions,
+one completed runtime. Unrecorded inference remains unknown. All six full-SPEC/prompt/
+native-output/control/config/reference/fixed-binary/model audits pass; four slots idle.
+Native-off/output32768/runtime6a2e531/debugB60ABB58/helper/harness/model remain fixed.
+Pi skipped; no acceptance, token-efficiency, default or causal win.
+
+Existing cap40 is the next bounded candidate. Attempts4–5 report budget_exhausted
+after1,203,020/1,318,045ms under outer1800s, leaving time that additional request
+headroom could use. This does not prove cap40 will improve acceptance or other attempts.
+Keep recurring/window3/native-off/direct8000/output32768/outer1800/provider1794/
+grace6/six attempts, prompt230589C5, binary/model/source unchanged.
+The cap changes only Rupi native configuration; Pi native cap remains unavailable/null.
+Initial/recovery user prompts do not interpolate this setting and must hash-match.
+Dry-run/native config/reference/hash/isolation guards before fresh retry17;
+same frozen Pi0.86.1 profile conditional on Rupi acceptance.
+
+Parent usage33% five-hour/60% weekly, below root95%/99%; next reset18:44ET,
+weeklyOct11 05:45ET. Case10, paired delivery/exact-head CI and broader gates stay active.

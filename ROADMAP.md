@@ -1600,6 +1600,10 @@ TUI rendering passed all budgets (3.31–3.90 µs/unit); checkpointed restore me
   startup135.258ms cold/8.137ms warm median/8.917ms max and all five session-log
   restore budgets pass. A fresh same-profile screen against the rebuilt binary is next;
   configured acceptance benefit and the full paired Case10 result remain unproven.
+  Same-profile fixed-binary retry16 fails6 (435,242 recorded work); help passes4
+  throughout, local tests fail. Two repair attempts exhaust the24-request budget
+  with time remaining. Retry17 tests existing cap40, keeping prompt/model/binary/
+  native-off/output32,768/window3/six1800s controls fixed; benefit remains unproven.
   Rupi-first screening and paired
   evidence/delivery checks remain pending. Broader project gates remain active.
   Preserve stable public delivery keys, distinct private fencing, lost-ack retry and
