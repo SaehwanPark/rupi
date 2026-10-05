@@ -533,3 +533,11 @@ differs; package-init272/tests-init0/public-test19,836 sizes match without provi
 content. Generated contents unread; README presence does not prove complete documentation.
 Cumulative work130,422/authoring2,524,688ms. Turn5 active with frozen controls; Pi not run,
 no acceptance, comparative or full-public-task completion claim.
+
+Retry06 Rupi turn5 exits0/budget_exhausted at236,756ms unresolved:18,596 recorded work
+(16,532 input+2,064 output), eleven starts/completions/usage records. Eleven requested/
+completed tools (six reads/five grep), zero failed/Unknown, no mutating request. Tests1/
+oracle1/all four help0, no verification timeouts. All five listed generated-file sizes
+match turn4 without proving unchanged content; generated contents unread. Cumulative
+work149,018/authoring2,761,444ms. Final turn6 active with frozen controls; Pi not run.
+Request-budget exhaustion is distinct from watchdog/provider timeout; no win claim.
