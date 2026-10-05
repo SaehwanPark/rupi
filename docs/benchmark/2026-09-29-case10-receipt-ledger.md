@@ -838,3 +838,14 @@ Cumulative work229,518/authoring4,799,654ms/74 completed tools/four failed/zero 
 Unfinished inference unknown. All saved prompt/control/SPEC/acceptance hashes and
 debug7C18C860/model27356/relay33028 audits pass. Turn5 active with frozen settings;
 Pi not run, no acceptance/comparative win.
+
+Retry09 Rupi turn5 exits0/runtime completed at322,643ms unresolved:14,805 recorded work
+(10,164 input+4,641 output), six starts/seven completions including an earlier abandoned
+request/six usage records. Six requested/completed tools/zero failed/Unknown
+(write, read, edit, edit, grep, grep). Project-test command1/all four help0/oracle1,
+no verification timeout. Audit-test8,036 differs; main49,019/README8,237/tests-README1,550/
+public-test9,560/sink-support5,888 sizes match without proving unchanged content. Generated
+contents unread; completion/metadata do not establish correctness or assertion preservation.
+Cumulative work244,323/authoring5,122,297ms/80 completed tools/four failed/zero Unknown.
+Saved prompt/control/SPEC/acceptance hashes and debug/model/relay audits pass.
+Final turn6 active with frozen settings; Pi not run, no acceptance/comparative win.
