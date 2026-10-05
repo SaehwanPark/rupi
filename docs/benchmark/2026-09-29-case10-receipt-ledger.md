@@ -1474,3 +1474,30 @@ Initial prompt equality/config/reference guards and parent invariant review pass
 Larger output/time are intentional; no causal or acceptance win claimed.
 Fresh Pi0.86.1 uses the same frozen output/native-off/time/prompt/model controls
 only after Rupi acceptance; its cap/progress fields remain unavailable/null.
+
+### Retry15 terminal failed screen; bounded durable-resume investigation
+
+Runner exits0; all six acceptance/project-test/all four help checks fail exit1,
+no verification timeout or outer watchdog. Attempt1 semantic failure1,643,598ms,
+one model start/completion/usage record, work38,976(input6,208/output32,768),
+one requested write/zero completed/one failed/zero recorded Unknown.
+Observed output equals configured32,768 ceiling; actual finish reason/cause unread.
+
+Attempts2–6 fail rapidly in2,775/2,715/2,677/2,704/2,733ms, with zero recorded
+model starts/completions/usage/work/tool requests and absent runtime completion metadata.
+Recorded zero is not proof of zero actual inference. Cause/type of these quick failures
+remains unproven; runner/model outputs/session traces/diagnostics stay unread.
+All generated filtered metadata empty; no whole-workspace or mutation-effect claim.
+
+Terminal total38,976 recorded work/1,657,202ms/zero completed tools/one failed/
+zero recorded Unknown; all six full-SPEC/prompt/native-control/output/config/reference/
+binary/model audits pass. Model slots0–3 idle, source9d0de2a/harnessD4CA3482,
+debug7C18C860/runtime2c8ee6b remain pinned. Pi skipped; no acceptance or token win.
+
+The quick failures after a non-completed tool-shaped response motivate a bounded
+source investigation and owned synthetic fixture for durable resume.
+No actual benchmark trace, generated application or oracle diagnostics will be read.
+Preserve canonical trace vs model context separation, no dispatch of incomplete calls,
+explicit Unknown state, no blind replay, native reasoning provenance and single-model execution.
+A synthetic reproduction must establish any actual runtime bug before implementation;
+otherwise no speculative core change. Broader and Case10 gates remain active.

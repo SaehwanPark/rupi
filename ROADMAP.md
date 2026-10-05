@@ -1588,6 +1588,11 @@ TUI rendering passed all budgets (3.31–3.90 µs/unit); checkpointed restore me
   semantic failure and no tools. No six-attempt or causal claim. Retry15 will test
   a matched Case10 output allowance32,768 and outer1800s/provider1794s/grace6;
   default16,384 and incomplete-response/no-dispatch runtime semantics stay intact.
+  Retry15 fails6 (38,976 recorded work); attempt1 records output32,768/semantic
+  failure/one failed write request. Attempts2–6 fail quickly with no recorded model
+  starts or usage; cause remains unproven. Next bounded work investigates durable
+  resume after incomplete tool responses using owned synthetic fixtures, preserving
+  no dispatch/replay of incomplete mutations and strict canonical/projection integrity.
   Rupi-first screening and paired
   evidence/delivery checks remain pending. Broader project gates remain active.
   Preserve stable public delivery keys, distinct private fencing, lost-ack retry and
