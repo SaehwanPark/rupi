@@ -37,6 +37,8 @@ param(
   [int]$Case10ReasoningRelayPort = 8001,
   [ValidateRange(0, 3600)]
   [int]$Case10RelayResponseTimeoutSeconds = 0,
+  [ValidateRange(1, 65536)]
+  [int]$Case10MaxOutputTokens = 16384,
   [ValidateSet("one_shot", "recurring")]
   [string]$Case10ProgressBoundaryMode = "one_shot",
   [ValidateRange(1, 100)]
@@ -2066,6 +2068,11 @@ function Get-BenchmarkReasoningBudget([hashtable]$case) {
   return 0
 }
 
+function Get-BenchmarkMaxOutputTokens([hashtable]$case) {
+  if ($case.Id -eq "10-receipt-ledger") { return $Case10MaxOutputTokens }
+  return 16384
+}
+
 function Get-BenchmarkProgressControl([hashtable]$case) {
   if ($case.Id -eq "10-receipt-ledger") {
     return [pscustomobject]@{
@@ -2197,7 +2204,7 @@ function New-BenchmarkWorkspace([hashtable]$case, [string]$agentRoot, [string]$t
         $config.endpoints[0].base_url = Get-BenchmarkEndpoint $case
       }
       if ($config.endpoints[0].capabilities) {
-        $config.endpoints[0].capabilities.max_output_tokens = 16384
+        $config.endpoints[0].capabilities.max_output_tokens = Get-BenchmarkMaxOutputTokens $case
       }
       # Let the runtime handle its provider timeout before the outer turn watchdog stops it.
       $reqTimeout = $script:providerRequestTimeoutMs
@@ -2225,7 +2232,7 @@ function New-PiConfig([string]$agentRoot, [hashtable]$case) {
           id = "qwen3.8-flash-next"
           name = "Qwen3.8 Flash Next"
           contextWindow = 262144
-          maxTokens = 16384
+          maxTokens = Get-BenchmarkMaxOutputTokens $case
           defaultParameters = [ordered]@{
             temperature = 1.0
             top_p = 0.95
@@ -2491,6 +2498,9 @@ function Invoke-AgentCase([hashtable]$case, [string]$agent, [string]$root, [stri
         $Case10RelayResponseTimeoutSeconds
       } else { $null }
       $turnRecord["configured_native_reasoning_replay"] = $true
+      if ($case.Id -eq "10-receipt-ledger") {
+        $turnRecord["configured_max_output_tokens"] = Get-BenchmarkMaxOutputTokens $case
+      }
       $turnRecord["configured_skill_discovery"] = if ($agent -eq "rupi") {
         "empty_child_profile"
       } else { "disabled_flags" }
@@ -2538,6 +2548,11 @@ if ($DryRun) {
   Write-Host "Recovery feedback scope: $recoveryFeedbackScope"
   $cases | ForEach-Object {
     [void](Get-InitialPrompt $_)
+    $expectedOutput = if ($_.Id -eq "10-receipt-ledger") { $Case10MaxOutputTokens }
+      else { 16384 }
+    if ((Get-BenchmarkMaxOutputTokens $_) -ne $expectedOutput) {
+      throw "Case 10 output control must preserve other cases' output limits."
+    }
     $progressLimits = [pscustomobject]@{ max_model_requests_without_progress = 1 }
     Set-BenchmarkProgressBoundary $_ $progressLimits
     $hasProgressControl = $_.Id -in @("08-lease-fence", "09-lease-receipt", "10-receipt-ledger")
@@ -3020,6 +3035,22 @@ if ($DryRun) {
     }
     if ($_.Id -eq "10-receipt-ledger") {
       $spec = [IO.File]::ReadAllText((Join-Path (Join-Path $repoRoot $_.Source) "SPEC.md"))
+      $outputGuardRoot = Join-Path $artifactRoot (
+        "case10-output-guard-" + [Guid]::NewGuid().ToString("N")
+      )
+      $outputWorkspace = New-BenchmarkWorkspace $_ $outputGuardRoot $ThinkingLevel
+      $outputConfig = Get-Content -Raw -LiteralPath $outputWorkspace.config | ConvertFrom-Json
+      $piConfigRoot = New-PiConfig $outputGuardRoot $_
+      $piOutputConfig = Get-Content -Raw -LiteralPath (Join-Path $piConfigRoot "models.json") |
+        ConvertFrom-Json
+      $outputEndpoint = $outputConfig.endpoints[0]
+      $rupiOutputLimit = if ($null -ne $outputEndpoint.max_output_tokens) {
+        $outputEndpoint.max_output_tokens
+      } else { $outputEndpoint.capabilities.max_output_tokens }
+      if ($rupiOutputLimit -ne $Case10MaxOutputTokens -or
+          $piOutputConfig.providers.unsloth.models[0].maxTokens -ne $Case10MaxOutputTokens) {
+        throw "Case 10 must configure the same effective output limit for both agents."
+      }
       $dryRunProject = Join-Path ([IO.Path]::GetTempPath()) (
         "rupi-case10-dryrun-" + [Guid]::NewGuid().ToString("N")
       )
@@ -3294,6 +3325,7 @@ $summary = [ordered]@{
     $Case10ReasoningBudgetTokens
   } else { $null }
   case10_rupi_progress_boundary_mode = $Case10ProgressBoundaryMode
+  case10_max_output_tokens = $Case10MaxOutputTokens
   case10_relay_response_timeout_seconds = if ($Case10RelayResponseTimeoutSeconds -gt 0) {
     $Case10RelayResponseTimeoutSeconds
   } else { $null }

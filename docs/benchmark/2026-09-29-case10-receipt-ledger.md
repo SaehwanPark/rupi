@@ -1431,3 +1431,27 @@ response. Initial prompt/native-off/model/binary/window3/cap24/six attempts unch
 Output allowance and deadline intentionally change together; no causal single-variable
 claim. Guards must verify default/selected/Pi config, metadata, invalid limits and
 unchanged other-case prompts before fresh Rupi screen; Pi conditional on acceptance.
+
+### Shared Case10 output-limit control verified before retry15
+
+New Case10MaxOutputTokens range1–65,536 defaults16,384; selected32,768.
+The same helper sets Rupi endpoint capability and Pi model maxTokens.
+Per-turn configured_max_output_tokens records the Case10 request; aggregate records
+case10_max_output_tokens. These are configuration claims, not observed finish reasons.
+Other cases retain16,384 and their18 prompt hashes; Case10 prompt230589C5 unchanged.
+
+Dry-run now materializes owned native Rupi/Pi configs and compares effective output limits,
+catching an explicit endpoint override that would mask the selected capability.
+Selected32,768/default16,384/valid boundary1/65,536/capitalized recurring checks pass;
+invalid0/65,537 rejected before inference. Fresh selected native config verifies
+off/direct8000/window3/cap24/provider1794000/maxoutput32768 and copied full SPEC/
+three acceptance hashes. All five Case10 prompt variants/oracle sentinel pass.
+Ignored guard workspaces contain copied reference/config artifacts only; no model run.
+
+Parent separate invariant review has no blocker: matched agent output allowances,
+default/other-case isolation, no dispatch of incomplete tools, no blind replay,
+single Qwen activation and unchanged native exposure/provenance/startup.
+No Rust/helper source changed; prior required Rust/startup and seven relay tests apply.
+Output allowance32,768 and outer1800/provider1794/grace6 intentionally change together
+for retry15. Shared prompt/native-off/binary/model/window3/cap24/six attempts stay fixed.
+Fresh Rupi first; Pi0.86.1 conditional on acceptance. Case10 remains unresolved.
