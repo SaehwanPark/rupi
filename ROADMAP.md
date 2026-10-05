@@ -1565,7 +1565,11 @@ TUI rendering passed all budgets (3.31–3.90 µs/unit); checkpointed restore me
   clarification for supplied context/new files/delegated verification passes required
   Rust/startup checks; same-profile retry09 fails6 (313,229 recorded work), Pi not run.
   Local tests pass2–3 but fail on the final three attempts. Public-SPEC separator-byte
-  clarification is active in shared guidance; guards and a fresh same-profile screen follow.
+  clarification also fails retry10 after6 (245,549 recorded work); all local tests fail,
+  help passes throughout, Pi not run. Next screen tests existing native reasoning
+  budget4,096 instead of2,048 with unchanged CLI binary/guidance/window3/cap24/1,200s.
+  An isolated Case10 relay-port control selects a separate loopback relay on8002;
+  the existing2,048 relay remains on8001. Configuration/prompt-isolation guards pass.
   Rupi-first screening and paired
   evidence/delivery checks remain pending. Broader project gates remain active.
   Preserve stable public delivery keys, distinct private fencing, lost-ack retry and

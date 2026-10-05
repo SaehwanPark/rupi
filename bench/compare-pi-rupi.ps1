@@ -32,6 +32,9 @@ param(
   [int]$Case09ProgressRequestWindow = 1,
   [ValidateRange(0, 16384)]
   [int]$Case10ReasoningBudgetTokens = 0,
+  [ValidateRange(1024, 65535)]
+  [ValidateScript({ $_ -ne 8000 })]
+  [int]$Case10ReasoningRelayPort = 8001,
   [ValidateSet("one_shot", "recurring")]
   [string]$Case10ProgressBoundaryMode = "one_shot",
   [ValidateRange(1, 100)]
@@ -2083,6 +2086,9 @@ function Set-BenchmarkProgressBoundary([hashtable]$case, [object]$limits) {
 
 function Get-BenchmarkEndpoint([hashtable]$case) {
   if ((Get-BenchmarkReasoningBudget $case) -gt 0) {
+    if ($case.Id -eq "10-receipt-ledger") {
+      return "http://127.0.0.1:$Case10ReasoningRelayPort/v1"
+    }
     return "http://127.0.0.1:8001/v1"
   }
   return "http://127.0.0.1:8000/v1"
@@ -2530,7 +2536,9 @@ if ($DryRun) {
       throw "Selected progress request window must not change other cases."
     }
     $expectedEndpoint = if ((Get-BenchmarkReasoningBudget $_) -gt 0) {
-      "http://127.0.0.1:8001/v1"
+      if ($_.Id -eq "10-receipt-ledger") {
+        "http://127.0.0.1:$Case10ReasoningRelayPort/v1"
+      } else { "http://127.0.0.1:8001/v1" }
     } else { "http://127.0.0.1:8000/v1" }
     if ((Get-BenchmarkEndpoint $_) -cne $expectedEndpoint) {
       throw "The reasoning relay must match the selected case's explicit budget."
@@ -3173,7 +3181,8 @@ if ($DryRun) {
   exit 0
 }
 foreach ($budgetCase in @($cases | Where-Object { (Get-BenchmarkReasoningBudget $_) -gt 0 })) {
-  $relay = Invoke-RestMethod "http://127.0.0.1:8001/healthz" -TimeoutSec 5
+  $relayHealth = (Get-BenchmarkEndpoint $budgetCase) -replace '/v1$', '/healthz'
+  $relay = Invoke-RestMethod $relayHealth -TimeoutSec 5
   if ($ThinkingLevel -ne "low" -or
       $relay.reasoning_budget_tokens -ne (Get-BenchmarkReasoningBudget $budgetCase) -or
       $relay.upstream -cne "http://127.0.0.1:8000/v1" -or

@@ -938,3 +938,30 @@ shared public guidance, window3/cap24/six1200s/grace6/time controls. Pin the int
 relay/budget change, run config/dry-run guards, fresh Rupi screen and conditional matched
 Pi. No manual solver or acceptance changes. Case10 and broad project gates remain active.
 Parent usage0%five-hour/49%weekly before next slice.
+
+### Bounded relay-port setup for native budget4,096: reviewed and guarded
+
+Automatic approval review rejected the combined command that would stop/replace relay33028
+with stated reason "blocked by policy"; no relay mutation occurred. Safer setup leaves
+legacy2048/port8001/PID33028 available and starts the same owned relay code with
+budget4096/port8002/PID20516, content logging false, upstream same Qwen8000.
+Relay sourceSHA1B559700...0833B unchanged; no model reload or parallel inference.
+
+bench/compare-pi-rupi.ps1 adds isolated Case10ReasoningRelayPort, default8001, loopback-only
+endpoint, validated1024..65535 excluding main-model8000. Budget0 keeps direct8000;
+Cases01–09 routes unchanged. Health validation uses each selected endpoint so Rupi/Pi
+must match the explicit budget/upstream/no-content-logging controls. No runtime/binary or
+shared user guidance change. This is benchmark transport setup outside core.
+
+Selected/all-case/capitalized-mode dry-runs and fresh native4096/8002 config/reference
+guards pass. Three invalid ports reject; other-case endpoint isolation/default-port/
+budget-disabled route checks pass. All18 other prompt hashes unchanged; initial Case10
+guidance exactly matches retry10. An initial owned guard invocation lacked exported AST
+functions; rerun dot-sourced the owned snapshot and all endpoint/prompt checks pass.
+
+Parent separate invariant-review phase: pass, no blocking findings. Explicit endpoint/
+budget metadata remain honest; no tool state, Unknown/replay, provenance, trust, failover,
+model activation, lazy discovery or startup change. Runtime source2c8ee6b/debug7C18C860
+still covered by recorded Rust/startup checks. HarnessSHA27EECA11D646D70E039BBD9B7F40CE08268A816B76642FA8EBB7F41F0704737A.
+Fresh retry11 pins the intentional4096 budget/new relay route, same model and other controls.
+No acceptance/manual solver change; outcome and fresh matched Pi remain pending.
