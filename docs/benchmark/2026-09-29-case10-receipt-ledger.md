@@ -773,3 +773,14 @@ SPEC/three acceptance hashes and Case10 dry-run guards pass; model slots idle.
 Next fresh retry09 keeps shared user guidance and window3/cap24/low2048/6x1200s/grace6/
 provider1194000ms fixed. Only intended behavioral variable is generic CLI system text
 and its rebuilt binary. Fresh Pi conditional on acceptance, no win or full-task claim yet.
+
+### Retry09 CLI clarification screen: launched
+
+Run: bench-20261005-case10-cli-context-window3-budget2048-low-retry09-rupi24-screen6-1200s.
+Runtime source2c8ee6b; harness92d2b269/SHA86F04AA7...5AD98; checkpoint4a9b959.
+Exec63276/runner26560/wrapper25564; debug7C18C860...80E46, model27356/relay33028.
+Same recurring/window3/cap24/low2048/six1,200s/grace6/provider1194000/maxoutput16384.
+Saved initial user prompt hashes match retry08 exactly. Intended behavioral variable is
+generic CLI system text/new binary. No builds or parallel inference during this screen.
+Fresh Pi conditional on Rupi acceptance with frozen source/binary/guidance/settings.
+No acceptance/comparative win yet; broad project gates and Case10 remain active.
