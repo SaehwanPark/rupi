@@ -982,3 +982,19 @@ Fetch/prune again shows only main and active Case10 local/remote branches, fully
 Fresh Pi conditional on Rupi acceptance using the exact same guidance/new relay/budget
 and common time controls, native Pi request/progress limits unavailable. No win yet;
 Case10 and broader project gates remain active.
+
+Retry11 Rupi turn1 exits0/runtime failed(transport) at652,210ms unresolved.
+One model start/completion, no usage record or tool request. Recorded work0 is not actual
+zero inference; unfinished/unrecorded work unknown. Tests1/all four help1/oracle1, no
+verification timeout; filtered app/test/README metadata empty, generated contents unread.
+Saved prompt/control/SPEC/three acceptance hashes and debug7C18C860/model27356/relay20516
+audits pass; configured4096/window3/cap24/8002/provider1194000ms remain fixed.
+
+Owned relay-source review finds a hard response deadline650s (bench/case07-thinking-budget-
+relay.py:96), below the configured provider1194s/outer1200s. This is an additional
+transport limit for this and prior same-source profiles; the652,210ms failure is consistent
+with that limit but specific causality is unproven without excluded transport/model content.
+No source/settings/helper change during this screen. Consider a bounded configurable
+relay deadline with explicit health evidence after terminal results, preserving default650s
+and aligning a fresh profile with common provider/outer controls. Turn2 active;
+Pi not run, no acceptance/comparative win.
