@@ -712,3 +712,28 @@ matches without proving unchanged content. Generated contents unread; a passing 
 does not prove preserved assertions or every public requirement. Cumulative work257,672/
 authoring4,955,933ms. Final turn6 active with frozen controls; Pi not run. Local gates now
 pass but acceptance still fails, so no configured/comparative or full-public-task win.
+
+### Retry08 terminal evidence and next CLI slice
+
+Retry08 turn6 exits0/budget_exhausted at785,730ms unresolved:57,108 recorded work
+(50,425 input+6,683 output), twenty-four model starts/completions/usage records.
+Twenty-five tool requests/twenty-three completed/two failed/zero Unknown. Project tests0,
+all four help0, oracle1, no verification timeout. README9,538/main43,254/public-test15,759
+differ; tests-init45 size matches without proving unchanged content. Generated contents unread.
+
+All six attempts fail acceptance. Totals314,780 recorded work/5,741,663ms authoring/
+109 completed tools/seven failed/zero Unknown. Two watchdogs; unfinished inference unknown.
+All saved prompts/controls/copied SPEC/three acceptance hashes pass terminal audit.
+Debug8159F875...77F24/model27356/relay33028 unchanged; no Pi run or comparative win.
+
+Next bounded slice: clarify the generic CLI system prompt in src/run.rs so sufficient
+supplied context can support new-file creation and explicitly delegated verification uses
+supplied results with truthful attribution. Existing-file/project-instruction inspection,
+host permissions and runtime/tool lifecycle remain intact. No case-specific core policy,
+manual solver, acceptance change or harness/prompt change. The broad existing system text
+is a review lead, not an established cause. Parent is sole writer and performs a separate
+invariant-review phase. Required Rust checks/startup and explicit debug build precede a
+fresh same-profile Rupi screen; paired Pi conditional on acceptance. Case10 remains active.
+
+Fetch/prune confirms only main and active fix/case10-audit-ledger local/remote branches;
+historical benchmark worktrees remain detached with artifacts retained.
