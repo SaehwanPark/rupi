@@ -524,3 +524,12 @@ newly listed; main44,366/package-init272 sizes match without proving unchanged c
 README absent, generated contents unread; file presence does not prove discovered/passing
 tests or preserved assertions. Cumulative work105,376/authoring1,974,597ms. Runtime completion
 is not acceptance; turn4 active with frozen controls, Pi not run and no win claimed.
+
+Retry06 Rupi turn4 exits0/budget_exhausted at550,091ms unresolved:25,046 recorded work
+(16,812 input+8,234 output), twelve starts/completions/usage records. Eleven requested/
+completed tools/zero failed/Unknown (five grep, four reads, one edit, one write). Tests1/
+oracle1/all four help0, no verification timeouts. README14,069 newly listed/main44,713
+differs; package-init272/tests-init0/public-test19,836 sizes match without proving unchanged
+content. Generated contents unread; README presence does not prove complete documentation.
+Cumulative work130,422/authoring2,524,688ms. Turn5 active with frozen controls; Pi not run,
+no acceptance, comparative or full-public-task completion claim.
