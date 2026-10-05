@@ -615,3 +615,12 @@ support13,272 differs; other four filtered sizes match without proving unchanged
 Generated contents unread; module presence does not prove passing or preserved assertions.
 Cumulative work336,192/authoring4,579,742ms. Turn5 active with frozen controls; Pi not run,
 no acceptance/comparative/full-public-task completion claimed.
+
+Retry07 Rupi turn5 exits0/runtime failed(timeout) at727,153ms unresolved:10,264 recorded
+work (8,308 input+1,956 output), five starts/completions/four usage records. Four tool
+requests/three completed/one failed/zero Unknown (edit, two grep, read). Tests1/oracle1/
+all four help0, no verification timeouts. Public HTTP-test10,164 differs; other five filtered
+sizes match without proving unchanged contents. Generated contents unread; exact edits and
+assertion preservation unproven. Unrecorded unfinished inference unknown, not zero. Cumulative
+work346,456/authoring5,306,895ms. Final turn6 active with frozen controls; Pi not run.
+Runtime timeout does not establish its particular cause or imply an acceptance pass.
