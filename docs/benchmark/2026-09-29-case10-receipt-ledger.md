@@ -390,3 +390,11 @@ all four help0, no verification timeouts. Main27,737/tests-init0/test_help991 si
 turn3 without proving unchanged contents; README absent, contents unread. Unfinished
 inference usage unknown. Cumulative work73,551/authoring2,401,742ms. Turn5 active; Pi not run.
 Lower recorded work on this failed turn is not success or a causal progress-window benefit.
+Retry04 Rupi turn5 reaches its watchdog at600,313ms, unresolved:14,546 recorded work
+(8,182 input+6,364 output), five starts/five completions including an earlier abandoned
+request, four usage records. Four requested/completed tools (edit/write/grep/read), zero
+failed/Unknown. Tests1/oracle1/all four help0, no verification timeouts. README4,828 newly
+listed/main34,627 differs; tests-init0/test_help991 sizes match without proving unchanged
+content. Generated contents unread; file presence is not completeness or passing behavior.
+Cumulative work88,097/authoring3,002,055ms. Final turn6 active, controls frozen, Pi not run.
+Unfinished inference usage unknown; no comparative or full-public-task win claim.
