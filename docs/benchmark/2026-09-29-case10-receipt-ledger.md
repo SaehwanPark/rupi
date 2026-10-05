@@ -1274,3 +1274,15 @@ Saved prompt/full-SPEC/control/reference audits pass; binary7C18C860, model27356
 relay23732/8003/configured4096/deadline1194s remain unchanged.
 Runtime completion and prompt presence are not acceptance or model compliance.
 Screen continues to attempt2; Pi is not run before Rupi acceptance.
+
+### Retry13 attempt2 checkpoint
+
+Runtime completed714,010ms with33,211 recorded work (input22,154/output11,057),
+nine model starts/completions/usage records and nine completed file tools:
+write/read/grep/read/edit/read/edit/edit/read; zero recorded failed/Unknown tools.
+Project tests and acceptance fail (exit1), all four help paths pass, no verification timeout.
+Filtered generated metadata lists receiptledger/__main__.py21,659bytes only.
+Tool completion and file size do not establish implementation or assertion correctness.
+Cumulative42,093 recorded work/1,657,765ms/13 completed tools, no acceptance resolution.
+Prompt/full-SPEC/native-control/reference/binary/model/relay/deadline audits pass.
+Attempt3 continues; Pi remains conditional on Rupi acceptance. Generated contents unread.
