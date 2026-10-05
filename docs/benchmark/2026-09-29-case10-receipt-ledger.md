@@ -807,3 +807,11 @@ assertions or all public requirements. Local gates pass earlier than retry08 wit
 causal/statistical claim. Cumulative work104,773/authoring2,399,296ms/29 completed tools.
 Saved prompt/controls/SPEC/three acceptance hashes and debug/model/relay audits pass.
 Turn3 active with frozen settings; Pi not run, acceptance/comparative win absent.
+
+Public-SPEC-only follow-up lead during frozen retry09: an owned Python ast.literal_eval
+probe of the separator in SPEC.md:312 evaluates to codepoints[92,110]/two UTF-8 bytes.
+It is a literal backslash followed by n as the published expression is written. Current
+shared guidance already requests the exact public expression. This may support a later
+clarification if retry09 fails; it is not an observed implementation defect or a proven
+acceptance cause. No generated solution/test/trace or oracle source/diagnostic inspected;
+no source/guidance/binary change during the current screen.
