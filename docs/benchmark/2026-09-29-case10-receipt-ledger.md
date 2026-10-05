@@ -1580,3 +1580,18 @@ Root unrelated policy SHA3CEE11E5 preserved. Parent usage22% five-hour/58% weekl
 below root95%/99%; resets18:44ET/Oct11 05:45ET.
 Actual retry15 cause and retry16 acceptance benefit remain unproven; synthetic fix is verified.
 Fresh same-profile Pi0.86.1 remains conditional on Rupi acceptance; cap/progress unavailable.
+
+### Retry16 attempt1 checkpoint
+
+Outer watchdog fires1,800,211ms. Recorded work60,912(input29,499/output31,413),
+five model starts/four completions/four usage records; unfinished inference unknown.
+Six requested file tools/five completed/one failed/zero recorded Unknown;
+tool sequence read/grep/grep/read/read/write. Individual failed-tool cause/type unproven.
+Filtered metadata shows receiptledger/__main__.py59,605bytes. No contents inspected.
+All four help paths pass, project tests/acceptance fail exit1, no verification timeout.
+Presence/size/tool completion is not contract correctness or instruction compliance.
+Same-profile outcome differs from retry15, but one stochastic screen is not causal evidence
+for acceptance, token efficiency, output-limit or store-fix benefit.
+Saved full-SPEC/prompt/native-output/control/config/reference/binary/model audits pass;
+fixed runtime6a2e531/debugB60ABB58 and all frozen sources/settings remain pinned.
+Attempt2 continues; no acceptance resolution or Pi half.
