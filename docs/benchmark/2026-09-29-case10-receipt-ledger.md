@@ -1142,3 +1142,15 @@ does not include these explicit instructions. Retry12 first-turn failed-tool cou
 not establish which failures occurred or their cause. Consider shared static reconciliation
 guidance for both agents after terminal results if unresolved, without reading/generated
 diagnostics, altering tools or adding core workflow policy. No live-source/guidance change.
+
+Retry12 Rupi turn2 exits0/runtime completed at779,954ms unresolved:49,018 recorded work
+(39,657 input+9,361 output), eighteen starts/nineteen completions including an earlier
+abandoned request/eighteen usage records. Seventeen requested/completed tools/zero failed/
+Unknown; first tool grep. Project-test command1/all four help0/oracle1, no verification
+timeout. README6,279/tests-init60/public-test7,756 newly listed/main55,854 differs;
+app-init108 size matches without proving unchanged content. Contents unread; file presence/
+completed tools do not prove requirements, coverage or assertion preservation.
+Cumulative work90,798/authoring1,980,156ms/24 completed tools/seven failed/zero Unknown;
+unfinished inference unknown. All saved prompt/control/SPEC/acceptance hashes, requested/
+health deadline1194 and debug/model/relay audits pass. Turn3 active with frozen settings;
+Pi not run, no acceptance/comparative win or causal claim.
