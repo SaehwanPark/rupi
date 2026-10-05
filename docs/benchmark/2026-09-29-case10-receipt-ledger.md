@@ -1595,3 +1595,17 @@ for acceptance, token efficiency, output-limit or store-fix benefit.
 Saved full-SPEC/prompt/native-output/control/config/reference/binary/model audits pass;
 fixed runtime6a2e531/debugB60ABB58 and all frozen sources/settings remain pinned.
 Attempt2 continues; no acceptance resolution or Pi half.
+
+### Retry16 attempt2 checkpoint
+
+Outer watchdog1,800,252ms, recorded work76,017(input50,892/output25,125),
+13 model starts/completions but12 usage records; unrecorded inference unknown.
+20 requested tools/17 completed/three failed/zero recorded Unknown; first tool grep.
+Filtered metadata: README5,643bytes, main60,722bytes, tests/__init__.py82bytes;
+public test-file entry absent. Generated contents remain unread.
+Project tests fail exit5, all four help paths pass, acceptance fails exit1,
+no verification timeout. File presence/size/known tool completion does not establish
+assertion coverage, correctness or compliance with first-test-file guidance.
+Cumulative136,929 recorded work/3,600,463ms/22 completed/four failed/zero Unknown.
+Full-SPEC/prompt/native-output/control/config/reference/fixed-binary/model audits pass.
+Attempt3 continues; no acceptance resolution or Pi half.
