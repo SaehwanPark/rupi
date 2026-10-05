@@ -649,3 +649,14 @@ Root usage18% five-hour/44% weekly below95/99 limits. Fresh Rupi screen first, s
 Pi only if Rupi resolves, with frozen source/guidance/shared time settings. Pi cap unavailable.
 No runtime/source/acceptance change or manual solver. Paired evidence/final checks/startup/
 review/exact-head CI pending; Cases01–09 skipped and broad project gates remain active.
+
+### Retry08 existing window3/cap24/1200 screen: launched
+
+Run: `bench-20261004-case10-monolith-window3-budget2048-low-retry08-rupi24-screen6-1200s`.
+Source92d2b269/harness86F04AA7...5AD98/debug8159F875...77F24; checkpointd769483.
+Exec10828/runner14364/wrapper30756; same model/relay/low2048/cap24/six1,200s/grace6.
+Only existing window12→3 changes from retry07. Actual run controls pass; initial prompt
+byte-identical to retry07. Slots idle before launch; no builds or parallel inference.
+Fresh Pi conditional on Rupi acceptance with frozen source/guidance/shared time controls;
+Pi native cap remains unavailable. Branch inventory after fetch/prune remains main plus
+active Case10 locally/remotely; historical worktree artifacts retained. Outcome pending.
