@@ -1609,3 +1609,17 @@ assertion coverage, correctness or compliance with first-test-file guidance.
 Cumulative136,929 recorded work/3,600,463ms/22 completed/four failed/zero Unknown.
 Full-SPEC/prompt/native-output/control/config/reference/fixed-binary/model audits pass.
 Attempt3 continues; no acceptance resolution or Pi half.
+
+### Retry16 attempt3 checkpoint
+
+Outer watchdog1,800,332ms. Recorded work80,032(input53,981/output26,051),
+12 model starts/completions but11 usage records; unrecorded inference unknown.
+16 requested/completed file tools, zero failed/recorded Unknown; first tool read.
+Metadata now includes tests/test_receiptledger.py51,135bytes, tests init82bytes,
+main60,722bytes and README5,643bytes. Same sizes do not prove unchanged contents.
+Public test presence/tool success does not establish meaningful assertions or correctness.
+Project tests/acceptance fail exit1; all four help paths pass, no verification timeout.
+All generated contents and diagnostics remain unread.
+Cumulative216,961 recorded work/5,400,795ms/38 completed/four failed/zero Unknown.
+All full-SPEC/prompt/native-output/control/config/reference/binary/model audits pass.
+Attempt4 continues; no acceptance resolution or Pi half.
