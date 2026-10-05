@@ -1376,3 +1376,15 @@ Fetch/prune again confirms main plus activeCase10 local/remote heads only.
 Unrelated root policy SHA3CEE11E5 preserved. All prior relays left intact and unused.
 Pi0.86.1 conditional on Rupi acceptance with the same frozen native-off profile.
 No win, default benefit or causal comparison claimed.
+
+### Retry14 attempt1 checkpoint
+
+Runtime reports semantic failure after811,437ms; outer watchdog false.
+Recorded work23,118 (input6,514/output16,604), two model starts/completions/usage records,
+two completed grep calls, no recorded failed/Unknown file tools.
+Project tests, all four help paths and acceptance fail exit1, no verification timeout.
+Filtered generated metadata empty; no whole-workspace-empty or actual semantic-cause claim.
+Large aggregate output alone does not prove a per-request output ceiling was reached,
+nor identify a malformed/truncated response. Model output and diagnostics remain unread.
+Native-off/full-SPEC/prompt/control/reference/binary/model audits pass.
+Attempt2 continues. No acceptance win or Pi half exists.
