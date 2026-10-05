@@ -1596,8 +1596,10 @@ TUI rendering passed all budgets (3.31–3.90 µs/unit); checkpointed restore me
   An owned fixture reproduces a durable-resume bug: output-limit text has no projection,
   but alignment validation incorrectly demands one. The minimal store fix now passes
   close/reopen/resume for length/max_tokens with small/large unexecuted mutations;
-  normal completed responses still reject missing projections. Full Rust/startup checks
-  and a fresh same-profile screen against the rebuilt binary remain pending.
+  normal completed responses still reject missing projections. Required Rust checks pass;
+  startup135.258ms cold/8.137ms warm median/8.917ms max and all five session-log
+  restore budgets pass. A fresh same-profile screen against the rebuilt binary is next;
+  configured acceptance benefit and the full paired Case10 result remain unproven.
   Rupi-first screening and paired
   evidence/delivery checks remain pending. Broader project gates remain active.
   Preserve stable public delivery keys, distinct private fencing, lost-ack retry and

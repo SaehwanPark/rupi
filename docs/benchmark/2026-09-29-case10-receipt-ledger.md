@@ -1530,3 +1530,33 @@ Next fresh retry16 retains retry15 native-off/direct8000/output32768/outer1800/p
 grace6/window3/cap24/six attempts/prompt/model, with rebuilt binary containing this fix.
 Its acceptance benefit is unproven; a synthetic runtime improvement is not a Case10 win.
 Pi0.86.1 conditional on Rupi acceptance. All broader gates remain active.
+
+### Durable-resume fix required checks and defined performance budgets pass
+
+Verified production source6a2e5315847804b5826699c6e270030608c83e81:
+cargo fmt --all --check; cargo check -p rupi-core --all-features;
+cargo clippy --workspace --all-targets -- -D warnings;
+cargo test --workspace; cargo doc --workspace --no-deps; cargo build --bin rupi.
+All exit0 on the existing verified Rust/Cargo1.98.1 stable alias; repository pin unchanged.
+Owned check JSON/logs .benchmark/case10-resume-checks.json and case10-resume-*.log.
+Rebuilt debug SHA256B60ABB5899EE1D3CBC7FBA4F4822DB8599529AA2FA9CAABCCCC3B0A7EEB54B08.
+
+GitBash bench/startup.sh --json bench/results/startup-ci.json passes:
+cold135.258ms/warm median8.137ms/max8.917ms, budgets250/100ms.
+bench/large_session.sh default50 iterations passes all defined session-log hydration budgets:
+small10turns92.650us<=1000; medium100turns666.350<=4000;
+large500turns2573.450<=15000; checkpoint500turns2540.750<=15000;
+checkpoint1000turns4956.150<=30000. This benchmark measures session_log::restore,
+not the entire canonical-validation path; no universal/full-resume latency claim.
+
+Targeted reproduced failure and negative completed-projection fixtures pass.
+Seven previously passed relay behavior tests remain applicable to unchanged helperA0BCAE68.
+No render/source change requiring render benchmark. Parent separate invariant review
+has no blocker; ordinary completed messages/Unknown outcomes/lifecycle/payload/sequence
+validation, provenance, single model and lazy startup boundaries stay intact.
+No additional build during the next screen or a paired Pi half.
+
+Fresh retry16 will keep retry15 prompt230589C5/native-off/direct8000/output32768/
+outer1800/provider1794/grace6/window3/cap24/six attempts and same model27356,
+changing only the rebuilt Rupi binary to include the store resume fix.
+Synthetic runtime improvement is verified; actual acceptance benefit remains unproven.
