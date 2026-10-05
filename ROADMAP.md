@@ -1556,8 +1556,9 @@ TUI rendering passed all budgets (3.31–3.90 µs/unit); checkpointed restore me
   Case10 audit/receipt guidance and isolated controls are active onfix/case10-audit-ledger;
   retry01 Rupi remains unresolved after6; Pi was stopped as an incomplete comparison.
   Retry02 Rupi also remains unresolved after6; Pi not run. Single-module/discoverable-test
-  guidance also fails retry03 after6; Pi not run. Existing window12 control screening
-  is next with unchanged prompts/binary. Rupi-first screening and paired
+  guidance also fails retry03 after6; Pi not run. Existing window12 retry04 fails6
+  (113,076 recorded work), Pi not run. Next screen uses existing window1 with unchanged
+  prompts/binary and other controls. Rupi-first screening and paired
   evidence/delivery checks remain pending. Broader project gates remain active.
   Preserve stable public delivery keys, distinct private fencing, lost-ack retry and
   accepted receipt persistence. No acceptance fixtures or manually generated solution

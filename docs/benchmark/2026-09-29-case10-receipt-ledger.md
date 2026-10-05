@@ -398,3 +398,26 @@ listed/main34,627 differs; tests-init0/test_help991 sizes match without proving 
 content. Generated contents unread; file presence is not completeness or passing behavior.
 Cumulative work88,097/authoring3,002,055ms. Final turn6 active, controls frozen, Pi not run.
 Unfinished inference usage unknown; no comparative or full-public-task win claim.
+Retry04 Rupi turn6 exits0/budget_exhausted at420,666ms, unresolved:24,979 recorded work
+(21,296 input+3,683 output), eleven starts/twelve completions including an earlier abandoned
+request, eleven usage records. Eleven requested/completed tools (eight reads/three grep),
+zero failed/Unknown. Tests1/oracle1/all four help0, no verification timeouts. All four listed
+generated-file sizes match turn5 without proving unchanged contents; contents unread.
+
+Retry04 terminal failed screen:113,076 recorded work/3,422,721ms authoring/31 completed/
+two failed/zero Unknown tools. Five watchdogs/one budget-exhausted turn, no acceptance or
+project-test pass. Help passes from turn2. Exec7815 exits0; runner23564/wrapper29924 gone.
+All six saved prompt/control/copied SPEC/three acceptance hash audits pass; selected config,
+binary/model/relay unchanged. Pi not run, so Pi metrics unavailable and no paired win.
+README and tests listed but unread; full public task completeness unproven.
+
+### Existing window1 control: next screen
+
+Use existing Recurring/window1 instead of12 with shared monolith/TestCase guidance unchanged,
+source92d2b269/harness86F04AA7...5AD98/debug8159F875...77F24. This selects the more frequent
+existing boundary; no causal benefit is assumed. Same low2048/native replay/cap12/max-output
+16,384/six600s/grace6. All-case selected/capitalized window1 guards and actual fresh config/
+SPEC/three reference hash probes pass; all four model slots idle. Root usage66% five-hour/
+40% weekly below95/99 soft stops; root policy edit preserved. Fresh Rupi screen first, same
+RunId Pi comparison only if Rupi resolves, with frozen source/settings. No Rust changes,
+manual solver or acceptance edits. Paired evidence/final checks/startup/review/CI pending.
