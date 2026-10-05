@@ -849,3 +849,30 @@ contents unread; completion/metadata do not establish correctness or assertion p
 Cumulative work244,323/authoring5,122,297ms/80 completed tools/four failed/zero Unknown.
 Saved prompt/control/SPEC/acceptance hashes and debug/model/relay audits pass.
 Final turn6 active with frozen settings; Pi not run, no acceptance/comparative win.
+
+### Retry09 terminal evidence and next public-guidance slice
+
+Retry09 turn6 exits0/budget_exhausted at1,062,346ms unresolved:68,906 recorded work
+(57,913 input+10,993 output), twenty-three starts/completions/usage records.
+Twenty-four requested/completed tools/zero failed/Unknown; first tool edit.
+Project-test command1/all four help0/oracle1, no verification timeout. Main49,446/
+audit-test8,128/public-test15,428 sizes differ; README8,237/tests-README1,550/sink-support
+5,888 sizes match without proving unchanged content. Generated contents unread.
+
+All six attempts fail acceptance. Total313,229 work/6,184,643ms/104 completed tools/
+four failed/zero Unknown; three watchdogs, two runtime completions, final budget exhaustion.
+Local-test command passes2–3, fails1/4/5/6; all help passes each attempt. Earlier local
+success does not establish full public behavior, assertion preservation or causal benefit.
+All six prompt/control/SPEC/three acceptance hashes and debug7C18C860/model27356/relay33028
+audits pass. Exec63276 exits0; all model slots idle. Pi not run; no comparative win.
+
+Next bounded slice clarifies the public SPEC hash-separator bytes in shared user guidance
+for both agents, derived only from the published expression and owned ast.literal_eval probe
+(codepoints92,110/two bytes). No oracle/solution contents inspected or altered. Cause remains
+unproven. CLI source2c8ee6b/debug7C18C860 and existing inference controls stay fixed.
+Dry-run/reference/prompt-isolation guards precede a fresh same-profile Rupi screen; Pi
+conditional on acceptance. Existing Rust/startup checks cover unchanged runtime source.
+
+Fetch/prune again confirms main plus active Case10 local/remote branches; root unrelated
+policy SHA3CEE11E5...B496 preserved. Parent usage6%five-hour/48%weekly below soft stops.
+Cases01–09 skipped, Case10 and broad project gates remain active.
