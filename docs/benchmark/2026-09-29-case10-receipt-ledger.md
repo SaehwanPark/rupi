@@ -1031,3 +1031,14 @@ does not prove coverage or assertion preservation. Cumulative work177,066/author
 3,779,731ms/53 completed tools/two failed/zero Unknown; unfinished inference unknown.
 Saved prompt/control/SPEC/acceptance hashes and debug/model4096-relay audits pass.
 Turn5 active with frozen settings; Pi not run, no acceptance/comparative win.
+
+Retry11 Rupi turn5 reaches watchdog1,200,248ms unresolved:66,353 recorded work
+(54,674 input+11,679 output), nineteen starts/completions/eighteen usage records.
+Twenty-three tool requests/twenty-two completed/one failed/zero Unknown; first tool grep.
+Project-test command5/all four help0/oracle1, no verification timeout. Public-test8,329
+differs; main35,184/note2,403/tests-init54 sizes match without proving unchanged content.
+README absent in filtered metadata. Generated contents unread; size reduction does not
+prove removed assertions or a particular defect. Cumulative work243,419/authoring
+4,979,979ms/75 completed tools/three failed/zero Unknown; unrecorded inference unknown.
+Saved prompt/control/SPEC/acceptance hashes and debug/model4096-relay audits pass.
+Final turn6 active with frozen settings; Pi not run, no acceptance/comparative win.
