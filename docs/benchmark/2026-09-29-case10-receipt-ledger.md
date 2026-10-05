@@ -515,3 +515,12 @@ all four help0, no verification timeouts. Package init272 newly listed/main44,36
 without proving unchanged contents; tests/README absent, generated contents unread. Prompt
 presence does not prove adherence to missing-public-TestCase guidance. Cumulative work79,452/
 authoring1,380,764ms. Turn3 active with frozen controls; Pi not run, no win claimed.
+
+Retry06 Rupi turn3 exits0/runtime completed at593,833ms unresolved:25,924 recorded work
+(16,652 input+9,272 output), eleven starts/completions/usage records. Eleven requested tools/
+ten completed/one failed/zero Unknown (two writes, three reads, four grep, two edits).
+Tests1/oracle1/all four help0, no verification timeouts. Tests-init0/test_receiptledger19,836
+newly listed; main44,366/package-init272 sizes match without proving unchanged content.
+README absent, generated contents unread; file presence does not prove discovered/passing
+tests or preserved assertions. Cumulative work105,376/authoring1,974,597ms. Runtime completion
+is not acceptance; turn4 active with frozen controls, Pi not run and no win claimed.
