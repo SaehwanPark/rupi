@@ -1020,3 +1020,14 @@ prove behavior, coverage, exact edits or assertion preservation. Cumulative work
 authoring2,579,563ms/32 completed tools/two failed/zero Unknown; unrecorded inference unknown.
 All saved prompt/control/SPEC/acceptance hashes and debug/model4096-relay audits pass.
 Turn4 active with frozen settings; Pi not run, no acceptance/comparative win.
+
+Retry11 Rupi turn4 reaches watchdog1,200,168ms unresolved:75,643 recorded work
+(60,472 input+15,171 output), twenty-one starts/twenty completions/usage records.
+Twenty-one requested/completed tools/zero failed/Unknown; first tool grep.
+Project-test command1/all four help0/oracle1, no verification timeout. Public-test10,024
+newly listed/main35,184 differs; note2,403/tests-init54 sizes match without proving unchanged
+content. README absent in filtered metadata. Generated contents unread; a test filename
+does not prove coverage or assertion preservation. Cumulative work177,066/authoring
+3,779,731ms/53 completed tools/two failed/zero Unknown; unfinished inference unknown.
+Saved prompt/control/SPEC/acceptance hashes and debug/model4096-relay audits pass.
+Turn5 active with frozen settings; Pi not run, no acceptance/comparative win.
