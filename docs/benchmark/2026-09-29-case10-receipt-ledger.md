@@ -1299,3 +1299,15 @@ Neither tool completion nor file metadata establishes correctness or assertion p
 Cumulative125,919 recorded work/2,858,038ms/37 completed/one failed/zero Unknown.
 All saved full-SPEC/prompt/control/reference/binary/model/relay/deadline audits pass.
 Attempt4 continues; no Rupi acceptance resolution and no Pi half.
+
+### Retry13 attempt4 checkpoint
+
+Outer watchdog fired after1,200,226ms. Recorded work69,672 (input52,810/output16,862),
+22 model starts/completions but21 usage records; unrecorded inference unknown.
+21 requested tools/20 completed/one failed/zero recorded Unknown; first tool write.
+Metadata: main35,419bytes, tests/__init__.py75bytes, public test24,548bytes.
+Same file size does not prove unchanged content; generated contents remain unread.
+Project tests/acceptance fail (exit1), all four help paths pass, no verification timeout.
+Cumulative195,591 recorded work/4,058,264ms/57 completed/two failed/zero Unknown.
+All full-SPEC/prompt/native-control/reference/binary/model/relay/deadline audits pass.
+Attempt5 continues; neither acceptance resolution nor a paired result exists.
