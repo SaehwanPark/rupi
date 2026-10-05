@@ -14,6 +14,11 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   narrow the next request to configured mutating tools after repeated inspection-only
   tool requests while preserving normal tool lifecycle and `Unknown` semantics.
 
+### Fixed
+
+- Resume sessions after an output-limit response containing partial text and unexecuted
+  tool calls, preserving canonical evidence without projecting or replaying the failed response.
+
 ---
 
 ## [0.2.2] - 2026-09-20

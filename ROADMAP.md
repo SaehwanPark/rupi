@@ -1593,6 +1593,11 @@ TUI rendering passed all budgets (3.31–3.90 µs/unit); checkpointed restore me
   starts or usage; cause remains unproven. Next bounded work investigates durable
   resume after incomplete tool responses using owned synthetic fixtures, preserving
   no dispatch/replay of incomplete mutations and strict canonical/projection integrity.
+  An owned fixture reproduces a durable-resume bug: output-limit text has no projection,
+  but alignment validation incorrectly demands one. The minimal store fix now passes
+  close/reopen/resume for length/max_tokens with small/large unexecuted mutations;
+  normal completed responses still reject missing projections. Full Rust/startup checks
+  and a fresh same-profile screen against the rebuilt binary remain pending.
   Rupi-first screening and paired
   evidence/delivery checks remain pending. Broader project gates remain active.
   Preserve stable public delivery keys, distinct private fencing, lost-ack retry and

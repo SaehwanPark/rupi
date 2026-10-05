@@ -3193,7 +3193,10 @@ fn validate_projection_alignment(
       }
       AgentEvent::ModelRequestCompleted(completed)
         if completed.finish_reason.is_some()
-          && completed.finish_reason.as_deref() != Some("abandoned") =>
+          && !matches!(
+            completed.finish_reason.as_deref(),
+            Some("abandoned" | "length" | "max_tokens")
+          ) =>
       {
         let completion_seq = entry.envelope.meta.seq;
         let request_start = entries
@@ -7528,6 +7531,60 @@ mod tests {
     let restored = opened.restore(&session_id).unwrap();
     assert_eq!(restored.messages.len(), 1);
     assert_eq!(restored.messages[0].message.text(), "summary");
+  }
+
+  #[test]
+  fn completed_responses_still_require_their_semantic_projection() {
+    for finish_reason in ["stop", "tool_calls"] {
+      let tmp = TempDir::new("store-completed-projection-required");
+      let opened = store(&tmp);
+      let session_id = SessionId::new();
+      let turn_id = TurnId::new();
+      let mut session = opened.begin(header(&session_id)).unwrap();
+      for event in [
+        AgentEvent::ModelRequestStarted(ModelRequestStarted {
+          epoch: 0,
+          model: ModelRef::new("local", "qwen"),
+          message_count: 1,
+          context_tokens_est: 1,
+          tools_exposed: 0,
+        }),
+        AgentEvent::AssistantDelta(rupi_core::AssistantDelta {
+          text: "complete answer".into(),
+          chunk_index: 0,
+        }),
+        AgentEvent::ModelRequestCompleted(ModelRequestCompleted {
+          epoch: 0,
+          model: ModelRef::new("local", "qwen"),
+          finish_reason: Some(finish_reason.into()),
+          input_tokens: None,
+          uncached_input_tokens: None,
+          logical_prompt_tokens: None,
+          cache_read_tokens: None,
+          cache_write_tokens: None,
+          output_tokens: Some(4),
+          provider_total_tokens: None,
+          duration_ms: 1,
+          tool_calls: 0,
+          reasoning_provenance: None,
+          first_delta_ms: Some(1),
+        }),
+      ] {
+        session
+          .emit(&mut EventEnvelope::new(meta(&session_id, &turn_id), event))
+          .unwrap();
+      }
+      session.finish().unwrap();
+      assert!(
+        matches!(
+          opened.restore(&session_id),
+          Err(StoreError::Invalid(message))
+            if message.contains("canonical model_request_completed") &&
+              message.contains("no semantic projection")
+        ),
+        "a completed response must not silently lose its model-visible history"
+      );
+    }
   }
 
   #[test]

@@ -13805,6 +13805,144 @@ mod tests {
   }
 
   #[test]
+  fn full_ceiling_mutating_response_can_resume_without_replaying_its_call() {
+    for (finish_reason, argument_bytes) in [
+      ("length", 16),
+      ("length", 200_000),
+      ("max_tokens", 16),
+      ("max_tokens", 200_000),
+    ] {
+      let temp = rupi_store::TempDir::new("runtime-full-ceiling-mutation-resume");
+      let store = rupi_store::Store::open(temp.path(), rupi_store::WritePolicy::default())
+        .expect("store opens");
+      let session_id = SessionId::new();
+      let events = tool_call(
+        "write_probe",
+        json!({"content": "x".repeat(argument_bytes)}),
+      )
+      .into_iter()
+      .chain(text("part"))
+      .collect();
+      let provider = Scripted::new("full-ceiling-resume", vec![events])
+        .with_output_limit(4)
+        .finishes_with(finish_reason);
+      let seen = Arc::new(Mutex::new(Vec::new()));
+      let tools = registry_with(vec![Box::new(MutatingSpy {
+        seen: Arc::clone(&seen),
+        outcome: ToolOutcome::succeeded("mutation executed"),
+      })]);
+      let policy = rupi_core::ProfilePolicy::new(
+        rupi_core::ContextProfile::Balanced,
+        provider.capabilities().context_window,
+      );
+      let session = store
+        .begin(SessionHeader {
+          session_id: session_id.clone(),
+          version: rupi_core::session::SESSION_SCHEMA_VERSION,
+          started_at_ms: 1,
+          working_dir: "/workspace".into(),
+          model: provider.model().clone(),
+          parent_session: None,
+          branched_from_event: None,
+          imported_from: None,
+        })
+        .expect("session begins");
+      let mut trace = StoreTrace::new(session);
+      let error = TurnLoop::new(
+        &provider,
+        &tools,
+        &policy,
+        &mut trace,
+        session_id.clone(),
+        TraceId::new(),
+      )
+      .run_turn(
+        "perform the bounded task",
+        &CancelToken::new(),
+        &mut SilentProgress,
+      )
+      .expect_err("full-ceiling response remains incomplete");
+      assert_eq!(error.kind(), Some(ModelFailureKind::Semantic));
+      assert_eq!(provider.requests().len(), 1);
+      assert!(seen.lock().unwrap().is_empty());
+      trace
+        .into_session()
+        .finish()
+        .expect("finish failed session");
+      drop(store);
+
+      let reopened = rupi_store::Store::open(temp.path(), rupi_store::WritePolicy::default())
+        .expect("store reopens");
+      let resumed_session = reopened
+        .resume(&session_id)
+        .expect("session reopens safely");
+      let restored = reopened
+        .restore(&session_id)
+        .expect("durable state restores");
+      assert!(restored.interrupted_tools.is_empty());
+      assert!(restored.unresolved_side_effects.is_empty());
+      assert!(restored.messages.iter().all(|message| {
+        message.message.role != Role::Tool && message.message.role != Role::Assistant
+      }));
+      let next_provider = Scripted::new("full-ceiling-resume", vec![text("next answer")]);
+      let state = ResumeState {
+        messages: restored
+          .messages
+          .iter()
+          .map(|message| message.message.clone())
+          .collect(),
+        message_seqs: restored
+          .messages
+          .iter()
+          .map(|message| message.seq)
+          .collect(),
+        epochs: restored
+          .epochs
+          .iter()
+          .map(|epoch| ModelEpoch {
+            index: epoch.epoch,
+            model: epoch.model.clone(),
+            capabilities: next_provider.capabilities(),
+            reason: epoch.reason.clone(),
+            started_by_event: None,
+          })
+          .collect(),
+        context_epoch: restored.context_epoch,
+        checkpoint_floor: usize::from(restored.checkpoint.is_some()),
+        cited_history: restored.last_seq.map(|last| (EventSeq(1), last)),
+        interrupted_tools: restored.interrupted_tools,
+        unresolved_side_effects: restored.unresolved_side_effects,
+      };
+      let mut resumed_trace = StoreTrace::new(resumed_session);
+      let report = TurnLoop::new(
+        &next_provider,
+        &tools,
+        &policy,
+        &mut resumed_trace,
+        session_id.clone(),
+        TraceId::new(),
+      )
+      .with_resume_state(state)
+      .expect("resume state validates")
+      .run_turn("continue safely", &CancelToken::new(), &mut SilentProgress)
+      .expect("a new request can complete");
+      assert_eq!(report.text, "next answer");
+      assert_eq!(next_provider.requests().len(), 1);
+      assert!(
+        seen.lock().unwrap().is_empty(),
+        "incomplete mutation must never replay"
+      );
+      resumed_trace
+        .into_session()
+        .finish()
+        .expect("finish resumed session");
+      reopened
+        .restore(&session_id)
+        .expect("resumed state stays valid");
+    }
+  }
+
+  #[test]
   fn output_truncation_at_the_requested_ceiling_is_not_retried() {
     let provider = Scripted::new("full-limit", vec![text("partial")])
       .with_output_limit(4)

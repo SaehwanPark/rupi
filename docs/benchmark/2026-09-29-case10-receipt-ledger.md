@@ -1501,3 +1501,32 @@ Preserve canonical trace vs model context separation, no dispatch of incomplete 
 explicit Unknown state, no blind replay, native reasoning provenance and single-model execution.
 A synthetic reproduction must establish any actual runtime bug before implementation;
 otherwise no speculative core change. Broader and Case10 gates remain active.
+
+### Owned synthetic durable-resume bug reproduced and fixed
+
+Source investigation uses no model-generated files/traces or oracle diagnostics.
+A synthetic full-ceiling response contains partial text plus a decoded mutating call,
+then finishes length. Closing/reopening fails with:
+canonical model_request_completed event has no semantic projection; resume requires recovery.
+This reproduces for a small16-byte call as well as testing a large200,000-byte argument.
+The failure is owned fixture evidence; causality for actual retry15 remains unproven.
+
+Recovery already intentionally excludes length/max_tokens output from model projection,
+but validate_projection_alignment demanded it whenever the response had assistant deltas.
+The minimal store guard now treats these completions like other trace-only failures.
+Canonical lifecycle/payload/sequence checks, completed-response projection joins, Unknown
+reconciliation, no mutation dispatch/replay, failover and model activation remain unchanged.
+
+Runtime fixture verifies both length/max_tokens and small/large argument sizes:
+semantic failure retained, one request only, no mutation dispatch, close/reopen/restore
+succeeds, no interrupted/uncertain tools, no partial assistant/tool history, fresh resumed
+request completes, and mutation is never replayed. Negative store fixture checks stop and
+tool_calls completions still fail closed when semantic projection is missing.
+Both targeted native tests pass; the runtime fixture failed before the store fix.
+ARCHITECTURE/CHANGELOG/ROADMAP now reflect verified behavior. Parent invariant review
+has no blocking finding; broad required Rust/startup/performance checks remain pending.
+
+Next fresh retry16 retains retry15 native-off/direct8000/output32768/outer1800/provider1794/
+grace6/window3/cap24/six attempts/prompt/model, with rebuilt binary containing this fix.
+Its acceptance benefit is unproven; a synthetic runtime improvement is not a Case10 win.
+Pi0.86.1 conditional on Rupi acceptance. All broader gates remain active.

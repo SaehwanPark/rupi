@@ -288,6 +288,10 @@ Durable layout (the session files are kept flat so listing only reads headers):
 
 Exact paths remain configurable. A committed WAL is compacted; an incomplete
 intent blocks read-only continuation until resume repairs it or fails closed.
+Output-limited responses (`length` or `max_tokens`) keep their deltas and unexecuted calls
+in the canonical trace, without requiring an assistant projection on close/reopen/resume.
+Completed responses still require their semantic projection; incomplete calls never dispatch
+or replay when a session continues.
 Message-bearing runtime events use one WAL transaction with an exact redacted
 message payload: small messages stay inline, while larger messages keep a verified
 session-blob reference. `begin` and `resume` hold the per-session lease for the
