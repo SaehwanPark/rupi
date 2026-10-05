@@ -450,3 +450,10 @@ requested/completed/failed/Unknown. Tests1/all four help1/oracle1, no verificati
 Filtered application/test/README metadata empty, contents unread. Cumulative recorded
 work6,104/authoring1,789,871ms. Turn4 active with unchanged controls; Pi not run. Repeated
 provider timeout is recorded separately from harness watchdog and acceptance failure.
+
+Retry05 Rupi turn4 reaches watchdog600,287ms unresolved:6,939 recorded work (5,645
+input+1,294 output), two starts/one completion/one usage record. One requested/completed read,
+zero failed/Unknown, no mutating request. Tests1/all four help1/oracle1, no verification
+timeouts. Filtered application/test/README entries empty, generated contents unread.
+Cumulative recorded work13,043/authoring2,390,158ms; unfinished inference unknown. Turn5
+active with frozen controls; Pi not run, no comparative win.
