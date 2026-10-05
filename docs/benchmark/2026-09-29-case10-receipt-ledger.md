@@ -605,3 +605,13 @@ without proving unchanged content. Public test module/package init absent from f
 snapshot; generated contents unread. Helper/documentation presence does not prove real
 public TestCases or preserved assertions. Cumulative work228,213/authoring3,409,827ms.
 Turn4 active with frozen controls; unrecorded unfinished inference unknown, Pi not run.
+
+Retry07 Rupi turn4 exits0/budget_exhausted at1,169,915ms unresolved:107,979 recorded work
+(95,442 input+12,537 output), twenty-four starts/twenty-five completions including an earlier
+abandoned request, twenty-four usage records. Twenty-nine tool requests/twenty-eight completed/
+one failed/zero Unknown (seventeen reads, nine grep, two edits, one write). Tests1/oracle1/
+all four help0, no verification timeouts. Public test_http_admission10,173 newly listed/
+support13,272 differs; other four filtered sizes match without proving unchanged contents.
+Generated contents unread; module presence does not prove passing or preserved assertions.
+Cumulative work336,192/authoring4,579,742ms. Turn5 active with frozen controls; Pi not run,
+no acceptance/comparative/full-public-task completion claimed.
