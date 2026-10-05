@@ -586,3 +586,12 @@ one write, two edits). Tests1/oracle1/all four help0, no verification timeouts. 
 listed, tests/README absent, generated contents unread. First tool grep despite first-write
 guidance; no compliance or causal cap benefit claimed. Unfinished inference unknown.
 Turn2 active with frozen recurring/window12/cap24/1200 controls; Pi not run, no paired win.
+
+Retry07 Rupi turn2 exits0/budget_exhausted at1,009,003ms unresolved:91,635 recorded work
+(81,787 input+9,848 output), twenty-four starts/twenty-five completions including an earlier
+abandoned request, twenty-four usage records. Twenty-five tool requests/twenty-one completed/
+four failed/zero Unknown (seven grep, sixteen reads, two writes). Tests5/oracle1/all four
+help0, no verification timeouts. README10,182/tests-init37 newly listed/main44,778 size
+matches without proving unchanged contents. Public test module/package init absent from
+snapshot; contents unread. Cumulative work158,974/authoring2,209,319ms. Turn3 active with
+frozen controls, Pi not run; prompt presence does not prove missing-test guidance compliance.
