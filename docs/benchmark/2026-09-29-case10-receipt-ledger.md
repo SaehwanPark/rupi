@@ -1009,3 +1009,14 @@ Cumulative recorded work46,709/authoring1,852,469ms/20 completed tools/one faile
 first-turn and other unfinished inference unknown. All saved prompt/control/SPEC/acceptance
 hashes and debug/model4096-relay audits pass. Turn3 active with frozen settings;
 Pi not run, no acceptance/comparative win.
+
+Retry11 Rupi turn3 exits0/runtime completed at727,094ms unresolved:54,714 recorded
+work (46,469 input+8,245 output), eleven starts/twelve completions including an earlier
+abandoned request/eleven usage records. Thirteen tool requests/twelve completed/one failed/
+zero Unknown; first tool grep. Project-test command5/all four help0/oracle1, no verification
+timeout. Main34,588/notes_sink_audit.md2,403 differ; tests-init54 newly listed; public-test/
+README absent in filtered metadata. Generated contents unread; these names/sizes do not
+prove behavior, coverage, exact edits or assertion preservation. Cumulative work101,423/
+authoring2,579,563ms/32 completed tools/two failed/zero Unknown; unrecorded inference unknown.
+All saved prompt/control/SPEC/acceptance hashes and debug/model4096-relay audits pass.
+Turn4 active with frozen settings; Pi not run, no acceptance/comparative win.
