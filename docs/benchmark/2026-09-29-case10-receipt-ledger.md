@@ -443,3 +443,10 @@ include an earlier abandoned request. Zero tools requested/completed/failed/Unkn
 all four help1/oracle1; no verification timeouts (provider timeout is separate). Filtered
 application/tests/README entries empty, generated contents unread. Cumulative recorded
 work6,104/authoring1,195,148ms; unrecorded inference unknown. Turn3 active; Pi not run.
+
+Retry05 Rupi turn3 exits0/runtime failed(timeout) at594,723ms, unresolved. Recorded work0/
+no usage records, actual unfinished inference unknown. One start/one completion, zero tools
+requested/completed/failed/Unknown. Tests1/all four help1/oracle1, no verification timeouts.
+Filtered application/test/README metadata empty, contents unread. Cumulative recorded
+work6,104/authoring1,789,871ms. Turn4 active with unchanged controls; Pi not run. Repeated
+provider timeout is recorded separately from harness watchdog and acceptance failure.
