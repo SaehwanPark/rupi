@@ -668,3 +668,12 @@ Tests1/oracle1/all four help1, no verification timeouts. Filtered application/te
 metadata empty, generated contents unread; unfinished inference work unknown. Transport
 failure does not establish its particular cause or a progress-window benefit. Turn2 active
 with frozen recurring/window3/cap24/1200 controls; Pi not run, no comparative win.
+
+Retry08 Rupi turn2 reaches watchdog1,200,281ms unresolved:74,267 recorded work (62,516
+input+11,751 output), twenty-one starts/twenty completions/usage records. Twenty-three tool
+requests/twenty-two completed/one failed/zero Unknown (write, twelve reads, nine edits, grep).
+Tests1/oracle1/all four help0, no verification timeouts. Main25,480 listed, tests/README
+absent, generated contents unread. First tool is write on this repair; this does not prove
+complete behavior, edit bounds, assertion preservation or causal window benefit. Unfinished
+inference unknown. Cumulative work91,586/authoring2,029,513ms. Turn3 active with frozen
+controls; Pi not run, no paired win.
