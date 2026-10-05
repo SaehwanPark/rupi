@@ -1185,3 +1185,29 @@ content. Generated contents unread; successful edit/completion does not prove co
 Cumulative work231,872/authoring4,251,019ms/55 completed tools/twelve failed/zero Unknown.
 Saved prompt/control/SPEC/acceptance hashes, requested/health1194s and debug/model/relay
 audits pass. Final turn6 active with frozen settings; Pi not run, no win or causal claim.
+
+### Retry12 terminal evidence and bounded file-tool guidance slice
+
+Retry12 turn6 exits0/runtime completed at376,206ms unresolved:23,521 recorded work
+(19,227 input+4,294 output), five starts/completions/usage records.
+Four requested/completed tools/zero failed/Unknown (grep, read, grep, edit).
+Project-test command1/all four help0/oracle1, no verification timeout. Main56,422 differs;
+README6,279/app-init108/tests-init60/public-test17,923 sizes match without proving unchanged
+content. Generated contents unread.
+
+All six attempts fail project tests/acceptance; all help passes. Total255,393 recorded
+work/4,627,225ms/59 completed tools/twelve failed/zero Unknown. One watchdog, four runtime
+completions, one request-budget exhaustion. Unrecorded unfinished inference unknown.
+Exec49566 exits0; slots idle. All six saved prompts/controls/SPEC/three acceptance hashes,
+requested/health1194s and debug7C18C860/model27356/relay23732 audits pass.
+Pi not run, no configured/comparative/causal/full-public-task win.
+
+Next bounded candidate: shared static file-tool reconciliation guidance in Get-Case10Prompt,
+following already-established Case07 instructions. Require actual diagnostics, observed
+current text/native schema, unique anchors without line/truncation markers, preservation
+of already-applied changes and inspection/deferment for Unknown mutations. Failed-tool
+counts identify no specific cause. No parent inspection of generated source/diagnostics/
+traces, new tools, acceptance edits or core workflow policy. Preserve all other prompts,
+current CLI/helper binary/source and existing4096/window3/cap24/relay1194/6x1200s controls.
+Prompt/reference/config/dry-run guards precede fresh retry13 and conditional matched Pi.
+Case10 and broad project gates remain active. Parent usage26%five-hour/53%weekly.
