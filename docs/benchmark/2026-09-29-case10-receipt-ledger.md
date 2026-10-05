@@ -1560,3 +1560,23 @@ Fresh retry16 will keep retry15 prompt230589C5/native-off/direct8000/output32768
 outer1800/provider1794/grace6/window3/cap24/six attempts and same model27356,
 changing only the rebuilt Rupi binary to include the store resume fix.
 Synthetic runtime improvement is verified; actual acceptance benefit remains unproven.
+
+### Retry16 fixed-binary launch audit
+
+Run: `bench-20261005-case10-reconcile-window3-native-off-output32768-retry16-rupi24-screen6-1800s`, runner5164/session59723.
+Same initial shared prompt230589C5F20B5486CD84216CE5B6A0DB9734CE724C2903D891E4D50D9CFB3270
+is byte-identical to retry15. Harness9d0de2a/SHA D4CA3482 and helperA0BCAE68 unchanged.
+New runtime production source6a2e531/debugSHA
+B60ABB5899EE1D3CBC7FBA4F4822DB8599529AA2FA9CAABCCCC3B0A7EEB54B08
+contains the reproduced trace-only output-limit resume fix; CLI system copy2c8ee6b unchanged.
+Native config verifies off/direct8000/output32768/provider1794000ms/window3/cap24;
+six attempts/outer1800s/grace6. No configured relay budget/deadline; unavailable/null.
+Model27356/aliasQwen3.8 unchanged, all slots idle before launch. Prior relays retained.
+All required Rust/debug/startup/session-log restore checks completed before inference.
+No builds during this screen or a paired half.
+
+Fetch/prune confirms only main plus activeCase10 local/remote actual heads.
+Root unrelated policy SHA3CEE11E5 preserved. Parent usage22% five-hour/58% weekly,
+below root95%/99%; resets18:44ET/Oct11 05:45ET.
+Actual retry15 cause and retry16 acceptance benefit remain unproven; synthetic fix is verified.
+Fresh same-profile Pi0.86.1 remains conditional on Rupi acceptance; cap/progress unavailable.
