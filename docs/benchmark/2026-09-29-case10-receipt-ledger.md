@@ -660,3 +660,11 @@ byte-identical to retry07. Slots idle before launch; no builds or parallel infer
 Fresh Pi conditional on Rupi acceptance with frozen source/guidance/shared time controls;
 Pi native cap remains unavailable. Branch inventory after fetch/prune remains main plus
 active Case10 locally/remotely; historical worktree artifacts retained. Outcome pending.
+
+Retry08 Rupi turn1 exits0/runtime failed(transport) at829,232ms unresolved:17,319 recorded
+work (14,917 input+2,402 output), three starts/completions/two usage records. Four tool
+requests/two completed/two failed/zero Unknown (read, three grep), no mutating request.
+Tests1/oracle1/all four help1, no verification timeouts. Filtered application/test/README
+metadata empty, generated contents unread; unfinished inference work unknown. Transport
+failure does not establish its particular cause or a progress-window benefit. Turn2 active
+with frozen recurring/window3/cap24/1200 controls; Pi not run, no comparative win.
