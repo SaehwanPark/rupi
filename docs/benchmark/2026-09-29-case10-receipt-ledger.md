@@ -1133,3 +1133,12 @@ and health1194 explicitly match. Debug7C18C860/model27356/relay23732 unchanged.
 No causal improvement inferred from first-turn recorded usage vs retry11's unrecorded
 transport failure. Turn2 active with frozen4096/window3/cap24/1194s relay profile;
 Pi not run, no acceptance/comparative win.
+
+Source-only follow-up lead during frozen retry12: Get-RecoveryPrompt's Case07 branch
+(bench/compare-pi-rupi.ps1 around1800) supplies explicit known-edit-failure reconciliation:
+observed file text/native schema, unique anchors without line/truncation markers, preserve
+already-applied changes, and inspect/defer Unknown mutations. Case10's early-return prompt
+does not include these explicit instructions. Retry12 first-turn failed-tool count7 does
+not establish which failures occurred or their cause. Consider shared static reconciliation
+guidance for both agents after terminal results if unresolved, without reading/generated
+diagnostics, altering tools or adding core workflow policy. No live-source/guidance change.
