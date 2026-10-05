@@ -457,3 +457,10 @@ zero failed/Unknown, no mutating request. Tests1/all four help1/oracle1, no veri
 timeouts. Filtered application/test/README entries empty, generated contents unread.
 Cumulative recorded work13,043/authoring2,390,158ms; unfinished inference unknown. Turn5
 active with frozen controls; Pi not run, no comparative win.
+
+Retry05 Rupi turn5 exits0/runtime failed(timeout) at595,571ms, unresolved. Recorded work0/
+no usage records; actual unfinished inference unknown. One model start/two completions include
+an earlier abandoned request. Zero tools requested/completed/failed/Unknown. Tests1/all four
+help1/oracle1, no verification timeouts. Filtered application/test/README entries empty,
+contents unread. Cumulative recorded work13,043/authoring2,985,729ms. Final turn6 active with
+unchanged controls; Pi not run and no win claim.
