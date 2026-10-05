@@ -1258,3 +1258,19 @@ Historical artifact worktrees stay detached; active PR145 is retained.
 Unrelated root usage-policy edit SHA2563CEE11E5 remains preserved.
 Latest parent quota check29% five-hour/54% weekly, below root95%/99% thresholds.
 No acceptance or token-efficiency improvement is claimed before terminal evidence.
+
+### Retry13 attempt1 checkpoint
+
+Attempt1 runtime reports failed timeout after943,755ms; outer watchdog did not fire.
+Recorded work8,882 (input7,105/output1,777), four model starts/completions but
+three usage records; unfinished/unrecorded inference is unknown.
+Four completed file tools were grep, grep, read, grep; no recorded failed/Unknown tools.
+This does not prove compliance with the first-write instruction.
+Project tests, all four help checks and acceptance fail (exit1); no verification timeout.
+Filtered application/test/README file metadata is empty; this alone does not establish
+a whole-workspace-empty claim. Generated contents and diagnostics remain unread.
+
+Saved prompt/full-SPEC/control/reference audits pass; binary7C18C860, model27356,
+relay23732/8003/configured4096/deadline1194s remain unchanged.
+Runtime completion and prompt presence are not acceptance or model compliance.
+Screen continues to attempt2; Pi is not run before Rupi acceptance.
