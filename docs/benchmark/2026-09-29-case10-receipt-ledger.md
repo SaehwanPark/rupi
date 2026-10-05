@@ -1164,3 +1164,14 @@ content. Generated contents unread; growth does not prove coverage or assertion 
 Cumulative work160,844/authoring3,121,071ms/43 completed tools/twelve failed/zero Unknown.
 Saved prompt/control/SPEC/acceptance hashes, requested/health deadline1194 and debug/model/
 relay audits pass. Turn4 active with frozen settings; Pi not run, no win or causal claim.
+
+Retry12 Rupi turn4 exits0/runtime completed at842,141ms unresolved:43,377 recorded
+work (33,545 input+9,832 output), nine starts/completions/usage records.
+Eight requested/completed tools/zero failed/Unknown; first tool grep.
+Project-test command1/all four help0/oracle1, no verification timeout. Public-test17,923
+differs; main55,854/README6,279/app-init108/tests-init60 sizes match without proving unchanged
+content. Generated contents unread; file size and completed edits do not prove assertion
+preservation or public completeness. Cumulative work204,221/authoring3,963,212ms/51 completed
+tools/twelve failed/zero Unknown. All prompt/control/SPEC/acceptance hashes, requested/
+health1194s and debug/model/relay audits pass. Turn5 active with frozen settings;
+Pi not run, no acceptance/comparative win or causal claim.
