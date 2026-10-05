@@ -1286,3 +1286,16 @@ Tool completion and file size do not establish implementation or assertion corre
 Cumulative42,093 recorded work/1,657,765ms/13 completed tools, no acceptance resolution.
 Prompt/full-SPEC/native-control/reference/binary/model/relay/deadline audits pass.
 Attempt3 continues; Pi remains conditional on Rupi acceptance. Generated contents unread.
+
+### Retry13 attempt3 checkpoint
+
+Outer watchdog fired after1,200,273ms. Recorded work83,826 (input70,301/output13,525),
+23 model starts/22 completions/22 usage records; unfinished inference unknown.
+25 tool requests/24 completed/one failed/zero recorded Unknown; first tool grep.
+Generated metadata shows main35,419bytes, tests/__init__.py75bytes and
+tests/test_receiptledger.py11,692bytes; application/test contents remain unread.
+Project tests and acceptance fail (exit1), all four help paths pass, no verification timeout.
+Neither tool completion nor file metadata establishes correctness or assertion preservation.
+Cumulative125,919 recorded work/2,858,038ms/37 completed/one failed/zero Unknown.
+All saved full-SPEC/prompt/control/reference/binary/model/relay/deadline audits pass.
+Attempt4 continues; no Rupi acceptance resolution and no Pi half.
