@@ -1311,3 +1311,15 @@ Project tests/acceptance fail (exit1), all four help paths pass, no verification
 Cumulative195,591 recorded work/4,058,264ms/57 completed/two failed/zero Unknown.
 All full-SPEC/prompt/native-control/reference/binary/model/relay/deadline audits pass.
 Attempt5 continues; neither acceptance resolution nor a paired result exists.
+
+### Retry13 attempt5 checkpoint
+
+Outer watchdog fired after1,200,246ms. Recorded work50,662 (input38,566/output12,096),
+16 model starts/completions but15 usage records; unrecorded inference unknown.
+17 requested/completed file tools, zero failed/recorded Unknown; first tool read.
+Generated metadata: main36,419bytes, tests/__init__.py75bytes, public test25,135bytes.
+Project tests/acceptance fail (exit1), all four help paths pass, no verification timeout.
+Contents unread; no assertion/correctness claims follow from successful tools/file metadata.
+Cumulative246,253 recorded work/5,258,510ms/74 completed/two failed/zero Unknown.
+Full-SPEC/prompt/control/reference/binary/model/relay/deadline audits all pass.
+Attempt6 is the final screen attempt; no acceptance resolution or Pi half exists.
