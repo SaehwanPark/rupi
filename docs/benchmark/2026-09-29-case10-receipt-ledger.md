@@ -1211,3 +1211,30 @@ traces, new tools, acceptance edits or core workflow policy. Preserve all other 
 current CLI/helper binary/source and existing4096/window3/cap24/relay1194/6x1200s controls.
 Prompt/reference/config/dry-run guards precede fresh retry13 and conditional matched Pi.
 Case10 and broad project gates remain active. Parent usage26%five-hour/53%weekly.
+
+### Retry13 bounded static file-tool reconciliation guidance
+
+Retry12 is a terminal Rupi-only failed screen: all six acceptance and project-test
+attempts fail, all four help paths pass, with 255,393 recorded work tokens,
+59 completed tools, 12 failed tools and zero recorded Unknown outcomes.
+Failed-tool types and causes are unproven; model traces and generated contents remain unread.
+
+The existing Case07 static reconciliation guidance is now supplied in every Case10
+initial/recovery variant for both agents. Attempted edits are not completed changes;
+explicit no-change failures use bounded current-file reads and observed unique anchors,
+already-applied changes are preserved, and Unknown mutations require state reconciliation
+before retry. Public-contract repairs continue within remaining requests.
+No diagnostic parser, tool/controller, first-write enforcement or core semantics change.
+
+Selected/all-case/capitalized-mode dry-run checks pass, including all five Case10 variants.
+Native configuration and copied public SPEC/three acceptance file hashes pass.
+All 18 non-Case10 initial/recovery prompt hashes remain unchanged.
+Separate parent invariant review finds no blocking issue: unknown mutation replay remains
+prohibited, provenance and startup boundaries are unchanged, and acceptance stays private.
+Prior Rust/startup and seven relay tests apply to unchanged runtime/helper source.
+
+Fresh retry13 retains low/configured4096, relay23732/8003/deadline1194s,
+provider1194s, outer1200s/grace6, recurring/window3/cap24, maxoutput16384,
+six attempts and the existing Qwen process/CLI binary. New shared static guidance is
+the intended prompt change. Fresh matched Pi0.86.1 is conditional on Rupi acceptance.
+Case10 and broader project gates remain active; failed screens are not wins.

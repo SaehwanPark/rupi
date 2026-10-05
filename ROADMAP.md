@@ -1574,7 +1574,11 @@ TUI rendering passed all budgets (3.31–3.90 µs/unit); checkpointed restore me
   The owned relay's650s response deadline is shorter than provider1194s; its causal
   contribution is unproven. Configurable/health-visible relay deadlines and explicit
   Case10 deadline validation are active; seven transport behavior tests pass.
-  Next screen aligns relay1194s/provider1194s inside outer1200s/grace6 on separate8003.
+  Retry12 aligned relay1194s/provider1194s inside outer1200s/grace6 on separate8003,
+  but fails6 (255,393 recorded work); all local tests fail, help passes, Pi not run.
+  Retry13 applies existing static file-tool reconciliation guidance to both agents'
+  initial and recovery Case10 prompts. Failed-tool causes remain unproven; inspect
+  Unknown state before retry and preserve already-applied changes. Other controls stay fixed.
   Rupi-first screening and paired
   evidence/delivery checks remain pending. Broader project gates remain active.
   Preserve stable public delivery keys, distinct private fencing, lost-ack retry and

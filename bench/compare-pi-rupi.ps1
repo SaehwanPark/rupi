@@ -788,6 +788,17 @@ $feedback
 
 $guidance
 
+Use the actual edit diagnostic; an attempted edit is not a completed change.
+If a failed edit explicitly made no change, read its target file before correcting it.
+Read a small target region with offset/limit; narrow it if the response is truncated.
+Use file text in edit anchors, excluding displayed line numbers and truncation markers.
+Then edit the observed current text with a unique anchor and the native tool schema.
+Do not guess another stale anchor or rewrite the whole application after a failed edit.
+If the diagnostic says already applied, inspect the file and preserve the completed change.
+For an Unknown mutation, inspect current state and defer retry until reconciliation.
+After a known failure is corrected, continue public contract repairs within this attempt.
+Do not end an attempt merely because an edit failed while time and requests remain.
+
 Validate the full graph before atomic insertion; persist original pipeline/job order.
 Resolve only declared input_refs from successful dependencies. For barriers, collect only
 the selected top-level field in depends_on order. Missing selections fail locally without
@@ -3052,6 +3063,16 @@ if ($DryRun) {
           'outcome:unknown'
           'all four help paths'
           'Use unittest.TestCase subclasses with test_ methods'
+          'Use the actual edit diagnostic; an attempted edit is not a completed change.'
+          'If a failed edit explicitly made no change, read its target file before correcting it.'
+          'Read a small target region with offset/limit; narrow it if the response is truncated.'
+          'Use file text in edit anchors, excluding displayed line numbers and truncation markers.'
+          'Then edit the observed current text with a unique anchor and the native tool schema.'
+          'Do not guess another stale anchor or rewrite the whole application after a failed edit.'
+          'If the diagnostic says already applied, inspect the file and preserve the completed change.'
+          'For an Unknown mutation, inspect current state and defer retry until reconciliation.'
+          'After a known failure is corrected, continue public contract repairs within this attempt.'
+          'Do not end an attempt merely because an edit failed while time and requests remain.'
         )
         foreach ($prompt in @($initialPrompt, $dryRunRecovery, $oracleFailurePrompt,
             $repairPrompt, $helpRepairPrompt)) {
