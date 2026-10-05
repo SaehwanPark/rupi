@@ -541,3 +541,30 @@ oracle1/all four help0, no verification timeouts. All five listed generated-file
 match turn4 without proving unchanged content; generated contents unread. Cumulative
 work149,018/authoring2,761,444ms. Final turn6 active with frozen controls; Pi not run.
 Request-budget exhaustion is distinct from watchdog/provider timeout; no win claim.
+
+Retry06 Rupi turn6 exits0/runtime completed at365,217ms unresolved:24,556 recorded work
+(20,201 input+4,355 output), nine starts/completions/usage records. Eight requested/completed
+tools/zero failed/Unknown (six reads, one grep, one write). Tests1/oracle1/all four help0,
+no verification timeouts. Five filtered generated-file sizes match turn5 without proving
+unchanged contents. Full snapshot also lists CHANGELOG1,882; contents unread, no exact-write
+or assertion-preservation claim. Runtime completion is not acceptance.
+
+Retry06 terminal failed screen:173,574 recorded work/3,126,661ms authoring/64 completed/
+six failed/zero Unknown tools. Four request-budget-exhausted/two completed turns, no watchdog
+or provider-timeout result. Every tests/acceptance gate fails; all help passes. README/tests
+listed but unread, full public task completeness unproven. Exec40371 exits0, runner29200/
+wrapper20372 gone. All six saved prompt/control/copied SPEC/three acceptance hash audits pass;
+selected config/binary/model/relay unchanged and slots idle. Pi not run, metrics unavailable.
+No paired win or causal time-limit benefit claimed.
+
+### Existing cap24 with unchanged window12/1200 controls: next screen
+
+Keep shared guidance/source92d2b269/harness86F04AA7...5AD98/debug8159F875...77F24, same model/
+relay/low2048/native replay/max-output16,384/six1,200s/grace6/provider1,194,000ms. Select
+existing Rupi request cap12→24, retaining recurring/window12. Four exhausted turns motivate
+testing additional request headroom; benefit is unproven. All-case selected/capitalized
+window12/1200/cap24 guards and actual fresh config/SPEC/three acceptance hashes pass. Root
+usage8% five-hour/42% weekly below95/99 limits. Fresh Rupi screen first, Pi conditional on
+acceptance with frozen source/guidance/shared time settings; Pi native cap remains unavailable.
+No source/runtime/acceptance changes or manual solver. Final paired evidence/checks/startup/
+review/exact-head CI pending; Cases01–09 skipped and broad project gates remain active.

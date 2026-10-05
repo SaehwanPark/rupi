@@ -1558,8 +1558,9 @@ TUI rendering passed all budgets (3.31–3.90 µs/unit); checkpointed restore me
   Retry02 Rupi also remains unresolved after6; Pi not run. Single-module/discoverable-test
   guidance also fails retry03 after6; Pi not run. Existing window12 retry04 fails6
   (113,076 recorded work); window1 retry05 fails6 (38,465 recorded work), Pi not run.
-  Next screen uses existing window12 and longer matched1,200s attempts with unchanged
-  prompts/binary and other controls. Rupi-first screening and paired
+  Existing window12/1,200s retry06 fails6 (173,574 recorded work), Pi not run. Next
+  screen selects existing cap24 with window12/1,200s and unchanged prompts/binary.
+  Rupi-first screening and paired
   evidence/delivery checks remain pending. Broader project gates remain active.
   Preserve stable public delivery keys, distinct private fencing, lost-ack retry and
   accepted receipt persistence. No acceptance fixtures or manually generated solution
