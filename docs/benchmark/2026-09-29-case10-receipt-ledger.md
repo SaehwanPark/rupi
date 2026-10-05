@@ -624,3 +624,28 @@ sizes match without proving unchanged contents. Generated contents unread; exact
 assertion preservation unproven. Unrecorded unfinished inference unknown, not zero. Cumulative
 work346,456/authoring5,306,895ms. Final turn6 active with frozen controls; Pi not run.
 Runtime timeout does not establish its particular cause or imply an acceptance pass.
+
+Retry07 Rupi turn6 exits0/runtime completed at342,606ms unresolved:12,800 recorded work
+(7,866 input+4,934 output), two starts/completions/usage records. One requested/completed
+edit, zero failed/Unknown. Tests1/oracle1/all four help0, no verification timeouts. Public
+HTTP-test10,377 differs; other five filtered sizes match without proving unchanged contents.
+Generated contents unread; assertion preservation and full public-task completeness unproven.
+
+Retry07 terminal failed screen:359,256 recorded work/5,649,501ms authoring/97 completed/
+nine failed/zero Unknown tools. Two watchdogs/two budget-exhausted/one runtime-timeout failure/
+one completed turn. Every project-test/acceptance gate fails; all help passes. Unrecorded
+unfinished inference remains unknown. Exec57069 exits0, runner23972/wrapper7188 gone. All six
+saved prompt/control/copied SPEC/three acceptance hash audits pass; selected config/binary/
+model/relay unchanged, all slots idle. Pi not run, metrics unavailable; no paired win.
+
+### Existing window3 with unchanged cap24/1200 controls: next screen
+
+Keep current shared guidance/source92d2b269/harness86F04AA7...5AD98/debug8159F875...77F24.
+Select existing recurring/window3 instead of12, preserving cap24/low2048/native replay/
+max-output16,384/six1,200s/grace6/provider1,194,000ms. This tests the more frequent existing
+boundary with additional request headroom; no causal benefit is assumed. All-case selected/
+capitalized window3/1200/cap24 guards and fresh config/SPEC/three acceptance hashes pass.
+Root usage18% five-hour/44% weekly below95/99 limits. Fresh Rupi screen first, same-RunId
+Pi only if Rupi resolves, with frozen source/guidance/shared time settings. Pi cap unavailable.
+No runtime/source/acceptance change or manual solver. Paired evidence/final checks/startup/
+review/exact-head CI pending; Cases01–09 skipped and broad project gates remain active.
