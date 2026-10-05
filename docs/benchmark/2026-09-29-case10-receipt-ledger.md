@@ -1637,3 +1637,15 @@ Project tests/acceptance fail exit1, all four help paths pass, no verification t
 Cumulative303,107 recorded work/6,603,815ms/61 completed/six failed/zero Unknown.
 All prompt/full-SPEC/native-output/control/config/reference/fixed-binary/model audits pass.
 Attempt5 continues; no acceptance resolution, causal win or Pi half.
+
+### Retry16 attempt5 checkpoint
+
+Runtime budget_exhausted after1,318,045ms; outer watchdog false.
+Recorded work94,153(input77,280/output16,873),23 model starts/completions/usage records.
+32 requested/completed tools, zero failed/recorded Unknown; first tool read.
+Metadata: main62,983bytes/public test51,577bytes/test init82bytes/README4,111bytes.
+Contents remain unread; file changes do not establish correct repairs or preserved assertions.
+Project tests/acceptance fail exit1, all four help paths pass, no verification timeout.
+Cumulative397,260 recorded work/7,921,860ms/93 completed/six failed/zero Unknown.
+All saved full-SPEC/prompt/native-output/control/config/reference/fixed-binary/model audits pass.
+Attempt6 is the final screen attempt; no acceptance resolution or Pi half.
