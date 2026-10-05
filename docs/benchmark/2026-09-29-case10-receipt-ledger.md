@@ -1154,3 +1154,13 @@ Cumulative work90,798/authoring1,980,156ms/24 completed tools/seven failed/zero 
 unfinished inference unknown. All saved prompt/control/SPEC/acceptance hashes, requested/
 health deadline1194 and debug/model/relay audits pass. Turn3 active with frozen settings;
 Pi not run, no acceptance/comparative win or causal claim.
+
+Retry12 Rupi turn3 exits0/budget_exhausted at1,140,915ms unresolved:70,046 recorded
+work (54,494 input+15,552 output), twenty-four starts/completions/usage records.
+Twenty-four tool requests/nineteen completed/five failed/zero Unknown; first tool read.
+Project-test command1/all four help0/oracle1, no verification timeout. Public-test17,470
+differs; main55,854/README6,279/app-init108/tests-init60 sizes match without proving unchanged
+content. Generated contents unread; growth does not prove coverage or assertion preservation.
+Cumulative work160,844/authoring3,121,071ms/43 completed tools/twelve failed/zero Unknown.
+Saved prompt/control/SPEC/acceptance hashes, requested/health deadline1194 and debug/model/
+relay audits pass. Turn4 active with frozen settings; Pi not run, no win or causal claim.
