@@ -784,3 +784,14 @@ Saved initial user prompt hashes match retry08 exactly. Intended behavioral vari
 generic CLI system text/new binary. No builds or parallel inference during this screen.
 Fresh Pi conditional on Rupi acceptance with frozen source/binary/guidance/settings.
 No acceptance/comparative win yet; broad project gates and Case10 remain active.
+
+Retry09 Rupi turn1 reaches watchdog1,200,270ms unresolved:28,754 recorded work
+(14,633 input+14,121 output), seven starts/six completions/usage records.
+Seven tool requests/five completed/two failed/zero Unknown (grep, read, grep, write,
+read, read, edit). Tests1/all four help0/oracle1, no verification timeout.
+Main48,041 listed; tests/README absent in filtered metadata, generated contents unread.
+First actual tool is grep despite new generic prompt and shared first-write guidance;
+this does not establish the cause. File size and tool completion do not prove behavior.
+Saved prompt/controls/SPEC/three acceptance hashes pass, debug7C18C860...80E46 and
+model27356/relay33028 unchanged. Unfinished inference unknown. Turn2 active with frozen
+settings; Pi not run, no acceptance/comparative win.
