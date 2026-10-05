@@ -998,3 +998,14 @@ No source/settings/helper change during this screen. Consider a bounded configur
 relay deadline with explicit health evidence after terminal results, preserving default650s
 and aligning a fresh profile with common provider/outer controls. Turn2 active;
 Pi not run, no acceptance/comparative win.
+
+Retry11 Rupi turn2 reaches watchdog1,200,259ms unresolved:46,709 recorded work
+(27,947 input+18,762 output), seventeen starts/sixteen completions/usage records.
+Twenty-one tool requests/twenty completed/one failed/zero Unknown; first tool write.
+Tests1/all four help0/oracle1, no verification timeout. Main34,570 and an extra
+receiptledger/notes_sink_audit.md454 listed; public tests/README absent in filtered metadata.
+Generated contents unread; file/tool metadata do not prove full behavior or bounded edits.
+Cumulative recorded work46,709/authoring1,852,469ms/20 completed tools/one failed/zero Unknown;
+first-turn and other unfinished inference unknown. All saved prompt/control/SPEC/acceptance
+hashes and debug/model4096-relay audits pass. Turn3 active with frozen settings;
+Pi not run, no acceptance/comparative win.
