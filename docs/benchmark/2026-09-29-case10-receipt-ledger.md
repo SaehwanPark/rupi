@@ -1678,3 +1678,22 @@ same frozen Pi0.86.1 profile conditional on Rupi acceptance.
 
 Parent usage33% five-hour/60% weekly, below root95%/99%; next reset18:44ET,
 weeklyOct11 05:45ET. Case10, paired delivery/exact-head CI and broader gates stay active.
+
+### Retry17 cap40 launch audit
+
+Run: `bench-20261005-case10-reconcile-window3-native-off-output32768-retry17-rupi40-screen6-1800s`, runner38900/session28839.
+Initial shared prompt230589C5 is byte-identical to retry16; no cap interpolation.
+Native Rupi config cap40 replaces24; recurring/window3/native-off/direct8000/
+output32768/provider1794000ms/six1800s/grace6 remain unchanged.
+Harness9d0de2a/D4CA3482, runtime6a2e531/debugB60ABB58, helperA0BCAE68,
+model27356 and all same-profile controls stay pinned; no new source or build.
+Prior native/provenance/file-tool isolation controls remain intact.
+Selected/all-case cap40 dry-runs, fresh native config/SPEC/three acceptance hashes,
+other18 prompt hashes and initial Case10 prompt hash pass before inference.
+Slots idle before launch. Pi native cap/progress remain unavailable/null,
+same frozen Pi0.86.1 controls/prompt/output/time conditional on Rupi acceptance.
+
+Fetch/prune confirms only main plus activeCase10 actual local/remote heads.
+Root unrelated policy SHA3CEE11E5 preserved. No acceptance or efficiency benefit claimed;
+more configured headroom is a bounded candidate, not proof of repaired public behavior.
+Parent invariant review passes; required Rust/startup/restore checks apply to unchanged source.
