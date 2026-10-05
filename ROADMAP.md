@@ -1562,8 +1562,10 @@ TUI rendering passed all budgets (3.31–3.90 µs/unit); checkpointed restore me
   cap24/window12/1,200s retry07 fails6 (359,256 recorded work), Pi not run.
   window3/cap24/1,200s retry08 fails6 (314,780 recorded work); local tests/help pass
   on turns5–6, but acceptance fails throughout. Pi not run. Generic CLI prompt
-  clarification for supplied context/new files/delegated verification is active;
-  required checks/startup and a fresh same-profile screen with the rebuilt binary follow.
+  clarification for supplied context/new files/delegated verification passes required
+  Rust/startup checks; same-profile retry09 fails6 (313,229 recorded work), Pi not run.
+  Local tests pass2–3 but fail on the final three attempts. Public-SPEC separator-byte
+  clarification is active in shared guidance; guards and a fresh same-profile screen follow.
   Rupi-first screening and paired
   evidence/delivery checks remain pending. Broader project gates remain active.
   Preserve stable public delivery keys, distinct private fencing, lost-ack retry and

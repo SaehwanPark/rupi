@@ -817,6 +817,8 @@ Include claims, reclaims, success, retryable/terminal failure and each blocked t
 Rejected stale finalization appends only a safe operational event; never modify the newer job.
 Allocate seq from1 with no gaps under the transaction; canonical event_json has sorted keys
 and compact separators. Use the exact public SPEC hash expression and preserve its separator.
+In that published Python literal, use the two UTF-8 bytes 0x5c,0x6e (backslash then n).
+Use the same separator bytes when appending, verifying and independently recomputing in tests.
 Link prev_hash to the prior event_hash, or64 zeroes for row1. Keep every bounded public kind.
 Store safe public identifiers/status/attempts and concise outcomes; never secret, private token,
 raw argv or arbitrary sink response bytes. Persist lost-ack observed outcome:unknown when possible.
@@ -3019,6 +3021,8 @@ if ($DryRun) {
           'resource cleanup'
           'SAME SQLite'
           'exact public SPEC hash expression'
+          'two UTF-8 bytes 0x5c,0x6e (backslash then n)'
+          'same separator bytes when appending, verifying and independently recomputing in tests'
           'Audit rows are evidence, never worker input or job state.'
           'Rejected stale finalization appends only a safe operational event'
           'audit --verify opens SQLite read-only'

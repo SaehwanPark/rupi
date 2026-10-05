@@ -876,3 +876,19 @@ conditional on acceptance. Existing Rust/startup checks cover unchanged runtime 
 Fetch/prune again confirms main plus active Case10 local/remote branches; root unrelated
 policy SHA3CEE11E5...B496 preserved. Parent usage6%five-hour/48%weekly below soft stops.
 Cases01–09 skipped, Case10 and broad project gates remain active.
+
+### Public separator clarification: implemented and guarded
+
+Shared Get-Case10Prompt text now explicitly states the published separator's two UTF-8
+bytes0x5c,0x6e (backslash then n), consistently for append, verify and independent public
+tests. The same guidance goes to both agents; five assembled initial/recovery variants
+require the wording. No acceptance, generated solution, runtime source or inference
+control change. The owned public ast probe establishes the byte meaning; cause unproven.
+
+Selected Case10 and all-case/capitalized-Recurring dry-run guards pass, including hidden
+oracle sentinel and native-exposure rejection. Fresh native config/SPEC/three acceptance
+hashes pass; all18 other-case initial/recovery prompt hashes remain unchanged.
+Parent bounded invariant-review phase: pass, no blocking finding; static benchmark-user
+guidance only, outside core. Runtime source2c8ee6b/debug7C18C860...80E46 unchanged and
+covered by recorded Rust/startup checks. HarnessSHA30A6F9659C6F088E0995B4F84C47693088EDD736FDB214C87EB7C3738CE47840.
+Fresh same-profile retry10 Rupi screen precedes conditional matched Pi; no win yet.
