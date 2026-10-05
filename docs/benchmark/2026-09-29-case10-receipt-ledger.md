@@ -1709,3 +1709,16 @@ workspace was empty or that unfinished inference used no tokens.
 The frozen source/binary/model, prompt, reference, and native configuration audit
 passed. This attempt neither reached the cap40 request limit nor demonstrated
 an acceptance benefit. Remaining attempts are running; Pi remains unrun.
+
+### Retry17 attempt2: runtime timeout with unmeasured inference
+Attempt2 ended after 1,108,628 ms without a runner watchdog; the runtime
+reported timeout. Configured acceptance, project tests, and all four help
+commands failed (exit1). One model start and two completion events were
+recorded, with no usage records or tool requests. Recorded work is zero;
+actual inference work is unknown. Completion events may include closure of a
+previous abandoned request. The filtered files inventory was empty.
+The frozen-input audit still passes. Across two attempts the recorded totals
+are18,278 work tokens, 2,909,015 ms, and six completed tools with zero failed
+or Unknown tool calls. No acceptance benefit is established; Pi remains unrun.
+Current PR145 CI passes on Linux, macOS, and Windows; final-head CI will be
+required again before merge.
