@@ -1238,3 +1238,23 @@ provider1194s, outer1200s/grace6, recurring/window3/cap24, maxoutput16384,
 six attempts and the existing Qwen process/CLI binary. New shared static guidance is
 the intended prompt change. Fresh matched Pi0.86.1 is conditional on Rupi acceptance.
 Case10 and broader project gates remain active; failed screens are not wins.
+
+### Retry13 launched and frozen controls audited
+
+Run: `bench-20261005-case10-reconcile-window3-budget4096-relay1194-low-retry13-rupi24-screen6-1200s`.
+Harness source cd104b0d85aca458fa9c4ff20ea10631d109ba94;
+working harness SHA256 A53782C719CB602F49E7EF61FC507C9D0DADD67E181BC4899FA1FFF421574FB6.
+Initial shared user prompt SHA256
+230589C5F20B5486CD84216CE5B6A0DB9734CE724C2903D891E4D50D9CFB3270.
+Removing only the inserted reconciliation block matches retry12's prompt byte-for-byte;
+newline-normalized comparison also passes. Runtime source2c8ee6b/debug7C18C860,
+relay sourceA0BCAE68/process23732/8003 and Qwen process27356 remain unchanged.
+Health confirms configured4096, response1194s, upstream8000/v1, content logging false.
+Model was idle before launch; runner5504 began Rupi attempt1 with child21032.
+All public SPEC/acceptance contents remain inaccessible to benchmark agents except public SPEC.
+
+Fetch/prune confirms only main and active Case10 actual local/remote branches.
+Historical artifact worktrees stay detached; active PR145 is retained.
+Unrelated root usage-policy edit SHA2563CEE11E5 remains preserved.
+Latest parent quota check29% five-hour/54% weekly, below root95%/99% thresholds.
+No acceptance or token-efficiency improvement is claimed before terminal evidence.
