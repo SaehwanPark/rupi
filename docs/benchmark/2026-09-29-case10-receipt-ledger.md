@@ -906,3 +906,35 @@ raw equality is false because two existing CRLF endings also became LF (stripped
 21,074 vs21,076). This formatting difference is part of the changed prompt, not hidden.
 No causal assertion. Fresh Pi conditional on acceptance with exact same new user guidance
 and frozen source/binary/settings. Outcome pending, Case10 and broad project gates active.
+
+### Retry10 terminal evidence
+
+The screen completed while the parent was away; fresh metadata replaces the earlier
+attempt1 status. All six attempts fail project tests/acceptance; all four help checks pass
+throughout. Exec68817 exits0; all slots idle. Pi not run, no comparative win.
+
+| Turn | Authoring ms | Recorded work | Completed tools | Failed | Outcome |
+| --- | ---: | ---: | ---: | ---: | --- |
+| 1 | 1,200,328 | 66,502 | 16 | 1 | watchdog |
+| 2 | 819,205 | 28,918 | 9 | 0 | runtime completed |
+| 3 | 820,024 | 21,846 | 6 | 0 | runtime failed(timeout) |
+| 4 | 1,200,702 | 53,063 | 19 | 2 | watchdog |
+| 5 | 742,945 | 26,405 | 5 | 0 | runtime failed(timeout) |
+| 6 | 1,204,147 | 48,815 | 20 | 0 | watchdog |
+
+Totals245,549 recorded work/5,987,351ms/75 completed tools/three failed/zero Unknown;
+no verification timeout. Unrecorded unfinished inference remains unknown. Turn6 has
+21 starts/20 completions/usage records; final README10,629/app-init870/main47,839/
+tests-init84/public-test44,241 listed. Generated contents unread; presence/size/completion
+do not establish behavior, coverage or assertion preservation.
+
+All six saved prompt/control/SPEC/three acceptance hashes pass, including explicit public
+separator guidance. Debug7C18C860/model27356/relay33028 unchanged. Neither the generic CLI
+prompt nor separator clarification has established acceptance benefit.
+
+Next bounded candidate: existing native reasoning budget4,096 instead of2,048, matched
+for both agents through a relay with the new cap. Keep same Qwen model, source/binary,
+shared public guidance, window3/cap24/six1200s/grace6/time controls. Pin the intentional
+relay/budget change, run config/dry-run guards, fresh Rupi screen and conditional matched
+Pi. No manual solver or acceptance changes. Case10 and broad project gates remain active.
+Parent usage0%five-hour/49%weekly before next slice.
