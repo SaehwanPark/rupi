@@ -1354,3 +1354,25 @@ Fresh matched Pi0.86.1 remains conditional on Rupi acceptance.
 
 Parent quota1% five-hour/55% weekly, below root95%/99%; reset18:44ET/Oct11 05:45ET.
 Case10, paired handoff/exact-head CI and broader project gates remain active.
+
+### Retry14 native-off launch audit
+
+Run: `bench-20261005-case10-reconcile-window3-native-off-retry14-rupi24-screen6-1200s`, runner22328/session63020.
+Initial shared prompt230589C5F20B5486CD84216CE5B6A0DB9734CE724C2903D891E4D50D9CFB3270
+is byte-identical to retry13. Harness sourcecd104b0/harnessSHA A53782C7 and
+runtime source2c8ee6b/debugSHA7C18C860 remain unchanged.
+Thinking off maps to reasoning_effort:none for both agents; direct8000 uses the same
+Qwen3.8 process27356, checked idle before launch. Configured reasoning budget and
+relay deadline are unavailable/null; no relay injection/forwarding is used.
+Rupi config verifies recurring/window3/cap24/native four filetools/provider1194000ms;
+maxoutput16384, six1200s/grace6 remain fixed. Pi native cap/progress unavailable/null.
+Selected/all-case off dry-runs, native config/SPEC/three acceptance hashes pass,
+all18 other-prompt hashes unchanged; no inference during guards/no new source change.
+Parent invariant review has no blocker: existing native thinking-off path,
+single model, unchanged permissions/Unknown semantics/provenance/startup.
+Existing Rust/startup/helper checks apply to unchanged source.
+
+Fetch/prune again confirms main plus activeCase10 local/remote heads only.
+Unrelated root policy SHA3CEE11E5 preserved. All prior relays left intact and unused.
+Pi0.86.1 conditional on Rupi acceptance with the same frozen native-off profile.
+No win, default benefit or causal comparison claimed.
