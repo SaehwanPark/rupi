@@ -480,7 +480,8 @@ Pi not run, metrics unavailable; no paired win or full-public-task completion cl
 
 ### Existing window12 with longer matched attempt limit: next screen
 
-Keep current monolith/TestCase guidance/source92d2b269/harness86F04AA7...5AD98/debug8159F875...77F24.
+Keep current monolith/TestCase guidance/source92d2b269/harness86F04AA7...5AD98/
+debug8159F875...77F24.
 Select existing recurring/window12/cap12, low2048/native replay/max-output16,384 as retry04.
 Change the watchdog600→1,200s and provider deadline594,000→1,194,000ms, same grace6/six attempts.
 Repeated deadlines motivate testing more authoring time, without claiming their cause or
@@ -489,3 +490,12 @@ three reference hashes pass. Root usage2% five-hour/41% weekly below95/99 stops.
 first; same-RunId fresh Pi only on acceptance with identical source/guidance/time controls.
 No source/runtime/acceptance changes or manual solver. Final paired evidence/checks/startup/
 review/exact-head CI remain pending; Cases01–09 skipped and broad project gates remain active.
+
+### Retry06 window12/1200s screen: launched
+
+Run: `bench-20261004-case10-monolith-window12-budget2048-low-retry06-rupi12-screen6-1200s`.
+Source92d2b269/harness86F04AA7...5AD98/debug8159F875...77F24; checkpoint6b1c471.
+Exec40371/runner29200/wrapper20372; same model/relay/low2048/window12/cap12 as retry04.
+Six attempts1,200s/grace6/provider1,194,000ms. Actual run controls pass; initial prompt
+byte-identical to retry04. Slots idle before launch; no builds/parallel inference. Pi
+conditional on Rupi acceptance with frozen source/guidance/time controls; outcome pending.
