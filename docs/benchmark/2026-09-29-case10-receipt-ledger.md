@@ -595,3 +595,13 @@ help0, no verification timeouts. README10,182/tests-init37 newly listed/main44,7
 matches without proving unchanged contents. Public test module/package init absent from
 snapshot; contents unread. Cumulative work158,974/authoring2,209,319ms. Turn3 active with
 frozen controls, Pi not run; prompt presence does not prove missing-test guidance compliance.
+
+Retry07 Rupi turn3 reaches watchdog1,200,508ms unresolved:69,239 recorded work (55,869
+input+13,370 output), nineteen starts/eighteen completions/usage records. Twenty-three tool
+requests/twenty-two completed/one failed/zero Unknown (thirteen reads, seven grep, two writes,
+one edit). Tests5/oracle1/all four help0, no verification timeouts. Tests/_support8,888 and
+tests/README1,595 newly listed/main44,809 differs; README10,182/tests-init37 sizes match
+without proving unchanged content. Public test module/package init absent from filtered
+snapshot; generated contents unread. Helper/documentation presence does not prove real
+public TestCases or preserved assertions. Cumulative work228,213/authoring3,409,827ms.
+Turn4 active with frozen controls; unrecorded unfinished inference unknown, Pi not run.
