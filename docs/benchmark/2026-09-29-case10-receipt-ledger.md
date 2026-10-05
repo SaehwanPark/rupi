@@ -752,3 +752,24 @@ state, replay, Unknown handling, provenance serialization, failover, model activ
 trust gate, dependencies, network discovery or hydration changes. No domain-specific
 core workflow added. This is not a guarantee of model compliance or acceptance improvement.
 Required Cargo/startup verification and updated debug binary remain pending.
+
+### CLI clarification local verification: pass
+
+Runtime source2c8ee6b0a9595192cafa160cbdba1d1819383307; unchanged harness92d2b269/
+86F04AA70643CD8020EE348D5CE16A230C037D195B4D655966985EB37745AD98.
+cargo fmt --all --check; cargo check -p rupi-core --all-features; cargo clippy --workspace
+--all-targets -- -D warnings; cargo test --workspace; cargo doc --workspace --no-deps;
+cargo build --bin rupi all exit0. The pinned-name local installation lacks cargo/clippy;
+the installed stable route reports exactly rustc1.98.1(48a229cea2026-09-01) and
+cargo1.98.1(797e8a9bc2026-08-05), used through process-only RUSTUP_TOOLCHAIN=stable.
+Repository toolchain pin unchanged.
+
+Git Bash bench/startup.sh --json bench/results/startup-ci.json exits0:
+cold147.176ms/warm median8.091ms/max9.114ms meets250/100ms budgets.
+New debugSHA256:7C18C86079B6B801F1F57EFD6C10689926449A4DD3F4EE876D0FB278DC380E46.
+All Cargo/release builds complete before inference. Same-profile native configuration,
+SPEC/three acceptance hashes and Case10 dry-run guards pass; model slots idle.
+
+Next fresh retry09 keeps shared user guidance and window3/cap24/low2048/6x1200s/grace6/
+provider1194000ms fixed. Only intended behavioral variable is generic CLI system text
+and its rebuilt binary. Fresh Pi conditional on acceptance, no win or full-task claim yet.
