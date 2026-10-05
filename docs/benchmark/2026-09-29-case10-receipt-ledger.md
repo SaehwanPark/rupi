@@ -892,3 +892,17 @@ Parent bounded invariant-review phase: pass, no blocking finding; static benchma
 guidance only, outside core. Runtime source2c8ee6b/debug7C18C860...80E46 unchanged and
 covered by recorded Rust/startup checks. HarnessSHA30A6F9659C6F088E0995B4F84C47693088EDD736FDB214C87EB7C3738CE47840.
 Fresh same-profile retry10 Rupi screen precedes conditional matched Pi; no win yet.
+
+### Retry10 public-separator screen: launched
+
+Run: bench-20261005-case10-separator-window3-budget2048-low-retry10-rupi24-screen6-1200s.
+Harness sourcef6272212dda3760755f80113f9ee5f55905083eb/SHA30A6F965...47840;
+runtime source2c8ee6b/debug7C18C860...80E46. Exec68817/runner14692/wrapper25564.
+Same model27356/relay33028/recurring-window3/cap24/low2048/six1,200s/grace6/
+provider1194000/maxoutput16384; slots idle before launch. No builds/parallel inference.
+Saved initial promptSHAB888E63C...7F7D6 contains the byte clarification. After removing
+the two inserted guidance lines, the remainder matches retry09 after newline normalization;
+raw equality is false because two existing CRLF endings also became LF (stripped lengths
+21,074 vs21,076). This formatting difference is part of the changed prompt, not hidden.
+No causal assertion. Fresh Pi conditional on acceptance with exact same new user guidance
+and frozen source/binary/settings. Outcome pending, Case10 and broad project gates active.
