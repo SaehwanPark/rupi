@@ -578,3 +578,11 @@ Only existing Rupi cap12→24 changes from retry06. Actual run controls pass; in
 byte-identical to retry06. Slots idle before launch; no builds or parallel inference.
 Fresh Pi conditional on Rupi acceptance, with frozen source/guidance/shared time controls.
 Pi native cap remains unavailable; outcome pending, no comparative claim.
+
+Retry07 Rupi turn1 reaches watchdog1,200,316ms unresolved:67,339 recorded work (51,462
+input+15,877 output), twenty-four starts/twenty-three completions/usage records. Twenty-four
+tool requests/twenty-two completed/two failed/zero Unknown (four grep, seventeen reads,
+one write, two edits). Tests1/oracle1/all four help0, no verification timeouts. Main44,778
+listed, tests/README absent, generated contents unread. First tool grep despite first-write
+guidance; no compliance or causal cap benefit claimed. Unfinished inference unknown.
+Turn2 active with frozen recurring/window12/cap24/1200 controls; Pi not run, no paired win.
