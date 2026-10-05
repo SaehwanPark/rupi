@@ -568,3 +568,13 @@ usage8% five-hour/42% weekly below95/99 limits. Fresh Rupi screen first, Pi cond
 acceptance with frozen source/guidance/shared time settings; Pi native cap remains unavailable.
 No source/runtime/acceptance changes or manual solver. Final paired evidence/checks/startup/
 review/exact-head CI pending; Cases01–09 skipped and broad project gates remain active.
+
+### Retry07 existing cap24 screen: launched
+
+Run: `bench-20261004-case10-monolith-window12-budget2048-low-retry07-rupi24-screen6-1200s`.
+Source92d2b269/harness86F04AA7...5AD98/debug8159F875...77F24; checkpoint7b566c3.
+Exec57069/runner23972/wrapper7188; same model/relay/low2048/window12/six1,200s/grace6.
+Only existing Rupi cap12→24 changes from retry06. Actual run controls pass; initial prompt
+byte-identical to retry06. Slots idle before launch; no builds or parallel inference.
+Fresh Pi conditional on Rupi acceptance, with frozen source/guidance/shared time controls.
+Pi native cap remains unavailable; outcome pending, no comparative claim.
