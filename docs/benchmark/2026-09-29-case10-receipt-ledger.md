@@ -1388,3 +1388,17 @@ Large aggregate output alone does not prove a per-request output ceiling was rea
 nor identify a malformed/truncated response. Model output and diagnostics remain unread.
 Native-off/full-SPEC/prompt/control/reference/binary/model audits pass.
 Attempt2 continues. No acceptance win or Pi half exists.
+
+### Retry14 attempt2 checkpoint
+
+Runtime semantic failure after825,963ms; outer watchdog false.
+One model start/completion/usage record with22,246 recorded work
+(input5,862/output16,384), zero requested/completed/failed/Unknown file tools.
+The single recorded output count equals the configured16,384 output ceiling.
+This is a bounded candidate for investigating output capacity, not proof of the
+semantic cause, finish reason, response contents or an actual attempted mutation.
+Project tests/all four help/acceptance fail exit1; no verification timeout.
+Filtered generated metadata empty; contents and diagnostics remain unread.
+Cumulative45,364 recorded work/1,637,400ms/two completed tools, no resolution.
+All native-off/prompt/full-SPEC/control/reference/binary/model audits pass.
+Attempt3 continues; no Pi half exists.
