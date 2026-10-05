@@ -1455,3 +1455,22 @@ No Rust/helper source changed; prior required Rust/startup and seven relay tests
 Output allowance32,768 and outer1800/provider1794/grace6 intentionally change together
 for retry15. Shared prompt/native-off/binary/model/window3/cap24/six attempts stay fixed.
 Fresh Rupi first; Pi0.86.1 conditional on acceptance. Case10 remains unresolved.
+
+### Retry15 launch audit: matched larger output and time allowances
+
+Run: `bench-20261005-case10-reconcile-window3-native-off-output32768-retry15-rupi24-screen6-1800s`, runner37024/session54471.
+Harness source9d0de2a9169dd9d16dfbce4be37e1ad542a535ac,
+SHA256D4CA3482643AD1B56628533427D2552BA0D028AD447FA162FDBD6DE8DB5E2BB3.
+Initial shared prompt230589C5 is byte-identical to retry14.
+Native Rupi config verifies off/direct8000/output32,768/provider1794000ms,
+recurring/window3/cap24; six attempts/outer1800s/grace6.
+No relay budget/deadline injection; summary fields should be null when unavailable.
+Qwen27356/debug7C18C860/runtime2c8ee6b/helperA0BCAE68 unchanged.
+Four slots idle before launch, prior relays left intact. No rebuild during screen.
+
+Fetch/prune actual branches remain main plus activeCase10 local/remote.
+Root policy SHA3CEE11E5 preserved. Latest parent usage9% five-hour/56% weekly.
+Initial prompt equality/config/reference guards and parent invariant review pass.
+Larger output/time are intentional; no causal or acceptance win claimed.
+Fresh Pi0.86.1 uses the same frozen output/native-off/time/prompt/model controls
+only after Rupi acceptance; its cap/progress fields remain unavailable/null.
