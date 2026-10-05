@@ -677,3 +677,19 @@ absent, generated contents unread. First tool is write on this repair; this does
 complete behavior, edit bounds, assertion preservation or causal window benefit. Unfinished
 inference unknown. Cumulative work91,586/authoring2,029,513ms. Turn3 active with frozen
 controls; Pi not run, no paired win.
+
+Retry08 Rupi turn3 exits0/budget_exhausted at1,069,475ms unresolved:69,446 recorded work
+(56,847 input+12,599 output), twenty-three starts/twenty-four completions including an
+ earlier abandoned request, twenty-three usage records. Thirty-one tool requests/twenty-nine
+completed/two failed/zero Unknown (ten grep, three writes, eleven reads, seven edits).
+Tests1/oracle1/all four help0, no verification timeouts. README9,242/tests-init45/public-test
+12,530 newly listed/main25,480 size matches without proving unchanged content. Contents
+unread; file presence does not prove passing tests or assertion preservation. Cumulative
+work161,032/authoring3,098,988ms. Turn4 active with frozen controls; Pi not run, no win.
+
+Source-only review lead: src/run.rs CLI system text broadly requests inspection before
+editing and post-change checks; Case10 user guidance requests direct first writes and
+harness-only verification. Get-Case10Prompt initial/repair branches are separate. Review
+whether generic clarification of supplied context/new files/delegated verification would
+better respect user workflows after terminal evidence. This is not an established cause
+of these failures. No source edit or new domain-specific runtime policy during this screen.
