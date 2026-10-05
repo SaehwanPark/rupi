@@ -702,3 +702,13 @@ README9,242/tests-init45 sizes match without proving unchanged content. Generate
 unread; tool completion/size changes do not prove exact edits, assertion preservation or
 complete behavior. Unfinished inference unknown. Cumulative work203,854/authoring4,299,162ms.
 Turn5 active with frozen controls; Pi not run, no acceptance/comparative win.
+
+Retry08 Rupi turn5 exits0/runtime completed at656,771ms unresolved:53,818 recorded work
+(46,974 input+6,844 output), thirteen starts/fourteen completions including an earlier
+abandoned request, thirteen usage records. Fourteen requested/completed tools/zero failed/
+Unknown (five reads, four grep, five edits). Project tests0/all four help0/oracle1, no
+verification timeouts. README9,492/main42,430/public-test12,920 differ; tests-init45 size
+matches without proving unchanged content. Generated contents unread; a passing local suite
+does not prove preserved assertions or every public requirement. Cumulative work257,672/
+authoring4,955,933ms. Final turn6 active with frozen controls; Pi not run. Local gates now
+pass but acceptance still fails, so no configured/comparative or full-public-task win.
