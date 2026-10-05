@@ -436,3 +436,10 @@ input+189 output), two starts/one completion/one usage record. Two requested/com
 no verification timeouts. Filtered application/test/README metadata empty; no generated
 contents inspected. Unfinished inference work unknown, not zero. Lower work is not success.
 Turn2 active with frozen recurring/window1 controls; Pi not run, no comparative win.
+
+Retry05 Rupi turn2 exits0/runtime failed(timeout) at594,656ms, unresolved. Recorded work0
+with no usage records; this is not zero actual inference work. One model start/two completions
+include an earlier abandoned request. Zero tools requested/completed/failed/Unknown. Tests1/
+all four help1/oracle1; no verification timeouts (provider timeout is separate). Filtered
+application/tests/README entries empty, generated contents unread. Cumulative recorded
+work6,104/authoring1,195,148ms; unrecorded inference unknown. Turn3 active; Pi not run.
