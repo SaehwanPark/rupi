@@ -1102,3 +1102,20 @@ Runtime source2c8ee6b/debug7C18C860 unchanged, prior Rust/startup checks applica
 Fresh same-guidance/model/window3/cap24/4096/6x1200s/grace6 screen12 pending; common relay
 deadline1194 is an intentional control change. Fresh Pi conditional on acceptance.
 No configured/causal/full-public-task win yet; broad project gates and Case10 active.
+
+### Retry12 aligned relay/provider deadline screen: launched
+
+Run: bench-20261005-case10-separator-window3-budget4096-relay1194-low-retry12-rupi24-screen6-1200s.
+Harness/relay source4025535abb9885b2818b0d51ef781ab789a7c702; harnessSHA08C69DB2...FF234/
+relayA0BCAE68...387C7; runtime source2c8ee6b/debug7C18C860...80E46 unchanged.
+Exec49566/runner26544/wrapper25564/model27356/new relay23732/port8003.
+Configured4096/low/native replay/recurring-window3/cap24/six1200s/grace6/output16384/
+provider1194000ms fixed. Intentional transport changes: new route and health-verified
+response deadline1194s (previous source cap650s). Shared initial prompt hashes match
+retry11 exactly (B888E63C...7F7D6). Configured caps do not prove actual reasoning length.
+No source/binary/helper changes, builds or parallel inference during the screen.
+
+Prior relays33028/8001 and20516/8002 remain untouched. Fetch/prune shows only main and
+active Case10 local/remote branches, fully pushed. Fresh Pi conditional on Rupi acceptance
+with the same new relay/guidance/common settings; Pi native request/progress caps unavailable.
+Outcome pending, no comparative/causal/full-public-task claim. Broader gates and Case10 active.
