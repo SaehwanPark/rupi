@@ -2065,3 +2065,32 @@ prompt hashes remain unchanged. No builds/source changes during inference.
 Fresh matched Pi0.86.1 follows only passing Rupi acceptance. Failed screening
 requires root-cause analysis and a verified enhancement before another attempt.
 A one-turn failed screen is not a six-turn or paired result. Case10 remains active.
+
+### Retry20 terminal failed one-turn screen
+
+Frozen sourcec7b7ed6/debug75985E95/harnessC916C955/helperA0BCAE68/model27356
+and selected native controls/prompt/SPEC/three acceptance reference hashes pass
+terminal audit. The runner exits0 and all four model slots are idle; Pi was not run.
+
+One turn:905,693ms, no watchdog,36,161 recorded work (21,940 uncached input/
+14,221 output),17 started/completed requests and17 usage records. Twenty tools
+complete with zero known failures/Unknown:15 inspections (11grep/fourread) and
+five mutations (twowrite/threeedit). Runtime status is `completed`; acceptance
+and project tests exit1, all four help checks exit0, no verification timeout.
+Filtered inventory lists only app init444bytes/main48,441bytes; no tests/README
+are listed. Contents remain unread. This is one failed development turn, not
+a paired result or acceptance benefit. Deadline expiry was not exercised.
+
+The screen stopped roughly264s before its native time budget and used17 of40
+requests. Verified source closes an ordinary text-only answer immediately, without
+a deliverable review. An opt-in bounded same-model completion review is the next
+generic runtime enhancement, preserving budgets/provenance/Unknown barriers and
+avoiding case-specific artifact enforcement. It must be implemented and verified
+before any new benchmark attempt; no control-only retry is launched.
+
+CIcf244735 passes macOS/Linux but fails the new durable deadline fixture on
+Windows (zero refusal records where one was expected). The150ms whole-turn budget
+can expire before the intended streaming point during slow admission; reproduce
+that valid no-request path with owned delayed progress, then make the fixture
+establish its provider-start precondition. No unchanged CI rerun is launched.
+Usage18% five-hour/68% weekly is below the root policy's95/99% thresholds.
