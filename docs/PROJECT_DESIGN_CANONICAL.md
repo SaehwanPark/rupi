@@ -1339,6 +1339,11 @@ their shared allowance, external provenance and fresh final-check requirement.
 An opt-in request window may refresh Failed caller feedback during tool-bearing repair.
 Rearm only on failure, disarm on pass, reset each turn and share the original check cap.
 Fresh final checking and all uncertain-effect, budget and cancellation barriers remain.
+An optional initial request window may obtain the first caller observation during tool
+work before a final answer or reserved review. Skip it once an observation has occurred;
+share the original check cap, coalesce triggers and retain fresh final checking. This
+does not consume one-shot review, impose domain checks or extend any execution allowance.
+Renew only on a new turn and preserve the same no-tools and safety barriers.
 
 This is a distributed-systems-style reliability invariant.
 

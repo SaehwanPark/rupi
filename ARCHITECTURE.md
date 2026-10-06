@@ -628,6 +628,15 @@ Direct builders skip invalid windows; no-tools/finalization skips this selection
 turns reset it. Existing progress/tool-budget/Unknown/cancel/deadline and terminal check
 semantics remain. This needs no clock, new event or additional execution authority.
 
+Optional `completion_check_initial_request_window` requires the same positive ordinary
+request window and at least two checks. If no caller observation has occurred, the first
+safe boundary after that many requests obtains one through the existing helper and cap.
+A prior observation disables this trigger. It coalesces with reserved review, never
+consumes the one-shot review, and resets each turn. Failed can arm the repair window;
+Passed still requires fresh final checking. All progress/tool/Unknown/cancel/deadline,
+no-tools/finalization and terminal observation safeguards remain. Domain checks stay
+caller-owned; this threshold creates no clock, command, event or additional allowance.
+
 Static `CompletionCheck` guidance is a runtime control; bounded UTF-8 feedback (16KiB)
 is separate external context
 from `delegated_completion_check`, with citation and ordinal/status/elapsed metadata.

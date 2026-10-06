@@ -60,6 +60,8 @@ param(
   [ValidateRange(0, 16)]
   [int]$Case10CompletionChecks = 0,
   [ValidateRange(0, 100)]
+  [int]$Case10CompletionCheckInitialRequestWindow = 0,
+  [ValidateRange(0, 100)]
   [int]$Case10CompletionCheckRepairRequestWindow = 0,
   [switch]$Case10CompletionCheckOnReview,
   [ValidateRange(0, 64)]
@@ -72,6 +74,11 @@ param(
 )
 
 $ErrorActionPreference = "Stop"
+if ($Case10CompletionCheckInitialRequestWindow -gt 0 -and
+    ($Case10CompletionChecks -lt 2 -or
+     $Case10CompletionCheckInitialRequestWindow -ge ($MaxModelRequestsPerTurn - 1))) {
+  throw 'Case10 initial check window requires two checks and a larger ordinary request allowance.'
+}
 if ($Case10CompletionCheckRepairRequestWindow -gt 0 -and
     ($Case10CompletionChecks -lt 2 -or
      $Case10CompletionCheckRepairRequestWindow -ge ($MaxModelRequestsPerTurn - 1))) {
@@ -2244,6 +2251,24 @@ function Get-BenchmarkRepairCheckWindow([hashtable]$case, [string]$agent) {
   return $null
 }
 
+function Get-BenchmarkInitialCheckWindow([hashtable]$case, [string]$agent) {
+  if ($case.Id -eq '10-receipt-ledger' -and $agent -eq 'rupi' -and
+      $Case10CompletionCheckInitialRequestWindow -gt 0) {
+    return $Case10CompletionCheckInitialRequestWindow
+  }
+  return $null
+}
+
+function Set-BenchmarkInitialCheckWindow([hashtable]$case, [object]$limits) {
+  $selected = Get-BenchmarkInitialCheckWindow $case 'rupi'
+  if ($null -eq $selected) { return }
+  if ($Case10CompletionChecks -lt 2 -or $selected -ge ($MaxModelRequestsPerTurn - 1)) {
+    throw 'Case10 initial check window requires two checks and a larger ordinary request allowance.'
+  }
+  $limits | Add-Member -MemberType NoteProperty -Force `
+    -Name completion_check_initial_request_window -Value $selected
+}
+
 function Set-BenchmarkRepairCheckWindow([hashtable]$case, [object]$limits) {
   $selected = Get-BenchmarkRepairCheckWindow $case 'rupi'
   if ($null -eq $selected) { return }
@@ -2424,6 +2449,7 @@ function New-BenchmarkWorkspace([hashtable]$case, [string]$agentRoot, [string]$t
     Set-BenchmarkInitialThinking $case $config.limits
     Set-BenchmarkReviewCheck $case $config.limits
     Set-BenchmarkRepairCheckWindow $case $config.limits
+    Set-BenchmarkInitialCheckWindow $case $config.limits
     Set-BenchmarkReviewRequestReserve $case $config.limits
     if ($case.Id -eq "10-receipt-ledger" -and $Case10CompletionChecks -gt 0) {
       $config.limits | Add-Member -MemberType NoteProperty -Force `
@@ -2804,6 +2830,8 @@ function Invoke-AgentCase([hashtable]$case, [string]$agent, [string]$root, [stri
         $turnRecord["configured_completion_check_on_review"] = Get-BenchmarkReviewCheck $case $agent
         $turnRecord["configured_completion_check_repair_request_window"] =
           Get-BenchmarkRepairCheckWindow $case $agent
+        $turnRecord['configured_completion_check_initial_request_window'] =
+          Get-BenchmarkInitialCheckWindow $case $agent
         $turnRecord["configured_completion_review_request_reserve"] =
           Get-BenchmarkReviewRequestReserve $case $agent
         $turnRecord["configured_max_mutating_tool_calls_per_turn"] =
@@ -3678,6 +3706,8 @@ $summary = [ordered]@{
   case10_rupi_completion_check_on_review = Get-BenchmarkReviewCheck @{Id='10-receipt-ledger'} 'rupi'
   case10_rupi_completion_check_repair_request_window =
     Get-BenchmarkRepairCheckWindow @{Id='10-receipt-ledger'} 'rupi'
+  case10_rupi_completion_check_initial_request_window =
+    Get-BenchmarkInitialCheckWindow @{Id='10-receipt-ledger'} 'rupi'
   case10_rupi_completion_review_request_reserve =
     Get-BenchmarkReviewRequestReserve @{Id='10-receipt-ledger'} 'rupi'
   case10_rupi_max_mutating_tool_calls_per_turn =

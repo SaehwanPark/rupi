@@ -1801,6 +1801,13 @@ TUI rendering passed all budgets (3.31–3.90 µs/unit); checkpointed restore me
   verifies omitted idle limit resolves to300s despite total2394s/native2370s. Exact
   failure phase is unavailable in old summaries. Optional typed request-failure evidence
   and explicit Case10 idle-budget selection are active; causal benefit is unproven.
+  Source8d046aa/frozen9ff5e4b all3 CI pass. Retry36 exhausts request40 at1819.016s
+  with all usage known, all required files listed, failed tests/acceptance and help pass.
+  Caller checks first Failed after31, then Failed after34/37; no provider or verification
+  timeout. Frozen audits pass/slots idle. Native time retains551s while the request cap
+  binds. Optional earlier initial caller checking is active to expose failure sooner;
+  owned bounded comparison, renewal/coalescing and safety fixtures pass. Actual benefit
+  and next screening remain pending; semantic diagnostics remain uninspected.
   No semantic cause, acceptance benefit, or paired Case10 win is established.
   Rupi-first screening and paired
   evidence/delivery checks remain pending. Broader project gates remain active.

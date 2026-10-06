@@ -629,6 +629,7 @@ pub struct TurnLoop<'a> {
   review_completion: bool,
   max_completion_checks: u32,
   completion_check_repair_request_window: Option<usize>,
+  completion_check_initial_request_window: Option<usize>,
   completion_check_on_review: bool,
   completion_review_reserve: Option<Duration>,
   completion_review_request_reserve: Option<usize>,
@@ -744,6 +745,7 @@ impl<'a> TurnLoop<'a> {
       review_completion: false,
       max_completion_checks: 0,
       completion_check_repair_request_window: None,
+      completion_check_initial_request_window: None,
       completion_check_on_review: false,
       completion_review_reserve: None,
       completion_review_request_reserve: None,
@@ -950,6 +952,13 @@ impl<'a> TurnLoop<'a> {
   /// Require bounded caller observations before ordinary completion; zero disables checks.
   pub fn with_max_completion_checks(mut self, max: u32) -> Self {
     self.max_completion_checks = max.min(16);
+    self
+  }
+
+  /// Obtain a first caller observation during tool work, sharing the final-check allowance.
+  /// An earlier observation disables this trigger; a pass still needs a fresh final check.
+  pub fn with_completion_check_initial_request_window(mut self, window: Option<usize>) -> Self {
+    self.completion_check_initial_request_window = window;
     self
   }
 
@@ -1817,6 +1826,16 @@ impl<'a> TurnLoop<'a> {
           Some(turn_id.clone()),
         );
       }
+      let initial_check_pending = self.tools_enabled
+        && self.max_completion_checks >= 2
+        && completion_checks == 0
+        && self
+          .completion_check_initial_request_window
+          .is_some_and(|window| {
+            window > 0
+              && window < self.max_requests.saturating_sub(1)
+              && self.requests.load(Ordering::SeqCst) >= window
+          });
       let repair_check_pending = self.tools_enabled
         && self.max_completion_checks >= 2
         && self
@@ -1827,7 +1846,7 @@ impl<'a> TurnLoop<'a> {
               && failed_completion_at
                 .is_some_and(|at| self.requests.load(Ordering::SeqCst).saturating_sub(at) >= window)
           });
-      if review_check_pending || repair_check_pending {
+      if initial_check_pending || review_check_pending || repair_check_pending {
         if cancel.is_cancelled() {
           return self.finish(report, TurnStatus::Cancelled, clock, Some(turn_id.clone()));
         }
@@ -16084,6 +16103,192 @@ mod tests {
     assert!(has_review(&requests[3]));
   }
 
+  #[test]
+  fn initial_check_window_renews_coalesces_and_does_not_consume_later_review() {
+    for reserved in [false, true] {
+      let responses = if reserved {
+        vec![
+          tool_call("write_probe", json!({"content":"owned"})),
+          text("final candidate"),
+        ]
+      } else {
+        vec![
+          tool_call("write_probe", json!({"content":"owned"})),
+          text("initial candidate"),
+          text("reviewed candidate"),
+        ]
+      };
+      let provider = Scripted::new(
+        "initial-window-review",
+        (0..2).flat_map(|_| responses.clone()).collect(),
+      );
+      let tools = registry_with(vec![Box::new(MutatingSpy {
+        seen: Arc::new(Mutex::new(vec![])),
+        outcome: ToolOutcome::succeeded("written"),
+      })]);
+      let policy = rupi_core::ProfilePolicy::new(
+        rupi_core::ContextProfile::Balanced,
+        provider.capabilities().context_window,
+      );
+      let mut trace = Recorder::default();
+      let per_turn = if reserved { 2 } else { 3 };
+      let mut progress = CheckProgress {
+        results: (0..(per_turn * 2))
+          .map(|_| check_result(CompletionCheckStatus::Passed, "owned pass"))
+          .collect(),
+        requests: vec![],
+      };
+      let mut runtime = TurnLoop::new(
+        &provider,
+        &tools,
+        &policy,
+        &mut trace,
+        SessionId::new(),
+        TraceId::new(),
+      )
+      .with_max_requests(5)
+      .with_max_completion_checks(3)
+      .with_completion_review(true)
+      .with_completion_check_initial_request_window(Some(1))
+      .with_completion_check_on_review(reserved)
+      .with_completion_review_request_reserve(reserved.then_some(3));
+      for task in ["first", "fresh"] {
+        let report = runtime
+          .run_turn(task, &CancelToken::new(), &mut progress)
+          .unwrap();
+        assert_eq!(report.status, TurnStatus::Completed);
+        assert_eq!(report.requests, per_turn);
+      }
+      drop(runtime);
+      assert_eq!(progress.requests.len(), per_turn * 2);
+      assert!(
+        progress
+          .requests
+          .iter()
+          .all(|r| r.remaining_turn_time.is_none())
+      );
+      assert_eq!(progress.requests[0].ordinal, 1);
+      assert_eq!(progress.requests[per_turn].ordinal, 1);
+      assert_eq!(
+        trace
+          .all("runtime_control_injected")
+          .iter()
+          .filter(|event| event["kind"] == "completion_review")
+          .count(),
+        2
+      );
+      assert_eq!(trace.all("external_context_retrieved").len(), per_turn * 2);
+      let controls = trace.all("runtime_control_injected");
+      let first_review = controls
+        .iter()
+        .position(|c| c["kind"] == "completion_review")
+        .unwrap();
+      let first_check = controls
+        .iter()
+        .position(|c| c["kind"] == "completion_check")
+        .unwrap();
+      assert_eq!(first_review < first_check, reserved);
+    }
+  }
+
+  #[test]
+  fn initial_check_window_skips_invalid_builders_no_tools_and_prior_observations() {
+    for (window, checks) in [
+      (None, 2),
+      (Some(0), 2),
+      (Some(4), 2),
+      (Some(usize::MAX), 2),
+      (Some(1), 1),
+    ] {
+      let provider = Scripted::new(
+        "inactive-initial-check",
+        vec![
+          tool_call("write_probe", json!({"content":"owned"})),
+          text("candidate"),
+        ],
+      );
+      let tools = registry_with(vec![Box::new(MutatingSpy {
+        seen: Arc::new(Mutex::new(vec![])),
+        outcome: ToolOutcome::succeeded("written"),
+      })]);
+      let policy = rupi_core::ProfilePolicy::new(
+        rupi_core::ContextProfile::Balanced,
+        provider.capabilities().context_window,
+      );
+      let mut trace = Recorder::default();
+      let mut progress = CheckProgress {
+        results: VecDeque::from([check_result(CompletionCheckStatus::Passed, "owned pass")]),
+        requests: vec![],
+      };
+      let report = TurnLoop::new(
+        &provider,
+        &tools,
+        &policy,
+        &mut trace,
+        SessionId::new(),
+        TraceId::new(),
+      )
+      .with_max_requests(5)
+      .with_max_completion_checks(checks)
+      .with_completion_check_initial_request_window(window)
+      .run_turn("owned task", &CancelToken::new(), &mut progress)
+      .unwrap();
+      assert_eq!(report.status, TurnStatus::Completed);
+      assert_eq!(report.requests, 2);
+      assert_eq!(progress.requests.len(), 1);
+    }
+    for finalization in [false, true] {
+      let provider = Scripted::new(
+        "observed-initial-check",
+        if finalization {
+          vec![text("assessment")]
+        } else {
+          vec![
+            text("initial candidate"),
+            tool_call("write_probe", json!({"content":"repair"})),
+            text("final candidate"),
+          ]
+        },
+      );
+      let tools = registry_with(vec![Box::new(MutatingSpy {
+        seen: Arc::new(Mutex::new(vec![])),
+        outcome: ToolOutcome::succeeded("written"),
+      })]);
+      let policy = rupi_core::ProfilePolicy::new(
+        rupi_core::ContextProfile::Balanced,
+        provider.capabilities().context_window,
+      );
+      let mut trace = Recorder::default();
+      let mut progress = CheckProgress {
+        results: VecDeque::from([
+          check_result(CompletionCheckStatus::Failed, "owned failed candidate"),
+          check_result(CompletionCheckStatus::Passed, "owned final pass"),
+        ]),
+        requests: vec![],
+      };
+      let mut runtime = TurnLoop::new(
+        &provider,
+        &tools,
+        &policy,
+        &mut trace,
+        SessionId::new(),
+        TraceId::new(),
+      )
+      .with_max_requests(5)
+      .with_max_completion_checks(2)
+      .with_completion_check_initial_request_window(Some(2));
+      let report = if finalization {
+        runtime.run_finalization("assess", &CancelToken::new(), &mut progress)
+      } else {
+        runtime.run_turn("repair", &CancelToken::new(), &mut progress)
+      }
+      .unwrap();
+      assert_eq!(report.status, TurnStatus::Completed);
+      assert_eq!(report.requests, if finalization { 1 } else { 3 });
+      assert_eq!(progress.requests.len(), if finalization { 0 } else { 2 });
+    }
+  }
+
   struct SlowToolProgress;
 
   #[test]
@@ -16373,69 +16578,76 @@ mod tests {
 
   #[test]
   fn repair_check_window_keeps_terminal_results_and_request_caps() {
-    for (status, feedback) in [
-      (CompletionCheckStatus::Failed, "owned fail".into()),
-      (
-        CompletionCheckStatus::Unavailable,
-        "owned unavailable".into(),
-      ),
-      (CompletionCheckStatus::Passed, "owned pass".into()),
-      (
-        CompletionCheckStatus::Passed,
-        "x".repeat(MAX_COMPLETION_FEEDBACK_BYTES + 1),
-      ),
-    ] {
-      let provider = Scripted::new(
-        "repair-stop",
-        vec![
-          text("initial"),
-          tool_call("write_probe", json!({"content":"first"})),
-          tool_call("write_probe", json!({"content":"second"})),
-          text("candidate"),
-        ],
-      );
-      let tools = registry_with(vec![Box::new(MutatingSpy {
-        seen: Arc::new(Mutex::new(vec![])),
-        outcome: ToolOutcome::succeeded("written"),
-      })]);
-      let policy = rupi_core::ProfilePolicy::new(
-        rupi_core::ContextProfile::Balanced,
-        provider.capabilities().context_window,
-      );
-      let mut trace = Recorder::default();
-      let mut progress = CheckProgress {
-        results: VecDeque::from([
-          check_result(CompletionCheckStatus::Failed, "owned first fail"),
-          check_result(status, &feedback),
-        ]),
-        requests: vec![],
-      };
-      let result = TurnLoop::new(
-        &provider,
-        &tools,
-        &policy,
-        &mut trace,
-        SessionId::new(),
-        TraceId::new(),
-      )
-      .with_max_requests(8)
-      .with_max_completion_checks(2)
-      .with_completion_check_repair_request_window(Some(2))
-      .run_turn("owned task", &CancelToken::new(), &mut progress);
-      let unavailable = status == CompletionCheckStatus::Unavailable
-        || feedback.len() > MAX_COMPLETION_FEEDBACK_BYTES;
-      if unavailable {
-        assert_eq!(result.unwrap_err().kind(), Some(ModelFailureKind::Semantic));
-      } else {
-        assert_eq!(result.unwrap().status, TurnStatus::CompletionCheckExhausted);
+    for initial in [false, true] {
+      for (status, feedback) in [
+        (CompletionCheckStatus::Failed, "owned fail".into()),
+        (
+          CompletionCheckStatus::Unavailable,
+          "owned unavailable".into(),
+        ),
+        (CompletionCheckStatus::Passed, "owned pass".into()),
+        (
+          CompletionCheckStatus::Passed,
+          "x".repeat(MAX_COMPLETION_FEEDBACK_BYTES + 1),
+        ),
+      ] {
+        let provider = Scripted::new(
+          "repair-stop",
+          vec![
+            if initial {
+              tool_call("write_probe", json!({"content":"initial"}))
+            } else {
+              text("initial")
+            },
+            tool_call("write_probe", json!({"content":"first"})),
+            tool_call("write_probe", json!({"content":"second"})),
+            text("candidate"),
+          ],
+        );
+        let tools = registry_with(vec![Box::new(MutatingSpy {
+          seen: Arc::new(Mutex::new(vec![])),
+          outcome: ToolOutcome::succeeded("written"),
+        })]);
+        let policy = rupi_core::ProfilePolicy::new(
+          rupi_core::ContextProfile::Balanced,
+          provider.capabilities().context_window,
+        );
+        let mut trace = Recorder::default();
+        let mut progress = CheckProgress {
+          results: VecDeque::from([
+            check_result(CompletionCheckStatus::Failed, "owned first fail"),
+            check_result(status, &feedback),
+          ]),
+          requests: vec![],
+        };
+        let result = TurnLoop::new(
+          &provider,
+          &tools,
+          &policy,
+          &mut trace,
+          SessionId::new(),
+          TraceId::new(),
+        )
+        .with_max_requests(8)
+        .with_max_completion_checks(2)
+        .with_completion_check_repair_request_window(Some(2))
+        .with_completion_check_initial_request_window(initial.then_some(1))
+        .run_turn("owned task", &CancelToken::new(), &mut progress);
+        let unavailable = status == CompletionCheckStatus::Unavailable
+          || feedback.len() > MAX_COMPLETION_FEEDBACK_BYTES;
+        if unavailable {
+          assert_eq!(result.unwrap_err().kind(), Some(ModelFailureKind::Semantic));
+        } else {
+          assert_eq!(result.unwrap().status, TurnStatus::CompletionCheckExhausted);
+        }
+        assert_eq!(
+          provider.requests().len(),
+          3 + usize::from(status == CompletionCheckStatus::Passed && !unavailable)
+        );
+        assert_eq!(progress.requests.len(), 2);
+        assert!(trace.all("model_retry").is_empty());
+        assert!(trace.all("model_failover").is_empty());
       }
-      assert_eq!(
-        provider.requests().len(),
-        3 + usize::from(status == CompletionCheckStatus::Passed && !unavailable)
-      );
-      assert_eq!(progress.requests.len(), 2);
-      assert!(trace.all("model_retry").is_empty());
-      assert!(trace.all("model_failover").is_empty());
     }
   }
 
@@ -16444,6 +16656,7 @@ mod tests {
     struct RepairCancel {
       caller: CancelToken,
       deadline: bool,
+      initial: bool,
       calls: usize,
     }
     impl TurnProgress for RepairCancel {
@@ -16453,7 +16666,7 @@ mod tests {
         cancel: &CancelToken,
       ) -> CompletionCheckResult {
         self.calls += 1;
-        if self.calls == 1 {
+        if self.calls == 1 && !self.initial {
           return check_result(CompletionCheckStatus::Failed, "owned failure");
         }
         if self.deadline {
@@ -16466,79 +16679,103 @@ mod tests {
         check_result(CompletionCheckStatus::Passed, "must not be used")
       }
     }
-    for (unknown, deadline) in [(true, false), (false, false), (false, true)] {
-      let provider = Scripted::new(
-        "repair-barrier",
-        vec![
-          text("initial"),
-          tool_call("write_probe", json!({"content":"owned"})),
-          text("unused"),
-        ],
-      );
-      let writes = Arc::new(Mutex::new(vec![]));
-      let tools = registry_with(vec![Box::new(MutatingSpy {
-        seen: Arc::clone(&writes),
-        outcome: if unknown {
-          ToolOutcome::unknown("uncertain")
-        } else {
-          ToolOutcome::succeeded("written")
-        },
-      })]);
-      let policy = rupi_core::ProfilePolicy::new(
-        rupi_core::ContextProfile::Balanced,
-        provider.capabilities().context_window,
-      );
-      let mut trace = Recorder::default();
-      let caller = CancelToken::new();
-      let mut progress = RepairCancel {
-        caller: caller.clone(),
-        deadline,
-        calls: 0,
-      };
-      let mut runtime = TurnLoop::new(
-        &provider,
-        &tools,
-        &policy,
-        &mut trace,
-        SessionId::new(),
-        TraceId::new(),
-      )
-      .with_max_requests(5)
-      .with_max_completion_checks(3)
-      .with_completion_check_repair_request_window(Some(1))
-      .with_max_turn_duration(deadline.then_some(Duration::from_secs(2)));
-      let report = runtime
-        .run_turn("owned task", &caller, &mut progress)
-        .unwrap();
-      assert_eq!(
-        report.status,
-        if unknown {
-          TurnStatus::NeedsReconciliation
-        } else if deadline {
-          TurnStatus::TimeBudgetExhausted
-        } else {
-          TurnStatus::Cancelled
-        }
-      );
-      if unknown {
+    for initial in [false, true] {
+      for (unknown, deadline) in [(true, false), (false, false), (false, true)] {
+        let provider = Scripted::new(
+          "repair-barrier",
+          vec![
+            if initial {
+              tool_call("write_probe", json!({"content":"owned"}))
+            } else {
+              text("initial")
+            },
+            if initial {
+              text("unused candidate")
+            } else {
+              tool_call("write_probe", json!({"content":"owned"}))
+            },
+            text("unused"),
+          ],
+        );
+        let writes = Arc::new(Mutex::new(vec![]));
+        let tools = registry_with(vec![Box::new(MutatingSpy {
+          seen: Arc::clone(&writes),
+          outcome: if unknown {
+            ToolOutcome::unknown("uncertain")
+          } else {
+            ToolOutcome::succeeded("written")
+          },
+        })]);
+        let policy = rupi_core::ProfilePolicy::new(
+          rupi_core::ContextProfile::Balanced,
+          provider.capabilities().context_window,
+        );
+        let mut trace = Recorder::default();
+        let caller = CancelToken::new();
+        let mut progress = RepairCancel {
+          caller: caller.clone(),
+          deadline,
+          initial,
+          calls: 0,
+        };
+        let mut runtime = TurnLoop::new(
+          &provider,
+          &tools,
+          &policy,
+          &mut trace,
+          SessionId::new(),
+          TraceId::new(),
+        )
+        .with_max_requests(5)
+        .with_max_completion_checks(3)
+        .with_completion_check_repair_request_window(Some(1))
+        .with_completion_check_initial_request_window(initial.then_some(1))
+        .with_max_turn_duration(deadline.then_some(Duration::from_secs(2)));
+        let report = runtime
+          .run_turn("owned task", &caller, &mut progress)
+          .unwrap();
         assert_eq!(
-          runtime
-            .run_turn("fresh", &CancelToken::new(), &mut progress)
-            .unwrap()
-            .status,
-          TurnStatus::NeedsReconciliation
+          report.status,
+          if unknown {
+            TurnStatus::NeedsReconciliation
+          } else if deadline {
+            TurnStatus::TimeBudgetExhausted
+          } else {
+            TurnStatus::Cancelled
+          }
+        );
+        if unknown {
+          assert_eq!(
+            runtime
+              .run_turn("fresh", &CancelToken::new(), &mut progress)
+              .unwrap()
+              .status,
+            TurnStatus::NeedsReconciliation
+          );
+        }
+        drop(runtime);
+        assert_eq!(provider.requests().len(), if initial { 1 } else { 2 });
+        assert_eq!(writes.lock().unwrap().len(), 1);
+        assert_eq!(
+          progress.calls,
+          if initial {
+            usize::from(!unknown)
+          } else if unknown {
+            1
+          } else {
+            2
+          }
+        );
+        assert_eq!(
+          trace.all("external_context_retrieved").len(),
+          usize::from(!initial)
         );
       }
-      drop(runtime);
-      assert_eq!(provider.requests().len(), 2);
-      assert_eq!(writes.lock().unwrap().len(), 1);
-      assert_eq!(progress.calls, if unknown { 1 } else { 2 });
-      assert_eq!(trace.all("external_context_retrieved").len(), 1);
     }
   }
 
   #[test]
-  fn request_review_reserve_exposes_missing_tests_before_the_request_cap() {
+  fn request_reserve_or_initial_check_exposes_missing_tests_before_the_request_cap() {
     use std::sync::atomic::AtomicBool;
 
     struct ChunkingProvider {
@@ -16584,7 +16821,8 @@ mod tests {
         Scripted::new("chunking", vec![events]).stream(request, sink, cancel)
       }
     }
-    for reserve in [None, Some(2)] {
+    for (reserve, initial_window) in [(None, None), (Some(2), None), (None, Some(1))] {
+      let observed = reserve.is_some() || initial_window.is_some();
       let provider = ChunkingProvider {
         identity: Scripted::new("chunking", vec![]),
         requests: Mutex::new(vec![]),
@@ -16617,10 +16855,11 @@ mod tests {
         TraceId::new(),
       )
       .with_max_requests(4)
-      .with_completion_review(true)
+      .with_completion_review(initial_window.is_none())
       .with_max_completion_checks(2)
       .with_completion_check_on_review(true)
       .with_completion_review_request_reserve(reserve)
+      .with_completion_check_initial_request_window(initial_window)
       .run_turn(
         "deliver owned application and tests",
         &CancelToken::new(),
@@ -16629,23 +16868,20 @@ mod tests {
       .unwrap();
       assert_eq!(
         report.status,
-        if reserve.is_some() {
+        if observed {
           TurnStatus::Completed
         } else {
           TurnStatus::BudgetExhausted
         }
       );
-      assert_eq!(report.requests, if reserve.is_some() { 3 } else { 4 });
+      assert_eq!(report.requests, if observed { 3 } else { 4 });
       let writes = writes.lock().unwrap();
-      assert_eq!(writes.len(), if reserve.is_some() { 2 } else { 3 });
+      assert_eq!(writes.len(), if observed { 2 } else { 3 });
       assert_eq!(
         writes.iter().any(|args| args["content"] == "owned tests"),
-        reserve.is_some()
+        observed
       );
-      assert_eq!(
-        progress.requests.len(),
-        if reserve.is_some() { 2 } else { 0 }
-      );
+      assert_eq!(progress.requests.len(), if observed { 2 } else { 0 });
       assert!(
         progress
           .requests
@@ -16659,11 +16895,19 @@ mod tests {
           matches!(m.origin, MessageOrigin::ExternalContext { .. })
             && m.text().contains("missing owned tests")
         }),
-        reserve.is_some()
+        observed
       );
       assert_eq!(
         trace.all("external_context_retrieved").len(),
         progress.requests.len()
+      );
+      assert_eq!(
+        trace
+          .all("runtime_control_injected")
+          .iter()
+          .filter(|event| event["kind"] == "completion_review")
+          .count(),
+        usize::from(reserve.is_some())
       );
       assert!(trace.all("model_retry").is_empty());
       assert!(trace.all("model_failover").is_empty());

@@ -409,6 +409,9 @@ pub struct RuntimeLimits {
   /// Caller observations required before ordinary completion; omitted disables checks.
   #[serde(default, skip_serializing_if = "Option::is_none")]
   pub max_completion_checks_per_turn: Option<u32>,
+  /// Obtain the first caller observation after this many ordinary requests, if none occurred.
+  #[serde(default, skip_serializing_if = "Option::is_none")]
+  pub completion_check_initial_request_window: Option<u32>,
   /// Refresh Failed caller feedback after this many repair requests; omitted disables it.
   #[serde(default, skip_serializing_if = "Option::is_none")]
   pub completion_check_repair_request_window: Option<u32>,
@@ -467,6 +470,7 @@ impl Default for RuntimeLimits {
       review_completion: false,
       max_completion_checks_per_turn: None,
       completion_check_repair_request_window: None,
+      completion_check_initial_request_window: None,
       completion_check_on_review: false,
       completion_review_reserve_ms: None,
       completion_review_request_reserve: None,
@@ -715,6 +719,22 @@ impl RuntimeConfig {
     {
       return Err(ConfigError(
         "limits.max_completion_checks_per_turn must be between 1 and 16".into(),
+      ));
+    }
+    if let Some(window) = self.limits.completion_check_initial_request_window
+      && (window == 0
+        || window >= self.limits.max_model_requests_per_turn.saturating_sub(1)
+        || self
+          .limits
+          .max_completion_checks_per_turn
+          .is_none_or(|checks| checks < 2))
+    {
+      return Err(ConfigError(
+        concat!(
+          "limits.completion_check_initial_request_window requires at least two completion ",
+          "checks and a positive window below the ordinary request allowance"
+        )
+        .into(),
       ));
     }
     if let Some(window) = self.limits.completion_check_repair_request_window
@@ -1338,6 +1358,41 @@ mod tests {
       if let Ok(parsed) = parsed {
         assert_eq!(
           parsed.limits.completion_check_repair_request_window,
+          Some(window)
+        );
+        assert!(!parsed.limits.review_completion);
+        assert_eq!(parsed.limits.max_turn_duration_ms, None);
+      }
+    }
+  }
+
+  #[test]
+  fn initial_completion_check_window_requires_an_initial_and_fresh_final_observation() {
+    let mut config = sample_config();
+    assert!(
+      serde_json::to_value(&config).unwrap()["limits"]
+        .get("completion_check_initial_request_window")
+        .is_none()
+    );
+    for (checks, max, window, valid) in [
+      (Some(8), 40, 8, true),
+      (Some(2), 3, 1, true),
+      (None, 40, 8, false),
+      (Some(1), 40, 8, false),
+      (Some(8), 40, 0, false),
+      (Some(8), 40, 39, false),
+      (Some(8), 2, 1, false),
+      (Some(8), 1, 1, false),
+      (Some(8), 40, u32::MAX, false),
+    ] {
+      config.limits.max_completion_checks_per_turn = checks;
+      config.limits.max_model_requests_per_turn = max;
+      config.limits.completion_check_initial_request_window = Some(window);
+      let parsed = RuntimeConfig::parse(&serde_json::to_string(&config).unwrap());
+      assert_eq!(parsed.is_ok(), valid, "{checks:?}/{max}/{window}");
+      if let Ok(parsed) = parsed {
+        assert_eq!(
+          parsed.limits.completion_check_initial_request_window,
           Some(window)
         );
         assert!(!parsed.limits.review_completion);

@@ -298,6 +298,12 @@ fn open_session_with_feedback(
   .with_max_requests(config.limits.max_model_requests_per_turn as usize)
   .with_completion_review(config.limits.review_completion)
   .with_max_completion_checks(config.limits.max_completion_checks_per_turn.unwrap_or(0))
+  .with_completion_check_initial_request_window(
+    config
+      .limits
+      .completion_check_initial_request_window
+      .map(|window| window as usize),
+  )
   .with_completion_check_repair_request_window(
     config
       .limits

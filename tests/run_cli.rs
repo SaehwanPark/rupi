@@ -114,8 +114,15 @@ fn run(config: &Path, cwd: &Path, prompt: &str) -> Output {
 
 #[test]
 fn completion_mailbox_drives_a_real_cli_repair_without_new_execution_authority() {
-  for review_mode in ["ordinary", "timed", "requests", "repair_window"] {
+  for review_mode in [
+    "ordinary",
+    "timed",
+    "requests",
+    "repair_window",
+    "initial_window",
+  ] {
     let early_review = matches!(review_mode, "timed" | "requests");
+    let initial_window = review_mode == "initial_window";
     let repair_window = review_mode == "repair_window";
     let expected_checks = if repair_window { 3 } else { 2 };
     let temp = TempDir::new().unwrap();
@@ -124,7 +131,7 @@ fn completion_mailbox_drives_a_real_cli_repair_without_new_execution_authority()
     fs::create_dir(&workspace).unwrap();
     fs::create_dir(&mailbox).unwrap();
     let mut responses = vec![
-      if early_review {
+      if early_review || initial_window {
         tool_response(
           "initial",
           "write",
@@ -163,6 +170,10 @@ fn completion_mailbox_drives_a_real_cli_repair_without_new_execution_authority()
     let path = write_config(temp.path(), &server.base_url(), true);
     let mut config = RuntimeConfig::parse(&fs::read_to_string(&path).unwrap()).unwrap();
     config.limits.max_completion_checks_per_turn = Some(expected_checks);
+    if initial_window {
+      config.limits.max_model_requests_per_turn = 4;
+      config.limits.completion_check_initial_request_window = Some(1);
+    }
     if repair_window {
       config.limits.max_model_requests_per_turn = 8;
       config.limits.completion_check_repair_request_window = Some(2);
@@ -225,7 +236,7 @@ fn completion_mailbox_drives_a_real_cli_repair_without_new_execution_authority()
           );
           let ordinal = request["ordinal"].as_u64().unwrap();
           assert_eq!(ordinal as usize, seen.len());
-          if early_review && ordinal == 1 {
+          if (early_review || initial_window) && ordinal == 1 {
             assert_eq!(
               fs::read_to_string(canonical_workspace.join("app.txt")).unwrap(),
               "owned initial"
