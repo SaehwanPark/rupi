@@ -2471,3 +2471,46 @@ CI and paired/final delivery checks remain required.
   this failure/design handoff remotely, wait for04:48ET reset plus two-minute grace,
   then resume investigation with fresh headroom. Goal remains active; no new screen
   before analysis and a verified enhancement.
+
+### Verified delegated completion feedback before Retry25
+
+Retry24's observed closure gap is addressed by core59994fe, CLI6bceb14, host e658c7a
+and cleanup02ecdf9c40a54fa66096197f6735f78dbac44d1d. Core receives typed caller
+observations at otherwise accepted ordinary completions; failed observations permit
+bounded same-model repair, unavailable observations end semantic failure without
+retry/failover, and exhausted check allowance is explicit. Unknown mutation and
+cancellation/deadline barriers retain precedence. Static runtime control and external
+feedback use distinct durable provenance; no Rust command execution was added.
+
+The owned regression failed before the gate and passes after a Changed repair and later
+pass. Required Rust checks pass (203 runtime/132 core tests), alongside CLI protocol,
+preflight/no-provider-request and real-binary/fake-provider fixtures. Host public-only
+snapshot, required artifacts, nonzero tests, public diagnostics, private exclusion,
+stale identity, once-only handling, actual command timeout and live callback fixtures
+pass. Summary metadata/content exclusion passes. A PowerShell GetNewClosure function-
+scope failure was fixed before model use. Parent invariant review passes; no independent
+review agent was used. Outside search is rejected to protect the mailbox from grep.
+Host observations reserve12s for existing process cleanup/publication. Caller permissions
+are trusted; snapshot copying and file-tool protection do not constitute an OS sandbox.
+
+Performance passes: startup135.965ms cold/7.923ms warm median/8.823ms max; render
+3.467/3.638/3.177us, parse0.300us; five restores71.45–4697.55us and five context
+0.4/0.1/0/0/0.3us within budgets. Shared Case10 prompt SHA
+`230589C5F20B5486CD84216CE5B6A0DB9734CE724C2903D891E4D50D9CFB3270`,
+18 other prompt hashes, full public SPEC and three immutable acceptance hashes are
+unchanged. Profile checks/dryrun pass. Native Pi completion controls remain null.
+Source6bceb14 CI passes all three platforms; exact later-head CI is still required.
+Only main plus the active Case10 branch remain locally/remotely; root policy SHA is
+preserved. Latest direct usage is23% five-hour/84% weekly, below95%/99% soft stops.
+
+Next frozen one-turn screen:
+`bench-20261006-case10-feedback8-initial-progress-review300-turn2370-window3-budget4096-low-output32768-retry25-rupi40-screen1-2400s`.
+Reuse Retry24's model27356/relay23732:8003, low4096 reasoning/output32768,
+outer2400/native2370s, provider2394s/relay1194s, cap40/window3/initial progress,
+review/reserve300s; add caller checks8. Debug SHA
+`3CE72B74D00322E3E0D263D657094DEEF107DED74625007E97EA078DB28D57B5`, harness
+`B9568A1A8C548F994BA66169E05D1099AEC65759C8DA1C62EDE80DD7F271B241`, public-host module
+`699C871BE5AA9F141363ECC628AF7CE93A241097EFC9F587E01BE494A613AF69`; relay helper A0BCAE68 is unchanged.
+No attempt is yet claimed. No generated content or oracle diagnostics were inspected;
+semantic application cause, acceptance benefit, isolated causality and Case10 paired
+win remain unestablished. Fresh matched Pi follows only Rupi acceptance.

@@ -91,3 +91,32 @@ one fresh Rupi development turn using the Retry24 model/prompt/controls/outer240
 with checks8 selected. Any failure requires analysis and a verified enhancement before
 another attempt. Fresh matched Pi only after Rupi acceptance. Report configured results
 and parity limits honestly; no benefit or semantic fix is established by owned tests.
+
+## Implementation evidence before Retry25
+
+Core59994fe, CLI6bceb14, host e658c7a and cleanup02ecdf9 implement this plan.
+The owned before fixture fails because the first candidate closes; after the gate,
+supplied public failure permits a Changed repair and later pass on the same model.
+All203 runtime/132 core tests and required fmt/core-all-features/clippy/workspace
+tests/doc/debug checks pass. CLI protocol/parser/preflight and real binary/fake-provider
+repair fixtures pass. Host fixtures cover copied-only effects, requested public artifacts,
+nonzero tests, bounded public diagnostics, private-content exclusion, stale identity,
+once-only handling, timeout and a live callback; summary scalar/content exclusion passes.
+A GetNewClosure function-scope failure was corrected before model use.
+
+Two bounded refinements: reject outside search too (grep could expose the mailbox),
+and reserve12s within the host observation window for existing ten-second process-tree
+cleanup plus publication. The timeout fixture confirms a public command started and
+Unavailable returned, without replay. No Rust check execution or extra model/relay exists.
+The parent invariant review passes: single-model execution, semantic no-recovery,
+caller-owned snapshot effects, Unknown precedence, external/control/native separation,
+fresh bounded allowance, cancellation and lazy disabled paths. No independent review
+agent was used. Caller permissions are trusted; this is not an adversarial OS sandbox.
+
+Startup135.96ms cold/7.92ms median/8.82ms max; rendering3.47/3.64/3.18us and parse0.30us;
+all five restore71.45–4697.55us and five context0.4/0.1/0/0/0.3us budgets pass.
+Selected checks8/profile2400s/native2370s guards, shared Case10 prompt and18 other prompt
+hashes, full public SPEC and three unchanged acceptance hashes pass. Source6bceb14 CI
+passes all three platforms; exact later-head CI remains required. Retry25 is not yet run.
+No application contents or oracle diagnostics were inspected; no semantic cause, configured
+acceptance improvement, causal benefit or Case10 paired win is established.

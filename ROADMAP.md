@@ -1688,8 +1688,10 @@ TUI rendering passed all budgets (3.31–3.90 µs/unit); checkpointed restore me
   Required Rust checks pass (203 runtime/132 core tests), including the owned failing
   before/passing after fixture. Host public-snapshot and live-callback fixtures pass;
   a PowerShell closure scope failure was corrected before model use. Outside search
-  access is also rejected to protect the mailbox from grep. Performance, frozen profile
-  audits and fresh screening remain pending. The next screen adds checks8 to Retry24's
+  access is also rejected to protect the mailbox from grep. Startup135.96ms cold/7.92ms
+  warm median/8.82ms max, rendering, five restore and five context budgets pass. Frozen
+  prompt/profile/reference guards and parent invariant review pass. Fresh screening
+  remains pending. The next screen adds checks8 to Retry24's
   controls; native Pi parity is not claimed, and oracle checks stay after the turn.
   No semantic cause, acceptance benefit, or paired Case10 win is established.
   Rupi-first screening and paired
