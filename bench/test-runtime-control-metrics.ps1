@@ -25,7 +25,14 @@ $records = @(
   @{ type = "runtime_control_injected"; kind = "completion_review"; text = $marker },
   @{ type = "runtime_control_injected"; kind = "future_control"; text = $marker },
   @{ type = "assistant_delta"; text = $marker },
-  @{ type = "user_input"; text = $marker }
+  @{ type = "user_input"; text = $marker },
+  @{ type = "runtime_control_injected"; kind = "completion_check"; text = $marker },
+  @{ type = "external_context_retrieved"; source = @{provider="delegated_completion_check"};
+    metadata = @{ordinal="1";status="failed";elapsed_ms="123";unsafe=$marker}; text=$marker },
+  @{ type = "external_context_retrieved"; source = @{provider="other"};
+    metadata = @{ordinal="2";status="passed";elapsed_ms="456";unsafe=$marker} },
+  @{ type = "external_context_retrieved"; source = @{provider="delegated_completion_check"};
+    metadata = @{ordinal="3";status=$marker;elapsed_ms="123"} }
 )
 $lines = @($records | ForEach-Object { $_ | ConvertTo-Json -Compress })
 [IO.File]::WriteAllLines(
@@ -47,6 +54,13 @@ if (($all.completion_review_after_started_requests -join ',') -cne '1,2' -or
   throw "Review request position or turn scope mismatch."
 }
 foreach ($metrics in @($all, $scoped)) {
+  if ($metrics.runtime_control_counts.completion_check -ne 1 -or
+      $metrics.completion_checks.Count -ne 1 -or $metrics.completion_checks[0].ordinal -ne 1 -or
+      $metrics.completion_checks[0].status -cne 'failed' -or
+      $metrics.completion_checks[0].elapsed_ms -ne 123 -or
+      $metrics.completion_checks[0].after_started_requests -ne $metrics.model_requests_started) {
+    throw 'Completion check metrics did not preserve safe scope and scalar metadata.'
+  }
   if (($metrics | ConvertTo-Json -Depth 20 -Compress).Contains($marker)) {
     throw "Metrics exposed control or model content."
   }

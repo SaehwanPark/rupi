@@ -534,6 +534,42 @@ count, and review positions as counts of started requests at injection, without 
 text or model content; native Pi control metrics remain unavailable/null.
 These counts measure injected controls, not proof that the model used their guidance.
 
+### Caller completion observations
+
+Optional `limits.max_completion_checks_per_turn` (1–16, omitted by default) requires
+fresh caller observations before accepting an ordinary text-only completion. Progress
+rejection precedes checking; checking precedes the optional review. Every later candidate,
+including after review, needs another check. A failed observation allows same-model repair
+within request/tool/time/check budgets; exhausted allowance ends `CompletionCheckExhausted`.
+Unavailable observations end a semantic failure without retry or failover. Cancellation
+and native deadlines take precedence, no-tools finalization skips checking, and Unknown
+mutations stop before either checking or inference. New turns renew the local allowance.
+
+`TurnProgress::check_completion` supplies typed status/data and receives the current
+cancel token plus ordinal/remaining native time. Core does not execute checks. The caller
+must isolate effects outside the canonical task workspace. Static `CompletionCheck`
+guidance is a runtime control; bounded UTF-8 feedback (16KiB) is separate external context
+from `delegated_completion_check`, with citation and ordinal/status/elapsed metadata.
+Both persist using existing message/event transactions; native assistant evidence stays
+distinct. Resume never replays a prior caller check. A pass describes reported observations,
+not general correctness or acceptance certification.
+
+Run-only `--completion-feedback-dir` selects a caller-owned, existing absolute directory
+outside the workspace. Configured allowance and disabled outside read/write/search access
+are validated before provider requests. Interactive/default paths reject configured checks
+without a handler. CLI publishes version1 UUID requests atomically and waits at most300s
+(or shorter native time) for a matching strict reply: 128KiB JSON, 16KiB feedback. Invalid,
+missing, IO-failed or timed-out replies become Unavailable, with no replay. Artifacts remain.
+The channel protects against model file tools; it is not an OS sandbox or arbitrary-exec
+isolation. CLI/core never choose or run verification commands.
+
+Case10's opt-in benchmark host copies public package/tests/README into an owned snapshot,
+checks requested public artifacts, runs bounded public unittest/help commands there, and
+requires nonzero discovered tests. Private acceptance remains after the turn; no oracle
+is copied or supplied. Host scratch effects/cleanup belong to the caller. Safe summaries
+retain control counts and check ordinal/status/elapsed/request-position scalars only;
+native Pi controls remain null. Counts do not prove that the model acted on feedback.
+
 ## 10. Context engine
 
 The context engine owns model-visible working memory.

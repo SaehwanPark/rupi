@@ -383,6 +383,14 @@ The conceptual boundaries should remain stable:
 
 Important runtime actions should produce typed events.
 
+An explicitly configured caller completion observation may gate ordinary closure within
+bounded turn/check budgets. Core owns the typed decision and preserves unavailable/failed
+distinctions; the caller owns domain checks and isolates their effects outside the canonical
+workspace. Diagnostic feedback is external evidence, separate from static runtime controls
+and native assistant output. Cancellation and Unknown-effect barriers retain precedence.
+Unavailable observations end semantic failure without retry, failover or check replay.
+Neither an observation nor model self-review certifies overall task correctness.
+
 A conceptual schema:
 
 ```rust

@@ -1682,9 +1682,15 @@ TUI rendering passed all budgets (3.31–3.90 µs/unit); checkpointed restore me
   First tools are writes and public tests are listed; help passes, README is absent,
   acceptance/tests fail. Review follows six started requests. Frozen audits and
   exact057e827 three-platform CI pass. Application semantic cause remains unmeasured.
-  A delegated completion-check investigation is pending: permitted public feedback
-  currently arrives after turn closure. No implementation is selected; effect,
-  provenance, budget and authority boundaries must be resolved before another screen.
+  Bounded delegated completion feedback is selected and implemented at the core/CLI
+  boundary (59994fe/6bceb14): caller observations can permit same-model repair, with
+  explicit exhaustion/semantic-unavailable and durable external/control provenance.
+  Required Rust checks pass (203 runtime/132 core tests), including the owned failing
+  before/passing after fixture. Host public-snapshot and live-callback fixtures pass;
+  a PowerShell closure scope failure was corrected before model use. Outside search
+  access is also rejected to protect the mailbox from grep. Performance, frozen profile
+  audits and fresh screening remain pending. The next screen adds checks8 to Retry24's
+  controls; native Pi parity is not claimed, and oracle checks stay after the turn.
   No semantic cause, acceptance benefit, or paired Case10 win is established.
   Rupi-first screening and paired
   evidence/delivery checks remain pending. Broader project gates remain active.

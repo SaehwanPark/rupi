@@ -10,6 +10,12 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Added
 
+- Added optional bounded caller completion observations and a run-only private mailbox.
+  Failed public feedback can guide same-model repair; unavailable observations stop without
+  replay or failover. Core/CLI execute no checks; the caller isolates verification effects.
+  The Case10 benchmark can check copied public files during a turn while keeping independent
+  acceptance after closure. This does not certify correctness or claim Pi control parity.
+
 - Added an optional initial progress boundary for authorized implementation turns with
   supplied context, reusing existing tool eligibility, approval and effect-safety checks.
 - Added an opt-in bounded completion review so the active model can check requested

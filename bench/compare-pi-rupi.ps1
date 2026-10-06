@@ -45,6 +45,8 @@ param(
   [ValidateRange(0, 86400000)]
   [long]$Case10CompletionReviewReserveMs = 0,
   [switch]$Case10InitialProgressBoundary,
+  [ValidateRange(0, 16)]
+  [int]$Case10CompletionChecks = 0,
   [ValidateSet("one_shot", "recurring")]
   [string]$Case10ProgressBoundaryMode = "one_shot",
   [ValidateRange(1, 100)]
@@ -53,6 +55,7 @@ param(
 )
 
 $ErrorActionPreference = "Stop"
+. (Join-Path $PSScriptRoot "completion-feedback.ps1")
 $Case09ProgressBoundaryMode = $Case09ProgressBoundaryMode.ToLowerInvariant()
 $Case10ProgressBoundaryMode = $Case10ProgressBoundaryMode.ToLowerInvariant()
 $script:providerTimeoutGraceSeconds = [int][math]::Min(
@@ -2024,7 +2027,8 @@ function Invoke-External {
     [Parameter(Mandatory)] [string]$StdoutPath,
     [Parameter(Mandatory)] [string]$StderrPath,
     [int]$TimeoutSeconds = 300,
-    [hashtable]$Environment = @{}
+    [hashtable]$Environment = @{},
+    [scriptblock]$WhileRunning = $null
   )
 
   $psi = [Diagnostics.ProcessStartInfo]::new()
@@ -2053,8 +2057,20 @@ function Invoke-External {
   $process.StandardInput.Close()
   $stdoutTask = $process.StandardOutput.ReadToEndAsync()
   $stderrTask = $process.StandardError.ReadToEndAsync()
-  $timedOut = -not $process.WaitForExit($TimeoutSeconds * 1000)
-  if ($timedOut) {
+  $callbackFailed = $false
+  if ($null -eq $WhileRunning) {
+    $timedOut = -not $process.WaitForExit($TimeoutSeconds * 1000)
+  } else {
+    while (-not $process.HasExited -and $started.ElapsedMilliseconds -lt ($TimeoutSeconds * 1000)) {
+      try {
+        & $WhileRunning $process.Id (($TimeoutSeconds * 1000) - $started.ElapsedMilliseconds) |
+          Out-Null
+      } catch { $callbackFailed = $true; break }
+      if (-not $process.HasExited) { [void]$process.WaitForExit(100) }
+    }
+    $timedOut = -not $process.HasExited
+  }
+  if ($timedOut -or $callbackFailed) {
     & taskkill.exe /PID $process.Id /T /F 2>$null | Out-Null
     [void]$process.WaitForExit(10000)
   }
@@ -2068,6 +2084,7 @@ function Invoke-External {
   [pscustomobject]@{
     exit_code = $exitCode
     timed_out = $timedOut
+    callback_failed = $callbackFailed
     elapsed_ms = $started.ElapsedMilliseconds
     stdout_path = $StdoutPath
     stderr_path = $StderrPath
@@ -2207,6 +2224,10 @@ function New-BenchmarkWorkspace([hashtable]$case, [string]$agentRoot, [string]$t
       $config | Add-Member -MemberType NoteProperty -Name limits -Value ([pscustomobject]@{})
     }
     Set-BenchmarkProgressBoundary $case $config.limits
+    if ($case.Id -eq "10-receipt-ledger" -and $Case10CompletionChecks -gt 0) {
+      $config.limits | Add-Member -MemberType NoteProperty -Force `
+        -Name max_completion_checks_per_turn -Value $Case10CompletionChecks
+    }
     if ($case.Id -eq "10-receipt-ledger" -and $Case10InitialProgressBoundary) {
       $config.limits | Add-Member -MemberType NoteProperty -Force `
         -Name initial_progress_boundary -Value $true
@@ -2309,10 +2330,11 @@ function Read-RupiMetrics([string]$project, [int]$SkipLines = 0) {
   $output = [int64]0; $providerTotal = [int64]0; $known = 0
   $toolRequested = 0; $toolCompleted = 0; $toolFailed = 0; $toolUnknown = 0
   $controlCounts = [ordered]@{
-    turn_time_budget = 0; completion_review = 0; progress_boundary = 0
+    turn_time_budget = 0; completion_review = 0; completion_check = 0; progress_boundary = 0
     progress_correction = 0; request_finalization = 0; unknown = 0
   }
   $reviewPositions = [Collections.Generic.List[int]]::new()
+  $completionChecks = [Collections.Generic.List[object]]::new()
   $toolNames = [Collections.Generic.List[string]]::new(); $status = $null; $finish = [Collections.Generic.List[string]]::new()
   $seenLines = 0
   foreach ($file in $traceFiles) {
@@ -2326,6 +2348,20 @@ function Read-RupiMetrics([string]$project, [int]$SkipLines = 0) {
           if ($controlCounts.Contains($kind)) { $controlCounts[$kind]++ }
           else { $controlCounts["unknown"]++ }
           if ($kind -eq "completion_review") { [void]$reviewPositions.Add($started) }
+        }
+        "external_context_retrieved" {
+          if ($record.source.provider -eq "delegated_completion_check") {
+            $ordinal = 0; $elapsed = [long]0
+            if ([int]::TryParse([string]$record.metadata.ordinal, [ref]$ordinal) -and
+                $ordinal -ge 1 -and $ordinal -le 16 -and
+                [long]::TryParse([string]$record.metadata.elapsed_ms, [ref]$elapsed) -and
+                $elapsed -ge 0 -and $record.metadata.status -in @("passed", "failed", "unavailable")) {
+              [void]$completionChecks.Add([pscustomobject]@{
+                ordinal = $ordinal; status = [string]$record.metadata.status
+                elapsed_ms = $elapsed; after_started_requests = $started
+              })
+            }
+          }
         }
         "model_request_started" { $started++ }
         "model_request_completed" {
@@ -2370,6 +2406,7 @@ function Read-RupiMetrics([string]$project, [int]$SkipLines = 0) {
     turn_status = $status; finish_reasons = @($finish)
     runtime_control_counts = $controlCounts
     completion_review_after_started_requests = @($reviewPositions)
+    completion_checks = @($completionChecks)
     measurement_scope = "turn"
   }
 }
@@ -2423,6 +2460,7 @@ function Read-PiMetrics([string]$stdoutPath) {
     tool_failures = $null; tool_unknown = $null; tool_names = @($toolNames)
     runtime_control_counts = $null
     completion_review_after_started_requests = $null
+    completion_checks = $null
     turn_status = $stop; finish_reasons = @($stop); session_id = $session; measurement_scope = "turn"
   }
 }
@@ -2473,10 +2511,19 @@ function Invoke-AgentCase([hashtable]$case, [string]$agent, [string]$root, [stri
       $args.Add("run"); $args.Add("--config"); $args.Add($workspace.config); $args.Add("--cwd"); $args.Add(".")
       if ($sessionId) { $args.Add("--resume"); $args.Add($sessionId) }
       $args.Add("--prompt"); $args.Add($prompt); $args.Add("--no-color"); $args.Add("--no-reasoning"); $args.Add("--verbose")
+      $completionCallback = $null
+      if ($case.Id -eq "10-receipt-ledger" -and $Case10CompletionChecks -gt 0) {
+        $completionHost = New-CompletionFeedbackHost $workspace.project $turnRoot $python $case.Help
+        $args.Add("--completion-feedback-dir"); $args.Add($completionHost.mailbox)
+        $completionCallback = {
+          param($processId, $remainingMs)
+          Invoke-CompletionFeedbackHost $completionHost $processId $remainingMs
+        }
+      }
       $call = Invoke-External -FileName $rupiBinary -Arguments @($args) `
         -WorkingDirectory $workspace.project -StdoutPath (Join-Path $turnRoot "stdout.txt") `
         -StderrPath (Join-Path $turnRoot "stderr.txt") -TimeoutSeconds $TurnTimeoutSeconds `
-        -Environment $benchmarkEnvironment
+        -Environment $benchmarkEnvironment -WhileRunning $completionCallback
       $metrics = Read-RupiMetrics $workspace.project $traceLinesBefore
       $sessionId = Get-RupiSessionId $workspace.project
     } else {
@@ -2523,6 +2570,9 @@ function Invoke-AgentCase([hashtable]$case, [string]$agent, [string]$root, [stri
         $Case10MaxTurnDurationMs -gt 0
       ) { $Case10MaxTurnDurationMs } else { $null }
       if ($case.Id -eq "10-receipt-ledger") {
+        $turnRecord["configured_completion_checks"] = if (
+          $agent -eq "rupi" -and $Case10CompletionChecks -gt 0
+        ) { $Case10CompletionChecks } else { $null }
         $turnRecord["configured_initial_progress_boundary"] = if ($agent -eq "rupi") {
           $Case10InitialProgressBoundary.IsPresent
         } else { $null }
@@ -3386,6 +3436,9 @@ $summary = [ordered]@{
   } else { $null }
   case10_rupi_progress_boundary_mode = $Case10ProgressBoundaryMode
   case10_rupi_initial_progress_boundary = $Case10InitialProgressBoundary.IsPresent
+  case10_rupi_completion_checks = if ($Case10CompletionChecks -gt 0) {
+    $Case10CompletionChecks
+  } else { $null }
   case10_max_output_tokens = $Case10MaxOutputTokens
   case10_rupi_max_turn_duration_ms = if ($Case10MaxTurnDurationMs -gt 0) {
     $Case10MaxTurnDurationMs

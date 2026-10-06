@@ -523,6 +523,10 @@ Expected divergences include:
   native Pi control parity is not claimed;
 - optional bounded same-model completion review; this is runtime guidance rather than
   certification that the user's task is correct, and native Pi parity is not claimed;
+- optional caller-delegated completion observations through an explicit run mailbox;
+  public feedback may permit bounded same-model repair, and unavailable observations stop
+  without replay. Owned protocol/runtime/host fixtures cover this Rupi-specific behavior;
+  native Pi control parity and acceptance benefit are not claimed;
 - potentially different internal session storage.
 
 These divergences should not unnecessarily break ecosystem-level reuse.
