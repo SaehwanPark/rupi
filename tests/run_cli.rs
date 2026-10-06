@@ -120,18 +120,26 @@ fn completion_mailbox_drives_a_real_cli_repair_without_new_execution_authority()
     "requests",
     "repair_window",
     "initial_window",
+    "check_reserve",
   ] {
     let early_review = matches!(review_mode, "timed" | "requests");
     let initial_window = review_mode == "initial_window";
     let repair_window = review_mode == "repair_window";
-    let expected_checks = if repair_window { 3 } else { 2 };
+    let check_reserve = review_mode == "check_reserve";
+    let expected_checks = if check_reserve {
+      4
+    } else if repair_window {
+      3
+    } else {
+      2
+    };
     let temp = TempDir::new().unwrap();
     let workspace = temp.path().join("workspace");
     let mailbox = temp.path().join("mailbox");
     fs::create_dir(&workspace).unwrap();
     fs::create_dir(&mailbox).unwrap();
     let mut responses = vec![
-      if early_review || initial_window {
+      if early_review || initial_window || check_reserve {
         tool_response(
           "initial",
           "write",
@@ -149,6 +157,17 @@ fn completion_mailbox_drives_a_real_cli_repair_without_new_execution_authority()
       ),
       text_response("checked candidate"),
     ];
+    if check_reserve {
+      responses.insert(
+        1,
+        tool_response(
+          "intermediate",
+          "write",
+          r#"{"path":"app.txt","contents":"owned intermediate"}"#,
+          None,
+        ),
+      );
+    }
     if repair_window {
       for (index, content) in [(1, "owned first repair"), (2, "owned intermediate")] {
         responses.insert(
@@ -170,6 +189,14 @@ fn completion_mailbox_drives_a_real_cli_repair_without_new_execution_authority()
     let path = write_config(temp.path(), &server.base_url(), true);
     let mut config = RuntimeConfig::parse(&fs::read_to_string(&path).unwrap()).unwrap();
     config.limits.max_completion_checks_per_turn = Some(expected_checks);
+    if check_reserve {
+      config.limits.max_model_requests_per_turn = 8;
+      config.limits.completion_check_initial_request_window = Some(1);
+      config.limits.completion_check_repair_request_window = Some(1);
+      config.limits.review_completion = true;
+      config.limits.completion_review_check_reserve = Some(2);
+      config.limits.completion_check_on_review = true;
+    }
     if initial_window {
       config.limits.max_model_requests_per_turn = 4;
       config.limits.completion_check_initial_request_window = Some(1);
@@ -236,24 +263,24 @@ fn completion_mailbox_drives_a_real_cli_repair_without_new_execution_authority()
           );
           let ordinal = request["ordinal"].as_u64().unwrap();
           assert_eq!(ordinal as usize, seen.len());
-          if (early_review || initial_window) && ordinal == 1 {
+          if (early_review || initial_window || check_reserve) && ordinal == 1 {
             assert_eq!(
               fs::read_to_string(canonical_workspace.join("app.txt")).unwrap(),
               "owned initial"
             );
           }
-          if repair_window && ordinal == 2 {
+          if (repair_window || check_reserve) && ordinal == 2 {
             assert_eq!(
               fs::read_to_string(canonical_workspace.join("app.txt")).unwrap(),
               "owned intermediate"
             );
           }
           let id = request["request_id"].as_str().unwrap();
+          let passed = ordinal >= expected_checks as u64 || (check_reserve && ordinal == 3);
           let reply = serde_json::json!({"version":1,"request_id":id,
-          "status":if ordinal < expected_checks as u64 { "failed" } else { "passed" },
-          "feedback":if ordinal == 1 { "owned public failure" }
-            else if ordinal < expected_checks as u64 { "owned remaining failure" }
-            else { "owned pass" }});
+          "status":if passed { "passed" } else { "failed" },
+          "feedback":if passed { "owned pass" } else if ordinal == 1 { "owned public failure" }
+            else { "owned remaining failure" }});
           let temporary = mailbox.join(format!("reply-{id}.tmp"));
           fs::write(&temporary, serde_json::to_vec(&reply).unwrap()).unwrap();
           fs::rename(temporary, mailbox.join(format!("reply-{id}.json"))).unwrap();
@@ -287,7 +314,20 @@ fn completion_mailbox_drives_a_real_cli_repair_without_new_execution_authority()
       "owned repaired"
     );
     let requests = server.requests();
-    assert_eq!(requests.len(), if repair_window { 5 } else { 3 });
+    assert_eq!(
+      requests.len(),
+      if check_reserve {
+        4
+      } else if repair_window {
+        5
+      } else {
+        3
+      }
+    );
+    if check_reserve {
+      assert!(requests[2].body.contains("bounded review"));
+      assert!(requests[2].body.contains("owned remaining failure"));
+    }
     if repair_window {
       assert!(requests[3].body.contains("owned remaining failure"));
     }

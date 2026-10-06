@@ -14,6 +14,7 @@ foreach ($name in @('Get-BenchmarkReviewCheck', 'Set-BenchmarkReviewCheck',
 $case = @{Id='10-receipt-ledger'}
 $Case10CompletionCheckOnReview = $false
 $Case10CompletionReviewRequestReserve = 0
+$Case10CompletionReviewCheckReserve = 0
 $MaxModelRequestsPerTurn = 40
 $limits = [pscustomobject]@{}
 Set-BenchmarkReviewCheck $case $limits
@@ -65,6 +66,13 @@ foreach ($profile in @(@($false,40,8), @($true,40,39), @($true,40,40),
 }
 $Case10ReviewCompletion = $true
 $MaxModelRequestsPerTurn = 40
+$Case10CompletionReviewRequestReserve = 8
+$Case10CompletionReviewReserveMs = 0
+$Case10CompletionReviewRequestReserve = 0
+$Case10CompletionReviewCheckReserve = 2
+$checkOnly = [pscustomobject]@{}
+Set-BenchmarkReviewCheck $case $checkOnly
+if ($checkOnly.completion_check_on_review -ne $true) { throw 'Check-only reserve rejected.' }
 $Case10CompletionReviewRequestReserve = 8
 $other = [pscustomobject]@{}
 Set-BenchmarkReviewCheck @{Id='09-lease-receipt'} $other

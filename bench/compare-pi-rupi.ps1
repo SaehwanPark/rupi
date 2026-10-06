@@ -48,6 +48,8 @@ param(
   [long]$Case10CompletionReviewReserveMs = 0,
   [ValidateRange(0, 100)]
   [int]$Case10CompletionReviewRequestReserve = 0,
+  [ValidateRange(0, 16)]
+  [int]$Case10CompletionReviewCheckReserve = 0,
   [switch]$Case10InitialProgressBoundary,
   [ValidateRange(0, 65536)]
   [int]$Case10InitialProgressMaxOutputTokens = 0,
@@ -74,6 +76,11 @@ param(
 )
 
 $ErrorActionPreference = "Stop"
+if ($Case10CompletionReviewCheckReserve -gt 0 -and
+    (-not $Case10ReviewCompletion -or $Case10CompletionChecks -lt 2 -or
+     $Case10CompletionReviewCheckReserve -ge $Case10CompletionChecks)) {
+  throw 'Case10 check review reserve requires review and a larger completion check allowance.'
+}
 if ($Case10CompletionCheckInitialRequestWindow -gt 0 -and
     ($Case10CompletionChecks -lt 2 -or
      $Case10CompletionCheckInitialRequestWindow -ge ($MaxModelRequestsPerTurn - 1))) {
@@ -95,7 +102,8 @@ if ($Case10CompletionReviewRequestReserve -gt 0 -and
 }
 if ($Case10CompletionCheckOnReview -and
     (-not $Case10ReviewCompletion -or
-     ($Case10CompletionReviewReserveMs -le 0 -and $Case10CompletionReviewRequestReserve -le 0) -or
+     ($Case10CompletionReviewReserveMs -le 0 -and $Case10CompletionReviewRequestReserve -le 0 -and
+      $Case10CompletionReviewCheckReserve -le 0) -or
      $Case10CompletionChecks -le 0)) {
   throw 'Case10CompletionCheckOnReview requires reserved review and completion checks.'
 }
@@ -2282,7 +2290,8 @@ function Set-BenchmarkRepairCheckWindow([hashtable]$case, [object]$limits) {
 function Set-BenchmarkReviewCheck([hashtable]$case, [object]$limits) {
   if ($case.Id -ne '10-receipt-ledger' -or -not $Case10CompletionCheckOnReview) { return }
   if (-not $Case10ReviewCompletion -or
-      ($Case10CompletionReviewReserveMs -le 0 -and $Case10CompletionReviewRequestReserve -le 0) -or
+      ($Case10CompletionReviewReserveMs -le 0 -and $Case10CompletionReviewRequestReserve -le 0 -and
+       $Case10CompletionReviewCheckReserve -le 0) -or
       $Case10CompletionChecks -le 0) {
     throw 'Case10CompletionCheckOnReview requires reserved review and completion checks.'
   }
@@ -2293,6 +2302,23 @@ function Get-BenchmarkReviewRequestReserve([hashtable]$case, [string]$agent) {
   if ($case.Id -eq '10-receipt-ledger' -and $agent -eq 'rupi' -and
       $Case10CompletionReviewRequestReserve -gt 0) { return $Case10CompletionReviewRequestReserve }
   return $null
+}
+
+function Get-BenchmarkReviewCheckReserve([hashtable]$case, [string]$agent) {
+  if ($case.Id -eq '10-receipt-ledger' -and $agent -eq 'rupi' -and
+      $Case10CompletionReviewCheckReserve -gt 0) { return $Case10CompletionReviewCheckReserve }
+  return $null
+}
+
+function Set-BenchmarkReviewCheckReserve([hashtable]$case, [object]$limits) {
+  $selected = Get-BenchmarkReviewCheckReserve $case 'rupi'
+  if ($null -eq $selected) { return }
+  if (-not $Case10ReviewCompletion -or $Case10CompletionChecks -lt 2 -or
+      $selected -ge $Case10CompletionChecks) {
+    throw 'Case10 check review reserve requires review and a larger completion check allowance.'
+  }
+  $limits | Add-Member -MemberType NoteProperty -Force `
+    -Name completion_review_check_reserve -Value $selected
 }
 
 function Set-BenchmarkReviewRequestReserve([hashtable]$case, [object]$limits) {
@@ -2451,6 +2477,7 @@ function New-BenchmarkWorkspace([hashtable]$case, [string]$agentRoot, [string]$t
     Set-BenchmarkRepairCheckWindow $case $config.limits
     Set-BenchmarkInitialCheckWindow $case $config.limits
     Set-BenchmarkReviewRequestReserve $case $config.limits
+    Set-BenchmarkReviewCheckReserve $case $config.limits
     if ($case.Id -eq "10-receipt-ledger" -and $Case10CompletionChecks -gt 0) {
       $config.limits | Add-Member -MemberType NoteProperty -Force `
         -Name max_completion_checks_per_turn -Value $Case10CompletionChecks
@@ -2834,6 +2861,8 @@ function Invoke-AgentCase([hashtable]$case, [string]$agent, [string]$root, [stri
           Get-BenchmarkInitialCheckWindow $case $agent
         $turnRecord["configured_completion_review_request_reserve"] =
           Get-BenchmarkReviewRequestReserve $case $agent
+        $turnRecord['configured_completion_review_check_reserve'] =
+          Get-BenchmarkReviewCheckReserve $case $agent
         $turnRecord["configured_max_mutating_tool_calls_per_turn"] =
           Get-BenchmarkMutatingBudget $case $agent
         $turnRecord["configured_initial_progress_max_output_tokens"] =
@@ -3710,6 +3739,8 @@ $summary = [ordered]@{
     Get-BenchmarkInitialCheckWindow @{Id='10-receipt-ledger'} 'rupi'
   case10_rupi_completion_review_request_reserve =
     Get-BenchmarkReviewRequestReserve @{Id='10-receipt-ledger'} 'rupi'
+  case10_rupi_completion_review_check_reserve =
+    Get-BenchmarkReviewCheckReserve @{Id='10-receipt-ledger'} 'rupi'
   case10_rupi_max_mutating_tool_calls_per_turn =
     Get-BenchmarkMutatingBudget @{Id="10-receipt-ledger"} "rupi"
   case10_rupi_initial_progress_max_output_tokens =

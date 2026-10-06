@@ -1808,6 +1808,11 @@ TUI rendering passed all budgets (3.31–3.90 µs/unit); checkpointed restore me
   binds. Optional earlier initial caller checking is active to expose failure sooner;
   owned bounded comparison, renewal/coalescing and safety fixtures pass. Actual benefit
   and next screening remain pending; semantic diagnostics remain uninspected.
+  Initial-window source0e651e2/frozena920dc2 all3 CI pass. Retry37 reaches checks8/11/
+  14/17/20/23/26/29, all Failed; completion-check exhaustion stops29 before reserved
+  review31. All29 usage known, required files present, tests/acceptance fail/help passes;
+  frozen audits pass/slots idle/no timeouts. Caller-check reserve for one-shot review is
+  active work to coordinate the two caps; no semantic cause or configured win established.
   No semantic cause, acceptance benefit, or paired Case10 win is established.
   Rupi-first screening and paired
   evidence/delivery checks remain pending. Broader project gates remain active.

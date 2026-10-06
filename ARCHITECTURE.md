@@ -608,7 +608,7 @@ cancel token plus ordinal/remaining native time. Core does not execute checks. T
 must isolate effects outside the canonical task workspace.
 
 Optional `limits.completion_check_on_review` defaults to false and requires configured
-checks, enabled review and a valid time or request reserve. The one-shot reserved review
+checks, enabled review and a valid time, request or check reserve. The one-shot reserved review
 can request a fresh caller observation before its next model request, even without a final
 assistant answer. This shares the ordinary allowance; a pass still proceeds through model review
 and a later fresh completion check. A repairable failure permits bounded same-model work;
@@ -636,6 +636,15 @@ consumes the one-shot review, and resets each turn. Failed can arm the repair wi
 Passed still requires fresh final checking. All progress/tool/Unknown/cancel/deadline,
 no-tools/finalization and terminal observation safeguards remain. Domain checks stay
 caller-owned; this threshold creates no clock, command, event or additional allowance.
+
+Optional `completion_review_check_reserve` requires enabled review, at least two checks
+and a positive reserve below their cap. After fresh, repairable Failed evidence, if
+remaining checks are within the reserve and ordinary work remains, activate the same
+one-shot review. Reuse the observation just obtained; `completion_check_on_review` does
+not create a duplicate callback on this boundary. Time/request/accepted-answer/check
+triggers share the review flag. Passed, Unavailable, last Failed, cancellation, exhausted
+requests and no-tools paths cannot activate this trigger. Fresh final checks and all
+existing budgets/effect barriers remain; counters/review state reset each turn.
 
 Static `CompletionCheck` guidance is a runtime control; bounded UTF-8 feedback (16KiB)
 is separate external context

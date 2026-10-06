@@ -427,6 +427,9 @@ pub struct RuntimeLimits {
   /// Ordinary requests to retain for review/repair, excluding no-tools finalization.
   #[serde(default, skip_serializing_if = "Option::is_none")]
   pub completion_review_request_reserve: Option<u32>,
+  /// Remaining checks that trigger one-shot review after a repairable Failed observation.
+  #[serde(default, skip_serializing_if = "Option::is_none")]
+  pub completion_review_check_reserve: Option<u32>,
   /// Optional cooperative wall-time budget for one turn. Omitted means no turn deadline.
   #[serde(default, skip_serializing_if = "Option::is_none")]
   pub max_turn_duration_ms: Option<u64>,
@@ -474,6 +477,7 @@ impl Default for RuntimeLimits {
       completion_check_on_review: false,
       completion_review_reserve_ms: None,
       completion_review_request_reserve: None,
+      completion_review_check_reserve: None,
       max_turn_duration_ms: None,
       max_model_requests_per_turn: DEFAULT_MAX_MODEL_REQUESTS_PER_TURN,
       max_tool_calls_per_turn: DEFAULT_MAX_TOOL_CALLS_PER_TURN,
@@ -790,16 +794,33 @@ impl RuntimeConfig {
         .into(),
       ));
     }
+    if let Some(reserve) = self.limits.completion_review_check_reserve
+      && (!self.limits.review_completion
+        || reserve == 0
+        || self
+          .limits
+          .max_completion_checks_per_turn
+          .is_none_or(|checks| checks < 2 || reserve >= checks))
+    {
+      return Err(ConfigError(
+        concat!(
+          "limits.completion_review_check_reserve requires review_completion=true, at least ",
+          "two completion checks and a positive reserve below the check allowance"
+        )
+        .into(),
+      ));
+    }
     if self.limits.completion_check_on_review
       && (!self.limits.review_completion
         || (self.limits.completion_review_reserve_ms.is_none()
-          && self.limits.completion_review_request_reserve.is_none())
+          && self.limits.completion_review_request_reserve.is_none()
+          && self.limits.completion_review_check_reserve.is_none())
         || self.limits.max_completion_checks_per_turn.is_none())
     {
       return Err(ConfigError(
         concat!(
           "limits.completion_check_on_review requires review_completion=true, ",
-          "a time or request review reserve and max_completion_checks_per_turn"
+          "a time, request or check review reserve and max_completion_checks_per_turn"
         )
         .into(),
       ));
@@ -1329,6 +1350,46 @@ mod tests {
           .contains("max_completion_checks")
       );
     }
+  }
+
+  #[test]
+  fn completion_review_check_reserve_requires_repairable_failed_observations() {
+    let mut config = sample_config();
+    assert!(
+      serde_json::to_value(&config).unwrap()["limits"]
+        .get("completion_review_check_reserve")
+        .is_none()
+    );
+    for (enabled, checks, reserve, valid) in [
+      (true, Some(8), 2, true),
+      (true, Some(2), 1, true),
+      (false, Some(8), 2, false),
+      (true, None, 2, false),
+      (true, Some(1), 1, false),
+      (true, Some(8), 0, false),
+      (true, Some(8), 8, false),
+      (true, Some(8), u32::MAX, false),
+    ] {
+      config.limits.review_completion = enabled;
+      config.limits.max_completion_checks_per_turn = checks;
+      config.limits.completion_review_check_reserve = Some(reserve);
+      let parsed = RuntimeConfig::parse(&serde_json::to_string(&config).unwrap());
+      assert_eq!(parsed.is_ok(), valid, "{enabled}/{checks:?}/{reserve}");
+      if let Ok(parsed) = parsed {
+        assert_eq!(parsed.limits.completion_review_check_reserve, Some(reserve));
+        assert_eq!(parsed.limits.completion_review_request_reserve, None);
+        assert_eq!(parsed.limits.max_turn_duration_ms, None);
+      }
+    }
+    let mut config = sample_config();
+    config.limits.review_completion = true;
+    config.limits.max_completion_checks_per_turn = Some(4);
+    config.limits.completion_review_check_reserve = Some(2);
+    config.limits.completion_check_on_review = true;
+    let parsed = RuntimeConfig::parse(&config.to_json_string().unwrap()).unwrap();
+    assert!(parsed.limits.completion_check_on_review);
+    assert_eq!(parsed.limits.completion_review_request_reserve, None);
+    assert_eq!(parsed.limits.completion_review_reserve_ms, None);
   }
 
   #[test]

@@ -1344,6 +1344,11 @@ work before a final answer or reserved review. Skip it once an observation has o
 share the original check cap, coalesce triggers and retain fresh final checking. This
 does not consume one-shot review, impose domain checks or extend any execution allowance.
 Renew only on a new turn and preserve the same no-tools and safety barriers.
+An optional positive caller-check reserve below the check cap may activate one-shot
+review after fresh repairable Failed evidence, while ordinary work remains. Reuse that
+observation rather than checking twice on the boundary; share review with time, request
+and accepted-answer triggers. Passed, Unavailable and last Failed evidence cannot activate
+this trigger. Fresh final checking and existing check/request/time/effect barriers remain.
 
 This is a distributed-systems-style reliability invariant.
 
