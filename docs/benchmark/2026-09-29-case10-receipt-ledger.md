@@ -3258,3 +3258,21 @@ unfinished provider timeout before reserved review/feedback, with native time re
 Its precise timeout phase/cause is not exposed by the permitted summary; inspect owned
 provider/config timeout mapping before choosing a bounded enhancement. No blind retry or
 unavailable-to-failed coercion. Parent usage resets to1%5-hour/14%weekly, healthy headroom.
+
+### Retry36 enhancement and freeze — explicit idle budget / typed failure facts
+
+Retry35 RCA found a verified config mismatch: omitted idle timeout resolves to300s while
+total request2394s/native2370s remain. Exact observed failure phase/mechanism is unknown.
+Source8d046aa adds optional typed failure facts without provider text and explicit Case10
+idle selection bounded by total timeout. Old records/imports remain absent, not successful.
+No actual trace backfill or generated solution/feedback/oracle content inspected.
+Full required Rust/debug checks (225/138/100/25 plus28 event roundtrips), ten owned
+harness guards, full profile/shared prompts/SPEC/reference hashes and startup/restore/context
+budgets pass. Parent author review passes. See
+[bounded plan and validation](2026-10-06-case10-idle-budget.md).
+
+Retry36 intended screen changes only idle2394000ms versus Retry35's controls, retaining
+request40/native2370s/provider2394s/outer2400s, firstOff/templateOff/direct8000/
+first8192/args2048/check8/mut32/timeReserve300s/requestReserve8/repairWindow3.
+Same physical model and original helpers; no inference starts before sourceCI37514973343
+and exact frozen-head all3 CI pass. No configured acceptance or paired win; PR145 stays draft.
