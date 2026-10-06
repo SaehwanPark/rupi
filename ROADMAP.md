@@ -1725,7 +1725,8 @@ TUI rendering passed all budgets (3.31–3.90 µs/unit); checkpointed restore me
   omission versus enforcement, first-only/fresh renewal, Unicode/nesting, existing
   smaller schema bounds and real CLI wire; disabled/incomplete-response guards pass.
   Required Rust checks pass (211 runtime/134 core); startup140.496ms cold/8.711ms median/
-  9.624ms max. Session/context checks and a frozen first2048-character screen remain pending.
+  9.624ms max. All five restores (103.10–4937.90us) and context cases pass. Parent
+  invariant review passes; a frozen first2048-character screen remains pending.
   No semantic cause, acceptance benefit, or paired Case10 win is established.
   Rupi-first screening and paired
   evidence/delivery checks remain pending. Broader project gates remain active.

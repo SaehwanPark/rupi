@@ -31,3 +31,9 @@ Run required Rust/debug/startup/session/context checks and parent invariant revi
 update documents, commit/push/freeze before Retry28. Select2048 characters for the first
 request while first8192/later32768 remains unchanged. Any failure requires new analysis
 and verified enhancement. Fresh Pi remains conditional on Rupi acceptance.
+
+Implemented in043196b. Owned runtime/config/CLI wire and all five harness fixtures pass;
+required Rust checks pass (211 runtime/134 core), startup and all five restore/context
+cases meet budgets. An explicit rejection-effect fixture confirms durable None before
+dispatch. Parent invariant review passes; model compliance and acceptance benefit remain
+unmeasured. Freeze metadata and controls are recorded in the Case10 ledger.

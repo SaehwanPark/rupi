@@ -2677,3 +2677,46 @@ incremental complete-call guidance using owned fixtures. Preserve failed-respons
 no-dispatch/no-replay, canonical provenance, original model/relay and all safety barriers.
 Do not merely rerun this configuration or increase its output ceiling without a justified
 verified enhancement.
+
+### Retry28 bounded initial arguments enhancement and frozen screen
+
+Source043196bc61d42b9ff47a03a011d7e263257534d6 adds optional
+initial_progress_max_argument_chars (omitted/None,1..65536, requires initial output
+selection). First-request mutating tool schemas advertise per-string Unicode maxLength,
+respect smaller existing constraints and retain registry identities. Captured request
+limits reject oversized complete calls before dispatch through existing lifecycle:
+Failed with known None effect, total-call accounting, no progress release or replay.
+Later requests have ordinary schemas and limits, even without initial Changed progress;
+fresh turns renew selection. Runtime guidance asks one small coherent complete mutation
+followed by incremental complete calls, without naming domain artifacts.
+
+Owned comparative fixture: omission executes both calls; selection rejects oversized
+first and permits larger later call, renewed over two turns. Unicode/nested/schema
+minimum/example preservation, disabled/no-limit/no-tools, incomplete-response guards,
+config omission/dependency/range/round-trip and CLI provider-wire pass. Explicit durable
+effect assertion confirms None for rejected calls. All five owned harness fixtures pass,
+and selected profile/shared prompt/full SPEC/18 other prompts/three reference guards pass.
+
+Required fmt/core-all-features/clippy/workspace tests/docs/debug checks pass, including
+211 runtime/134 core/25 CLI tests. Startup140.496ms cold/8.711ms median/9.624ms max.
+All five restores103.10–4937.90us and context0.3/0.1/0/0/0.3us pass. Rendering events/
+status unchanged; prior budgets apply. Parent invariant review passes with no blocking
+findings: request snapshot controls enforcement, registry identity/approval/effect safety
+remain intact, no execution occurs for rejected/incomplete calls, and no timer, event,
+provider replay or authority is added. This is author review, not independent review.
+Schema guidance cannot guarantee model compliance or output latency; scalar characters
+are not bytes/tokens, and no actual acceptance/Pi benefit is claimed.
+
+Frozen Retry28 adds initial argument2048 characters to Retry27: initial output8192,
+later endpoint32768, checks8/mutations32, cap40/window3, initial/recurring/review enabled,
+reserve300000ms/native2370000ms/outer2400s/provider2394000ms/grace6/relay1194s,
+same preserved model27356/relay8003/low4096, prompt, sampling, context and tools.
+One fresh Rupi development turn; fresh matched Pi only after acceptance. Any failure
+needs new root-cause analysis and another verified enhancement before a further attempt.
+
+Debug SHA25616C6A138241FE560B00B43173E1DB105E7036B5FD5AC13284042FE9F1711B44A;
+harness409DFF55556F062D87FCD92C1109F892A4A3E6B9B8CCE914C7B5E4183B424319;
+host699C871BE5AA9F141363ECC628AF7CE93A241097EFC9F587E01BE494A613AF69 and
+relayA0BCAE689139BFD281CB91C209D5D8F6CF9EA42FD7EFF256BE02D97A871387C7 unchanged.
+No inference active during implementation/checks. Root's user policy hash is unchanged.
+Generated/model/oracle/diagnostic contents remain unread; broader stage gates remain active.
