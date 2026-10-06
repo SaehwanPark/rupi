@@ -53,6 +53,7 @@ param(
   [string]$Case10InitialProgressThinking = 'inherit',
   [ValidateRange(0, 16)]
   [int]$Case10CompletionChecks = 0,
+  [switch]$Case10CompletionCheckOnReview,
   [ValidateRange(0, 64)]
   [int]$Case10MaxMutatingToolCalls = 0,
   [ValidateSet("one_shot", "recurring")]
@@ -63,6 +64,11 @@ param(
 )
 
 $ErrorActionPreference = "Stop"
+if ($Case10CompletionCheckOnReview -and
+    (-not $Case10ReviewCompletion -or $Case10CompletionReviewReserveMs -le 0 -or
+     $Case10CompletionChecks -le 0)) {
+  throw 'Case10CompletionCheckOnReview requires timed review and completion checks.'
+}
 if ($Case10InitialProgressThinking -ne 'inherit' -and -not $Case10InitialProgressBoundary) {
   throw "Case10InitialProgressThinking requires Case10InitialProgressBoundary."
 }
@@ -2170,6 +2176,20 @@ function Get-BenchmarkInitialArgumentLimit([hashtable]$case, [string]$agent) {
   return $null
 }
 
+function Get-BenchmarkReviewCheck([hashtable]$case, [string]$agent) {
+  if ($case.Id -ne '10-receipt-ledger' -or $agent -ne 'rupi') { return $null }
+  return [bool]$Case10CompletionCheckOnReview
+}
+
+function Set-BenchmarkReviewCheck([hashtable]$case, [object]$limits) {
+  if ($case.Id -ne '10-receipt-ledger' -or -not $Case10CompletionCheckOnReview) { return }
+  if (-not $Case10ReviewCompletion -or $Case10CompletionReviewReserveMs -le 0 -or
+      $Case10CompletionChecks -le 0) {
+    throw 'Case10CompletionCheckOnReview requires timed review and completion checks.'
+  }
+  $limits | Add-Member -MemberType NoteProperty -Force -Name completion_check_on_review -Value $true
+}
+
 function Get-BenchmarkInitialThinking([hashtable]$case, [string]$agent) {
   if ($case.Id -eq "10-receipt-ledger" -and $agent -eq "rupi" -and
       $Case10InitialProgressThinking -ne 'inherit') {
@@ -2308,6 +2328,7 @@ function New-BenchmarkWorkspace([hashtable]$case, [string]$agentRoot, [string]$t
     Set-BenchmarkInitialOutputLimit $case $config.limits
     Set-BenchmarkInitialArgumentLimit $case $config.limits
     Set-BenchmarkInitialThinking $case $config.limits
+    Set-BenchmarkReviewCheck $case $config.limits
     if ($case.Id -eq "10-receipt-ledger" -and $Case10CompletionChecks -gt 0) {
       $config.limits | Add-Member -MemberType NoteProperty -Force `
         -Name max_completion_checks_per_turn -Value $Case10CompletionChecks
@@ -2658,6 +2679,7 @@ function Invoke-AgentCase([hashtable]$case, [string]$agent, [string]$root, [stri
         $turnRecord["configured_completion_checks"] = if (
           $agent -eq "rupi" -and $Case10CompletionChecks -gt 0
         ) { $Case10CompletionChecks } else { $null }
+        $turnRecord["configured_completion_check_on_review"] = Get-BenchmarkReviewCheck $case $agent
         $turnRecord["configured_max_mutating_tool_calls_per_turn"] =
           Get-BenchmarkMutatingBudget $case $agent
         $turnRecord["configured_initial_progress_max_output_tokens"] =
@@ -3531,6 +3553,7 @@ $summary = [ordered]@{
   case10_rupi_completion_checks = if ($Case10CompletionChecks -gt 0) {
     $Case10CompletionChecks
   } else { $null }
+  case10_rupi_completion_check_on_review = Get-BenchmarkReviewCheck @{Id='10-receipt-ledger'} 'rupi'
   case10_rupi_max_mutating_tool_calls_per_turn =
     Get-BenchmarkMutatingBudget @{Id="10-receipt-ledger"} "rupi"
   case10_rupi_initial_progress_max_output_tokens =

@@ -10,6 +10,11 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Added
 
+- Added an optional caller observation when timed completion review begins, so bounded
+  public feedback can reach the active model before its final answer. Review and final
+  checking share an allowance; passes do not replace review or a fresh final check.
+  Unavailable observations, cancellation and uncertain-effect barriers retain their stops.
+
 - Added optional first-request thinking selection within initial progress, renewed each
   turn and inherited normally afterward. The endpoint owns disable encoding; requested
   Off is not a claim about observed hidden reasoning or guaranteed backend enforcement.

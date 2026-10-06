@@ -576,8 +576,21 @@ mutations stop before either checking or inference. New turns renew the local al
 
 `TurnProgress::check_completion` supplies typed status/data and receives the current
 cancel token plus ordinal/remaining native time. Core does not execute checks. The caller
-must isolate effects outside the canonical task workspace. Static `CompletionCheck`
-guidance is a runtime control; bounded UTF-8 feedback (16KiB) is separate external context
+must isolate effects outside the canonical task workspace.
+
+Optional `limits.completion_check_on_review` defaults to false and requires configured
+checks, enabled review and a valid timed reserve. The one-shot timed review can request
+a fresh caller observation before its next model request, even without a final assistant
+answer. This shares the ordinary allowance; a pass still proceeds through model review
+and a later fresh completion check. A repairable failure permits bounded same-model work;
+last failure/exhaustion and unavailable/oversized results retain their existing stops.
+Progress/tool-budget and uncertain-effect barriers precede the observation. Observations
+do not count as Changed progress. Cancellation or deadline during the callback discards
+its result. Disabled review, absent reserve/checks and no-tools paths skip this selection;
+fresh turns renew the one-shot boundary and shared allowance. No new events or commands.
+
+Static `CompletionCheck` guidance is a runtime control; bounded UTF-8 feedback (16KiB)
+is separate external context
 from `delegated_completion_check`, with citation and ordinal/status/elapsed metadata.
 Both persist using existing message/event transactions; native assistant evidence stays
 distinct. Resume never replays a prior caller check. A pass describes reported observations,

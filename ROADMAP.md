@@ -1750,7 +1750,15 @@ TUI rendering passed all budgets (3.31–3.90 µs/unit); checkpointed restore me
   The next matched profile selects globalOff/firstOff on existing direct8000, no reasoning
   budget/relay deadline, preserving native2370s/provider2394s/outer2400s and other controls.
   Model/processes/prompts/references stay unchanged; native/Pi first-control parity and
-  backend enforcement/latency/acceptance remain unproved. Usage and frozen screen pending.
+  backend enforcement/latency/acceptance remain unproved. Frozen Retry30 on direct-Off
+  reaches native2370s exhaustion,27 requests/26 usage records and143,756 known work
+  (unfinished work unknown). Only application29,883 bytes; acceptance/tests fail/help pass.
+  All frozen audits and three-platform5fba487 CI pass. One review after21 starts but zero
+  caller checks exposes feedback waiting for final assistant text. Optional observation
+  at timed review now shares the existing allowance and external provenance; owned
+  comparative/CLI fixtures verify feedback before the final answer, repair and fresh
+  final checking. Unavailable/cancel/Unknown/cap semantics remain. Full gates pending;
+  no actual configured acceptance or paired improvement is established.
   No semantic cause, acceptance benefit, or paired Case10 win is established.
   Rupi-first screening and paired
   evidence/delivery checks remain pending. Broader project gates remain active.

@@ -41,3 +41,19 @@ commit/push/freeze before one fresh Retry31. Preserve direct8000/globalOff, firs
 8192/32768 output,2048 first strings,checks8/mutations32/cap40/window3, timed review300s/
 native2370s/provider2394s/outer2400s/grace6 and original model/helpers. Fresh matched Pi
 only after actual Rupi acceptance. No actual win or causal improvement claimed.
+
+Implemented evidence: required fmt/core-all-features/clippy/workspace tests/docs/debug
+pass (216 runtime/136 core/25 CLI), including feedback-directed comparative3 versus4
+requests, early/final check ordering, fresh renewal, Passed still requiring final check,
+terminal Failed/Unavailable/oversized observations, inactive paths, request caps and
+cancel/deadline/Unknown barriers. Real CLI mailbox fixture passes both ordinary and
+timed-review variants with original no-exec assertions. Seven owned harness fixtures
+and full direct-Off profile pass; shared Case10 and18 other prompt hashes, full SPEC
+and three reference hashes remain unchanged. Root usage policy is untouched.
+
+Parent author invariant review: pass. One active model; tool/cancel/Unknown barriers
+precede callback; observations use existing external provenance/transaction ordering,
+shared allowance and remaining-time token. No event/status/render/timer/dependency or
+execution authority is added. Default paths preserve closure semantics. This is author
+review, not an independent review or actual comparison win. Performance/remote CI/freeze
+remain pending before inference; no model/helper restart or generated artifact edit.

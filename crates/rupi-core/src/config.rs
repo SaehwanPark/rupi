@@ -407,6 +407,9 @@ pub struct RuntimeLimits {
   /// Caller observations required before ordinary completion; omitted disables checks.
   #[serde(default, skip_serializing_if = "Option::is_none")]
   pub max_completion_checks_per_turn: Option<u32>,
+  /// Request a caller observation when the timed one-shot completion review begins.
+  #[serde(default, skip_serializing_if = "is_false")]
+  pub completion_check_on_review: bool,
   /// Ask the active model to review requested deliverables once per turn.
   #[serde(default, skip_serializing_if = "is_false")]
   pub review_completion: bool,
@@ -455,6 +458,7 @@ impl Default for RuntimeLimits {
     Self {
       review_completion: false,
       max_completion_checks_per_turn: None,
+      completion_check_on_review: false,
       completion_review_reserve_ms: None,
       max_turn_duration_ms: None,
       max_model_requests_per_turn: DEFAULT_MAX_MODEL_REQUESTS_PER_TURN,
@@ -726,6 +730,19 @@ impl RuntimeConfig {
           .into(),
         ));
       }
+    }
+    if self.limits.completion_check_on_review
+      && (!self.limits.review_completion
+        || self.limits.completion_review_reserve_ms.is_none()
+        || self.limits.max_completion_checks_per_turn.is_none())
+    {
+      return Err(ConfigError(
+        concat!(
+          "limits.completion_check_on_review requires review_completion=true, ",
+          "completion_review_reserve_ms and max_completion_checks_per_turn"
+        )
+        .into(),
+      ));
     }
     if self.limits.max_model_requests_per_turn == 0 {
       return Err(ConfigError(
@@ -1156,6 +1173,34 @@ mod tests {
     let parsed = RuntimeConfig::parse(&config.to_json_string().unwrap()).unwrap();
     assert!(parsed.limits.review_completion);
     assert_eq!(parsed.limits.completion_review_reserve_ms, None);
+  }
+
+  #[test]
+  fn completion_check_on_review_is_opt_in_and_requires_a_timed_review_with_checks() {
+    let mut config = sample_config();
+    assert!(!config.limits.completion_check_on_review);
+    assert!(
+      serde_json::to_value(&config).unwrap()["limits"]
+        .get("completion_check_on_review")
+        .is_none()
+    );
+    config.limits.completion_check_on_review = true;
+    for (review, reserve, checks) in [
+      (false, Some(100), Some(2)),
+      (true, None, Some(2)),
+      (true, Some(100), None),
+    ] {
+      config.limits.review_completion = review;
+      config.limits.completion_review_reserve_ms = reserve;
+      config.limits.max_completion_checks_per_turn = checks;
+      config.limits.max_turn_duration_ms = Some(1000);
+      assert!(config.validate().is_err());
+    }
+    config.limits.review_completion = true;
+    config.limits.completion_review_reserve_ms = Some(100);
+    config.limits.max_completion_checks_per_turn = Some(2);
+    let parsed = RuntimeConfig::parse(&config.to_json_string().unwrap()).unwrap();
+    assert!(parsed.limits.completion_check_on_review);
   }
 
   #[test]

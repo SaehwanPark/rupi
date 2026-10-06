@@ -390,6 +390,11 @@ workspace. Diagnostic feedback is external evidence, separate from static runtim
 and native assistant output. Cancellation and Unknown-effect barriers retain precedence.
 Unavailable observations end semantic failure without retry, failover or check replay.
 Neither an observation nor model self-review certifies overall task correctness.
+An explicitly configured timed review may request a fresh caller observation before the
+next model request without waiting for a final assistant answer. Share the ordinary check
+allowance and external provenance; observations do not release progress barriers. A pass
+does not replace review or a fresh final check. Unavailable observations and exhausted
+allowance retain their terminal semantics. This must not add execution authority or replay.
 Caller snapshot and artifact paths must support child process startup as well as file
 creation. A short isolated scratch root may coexist with a run-local mailbox; preserve
 artifacts and keep both outside the canonical workspace. Path-layout failures remain
