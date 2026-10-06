@@ -521,6 +521,9 @@ Expected divergences include:
   exhausted status; native Pi control parity is not claimed;
 - optional initial progress boundary for explicitly selected implementation turns;
   native Pi control parity is not claimed;
+- optional first-request output ceiling within that initial boundary; owned runtime and
+  provider-wire fixtures establish budgeting behavior, not acceptance or latency benefit;
+  native Pi selection remains null;
 - optional bounded same-model completion review; this is runtime guidance rather than
   certification that the user's task is correct, and native Pi parity is not claimed;
 - optional caller-delegated completion observations through an explicit run mailbox;

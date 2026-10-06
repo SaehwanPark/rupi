@@ -10,6 +10,11 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Added
 
+- Added an optional initial progress output ceiling for the first ordinary request only,
+  with smaller-change guidance, endpoint/context clamping and renewal each turn. Later
+  requests retain the endpoint ceiling. The Case10 harness can select this independently;
+  acceptance, latency and Pi control parity remain unproved.
+
 - Added explicit bounded Case10 benchmark mutation-budget selection, preserving runtime
   defaults and total/request/time limits. Owned fixtures show mutation headroom can permit
   later delivery/checking; acceptance improvement and native Pi control parity remain unproved.

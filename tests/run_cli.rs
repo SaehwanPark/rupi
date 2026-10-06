@@ -254,6 +254,48 @@ fn completion_mailbox_preflight_rejects_missing_and_exposed_handlers_before_requ
 }
 
 #[test]
+fn configured_initial_output_ceiling_reaches_the_provider_wire_first_only() {
+  let temp = TempDir::new().unwrap();
+  let workspace = temp.path().join("workspace");
+  fs::create_dir(&workspace).unwrap();
+  let server = FakeServer::answer(vec![
+    tool_response(
+      "first",
+      "write",
+      r#"{"path":"owned.txt","contents":"small coherent owned change"}"#,
+      None,
+    ),
+    text_response("owned done"),
+  ]);
+  let path = write_config(temp.path(), &server.base_url(), true);
+  let mut config = RuntimeConfig::parse(&fs::read_to_string(&path).unwrap()).unwrap();
+  config.endpoints[0].capabilities.context_window = 262_144;
+  config.endpoints[0].capabilities.max_output_tokens = Some(32_768);
+  config.endpoints[0].max_output_tokens = Some(32_768);
+  config.limits.max_model_requests_without_progress = Some(3);
+  config.limits.initial_progress_boundary = true;
+  config.limits.initial_progress_max_output_tokens = Some(8_192);
+  fs::write(&path, config.to_json_string().unwrap()).unwrap();
+  let output = run(&path, &workspace, "create owned.txt");
+  assert!(
+    output.status.success(),
+    "{}",
+    String::from_utf8_lossy(&output.stderr)
+  );
+  let requests = server.requests();
+  assert_eq!(requests.len(), 2);
+  let first: serde_json::Value = serde_json::from_str(&requests[0].body).unwrap();
+  let later: serde_json::Value = serde_json::from_str(&requests[1].body).unwrap();
+  assert_eq!(first["max_tokens"], 8_192);
+  assert_eq!(later["max_tokens"], 32_768);
+  assert_eq!(first["model"], later["model"]);
+  assert_eq!(
+    fs::read_to_string(workspace.join("owned.txt")).unwrap(),
+    "small coherent owned change"
+  );
+}
+
+#[test]
 fn configured_recurring_progress_rejects_completion_until_a_file_change_is_observed() {
   let temp = TempDir::new().unwrap();
   let workspace = temp.path().join("workspace");

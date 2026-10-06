@@ -642,6 +642,7 @@ pub struct TurnLoop<'a> {
   progress_request_limit: Option<usize>,
   progress_boundary_mode: ProgressBoundaryMode,
   initial_progress_boundary: bool,
+  initial_progress_max_output_tokens: Option<u64>,
   /// Explicit progress tools, or an empty list meaning every permitted
   /// mutating tool when the boundary is active.
   progress_tool_names: Vec<String>,
@@ -748,6 +749,7 @@ impl<'a> TurnLoop<'a> {
       progress_request_limit: None,
       progress_boundary_mode: ProgressBoundaryMode::OneShot,
       initial_progress_boundary: false,
+      initial_progress_max_output_tokens: None,
       progress_tool_names: Vec::new(),
       progress_requests_without_progress: 0,
       progress_boundary_active: false,
@@ -896,6 +898,13 @@ impl<'a> TurnLoop<'a> {
   /// Callers must already authorize implementation and supply sufficient context.
   pub fn with_initial_progress_boundary(mut self, enabled: bool) -> Self {
     self.initial_progress_boundary = enabled;
+    self
+  }
+
+  /// Bound only the first ordinary request of an active initial progress boundary.
+  /// Later requests keep the endpoint ceiling; context admission may further clamp either.
+  pub fn with_initial_progress_max_output_tokens(mut self, limit: Option<u64>) -> Self {
+    self.initial_progress_max_output_tokens = limit;
     self
   }
 
@@ -3870,7 +3879,9 @@ impl<'a> TurnLoop<'a> {
     messages: Vec<Message>,
   ) -> BuiltRequest {
     let capabilities = provider.capabilities();
-    let max_output_tokens = capabilities.max_output_tokens;
+    let max_output_tokens = self
+      .initial_progress_output_limit(capabilities.max_output_tokens)
+      .or(capabilities.max_output_tokens);
     let exposed = self.exposed_tool_bindings_for(&capabilities);
     let tool_choice = if self.progress_boundary_active && !exposed.is_empty() {
       ToolChoice::Required
@@ -3893,11 +3904,24 @@ impl<'a> TurnLoop<'a> {
     }
     system.push_str(&tool_availability_prompt(&request.tools));
     request = request.with_system(system);
-    request.max_output_tokens = max_output_tokens;
+    request = request.with_output_budget(max_output_tokens, max_output_tokens);
     BuiltRequest {
       request,
       tool_bindings,
     }
+  }
+
+  fn initial_progress_output_limit(&self, endpoint_limit: Option<u64>) -> Option<u64> {
+    if !self.tools_enabled
+      || !self.initial_progress_boundary
+      || !self.progress_boundary_active
+      || self.requests.load(Ordering::SeqCst) != 0
+    {
+      return None;
+    }
+    self
+      .initial_progress_max_output_tokens
+      .map(|limit| endpoint_limit.map_or(limit, |endpoint| endpoint.min(limit)))
   }
 
   fn calibrated_prompt_estimate(
@@ -4146,7 +4170,7 @@ impl<'a> TurnLoop<'a> {
     } else {
       self.progress_tool_names.join(", ")
     };
-    let text = if self.initial_progress_boundary && self.requests.load(Ordering::SeqCst) == 0 {
+    let mut text = if self.initial_progress_boundary && self.requests.load(Ordering::SeqCst) == 0 {
       format!(
         concat!(
           "Runtime progress boundary: this implementation turn is configured to begin with ",
@@ -4178,6 +4202,19 @@ impl<'a> TurnLoop<'a> {
         ),
       }
     };
+    if let Some(limit) =
+      self.initial_progress_output_limit(self.provider().capabilities().max_output_tokens)
+    {
+      text.push_str(&format!(
+        concat!(
+          " Initial response output is bounded to at most {limit} tokens. Make a small coherent ",
+          "first change and close every tool call within this response budget. Continue the ",
+          "requested implementation with later complete tool calls; the first change does ",
+          "not imply that delivery or verification is complete."
+        ),
+        limit = limit
+      ));
+    }
     let kind = RuntimeControlKind::ProgressBoundary;
     let message = Message::runtime_control(text.clone(), kind);
     let envelope = self.emit_message(
@@ -15008,6 +15045,268 @@ mod tests {
     }
     assert_eq!((observations, controls, inputs), (2, 2, 1));
     assert_eq!(native, vec!["first", "repaired"]);
+  }
+
+  #[test]
+  fn initial_progress_output_ceiling_is_first_only_and_renews_per_turn() {
+    let provider = Scripted::new(
+      "bounded-initial",
+      (0..2)
+        .flat_map(|_| {
+          [
+            tool_call(
+              "write_probe",
+              json!({"content":"small coherent owned change"}),
+            ),
+            text("owned delivery complete"),
+          ]
+        })
+        .collect(),
+    )
+    .with_output_limit(32_768);
+    let changed = Arc::new(Mutex::new(Vec::new()));
+    let tools = registry_with(vec![Box::new(MutatingSpy {
+      seen: Arc::clone(&changed),
+      outcome: ToolOutcome::succeeded("changed")
+        .with_effect(rupi_core::ToolEffectDisposition::Changed),
+    })]);
+    let policy = rupi_core::ProfilePolicy::new(
+      rupi_core::ContextProfile::Balanced,
+      provider.capabilities().context_window,
+    );
+    let mut trace = Recorder::default();
+    let mut runtime = TurnLoop::new(
+      &provider,
+      &tools,
+      &policy,
+      &mut trace,
+      SessionId::new(),
+      TraceId::new(),
+    )
+    .with_progress_boundary(Some(3), vec!["write_probe".into()])
+    .with_initial_progress_boundary(true)
+    .with_initial_progress_max_output_tokens(Some(8_192));
+    for task in ["first", "next"] {
+      assert_eq!(
+        runtime
+          .run_turn(task, &CancelToken::new(), &mut SilentProgress)
+          .unwrap()
+          .status,
+        TurnStatus::Completed
+      );
+    }
+    let requests = provider.requests();
+    assert_eq!(
+      requests
+        .iter()
+        .map(|r| r.desired_output_tokens)
+        .collect::<Vec<_>>(),
+      vec![Some(8_192), Some(32_768), Some(8_192), Some(32_768)]
+    );
+    assert_eq!(
+      requests
+        .iter()
+        .map(|r| r.max_output_tokens)
+        .collect::<Vec<_>>(),
+      vec![Some(8_192), Some(32_768), Some(8_192), Some(32_768)]
+    );
+    assert!(
+      requests
+        .iter()
+        .all(|request| request.model == requests[0].model)
+    );
+    assert!(requests[0].messages.iter().any(|m| matches!(
+      m.origin,
+      MessageOrigin::RuntimeControl {
+        kind: RuntimeControlKind::ProgressBoundary
+      }
+    ) && m.text().contains("8192")
+      && m.text().contains("small coherent")));
+    assert_eq!(changed.lock().unwrap().len(), 2);
+  }
+
+  #[test]
+  fn initial_progress_output_limit_respects_endpoint_and_context_admission() {
+    for (endpoint, context) in [(4_096, 262_144), (32_768, 8_192)] {
+      let mut provider = Scripted::new(
+        "bounded-admission",
+        vec![
+          tool_call("write_probe", json!({"content":"owned"})),
+          text("done"),
+        ],
+      )
+      .with_output_limit(endpoint);
+      provider.capabilities.context_window = context;
+      let changed = Arc::new(Mutex::new(Vec::new()));
+      let tools = registry_with(vec![Box::new(MutatingSpy {
+        seen: changed,
+        outcome: ToolOutcome::succeeded("changed")
+          .with_effect(rupi_core::ToolEffectDisposition::Changed),
+      })]);
+      let policy = rupi_core::ProfilePolicy::new(rupi_core::ContextProfile::Balanced, context);
+      let mut trace = Recorder::default();
+      TurnLoop::new(
+        &provider,
+        &tools,
+        &policy,
+        &mut trace,
+        SessionId::new(),
+        TraceId::new(),
+      )
+      .with_progress_boundary(Some(3), vec!["write_probe".into()])
+      .with_initial_progress_boundary(true)
+      .with_initial_progress_max_output_tokens(Some(8_192))
+      .run_turn("task", &CancelToken::new(), &mut SilentProgress)
+      .unwrap();
+      let requests = provider.requests();
+      assert_eq!(requests[0].desired_output_tokens, Some(endpoint.min(8_192)));
+      let effective = requests[0].max_output_tokens.unwrap();
+      assert!(effective <= requests[0].desired_output_tokens.unwrap());
+      if context == 8_192 {
+        assert!(effective < 8_192);
+      } else {
+        assert_eq!(effective, 4_096);
+      }
+    }
+  }
+
+  #[test]
+  fn initial_progress_output_limit_skips_disabled_no_limit_and_no_tools_paths() {
+    for (initial, window, enabled, ceiling) in [
+      (false, Some(3), true, Some(8_192)),
+      (true, None, true, Some(8_192)),
+      (true, Some(3), false, Some(8_192)),
+      (true, Some(3), true, None),
+    ] {
+      let response = if initial && window.is_some() && enabled {
+        tool_call("write_probe", json!({"content":"owned"}))
+      } else {
+        text("done")
+      };
+      let provider =
+        Scripted::new("skipped-ceiling", vec![response, text("done")]).with_output_limit(32_768);
+      let changed = Arc::new(Mutex::new(Vec::new()));
+      let tools = registry_with(vec![Box::new(MutatingSpy {
+        seen: changed,
+        outcome: ToolOutcome::succeeded("changed")
+          .with_effect(rupi_core::ToolEffectDisposition::Changed),
+      })]);
+      let policy = rupi_core::ProfilePolicy::new(
+        rupi_core::ContextProfile::Balanced,
+        provider.capabilities().context_window,
+      );
+      let mut trace = Recorder::default();
+      let mut runtime = TurnLoop::new(
+        &provider,
+        &tools,
+        &policy,
+        &mut trace,
+        SessionId::new(),
+        TraceId::new(),
+      )
+      .with_progress_boundary(window, vec!["write_probe".into()])
+      .with_initial_progress_boundary(initial)
+      .with_initial_progress_max_output_tokens(ceiling);
+      runtime.tools_enabled = enabled;
+      assert_eq!(
+        runtime
+          .run_turn("task", &CancelToken::new(), &mut SilentProgress)
+          .unwrap()
+          .status,
+        TurnStatus::Completed
+      );
+      assert_eq!(provider.requests()[0].max_output_tokens, Some(32_768));
+    }
+  }
+
+  #[test]
+  fn initial_progress_output_limit_does_not_renew_on_no_effect_progress() {
+    let provider = Scripted::new(
+      "no-effect-ceiling",
+      vec![
+        tool_call("write_probe", json!({"content":"owned"})),
+        tool_call("write_probe", json!({"content":"owned"})),
+        text("unused"),
+      ],
+    )
+    .with_output_limit(32_768);
+    let changed = Arc::new(Mutex::new(Vec::new()));
+    let tools = registry_with(vec![Box::new(MutatingSpy {
+      seen: Arc::clone(&changed),
+      outcome: ToolOutcome::succeeded("no effect")
+        .with_effect(rupi_core::ToolEffectDisposition::None),
+    })]);
+    let policy = rupi_core::ProfilePolicy::new(
+      rupi_core::ContextProfile::Balanced,
+      provider.capabilities().context_window,
+    );
+    let mut trace = Recorder::default();
+    let report = TurnLoop::new(
+      &provider,
+      &tools,
+      &policy,
+      &mut trace,
+      SessionId::new(),
+      TraceId::new(),
+    )
+    .with_max_requests(3)
+    .with_progress_boundary(Some(3), vec!["write_probe".into()])
+    .with_initial_progress_boundary(true)
+    .with_initial_progress_max_output_tokens(Some(8_192))
+    .run_turn("task", &CancelToken::new(), &mut SilentProgress)
+    .unwrap();
+    assert_eq!(report.status, TurnStatus::BudgetExhausted);
+    let requests = provider.requests();
+    assert_eq!(requests.len(), 2);
+    assert_eq!(requests[0].max_output_tokens, Some(8_192));
+    assert_eq!(requests[1].max_output_tokens, Some(32_768));
+    assert!(
+      requests
+        .iter()
+        .all(|request| request.tool_choice == ToolChoice::Required)
+    );
+  }
+
+  #[test]
+  fn initial_progress_output_limit_never_dispatches_an_incomplete_call() {
+    let provider = Scripted::new(
+      "truncated-initial",
+      vec![
+        tool_call("write_probe", json!({"content":"uncommitted owned"})),
+        text("unused"),
+      ],
+    )
+    .with_output_limit(32_768)
+    .finishes_at(0, "length");
+    let changed = Arc::new(Mutex::new(Vec::new()));
+    let tools = registry_with(vec![Box::new(MutatingSpy {
+      seen: Arc::clone(&changed),
+      outcome: ToolOutcome::succeeded("changed")
+        .with_effect(rupi_core::ToolEffectDisposition::Changed),
+    })]);
+    let policy = rupi_core::ProfilePolicy::new(
+      rupi_core::ContextProfile::Balanced,
+      provider.capabilities().context_window,
+    );
+    let mut trace = Recorder::default();
+    let error = TurnLoop::new(
+      &provider,
+      &tools,
+      &policy,
+      &mut trace,
+      SessionId::new(),
+      TraceId::new(),
+    )
+    .with_progress_boundary(Some(3), vec!["write_probe".into()])
+    .with_initial_progress_boundary(true)
+    .with_initial_progress_max_output_tokens(Some(8_192))
+    .run_turn("task", &CancelToken::new(), &mut SilentProgress)
+    .unwrap_err();
+    assert_eq!(error.kind(), Some(ModelFailureKind::Semantic));
+    assert_eq!(provider.requests().len(), 1);
+    assert!(changed.lock().unwrap().is_empty());
+    assert!(trace.all("tool_started").is_empty());
+    assert!(trace.all("model_retry").is_empty());
   }
 
   #[test]

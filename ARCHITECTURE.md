@@ -509,6 +509,15 @@ Owned fixtures cover initial exposure/choice, release/renewal, unavailable/denie
 mutation capacity, caller cancellation, no-effect/Unknown barriers, interactive approval,
 default/no-limit/no-tools behavior and durable runtime-control provenance.
 
+Optional `initial_progress_max_output_tokens` requires initial progress selection and a
+value in 1..=65536. Only the first ordinary request of its active boundary uses this
+ceiling, capped by the endpoint limit and normal context admission. Later requests use
+the endpoint ceiling even when progress remains unsatisfied; new turns renew selection.
+Desired/effective budgeting stays explicit. The initial runtime control guides a small
+coherent completed change without claiming delivery or correctness. Omission preserves
+existing behavior. Owned runtime and CLI wire fixtures cover renewal, endpoint/context
+clamping, skipped paths and incomplete-response no-dispatch/no-replay.
+
 ### Opt-in completion review
 
 `RuntimeLimits::review_completion` defaults to false. When enabled, the first otherwise

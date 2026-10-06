@@ -45,6 +45,8 @@ param(
   [ValidateRange(0, 86400000)]
   [long]$Case10CompletionReviewReserveMs = 0,
   [switch]$Case10InitialProgressBoundary,
+  [ValidateRange(0, 65536)]
+  [int]$Case10InitialProgressMaxOutputTokens = 0,
   [ValidateRange(0, 16)]
   [int]$Case10CompletionChecks = 0,
   [ValidateRange(0, 64)]
@@ -57,6 +59,9 @@ param(
 )
 
 $ErrorActionPreference = "Stop"
+if ($Case10InitialProgressMaxOutputTokens -gt 0 -and -not $Case10InitialProgressBoundary) {
+  throw "Case10InitialProgressMaxOutputTokens requires Case10InitialProgressBoundary."
+}
 . (Join-Path $PSScriptRoot "completion-feedback.ps1")
 $Case09ProgressBoundaryMode = $Case09ProgressBoundaryMode.ToLowerInvariant()
 $Case10ProgressBoundaryMode = $Case10ProgressBoundaryMode.ToLowerInvariant()
@@ -2143,6 +2148,20 @@ function Get-BenchmarkMutatingBudget([hashtable]$case, [string]$agent) {
   return $null
 }
 
+function Get-BenchmarkInitialOutputLimit([hashtable]$case, [string]$agent) {
+  if ($case.Id -eq "10-receipt-ledger" -and $agent -eq "rupi" -and
+      $Case10InitialProgressMaxOutputTokens -gt 0) { return $Case10InitialProgressMaxOutputTokens }
+  return $null
+}
+
+function Set-BenchmarkInitialOutputLimit([hashtable]$case, [object]$limits) {
+  $selected = Get-BenchmarkInitialOutputLimit $case "rupi"
+  if ($null -eq $selected) { return }
+  if (-not $Case10InitialProgressBoundary) { throw "Initial output limit requires initial progress." }
+  $limits | Add-Member -MemberType NoteProperty -Force `
+    -Name initial_progress_max_output_tokens -Value $selected
+}
+
 function Set-BenchmarkMutatingBudget([hashtable]$case, [object]$limits) {
   $selected = Get-BenchmarkMutatingBudget $case "rupi"
   if ($null -eq $selected) { return }
@@ -2245,6 +2264,7 @@ function New-BenchmarkWorkspace([hashtable]$case, [string]$agentRoot, [string]$t
     }
     Set-BenchmarkProgressBoundary $case $config.limits
     Set-BenchmarkMutatingBudget $case $config.limits
+    Set-BenchmarkInitialOutputLimit $case $config.limits
     if ($case.Id -eq "10-receipt-ledger" -and $Case10CompletionChecks -gt 0) {
       $config.limits | Add-Member -MemberType NoteProperty -Force `
         -Name max_completion_checks_per_turn -Value $Case10CompletionChecks
@@ -2596,6 +2616,8 @@ function Invoke-AgentCase([hashtable]$case, [string]$agent, [string]$root, [stri
         ) { $Case10CompletionChecks } else { $null }
         $turnRecord["configured_max_mutating_tool_calls_per_turn"] =
           Get-BenchmarkMutatingBudget $case $agent
+        $turnRecord["configured_initial_progress_max_output_tokens"] =
+          Get-BenchmarkInitialOutputLimit $case $agent
         $turnRecord["configured_initial_progress_boundary"] = if ($agent -eq "rupi") {
           $Case10InitialProgressBoundary.IsPresent
         } else { $null }
@@ -3464,6 +3486,8 @@ $summary = [ordered]@{
   } else { $null }
   case10_rupi_max_mutating_tool_calls_per_turn =
     Get-BenchmarkMutatingBudget @{Id="10-receipt-ledger"} "rupi"
+  case10_rupi_initial_progress_max_output_tokens =
+    Get-BenchmarkInitialOutputLimit @{Id="10-receipt-ledger"} "rupi"
   case10_max_output_tokens = $Case10MaxOutputTokens
   case10_rupi_max_turn_duration_ms = if ($Case10MaxTurnDurationMs -gt 0) {
     $Case10MaxTurnDurationMs

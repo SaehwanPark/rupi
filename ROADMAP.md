@@ -1704,7 +1704,16 @@ TUI rendering passed all budgets (3.31–3.90 µs/unit); checkpointed restore me
   total rejection and native Pi null. Required Rust checks pass (204 runtime/132 core),
   startup141.739ms cold/8.160ms median/8.733ms max, and shared prompt/reference/profile
   guards pass. Parent invariant review passes; prior render/session/context behavior
-  and budgets are unchanged. Fresh screen with32 mutations remains pending.
+  and budgets are unchanged. Retry26 ends Transport on its first request at1,196.199s,
+  with no usage, tools or completion observations; actual unfinished work remains unknown.
+  Frozen source/config/prompt/reference audits pass before the next changes. The timing
+  is consistent with the preserved relay1194s deadline, but the exact transport defect
+  and output size are unmeasured. Initial-output bounding is implemented as an optional
+  first-request-only ceiling with smaller-change guidance and endpoint/context clamping.
+  Owned fixtures prove first8192/later32768, fresh-turn renewal, skipped paths and no
+  incomplete-call dispatch/replay. The real CLI wire and harness configuration tests pass.
+  Required Rust checks pass (209 runtime/133 core); startup145.705ms cold/8.825ms median/
+  9.735ms max. Session/context checks and the next frozen screen remain pending.
   No semantic cause, acceptance benefit, or paired Case10 win is established.
   Rupi-first screening and paired
   evidence/delivery checks remain pending. Broader project gates remain active.

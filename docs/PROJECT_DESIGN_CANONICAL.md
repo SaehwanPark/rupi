@@ -1286,6 +1286,13 @@ reuse normal tool eligibility and confirmed Changed evidence. Renew selection ea
 skip explicit no-tools assessment, and keep the default disabled. This does not infer
 task intent, enforce case artifacts or expand mutation authorization.
 
+An optional positive initial progress output ceiling may bound only the first ordinary
+request of that active boundary, renewed each turn. Respect smaller endpoint ceilings
+and context admission, keep desired/effective budgets explicit, and retain normal output
+limits on later requests even if progress is still unsatisfied. Guidance may ask for a
+small coherent completed first change; it cannot claim correctness, enforce artifacts,
+dispatch incomplete tool calls or replay a failed response. Default omission is unchanged.
+
 A caller may opt into one bounded review after the first otherwise accepted ordinary
 completion. Preserve native assistant evidence and record review instructions with
 runtime provenance. Continue only through normal request/tool/time budgets, approval,
