@@ -3235,3 +3235,26 @@ harness SHA2565BB67EFC561150739849A67A5E3E975FE330BA18CEE8CE4EC97A7A522533C88C;
 new public host SHA256EB7829961FC2AB93AC36E8FE4971F5EA18F07C8DE6136019110373775DF1E6AC.
 Root user policy unchanged (SHA3CEE11E5D4D8C8CA7CCF34F87A64B18BB183D4AF9AF79AB964AE19D4EF39B496).
 Only main/active Case10 branches remain; detached artifacts retained.
+
+### Retry35 terminal audit and provider-timeout investigation
+
+Frozen checkout33d99040bba8528b5ff5cf3aa72ec600621d05d2/caller
+fa6821860f6a2e94d4e5d1ecd86170e3eb00e072/runtime4cc8425ffda7fc5af5eaaae619055748f4cab226:
+bench-20261006-case10-preflight-repair-window3-reserve8-template-off-args2048-first8192-check8-mut32-review300-turn2370-retry35-rupi40-screen1-2400s.
+One screen ends Failed(Timeout) at1,295,184ms without outer timeout. Sixteen starts/closed
+but only15 usage records:72,053 known work (63,715 uncached input/8,338 output); unfinished
+request work is UNKNOWN, not zero. Fifteen requested/completed tools,zero failures/Unknown;
+Tool names are retained in safe per-turn metadata; no name-count claim is needed here. Four progress boundaries,16 time controls,no review/check/
+finalization/unknown-kind controls. Only receiptledger/__main__.py30,165 bytes; required
+init/tests/README absent. Tests/acceptance exit1/help four exit0,no verification timeout.
+
+All frozen binary/runtime/harness/host/helper/model/config/control/full prompt/SPEC/
+reference audits pass BEFORE subsequent changes. Source37509401285/exact-freeze37509605883
+CI all3 pass,slots idle,runner/child ended,screen exit0. Root user policy hash unchanged.
+Actual generated/model/caller diagnostics/oracle contents unread. No acceptance/win.
+
+New preflight is unreached, so its actual benefit is unmeasured. Verified failure is an
+unfinished provider timeout before reserved review/feedback, with native time remaining.
+Its precise timeout phase/cause is not exposed by the permitted summary; inspect owned
+provider/config timeout mapping before choosing a bounded enhancement. No blind retry or
+unavailable-to-failed coercion. Parent usage resets to1%5-hour/14%weekly, healthy headroom.
