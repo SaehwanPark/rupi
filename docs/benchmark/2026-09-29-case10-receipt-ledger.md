@@ -2943,3 +2943,38 @@ helperA0BCAE689139BFD281CB91C209D5D8F6CF9EA42FD7EFF256BE02D97A871387C7.
 Root user policy hash unchanged; headroom15% five-hour/2% weekly before freeze. Fetch/prune
 confirms only actual main and active Case10 branches; detached artifacts retained.
 Performance/author evidence recorded before launch; exact CI results remain pending.
+
+### Retry31 terminal initial-response failure
+
+Frozen source06da417/checkouta3887e1a5e82f5377c487e5d49c523e96540a076 ends
+Failed(Semantic) after404.127s, no outer timeout; finish reason length,8192 output.
+One request starts/closes with usage14,482 known work=6290 uncached input+8192 output.
+Zero decoded tool requests/completions/failures/Unknown, files or caller checks.
+One time guide/one initial boundary, no review or completion-check controls.
+Acceptance/tests/four help exits1; no verification timeout. No Pi or configured win.
+
+All frozen runtime/binary/harness/host/helper/model/config/control/full prompt/SPEC/
+three-reference audits pass before changes; runner32900/child31424 exit, screen exit0;
+all four original model slots idle. Enhancement06da417 and exact frozena3887e1 each
+pass all three CI platforms. Timed-review observation is never reached, so its actual
+acceptance benefit remains unmeasured. Generated/model/caller/oracle contents stay unread.
+
+Verified cause at response boundary: output ceiling exhausted before a tool can be
+decoded, despite requested global/initial Off. Actual reasoning/text composition and
+backend enforcement remain unknown. This recurrence removes any claim that Retry30
+tool progression demonstrates a reliable or isolated thinking-selection benefit.
+
+Read-only static metadata reports supports_enable_thinking=null (unknown), tool_calls
+and preserve_reasoning true. Current upstream server documentation and source support
+chat_template_kwargs.enable_thinking boolean; the existing rupi ChatTemplateThinking
+dialect emits a different thinking key and its llama.cpp-specific comment is too broad.
+This is a verified adapter coverage gap, not proof of the precise local failure or build.
+Sources: https://raw.githubusercontent.com/ggml-org/llama.cpp/master/tools/server/README.md
+and https://raw.githubusercontent.com/ggml-org/llama.cpp/master/tools/server/server-common.cpp.
+
+Next bounded investigation: add an explicit typed enable_thinking template dialect,
+preserving legacy/default behavior and honest requested-versus-effective metadata;
+verify firstOff/later inheritance and paired Pi support from pinned adapter code before
+selecting a comparison profile. No speculative capability claim, backend restart/helper
+replacement, hidden-reasoning claim or unchanged retry. Required verification and freeze
+must precede any new screen. Usage before next slice:19% five-hour/3% weekly.
