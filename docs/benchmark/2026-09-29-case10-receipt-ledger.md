@@ -1945,3 +1945,19 @@ Separate parent invariant review passes; no independent child review is claimed.
 This repairs a verified generic failed-edit diagnostic defect. Its contribution
 to the Case10 failures and its acceptance benefit remain unproven. A new screen
 requires startup completion and frozen source/binary/profile preflight.
+
+### Enhancement verification complete; same-profile evaluation prerequisites
+The required fmt/core all-features check/workspace Clippy/tests/docs/debug build
+all pass for the missed-edit enhancement (runtime source 9ac88a7). Final Clippy
+and all 113 tool tests also pass after formatting the new fixture source.
+Startup passes: cold 139.493 ms; warm median 8.018 ms, mean 8.207 ms,
+maximum 9.2 ms over ten iterations, within 250/100 ms budgets.
+Debug SHA256 C58EF706433D326FD47317A33612726EA6AC6DD0DBE0D46E3B56C8BECADF6BBE.
+The store and resume implementation are unchanged from the separately verified
+6a2e531 fix; its five session-log restore budgets remain applicable, without a
+claim about full canonical-validation latency. Rendering is unchanged.
+Next evaluation must use retry18 profile, unchanged shared prompt/harness/helper/
+SPEC/references/model, and this frozen runtime source and binary. The changed
+code addresses a reproduced failed-edit recovery defect; acceptance benefit
+remains unproven. No source changes or builds during its recovery turns or a
+fresh matched Pi half. Pi remains conditional on Rupi acceptance.
