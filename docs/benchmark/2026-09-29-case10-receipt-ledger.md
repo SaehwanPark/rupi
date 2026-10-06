@@ -1961,3 +1961,25 @@ SPEC/references/model, and this frozen runtime source and binary. The changed
 code addresses a reproduced failed-edit recovery defect; acceptance benefit
 remains unproven. No source changes or builds during its recovery turns or a
 fresh matched Pi half. Pi remains conditional on Rupi acceptance.
+
+### Retry19 pinned: evaluate verified edit recovery with retry18 controls
+Run bench-20261005-case10-edit-hint-window3-budget4096-relay1194-low-output32768-retry19-rupi40-screen6-1200s.
+Runtime source 9ac88a7290e7b2286d8e2427b4d41e2654ce2fbf; fixed debug binary
+C58EF706433D326FD47317A33612726EA6AC6DD0DBE0D46E3B56C8BECADF6BBE.
+This candidate follows reproduced failed-edit diagnostic analysis, a production
+fix, passing required checks/startup, and separate parent invariant review.
+Controls match retry18: low thinking/budget 4,096 via relay 23732/8003,
+response deadline 1,194 s, provider 1,194,000 ms, outer 1,200 s/grace 6,
+output 32,768, Rupi cap 40, recurring window 3, up to six recovery turns.
+No prompt or harness/helper change: shared prompt 230589C5, harness D4CA3482
+(source 9d0de2a), helper A0BCAE68, full SPEC and three reference hashes unchanged,
+all 18 other-case prompt hashes unchanged. Same model PID 27356/alias
+qwen3.8-flash-next. Selected native-config/reference/prompt guards pass.
+Six recovery turns evaluate this one changed implementation and must keep it
+frozen to support a fair first-acceptance-turn comparison. They do not constitute
+new control-only candidates. If the screen fails, analyze its evidence and implement
+another justified enhancement before a new screen; no unchanged-code retry planned.
+Fresh Pi 0.86.1 is conditional on Rupi acceptance and uses a matched profile.
+Pi native cap/progress remain unavailable/null. No source changes or builds
+during this evaluation or its Pi half. Acceptance benefit and causality remain
+unproven. Branches remain main plus active Case10; root policy edit SHA preserved.
