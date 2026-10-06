@@ -3164,3 +3164,34 @@ public host SHA256DC75BEB0995E0EC00C1D6AFC6AE34FCD53CA18CE5085D85B1C1A7ED70865A8
 Root user policy SHA remains3CEE11E5D4D8C8CA7CCF34F87A64B18BB183D4AF9AF79AB964AE19D4EF39B496,
 never staged/modified. Parent usage68%5-hour/11%weekly, below authoritative95%/99%.
 Only main and active Case10 branches remain locally/remotely; detached artifacts retained.
+
+### Retry34 terminal audit and masked missing-deliverable failure
+
+Frozen checkoutc069622f9b993f3318f698748bc9480237dfb5e8/runtime
+4cc8425ffda7fc5af5eaaae619055748f4cab226:
+bench-20261006-case10-repair-window3-request-reserve8-template-off-args2048-first8192-check8-mut32-review300-turn2370-retry34-rupi40-screen1-2400s.
+One Rupi screen ends Failed(Semantic) at1,961,638ms without outer timeout. All34 requests
+close with usage:121,262 known work (99,881 uncached input/21,381 output),38 tool requests,
+36 completions,2 known failures,zero Unknown. Review after31 starts; ordinal1 Failed
+after31 (883ms), ordinal2 Unavailable after34 (180,196ms). Six progress boundaries,
+34 time controls,two check controls,no finalization/unknown kinds. Follow-up window is
+reached; the runtime correctly stops on unavailable observation with no replay/failover.
+
+Metadata:README.md9130,receiptledger/__init__.py470,receiptledger/__main__.py36716,
+tests/test_receiptledger.py27720; required tests/__init__.py absent. Post-run project tests
+time out (exit null), acceptance exits1, four help exits0, one verification timeout.
+No acceptance/configured win. All frozen binary/runtime/harness/host/helper/model/config/
+control/full-prompt/SPEC/three-reference audits pass BEFORE following changes; source
+37502259113/exact-freeze37502612624 CI all3 pass, slots idle, processes ended,screen exit0.
+Root user policy hash unchanged; generated/model/caller diagnostics/oracle contents unread.
+
+Owned host source reveals a verified control-flow defect: it records known missing
+required deliverables, then starts tests/help anyway. A later command timeout throws,
+masking that determinate Failed result as Unavailable. At the second check34 no later
+model mutation occurs, and terminal canonical metadata lacks tests/__init__.py. Actual
+feedback contents and precise generated-test hang cause remain unknown; no hidden-reasoning
+claim. Next narrow enhancement returns Failed after a safe snapshot/missing-file preflight,
+explicitly states command checks were not run, and permits fresh checking after repair.
+Snapshot/budget/protocol/infrastructure Unavailable semantics remain, as does runtime
+Unavailable stop. No command replay, timeout increase, oracle use or acceptance weakening.
+Parent usage76%5-hour/12%weekly, below authoritative95%/99% thresholds.
