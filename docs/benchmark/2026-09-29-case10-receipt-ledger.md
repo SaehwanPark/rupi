@@ -2799,3 +2799,39 @@ relayA0BCAE689139BFD281CB91C209D5D8F6CF9EA42FD7EFF256BE02D97A871387C7.
 Remote refs pruned; only actual main and active Case10 branches remain, detached artifacts
 retained. No inference was active during changes/checks, no actual diagnostic content read.
 Broader project gates and final paired evidence remain active.
+
+### Retry29 terminal initial-response failure
+
+Frozen codebasea2e156e/runtime043196b/checkout416746314b6a441b0f448062934e2b3eea7521c3
+ends Failed(Semantic) after409.515s, no outer timeout: finish reason length and exactly
+8192 output tokens. One request starts/closes with usage14,435 work (6,243 uncached
+input +8,192 output). No decoded tool requests/completions/failures/Unknown, no files,
+no completion checks. Controls:one time guide/one initial boundary/zero other.
+Acceptance/tests/four help exits1, no verification timeout. No Pi or configured win.
+
+All frozen runtime/binary/harness/host/helper/model/config/control/full prompt/SPEC/
+three-reference audits pass before changes; all four model slots idle. Runner19236/
+child22032 end, screen exit0. Exact frozen checkout CI37461082997 passes Ubuntu,
+macOS and Windows after the mailbox fixture correction. The short caller snapshot
+root is not reached, so no actual caller-fix benefit is measured. Generated/model/
+caller/oracle/diagnostic content remains unread.
+
+Verified cause at the response boundary: the first8192 output allowance is exhausted
+before a tool call can be decoded. Schema maxLength and post-response validation cannot
+by themselves ensure a complete first response. Actual reasoning/text composition and
+the precise generation defect remain unknown. Provider mapping requests no strict
+sampling unless its explicit constraint/capability contract selects it.
+
+Upstream report https://github.com/ggml-org/llama.cpp/issues/27217 describes required
+tool choice ignored on reasoning-preserving templates, with length and no calls.
+Read-only local server metadata reports supports_tool_calls=true and
+supports_preserve_reasoning=true. This is a possible matching failure family, not a
+proved defect in our build; build/version and actual failed contents are unmeasured.
+No model/helper restart or unchanged rerun is authorized by this evidence.
+
+Next bounded runtime enhancement: caller-selected thinking override only for the first
+active initial progress request, retaining normal thinking on later requests/fresh
+renewal and all existing output/argument/approval/Unknown safeguards. Select requested
+Off first then Low/4096 later in the next screen, with honest native/Pi metadata.
+Verify config/owned runtime/wire/disable encoding before inference. Do not claim hidden
+reasoning composition, guaranteed no-reasoning behavior, latency, acceptance or Pi parity.
