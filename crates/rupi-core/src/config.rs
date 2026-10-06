@@ -127,8 +127,10 @@ pub enum OpenAiThinkingInput {
   /// OpenAI `reasoning_effort`.
   #[default]
   ReasoningEffort,
-  /// `chat_template_kwargs: { "thinking": bool }`, as llama.cpp builds expect.
+  /// `chat_template_kwargs: { "thinking": bool }` for templates using that key.
   ChatTemplateThinking,
+  /// `chat_template_kwargs: { "enable_thinking": bool }` for compatible local templates.
+  ChatTemplateEnableThinking,
 }
 
 /// Whether the endpoint supports strict JSON-Schema tool sampling.
@@ -1618,23 +1620,28 @@ mod tests {
 
   #[test]
   fn openai_compat_endpoint_options_round_trip() {
-    let mut config = sample_config();
-    config.endpoints[0].capabilities.exposed_reasoning = ReasoningExposure::Native;
-    config.endpoints[0].openai_compat = OpenAiCompatOptions {
-      stream: Some(false),
-      stream_usage: Some(false),
-      max_tokens_field: Some(OpenAiMaxTokensField::MaxCompletionTokens),
-      thinking_input: Some(OpenAiThinkingInput::ChatTemplateThinking),
-      thinking_disable: Some(OpenAiThinkingDisable::ReasoningEffortNone),
-      strict_tool_schema: Some(OpenAiStrictToolSchemaSupport::Supported),
-      preserve_reasoning: true,
-      headers: BTreeMap::new(),
-    };
-    let parsed = RuntimeConfig::parse(&config.to_json_string().unwrap()).unwrap();
-    assert_eq!(
-      parsed.endpoints[0].openai_compat,
-      config.endpoints[0].openai_compat
-    );
+    for thinking_input in [
+      OpenAiThinkingInput::ChatTemplateThinking,
+      OpenAiThinkingInput::ChatTemplateEnableThinking,
+    ] {
+      let mut config = sample_config();
+      config.endpoints[0].capabilities.exposed_reasoning = ReasoningExposure::Native;
+      config.endpoints[0].openai_compat = OpenAiCompatOptions {
+        stream: Some(false),
+        stream_usage: Some(false),
+        max_tokens_field: Some(OpenAiMaxTokensField::MaxCompletionTokens),
+        thinking_input: Some(thinking_input),
+        thinking_disable: Some(OpenAiThinkingDisable::ReasoningEffortNone),
+        strict_tool_schema: Some(OpenAiStrictToolSchemaSupport::Supported),
+        preserve_reasoning: true,
+        headers: BTreeMap::new(),
+      };
+      let parsed = RuntimeConfig::parse(&config.to_json_string().unwrap()).unwrap();
+      assert_eq!(
+        parsed.endpoints[0].openai_compat,
+        config.endpoints[0].openai_compat
+      );
+    }
   }
 
   #[test]

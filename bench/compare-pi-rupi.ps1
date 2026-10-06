@@ -51,6 +51,8 @@ param(
   [int]$Case10InitialProgressMaxArgumentChars = 0,
   [ValidateSet('inherit', 'off', 'minimal', 'low', 'medium', 'high', 'xhigh')]
   [string]$Case10InitialProgressThinking = 'inherit',
+  [ValidateSet('reasoning_effort', 'chat_template_enable_thinking')]
+  [string]$Case10ThinkingInput = 'reasoning_effort',
   [ValidateRange(0, 16)]
   [int]$Case10CompletionChecks = 0,
   [switch]$Case10CompletionCheckOnReview,
@@ -64,6 +66,10 @@ param(
 )
 
 $ErrorActionPreference = "Stop"
+if ($Case10ThinkingInput -eq 'chat_template_enable_thinking' -and
+    $Case10ReasoningBudgetTokens -gt 0) {
+  throw 'Case10 enable_thinking requires direct endpoint with reasoning budget selection0.'
+}
 if ($Case10CompletionCheckOnReview -and
     (-not $Case10ReviewCompletion -or $Case10CompletionReviewReserveMs -le 0 -or
      $Case10CompletionChecks -le 0)) {
@@ -2176,6 +2182,20 @@ function Get-BenchmarkInitialArgumentLimit([hashtable]$case, [string]$agent) {
   return $null
 }
 
+function Get-BenchmarkThinkingInput([hashtable]$case) {
+  if ($case.Id -eq '10-receipt-ledger' -and $Case10ThinkingInput) { return $Case10ThinkingInput }
+  return 'reasoning_effort'
+}
+
+function Get-BenchmarkThinkingControl([hashtable]$case, [string]$level) {
+  $dialect = Get-BenchmarkThinkingInput $case
+  return [ordered]@{
+    level = $level
+    dialect = $dialect
+    off_value = if ($dialect -eq 'chat_template_enable_thinking') { $false } else { 'none' }
+  }
+}
+
 function Get-BenchmarkReviewCheck([hashtable]$case, [string]$agent) {
   if ($case.Id -ne '10-receipt-ledger' -or $agent -ne 'rupi') { return $null }
   return [bool]$Case10CompletionCheckOnReview
@@ -2272,6 +2292,10 @@ function Get-BenchmarkEnvironment([hashtable]$case, [string]$agent, [string]$age
 function Set-BenchmarkReasoningCompatibility([hashtable]$case, [object]$endpoint) {
   if ($case.Id -notin @("07-lease-cascade", "08-lease-fence",
       "09-lease-receipt", "10-receipt-ledger")) { return }
+  if ((Get-BenchmarkThinkingInput $case) -eq 'chat_template_enable_thinking' -and
+      $Case10ReasoningBudgetTokens -gt 0) {
+    throw 'Template thinking requires direct endpoint.'
+  }
   if ($null -eq $endpoint.capabilities -or
       $endpoint.capabilities.exposed_reasoning -cne "native") {
     $caseName = "Case " + $case.Id.Substring(0, 2)
@@ -2284,7 +2308,7 @@ function Set-BenchmarkReasoningCompatibility([hashtable]$case, [object]$endpoint
     )
   }
   $endpoint.openai_compat | Add-Member -MemberType NoteProperty -Name thinking_input -Force `
-    -Value "reasoning_effort"
+    -Value (Get-BenchmarkThinkingInput $case)
   $endpoint.openai_compat | Add-Member -MemberType NoteProperty -Name thinking_disable -Force `
     -Value "reasoning_effort_none"
   $endpoint.openai_compat | Add-Member -MemberType NoteProperty -Name preserve_reasoning -Force `
@@ -2399,8 +2423,10 @@ function New-PiConfig([string]$agentRoot, [hashtable]$case) {
           }
           reasoning = $true
           compat = [ordered]@{
-            supportsReasoningEffort = $true
-            thinkingFormat = "openai"
+            supportsReasoningEffort = ((Get-BenchmarkThinkingInput $case) -eq 'reasoning_effort')
+            thinkingFormat = if ((Get-BenchmarkThinkingInput $case) -eq 'chat_template_enable_thinking') {
+              'chat-template'
+            } else { 'openai' }
             maxTokensField = "max_tokens"
           }
           thinkingLevelMap = [ordered]@{
@@ -2413,6 +2439,12 @@ function New-PiConfig([string]$agentRoot, [hashtable]$case) {
           }
         })
       }
+    }
+  }
+  if ((Get-BenchmarkThinkingInput $case) -eq 'chat_template_enable_thinking') {
+    if ($Case10ReasoningBudgetTokens -gt 0) { throw 'Template thinking requires direct endpoint.' }
+    $models.providers.unsloth.models[0].compat['chatTemplateKwargs'] = [ordered]@{
+      enable_thinking = [ordered]@{ '$var' = 'thinking.enabled' }
     }
   }
   Write-Json (Join-Path $piConfig "models.json") $models
@@ -2706,11 +2738,7 @@ function Invoke-AgentCase([hashtable]$case, [string]$agent, [string]$root, [stri
           $progressControl.window
         } else { $null }
       }
-      $turnRecord["configured_thinking_control"] = [ordered]@{
-        level = $thinkingLevel
-        dialect = "reasoning_effort"
-        off_value = "none"
-      }
+      $turnRecord["configured_thinking_control"] = Get-BenchmarkThinkingControl $case $thinkingLevel
       $turnRecord["configured_model_endpoint"] = Get-BenchmarkEndpoint $case
       $budget = Get-BenchmarkReasoningBudget $case
       $turnRecord["configured_reasoning_budget_tokens"] = if ($budget -gt 0) {
@@ -3561,6 +3589,7 @@ $summary = [ordered]@{
   case10_rupi_initial_progress_max_argument_chars =
     Get-BenchmarkInitialArgumentLimit @{Id="10-receipt-ledger"} "rupi"
   case10_rupi_initial_progress_thinking = Get-BenchmarkInitialThinking @{Id="10-receipt-ledger"} "rupi"
+  case10_thinking_input = Get-BenchmarkThinkingInput @{Id='10-receipt-ledger'}
   case10_max_output_tokens = $Case10MaxOutputTokens
   case10_rupi_max_turn_duration_ms = if ($Case10MaxTurnDurationMs -gt 0) {
     $Case10MaxTurnDurationMs

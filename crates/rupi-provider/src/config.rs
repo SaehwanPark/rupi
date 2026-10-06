@@ -557,37 +557,42 @@ mod tests {
 
   #[test]
   fn endpoint_dialect_options_reach_the_provider_adapter() {
-    let mut endpoint = ModelEndpoint::local("local", "qwen", "http://127.0.0.1:8080/v1", 4_096);
-    endpoint.capabilities.exposed_reasoning = ReasoningExposure::Native;
-    endpoint.openai_compat = rupi_core::OpenAiCompatOptions {
-      stream: Some(false),
-      stream_usage: Some(false),
-      max_tokens_field: Some(MaxTokensField::MaxCompletionTokens),
-      thinking_input: Some(ThinkingInput::ChatTemplateThinking),
-      thinking_disable: Some(ThinkingDisableMode::ReasoningEffortNone),
-      strict_tool_schema: Some(StrictToolSchemaSupport::Supported),
-      preserve_reasoning: true,
-      headers: BTreeMap::from([("x-route".into(), "local-fast".into())]),
-    };
+    for thinking_input in [
+      ThinkingInput::ChatTemplateThinking,
+      ThinkingInput::ChatTemplateEnableThinking,
+    ] {
+      let mut endpoint = ModelEndpoint::local("local", "qwen", "http://127.0.0.1:8080/v1", 4_096);
+      endpoint.capabilities.exposed_reasoning = ReasoningExposure::Native;
+      endpoint.openai_compat = rupi_core::OpenAiCompatOptions {
+        stream: Some(false),
+        stream_usage: Some(false),
+        max_tokens_field: Some(MaxTokensField::MaxCompletionTokens),
+        thinking_input: Some(thinking_input),
+        thinking_disable: Some(ThinkingDisableMode::ReasoningEffortNone),
+        strict_tool_schema: Some(StrictToolSchemaSupport::Supported),
+        preserve_reasoning: true,
+        headers: BTreeMap::from([("x-route".into(), "local-fast".into())]),
+      };
 
-    let derived = ProviderConfig::from_endpoint(&endpoint).unwrap();
-    assert!(!derived.stream);
-    assert!(!derived.stream_usage);
-    assert_eq!(
-      derived.max_tokens_field,
-      MaxTokensField::MaxCompletionTokens
-    );
-    assert_eq!(derived.thinking_input, ThinkingInput::ChatTemplateThinking);
-    assert_eq!(
-      derived.thinking_disable,
-      ThinkingDisableMode::ReasoningEffortNone
-    );
-    assert_eq!(
-      derived.strict_tool_schema,
-      StrictToolSchemaSupport::Supported
-    );
-    assert!(derived.preserve_reasoning);
-    assert_eq!(derived.headers["x-route"], "local-fast");
+      let derived = ProviderConfig::from_endpoint(&endpoint).unwrap();
+      assert!(!derived.stream);
+      assert!(!derived.stream_usage);
+      assert_eq!(
+        derived.max_tokens_field,
+        MaxTokensField::MaxCompletionTokens
+      );
+      assert_eq!(derived.thinking_input, thinking_input);
+      assert_eq!(
+        derived.thinking_disable,
+        ThinkingDisableMode::ReasoningEffortNone
+      );
+      assert_eq!(
+        derived.strict_tool_schema,
+        StrictToolSchemaSupport::Supported
+      );
+      assert!(derived.preserve_reasoning);
+      assert_eq!(derived.headers["x-route"], "local-fast");
+    }
   }
 
   #[test]

@@ -126,3 +126,19 @@ workspace. `bench/test-completion-feedback.ps1` reproduces the Windows baseline 
 short-root missing-deliverable failure, fresh repair success and canonical effect isolation.
 Keep observation Unavailable distinct from known failed checks; do not replay an uncertain
 check to hide a path-layout failure.
+
+## Cancel streaming fixtures after observing their first delta
+
+A transport fixture's150ms wall-time cancellation reached PreRequest under workspace
+test load, although the fixture required Streaming and partial output. Observe the first
+actual delta before cancelling instead of estimating HTTP/scheduler startup. Drain the
+complete fake POST, keep the connection open, and retain partial-output and no-repost
+assertions. The event-triggered fixture verifies those contracts without changing runtime.
+
+## Allow timeout fixtures enough setup time to start their command
+
+The caller fixture's13.1s total allowance left only1.1s after its12s cleanup/publication
+reserve. It returned Unavailable before the expected command artifact existed. Use18s
+with a10s simulated command so the fixture can complete snapshot/setup and then verify
+actual command timeout. Keep Unavailable and command-start assertions; do not relax
+production deadlines or retry uncertain observations.

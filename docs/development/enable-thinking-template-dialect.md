@@ -40,3 +40,27 @@ Planned direct8000/globalOff/firstOff both agents, all Retry31 output/argument/p
 review/check/budget/time/sampling/context/tool settings retained, original model/helpers
 unchanged. One fresh Rupi screen; matched Pi only after acceptance. Any failure requires
 new analysis and verified enhancement before another attempt. No configured win claimed.
+
+Verified local evidence: all required Rust/debug checks pass (216 runtime/136 core/
+100 provider/25 CLI), both-key config/derived-provider roundtrips, every-level boolean
+mapping, real Rupi firstOff/laterLow wire and pinned Pi fake HTTP Off/Low encoding.
+Eight owned harness fixtures and full selected Rupi/Pi profile pass. Shared Case10 and
+original18 other prompt hashes, full SPEC and three reference hashes remain unchanged.
+Startup158.146ms cold/9.688ms warm median/11.706ms max; five restores69.60/432.10/
+2604.50/2564.30/4949.30us and five context cases0.4/0.1/0/0/0.3us pass.
+
+Owned harness timeout fixture failed before command artifacts with only1.1s remaining
+after cleanup reserve;18s allowance and10s simulated command now verify actual startup
+and Unavailable timeout without production changes. Initial workspace verification also
+exposed150ms cancellation firing in PreRequest rather than Streaming; the fixture now
+cancels on the actual first delta and retains partial-output/no-repost assertions.
+Focused corrected fixture and subsequent full gates pass. No failed check rerun unchanged.
+LESSONS.md records both verified fixture boundaries.
+
+Parent author invariant review: pass. New typed dialect preserves default/legacy bytes
+and explicit endpoint ownership; no capability/provenance/effort-intensity claim. Matching
+Pi config sends only the tested template boolean; sampling/context/model identity and
+all existing tool/cancel/Unknown/budget barriers remain. No events/statuses/render paths,
+timers/dependencies/authority or upfront startup work added. Actual failure composition,
+backend enforcement and acceptance improvement remain unproved. Source/freeze CI and
+new actual screen remain pending; this is author review, not independent review.

@@ -20,8 +20,8 @@ use std::{
 use rupi_core::{
   CancelToken, Collector, CompletionCertainty, CompletionUsage, ContentBlock, FailurePhase,
   Message, ModelCapabilities, ModelEndpoint, ModelFailure, ModelFailureKind, ModelProvider,
-  ModelRef, ModelRequest, ProviderEvent, ReasoningChunk, ReasoningExposure, ReasoningProvenance,
-  Role, ThinkingLevel, ToolSamplingConstraint, ToolSamplingStrictness,
+  ModelRef, ModelRequest, ProviderEvent, ProviderEventSink, ReasoningChunk, ReasoningExposure,
+  ReasoningProvenance, Role, ThinkingLevel, ToolSamplingConstraint, ToolSamplingStrictness,
 };
 use rupi_provider::{
   MAX_RESPONSE_FRAMES, MaxTokensField, OpenAiCompat, ProviderConfig, ThinkingInput,
@@ -1060,14 +1060,25 @@ fn delayed_headers_use_the_logical_timeout_without_resubmitting_the_post() {
 
 #[test]
 fn cancel_during_a_slow_stream_stops_promptly() {
+  struct CancelAfterDelta {
+    collector: Collector,
+    cancel: CancelToken,
+  }
+  impl ProviderEventSink for CancelAfterDelta {
+    fn emit(&mut self, event: &ProviderEvent) {
+      self.collector.emit(event);
+      if matches!(event, ProviderEvent::TextDelta(_)) {
+        self.cancel.cancel();
+      }
+    }
+  }
   // The server sends one delta and then holds the connection open; the client
   // must abandon it on cancel rather than wait for a timeout.
   let listener = TcpListener::bind("127.0.0.1:0").expect("bind");
   let addr = listener.local_addr().expect("addr");
   let server = thread::spawn(move || {
     let (mut socket, _) = listener.accept().expect("accept");
-    let mut buf = [0u8; 512];
-    let _ = socket.read(&mut buf);
+    let _ = drain_request(&mut socket);
     let _ = socket.write_all(
       b"HTTP/1.1 200 OK\r\ncontent-type: text/event-stream\r\n\r\ndata: {\"choices\":[{\"delta\":{\"content\":\"first\"}}]}\n\n",
     );
@@ -1078,21 +1089,20 @@ fn cancel_during_a_slow_stream_stops_promptly() {
 
   let adapter = adapter(&format!("http://{addr}/v1"), None);
   let cancel = CancelToken::new();
-  let mut collector = Collector::default();
-  let thread_cancel = cancel.clone();
-  let killer = thread::spawn(move || {
-    thread::sleep(std::time::Duration::from_millis(150));
-    thread_cancel.cancel();
-  });
+  // A wall-time delay could cancel before the POST under CI load. Observe the
+  // actual first delta so this always tests cancellation during streaming.
+  let mut collector = CancelAfterDelta {
+    collector: Collector::default(),
+    cancel: cancel.clone(),
+  };
   let result = adapter.stream(&request("hang"), &mut collector, &cancel);
-  killer.join().expect("killer");
   let _ = server.join();
 
   let failure = result.unwrap_err();
   assert_eq!(failure.kind, ModelFailureKind::Cancelled);
   assert_eq!(failure.phase, FailurePhase::Streaming);
   assert!(failure.partial_output_emitted);
-  assert_eq!(collector.events().len(), 1);
+  assert_eq!(collector.collector.events().len(), 1);
 
   // The first POST is uncertain after cancellation. The same adapter must not
   // issue a second one; callers need a fresh provider instance or failover.

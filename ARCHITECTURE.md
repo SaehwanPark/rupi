@@ -538,6 +538,16 @@ hidden reasoning or guaranteed backend enforcement. Owned fresh/skipped/no-effec
 CLI wire fixtures verify Off first/Low later, including `reasoning_effort: none` when
 the endpoint declares that disable encoding. The default inherits normal thinking.
 
+### Endpoint thinking dialects
+
+Endpoint `openai_compat.thinking_input` can explicitly select
+`chat_template_enable_thinking`: it sends `chat_template_kwargs.enable_thinking` as a
+boolean, false for Off and true for other levels. The legacy `chat_template_thinking`
+key and default `reasoning_effort` remain unchanged. This requests a template toggle;
+it neither specifies effort intensity nor proves effective backend enforcement or hidden
+reasoning composition. First-request thinking selection uses the same endpoint dialect.
+Owned config/provider/CLI wire fixtures cover both keys, Off and later inheritance.
+
 ### Opt-in completion review
 
 `RuntimeLimits::review_completion` defaults to false. When enabled, the first otherwise

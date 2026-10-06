@@ -1316,6 +1316,11 @@ even before progress is satisfied; fresh turns renew selection. Describe request
 without claiming observed hidden reasoning or backend compliance. Do not relax output,
 tool, approval, cancellation or unresolved-effect safeguards to apply this selection.
 
+Endpoint thinking dialects must preserve their declared wire keys. An explicitly selected
+`chat_template_enable_thinking` dialect sends the boolean template toggle; do not conflate
+it with the legacy `thinking` key or generic reasoning effort. A requested toggle is not
+proof of effective backend enforcement, effort intensity or hidden reasoning composition.
+
 A caller may opt into one bounded review after the first otherwise accepted ordinary
 completion. Preserve native assistant evidence and record review instructions with
 runtime provenance. Continue only through normal request/tool/time budgets, approval,

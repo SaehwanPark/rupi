@@ -103,8 +103,9 @@ Invoke-CompletionFeedbackHost $state $PID 30000
 if ((Read-OwnedReply $id).status -cne 'unavailable' -or
     (Test-Path -LiteralPath (Join-Path $state.root "check-$id"))) { throw 'Invalid request ran checks.' }
 Write-Owned 'tests/test_receiptledger.py' $passingTest.Replace('self.assertEqual(1, 1)',
-  '__import__("time").sleep(2)')
-$id = Submit-Owned 6 13100
+  '__import__("time").sleep(10)')
+# Allow snapshot/launch scheduling before timing out the command, not the snapshot.
+$id = Submit-Owned 6 18000
 Invoke-CompletionFeedbackHost $state $PID 30000
 if ((Read-OwnedReply $id).status -cne 'unavailable') { throw 'Uncertain timed check accepted.' }
 if (-not (Test-Path -LiteralPath (Join-Path $state.root "check-$id/1.stderr.txt"))) {

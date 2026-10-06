@@ -531,6 +531,9 @@ Expected divergences include:
   fixtures cover this Rupi-specific contract; acceptance benefit and Pi parity are unproved;
 - optional bounded same-model completion review; this is runtime guidance rather than
   certification that the user's task is correct, and native Pi parity is not claimed;
+- explicit endpoint template `enable_thinking` boolean dialect, preserving legacy/default
+  encodings; owned pinned Pi fake-wire fixtures verify matching field selection, while
+  effective backend enforcement and actual acceptance improvement remain unproved;
 - optional caller-delegated completion observations through an explicit run mailbox;
   public feedback may permit bounded same-model repair, and unavailable observations stop
   without replay. Owned protocol/runtime/host fixtures cover this Rupi-specific behavior;

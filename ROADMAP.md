@@ -1759,6 +1759,17 @@ TUI rendering passed all budgets (3.31–3.90 µs/unit); checkpointed restore me
   comparative/CLI fixtures verify feedback before the final answer, repair and fresh
   final checking. Unavailable/cancel/Unknown/cap semantics remain. Full gates pending;
   no actual configured acceptance or paired improvement is established.
+  Frozen Retry31 fails its first response after404.127s with length8192 and14,482 known
+  work, no decoded tools/files/checks. All frozen audits and both source06da417/freezea3887e1
+  three-platform CI pass. Timed-review checking is not reached, so its actual benefit is
+  unmeasured. An explicit enable_thinking template dialect addresses a verified adapter
+  coverage gap; actual failed reasoning composition/backend compliance remain unknown.
+  Owned mapping/config/CLI and pinned Pi fake-wire fixtures verify exact boolean fields
+  and unchanged legacy/default encoding. Required local Rust/debug checks pass
+  (216 runtime/136 core/100 provider/25 CLI); startup158.146ms cold/9.688ms median/
+  11.706ms max and all five restores/five context budgets pass. Two timing fixtures now
+  verify command startup and cancel after observed streaming, preserving assertions.
+  Parent author invariant review passes. Remote CI/frozen screen/paired win remain pending.
   No semantic cause, acceptance benefit, or paired Case10 win is established.
   Rupi-first screening and paired
   evidence/delivery checks remain pending. Broader project gates remain active.

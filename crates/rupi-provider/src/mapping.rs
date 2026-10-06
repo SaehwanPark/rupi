@@ -249,6 +249,9 @@ fn apply_thinking(config: &ProviderConfig, level: ThinkingLevel, body: &mut Valu
     ThinkingInput::ChatTemplateThinking => {
       body["chat_template_kwargs"] = json!({ "thinking": level != ThinkingLevel::Off });
     }
+    ThinkingInput::ChatTemplateEnableThinking => {
+      body["chat_template_kwargs"] = json!({ "enable_thinking": level != ThinkingLevel::Off });
+    }
   }
 }
 
@@ -605,6 +608,31 @@ mod tests {
     let silent = request_body(&quiet, &req);
     assert!(silent.get("reasoning_effort").is_none());
     assert!(silent.get("chat_template_kwargs").is_none());
+  }
+
+  #[test]
+  fn enable_thinking_template_dialect_encodes_exact_booleans_for_every_level() {
+    let local = ProviderConfig {
+      thinking_input: ThinkingInput::ChatTemplateEnableThinking,
+      ..config()
+    };
+    for level in [
+      ThinkingLevel::Off,
+      ThinkingLevel::Minimal,
+      ThinkingLevel::Low,
+      ThinkingLevel::Medium,
+      ThinkingLevel::High,
+      ThinkingLevel::Xhigh,
+    ] {
+      let mut req = request(vec![Message::user("owned")]);
+      req.thinking = level;
+      let body = request_body(&local, &req);
+      assert_eq!(
+        body["chat_template_kwargs"],
+        json!({"enable_thinking":level != ThinkingLevel::Off})
+      );
+      assert!(body.get("reasoning_effort").is_none());
+    }
   }
 
   #[test]

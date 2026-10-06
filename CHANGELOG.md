@@ -10,6 +10,11 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Added
 
+- Added explicit `chat_template_enable_thinking` endpoint encoding for compatible local
+  templates. It sends the boolean `enable_thinking` key and preserves legacy/default
+  dialects. Owned Rupi and pinned Pi fake-wire fixtures verify matched requests; effective
+  backend enforcement and Case10 acceptance remain unproved.
+
 - Added an optional caller observation when timed completion review begins, so bounded
   public feedback can reach the active model before its final answer. Review and final
   checking share an allowance; passes do not replace review or a fresh final check.
