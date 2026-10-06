@@ -3195,3 +3195,43 @@ explicitly states command checks were not run, and permits fresh checking after 
 Snapshot/budget/protocol/infrastructure Unavailable semantics remain, as does runtime
 Unavailable stop. No command replay, timeout increase, oracle use or acceptance weakening.
 Parent usage76%5-hour/12%weekly, below authoritative95%/99% thresholds.
+
+### Verified public preflight and frozen Retry35
+
+Caller sourcefa6821860f6a2e94d4e5d1ecd86170e3eb00e072 returns Failed promptly when a safe
+bounded snapshot lacks required public deliverables. Feedback lists missing names and
+explicitly states commands were not run. Complete workspaces retain all original commands,
+nonzero tests and deadlines. Runtime/source4cc8425ffda7fc5af5eaaae619055748f4cab226,
+binary and harness are unchanged; Unavailable/uncertain-command/protocol/deadline stops
+and once marking/atomic replies/UTF8/link/size/snapshot guards remain. No acceptance waiver.
+
+Owned comparison against explicit historical4cc8425: baseline publishes Unavailable after
+one simulated uncertain command, masking missing init; new preflight publishes Failed
+with zero command starts, then fresh repair runs full real commands and passes. Default
+fixture passes after commit without historical dependency. Genuine timeouts/invalid/stale/
+once/live callbacks/short roots and complete long-path Process.Start coverage pass.
+Required local fmt/core-check/clippy/workspace tests/docs/debug-build pass:
+225 runtime/138 core/100 provider/25 CLI. Nine harness fixtures, selected config/public
+SPEC/reference hashes and18 other prompts pass; shared initial SHA remains
+230589C5F20B5486CD84216CE5B6A0DB9734CE724C2903D891E4D50D9CFB3270.
+Parent author invariant review passes after fixing the initially HEAD-dependent fixture.
+
+Startup tool reports14.489ms first/cold invocation,8.042ms warm median/12.964ms max.
+No runtime speedup is attributed to this caller-only change. Five restores
+69.20/504.25/2921.15/2710.20/5293.80us and context .4/.1/0/0/.3us meet budgets.
+SourceCI37509401285 and exact frozen-checkout all3 CI must pass before launch.
+
+Frozen one-turn screen:
+bench-20261006-case10-preflight-repair-window3-reserve8-template-off-args2048-first8192-check8-mut32-review300-turn2370-retry35-rupi40-screen1-2400s.
+All Retry34 controls preserved: cap40/request reserve8/repair window3/checks8/check_on_review,
+time reserve300s/native2370s/provider2394s/outer2400s/grace6, direct8000 templateglobalOff/
+firstOff/first8192/arguments2048/overall32768, initial boundary/recurringwindow3/mutation32/
+total64; same physical model/original helpers/shared inputs/SPEC/three reference hashes.
+Fresh matched Pi only after acceptance. Parent actual generated/model/caller/oracle
+contents remain unread, precise test-hang cause unknown, no configured win yet.
+
+Frozen binary SHA256C0E143AF4476CF8D1405E4E360168C55976DC1FC58ABBA4CCED3392ED6DA0A5B;
+harness SHA2565BB67EFC561150739849A67A5E3E975FE330BA18CEE8CE4EC97A7A522533C88C;
+new public host SHA256EB7829961FC2AB93AC36E8FE4971F5EA18F07C8DE6136019110373775DF1E6AC.
+Root user policy unchanged (SHA3CEE11E5D4D8C8CA7CCF34F87A64B18BB183D4AF9AF79AB964AE19D4EF39B496).
+Only main/active Case10 branches remain; detached artifacts retained.

@@ -48,4 +48,10 @@ UTF8 bounds, snapshot/link/size/budget safeguards and runtime Unavailable stop a
 No Rust/runtime/CLI/provider/schema/model/authority/event/storage/rendering change; optional
 caller work remains outside startup/core. Required local fmt/core-check/clippy/workspace
 tests/docs/debug-build pass (225 runtime/138 core/100 provider/25 CLI). Binary/runtime
-source are unchanged. Performance/remote CI/freeze and actual acceptance remain pending.
+source are unchanged. Startup tool reports14.489ms first/cold invocation,8.042ms warm
+median/12.964ms max; no runtime speedup is attributed to this caller-only change. Five
+restores69.20/504.25/2921.15/2710.20/5293.80us and context .4/.1/0/0/.3us meet all budgets.
+Caller sourcefa6821860f6a2e94d4e5d1ecd86170e3eb00e072 is pushed; runtime/source remains
+4cc8425ffda7fc5af5eaaae619055748f4cab226 and binary/harness unchanged. Default fixture
+passes after the commit. SourceCI37509401285/exact-freeze all3 CI precede Retry35.
+Actual acceptance and paired evidence remain pending.

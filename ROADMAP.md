@@ -1792,7 +1792,10 @@ TUI rendering passed all budgets (3.31–3.90 µs/unit); checkpointed restore me
   tests/__init__.py absent; help passes/acceptance fails. Frozen audits pass/slots idle.
   Caller source records missing files before commands but a later timeout masks that
   known failure. Immediate public missing-file feedback is active caller work; runtime
-  Unavailable/timeout semantics remain. Full gates/new frozen Retry35 remain pending.
+  Unavailable/timeout semantics remain. Required local Rust/debug checks, owned preflight
+  comparison/fresh repair/default post-commit fixture, nine harness/prompt/reference guards
+  and startup/five restore/five context budgets pass. Parent author review passes; caller
+  sourcefa68218/runtime4cc8425 pushed, remote CI/new frozen Retry35 remain pending.
   No semantic cause, acceptance benefit, or paired Case10 win is established.
   Rupi-first screening and paired
   evidence/delivery checks remain pending. Broader project gates remain active.
