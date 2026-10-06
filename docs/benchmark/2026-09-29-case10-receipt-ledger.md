@@ -1816,3 +1816,17 @@ is listed. Contents remain unread. File presence and help success do not prove
 contract correctness or documentation accuracy. Frozen controls/prompt/SPEC/
 reference/source/binary/model audit passes. Cap40 was not reached; unfinished
 inference is unmeasured. Remaining attempts continue; Pi remains unrun.
+
+### Retry18 attempt2: public test module present, acceptance still failing
+Attempt2 reached the1,200,256 ms runner watchdog. Configured acceptance and
+project tests failed (exit1); all four help checks passed (exit0), with no
+verification timeout. Recorded work was80,841 tokens (68,765 uncached input,
+12,076 output), with37 model starts/completion events,36 usage records,and37
+completed tools; zero failed/Unknown calls. Completion counts can include the
+closure of a previously abandoned request.
+Filtered metadata lists README.md702bytes, app init419bytes/main44,667bytes,
+app util.py0bytes, tests init0bytes, and tests/test_receiptledger.py14,250bytes.
+Contents remain unread; public test file presence does not establish meaningful
+assertions or preserved tests. Frozen-input audit passes. Two-attempt recorded
+totals:168,376 work tokens,2,400,493 ms,63 completed tools,two known failures,
+zero Unknown calls. Remaining attempts continue; Pi remains unrun.
