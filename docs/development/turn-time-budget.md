@@ -28,7 +28,7 @@ continuation is disabled during this diagnosis/fix cycle.
   Preserve its canonical event, projection, sequence, and runtime provenance.
   This is policy guidance, not user text or native model reasoning.
 - On deadline cancellation, complete the turn as `TimeBudgetExhausted`. Explicit
-  caller cancellation keeps `Cancelled`; unresolved mutating effects keep their
+  caller cancellation keeps its existing classification; unresolved mutating effects keep their
   reconciliation barrier. Do not replay uncertain requests or mutations, dispatch
   incomplete calls, fabricate usage, or initiate recovery inference after expiry.
 - Cancellation is cooperative, not a guarantee that arbitrary foreign operations

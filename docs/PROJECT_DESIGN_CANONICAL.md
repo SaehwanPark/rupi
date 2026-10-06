@@ -1263,6 +1263,14 @@ tool policy, and approval availability; an empty set is a durable semantic failu
 request, not a retry loop (including when failover changes capabilities). The default remains
 disabled so read-only tasks are not forced to mutate.
 
+An optional turn-time budget may use a monotonic deadline and linked cancellation
+token to cooperatively stop provider and tool work. Its remaining-time guidance must
+be runtime-owned, canonical, and projected with explicit provenance. Deadline expiry
+must not cancel the caller or siblings, dispatch incomplete calls, replay uncertain
+mutations, or initiate recovery inference. Unknown/Possible effects keep the
+reconciliation barrier. The default remains disabled, and foreign operations that do
+not cooperate may exceed the deadline.
+
 This is a distributed-systems-style reliability invariant.
 
 ---

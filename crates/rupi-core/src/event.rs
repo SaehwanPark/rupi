@@ -163,6 +163,8 @@ pub enum SessionEndReason {
 pub enum TurnStatus {
   Completed,
   Cancelled,
+  /// The optional turn duration expired; cancellation preserves uncertain effects.
+  TimeBudgetExhausted,
   /// The turn consumed its model-request budget without a final answer.
   BudgetExhausted,
   /// The turn consumed its total or mutating tool-call budget; excess calls were not executed.

@@ -39,6 +39,8 @@ param(
   [int]$Case10RelayResponseTimeoutSeconds = 0,
   [ValidateRange(1, 65536)]
   [int]$Case10MaxOutputTokens = 16384,
+  [ValidateRange(0, 86400000)]
+  [long]$Case10MaxTurnDurationMs = 0,
   [ValidateSet("one_shot", "recurring")]
   [string]$Case10ProgressBoundaryMode = "one_shot",
   [ValidateRange(1, 100)]
@@ -56,6 +58,9 @@ $script:providerTimeoutGraceSeconds = [int][math]::Min(
 $script:providerRequestTimeoutMs = [int](
   ($TurnTimeoutSeconds - $script:providerTimeoutGraceSeconds) * 1000
 )
+if ($Case10MaxTurnDurationMs -ge ($TurnTimeoutSeconds * 1000)) {
+  throw "Case10MaxTurnDurationMs must be below the outer turn watchdog."
+}
 $repoRoot = (Resolve-Path (Join-Path $PSScriptRoot "..")).Path
 $artifactRoot = Join-Path $repoRoot ".benchmark\runs"
 if ([string]::IsNullOrWhiteSpace($RunId)) {
@@ -2193,6 +2198,10 @@ function New-BenchmarkWorkspace([hashtable]$case, [string]$agentRoot, [string]$t
       $config | Add-Member -MemberType NoteProperty -Name limits -Value ([pscustomobject]@{})
     }
     Set-BenchmarkProgressBoundary $case $config.limits
+    if ($case.Id -eq "10-receipt-ledger" -and $Case10MaxTurnDurationMs -gt 0) {
+      $config.limits | Add-Member -MemberType NoteProperty -Force `
+        -Name max_turn_duration_ms -Value $Case10MaxTurnDurationMs
+    }
     if ($null -eq $config.limits.PSObject.Properties["max_model_requests_per_turn"]) {
       $config.limits | Add-Member -MemberType NoteProperty -Name max_model_requests_per_turn -Value $MaxModelRequestsPerTurn
     } else {
@@ -2473,6 +2482,10 @@ function Invoke-AgentCase([hashtable]$case, [string]$agent, [string]$root, [stri
       $turnRecord["harness_model_request_cap"] = if ($agent -eq "rupi") {
         $MaxModelRequestsPerTurn
       } else { $null }
+      $turnRecord["configured_turn_duration_ms"] = if (
+        $case.Id -eq "10-receipt-ledger" -and $agent -eq "rupi" -and
+        $Case10MaxTurnDurationMs -gt 0
+      ) { $Case10MaxTurnDurationMs } else { $null }
       $progressControl = Get-BenchmarkProgressControl $case
       if ($null -ne $progressControl) {
         $turnRecord["configured_progress_boundary_mode"] = if ($agent -eq "rupi") {
@@ -3326,6 +3339,9 @@ $summary = [ordered]@{
   } else { $null }
   case10_rupi_progress_boundary_mode = $Case10ProgressBoundaryMode
   case10_max_output_tokens = $Case10MaxOutputTokens
+  case10_rupi_max_turn_duration_ms = if ($Case10MaxTurnDurationMs -gt 0) {
+    $Case10MaxTurnDurationMs
+  } else { $null }
   case10_relay_response_timeout_seconds = if ($Case10RelayResponseTimeoutSeconds -gt 0) {
     $Case10RelayResponseTimeoutSeconds
   } else { $null }

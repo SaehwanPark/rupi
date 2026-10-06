@@ -2006,3 +2006,43 @@ Further development will diagnose this watchdog/inspection-heavy failure and
 apply a verified runtime enhancement before any new attempt. Development screens
 must avoid automatic continuation that bypasses this analysis; a frozen fresh
 paired verification must still support any eventual win claim.
+
+### Retry19 root-cause boundary and verified turn-time enhancement
+
+The failed first turn used16 of40 requests but reached the1,200s watchdog,
+with15 inspection tools out of18 completions and no listed tests/README.
+This verifies a budget-observability gap; it does not identify the task's semantic
+defect or establish an edit-hint acceptance benefit. Its already-started second
+turn was stopped and remains abandoned/unverified. Automatic retries are disabled
+during development; each failed one-turn screen requires analysis and a verified
+enhancement before another attempt.
+
+The opt-in `limits.max_turn_duration_ms` is now implemented (default omitted,
+valid1..86,400,000ms). Each turn receives a fresh monotonic child-token deadline.
+Every provider attempt receives canonical, projected `TurnTimeBudget` guidance.
+Expiry cancels cooperatively without cancelling the caller/siblings and reports
+`TimeBudgetExhausted`. Unknown/Possible mutations retain `NeedsReconciliation`;
+explicit caller cancellation keeps its existing classification. Foreign operations
+may overrun if they do not cooperate. No partial calls are dispatched or replayed,
+no usage is fabricated, and no recovery inference starts after expiry.
+
+Core token/config fixtures, all177 runtime tests, native HTTP deadline/no-repost
+fixture, and required fmt/core-all-features-check/workspace-Clippy/workspace-tests/
+docs/debug-build pass. Durable close/reopen/resume preserves the runtime control,
+excludes partial assistant text, retains honest no-effect refusals, and never replays
+the mutation. The default plain-answer fixture confirms no added control guidance.
+A separate parent invariant review passes; no independent model review is claimed.
+
+Startup is140.781ms cold/8.047ms warm median/8.771ms warm maximum, within250/100ms.
+Rendering medians3.78/3.74/3.22us and command parsing0.28us pass all four budgets.
+All five session-log restore cases pass (94.65..4,909.45us); complete canonical
+validation latency is not measured by that benchmark. All five context-experiment
+budgets also pass. Own logs use `.benchmark/case10-turn-time-*`.
+
+Harness dry-run/config guards pass for an explicit1,170,000ms native Rupi budget
+below the1,200s watchdog; Pi control metadata is unavailable/null. All18 other-case
+prompt hashes and three acceptance reference hashes remain unchanged. No model
+inference occurred during implementation. Only main and the active Case10 branch
+remain locally/remotely; the root user's usage-policy modification is preserved.
+A fresh pinned one-turn screen is pending. Case10 acceptance benefit, paired win,
+and final delivery checks remain unproven; broader roadmap gates remain active.

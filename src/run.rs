@@ -2,6 +2,7 @@ use std::{
   fs,
   io::{self, IsTerminal, Stderr, Stdout, Write},
   path::Path,
+  time::Duration,
 };
 
 use rupi_core::{
@@ -45,6 +46,9 @@ pub fn execute(args: RunArgs) -> Result<(), String> {
               .map_err(session_error),
             TurnStatus::ToolBudgetExhausted => session
               .close_interrupted("tool-call budget exhausted")
+              .map_err(session_error),
+            TurnStatus::TimeBudgetExhausted => session
+              .close_interrupted("turn time budget exhausted")
               .map_err(session_error),
             TurnStatus::NeedsReconciliation => session
               .close_interrupted("mutating tool side effect needs reconciliation")
@@ -263,6 +267,12 @@ pub(crate) fn open_session_with_approval(
   .with_interactive_tool_approval(interactive_approval)
   .with_thinking(config.thinking)
   .with_max_requests(config.limits.max_model_requests_per_turn as usize)
+  .with_max_turn_duration(
+    config
+      .limits
+      .max_turn_duration_ms
+      .map(Duration::from_millis),
+  )
   .with_tool_call_budgets(
     config.limits.max_tool_calls_per_turn as usize,
     config.limits.max_mutating_tool_calls_per_turn as usize,

@@ -10,6 +10,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Added
 
+- Added an optional cooperative turn-time budget with runtime-owned remaining-time
+  guidance and an explicit exhausted status, preserving uncertain-mutation recovery.
 - Added an opt-in model progress boundary for bounded implementation turns. It can
   narrow the next request to configured mutating tools after repeated inspection-only
   tool requests while preserving normal tool lifecycle and `Unknown` semantics.

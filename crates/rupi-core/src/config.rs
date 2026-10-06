@@ -404,6 +404,9 @@ impl ProgressBoundaryMode {
 #[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize)]
 #[serde(deny_unknown_fields)]
 pub struct RuntimeLimits {
+  /// Optional cooperative wall-time budget for one turn. Omitted means no turn deadline.
+  #[serde(default, skip_serializing_if = "Option::is_none")]
+  pub max_turn_duration_ms: Option<u64>,
   /// Maximum model round-trips for one user input, including retries and failover.
   #[serde(default = "default_max_model_requests_per_turn")]
   pub max_model_requests_per_turn: u32,
@@ -429,6 +432,7 @@ pub struct RuntimeLimits {
 impl Default for RuntimeLimits {
   fn default() -> Self {
     Self {
+      max_turn_duration_ms: None,
       max_model_requests_per_turn: DEFAULT_MAX_MODEL_REQUESTS_PER_TURN,
       max_tool_calls_per_turn: DEFAULT_MAX_TOOL_CALLS_PER_TURN,
       max_mutating_tool_calls_per_turn: DEFAULT_MAX_MUTATING_TOOL_CALLS_PER_TURN,
@@ -635,6 +639,13 @@ impl RuntimeConfig {
     }
     if self.state_dir.trim().is_empty() {
       return Err(ConfigError("state_dir is required".into()));
+    }
+    if let Some(duration) = self.limits.max_turn_duration_ms
+      && !(1..=86_400_000).contains(&duration)
+    {
+      return Err(ConfigError(
+        "limits.max_turn_duration_ms must be between 1 and 86400000".into(),
+      ));
     }
     if self.limits.max_model_requests_per_turn == 0 {
       return Err(ConfigError(
@@ -1024,7 +1035,28 @@ mod tests {
       DEFAULT_MAX_MUTATING_TOOL_CALLS_PER_TURN
     );
     assert_eq!(parsed.limits.max_model_requests_without_progress, None);
+    assert_eq!(parsed.limits.max_turn_duration_ms, None);
     assert!(parsed.limits.progress_tool_names.is_empty());
+  }
+
+  #[test]
+  fn turn_duration_is_opt_in_and_rejects_invalid_budgets() {
+    let mut config = sample_config();
+    let default_json = serde_json::to_value(&config).unwrap();
+    assert!(default_json["limits"].get("max_turn_duration_ms").is_none());
+    config.limits.max_turn_duration_ms = Some(1_194_000);
+    let parsed = RuntimeConfig::parse(&config.to_json_string().unwrap()).unwrap();
+    assert_eq!(parsed.limits.max_turn_duration_ms, Some(1_194_000));
+    for duration in [0, 86_400_001] {
+      config.limits.max_turn_duration_ms = Some(duration);
+      assert!(
+        config
+          .validate()
+          .unwrap_err()
+          .to_string()
+          .contains("max_turn_duration_ms")
+      );
+    }
   }
 
   #[test]

@@ -897,6 +897,43 @@ fn a_quiet_stream_expires_at_the_logical_idle_timeout() {
 }
 
 #[test]
+fn an_active_partial_frame_obeys_a_child_deadline_without_reposting() {
+  let server = active_response(true);
+  let mut config = ProviderConfig::local("local-vulkan", "qwen3.8-flash", server.base_url(), 8_192);
+  config.read_timeout_ms = 500;
+  config.request_timeout_ms = Some(5_000);
+  let adapter = OpenAiCompat::new(config).expect("adapter");
+  let caller = CancelToken::new();
+  let cancel = caller.child_with_deadline(Instant::now() + Duration::from_millis(250));
+  let mut collector = Collector::default();
+  let started = Instant::now();
+  let failure = adapter
+    .stream(&request("bound active input"), &mut collector, &cancel)
+    .expect_err("active input must obey the turn deadline");
+  assert!(started.elapsed() < Duration::from_secs(2));
+  assert_eq!(failure.kind, ModelFailureKind::Cancelled);
+  assert_eq!(
+    failure.replay_safety,
+    rupi_core::RequestReplaySafety::AmbiguousPostBoundary
+  );
+  assert!(
+    collector.events().is_empty(),
+    "partial bytes are not a completion"
+  );
+  assert!(!caller.is_cancelled());
+  let refused = adapter
+    .stream(
+      &request("must not repost"),
+      &mut Collector::default(),
+      &caller,
+    )
+    .expect_err("an ambiguous request stays quarantined");
+  assert_eq!(refused.kind, ModelFailureKind::ProviderUnavailable);
+  let wire_request = server.request();
+  assert_eq!(wire_request.matches("POST ").count(), 1);
+}
+
+#[test]
 fn total_request_deadline_is_distinct_from_idle_timeout() {
   let listener = TcpListener::bind("127.0.0.1:0").expect("bind");
   let addr = listener.local_addr().expect("addr");

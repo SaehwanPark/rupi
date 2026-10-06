@@ -542,6 +542,7 @@ pub fn render_event(event: &AgentEvent, options: &TranscriptOptions) -> Vec<Rend
         TurnStatus::Cancelled => ("cancelled", Role::Muted),
         TurnStatus::BudgetExhausted => ("budget exhausted", Role::StateFailed),
         TurnStatus::ToolBudgetExhausted => ("tool budget exhausted", Role::StateFailed),
+        TurnStatus::TimeBudgetExhausted => ("time budget exhausted", Role::StateFailed),
         TurnStatus::NeedsReconciliation => ("needs reconciliation", Role::StateFailed),
         TurnStatus::Failed { kind } => (kind.as_str(), Role::StateFailed),
       };

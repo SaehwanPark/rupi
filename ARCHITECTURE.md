@@ -480,6 +480,24 @@ and current approval availability. An empty set emits a durable error diagnostic
 another provider request, including after a failover changes capabilities. The default is disabled
 so read-only questions and inspection workflows remain unchanged.
 
+### Opt-in turn-time budget
+
+`RuntimeLimits::max_turn_duration_ms` optionally bounds a turn cooperatively; omission
+preserves existing behavior. Each turn creates a fresh monotonic deadline in a child
+`CancelToken`, including after resume. Expiry reaches provider and tool cancellation
+checks without cancelling the caller or sibling tokens. There is no timer thread.
+Before each provider attempt, `TurnLoop` records elapsed/remaining time and remaining
+request allowance as a `TurnTimeBudget` runtime control with canonical event and
+projection provenance. Deadline cancellation ends as `TimeBudgetExhausted`; explicit
+caller cancellation retains its existing classification. Unknown/Possible mutating
+effects retain `NeedsReconciliation` and block later inference. Cancellation never
+dispatches incomplete calls or starts recovery inference after expiry. Operations that
+do not cooperate can overrun the deadline; this is not a hard interruption guarantee.
+
+Owned fixtures verify active native HTTP cancellation, no repeated POST or fabricated
+completion, caller isolation, fresh-turn renewal, durable control restore, exclusion of
+partial assistant text, no mutation replay, and the uncertain-effect safety barrier.
+
 ## 10. Context engine
 
 The context engine owns model-visible working memory.

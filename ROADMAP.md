@@ -1614,6 +1614,17 @@ TUI rendering passed all budgets (3.31–3.90 µs/unit); checkpointed restore me
   hint. Required checks pass; startup is 139.493ms cold/8.018ms warm median/9.2ms max,
   within the 250/100ms budgets. Fresh fixed-profile comparison remains pending; the
   defect is verified but its contribution to Case10 acceptance failures is unproven.
+  Retry19 stopped after one verified failed turn (70,702 recorded work): 16 requests
+  still reached the 1,200s watchdog; 15 of 18 completed tools inspected files. No
+  semantic cause or edit-hint benefit is established. An opt-in cooperative turn-time
+  budget is implemented with runtime-owned remaining-time guidance, caller isolation,
+  and a typed exhausted status. Owned core/runtime/native-HTTP fixtures and required
+  Rust checks pass, including safe durable restore and the Unknown mutation barrier.
+  Startup140.781ms cold/8.047ms warm median/8.771ms max and all four rendering budgets
+  pass. All five session-log restore budgets (94.65–4,909.45us) and all five context
+  experiment budgets pass; this does not measure complete canonical restore latency.
+  A fresh one-turn development screen remains pending; a failed screen requires
+  analysis and a verified enhancement.
   Rupi-first screening and paired
   evidence/delivery checks remain pending. Broader project gates remain active.
   Preserve stable public delivery keys, distinct private fencing, lost-ack retry and

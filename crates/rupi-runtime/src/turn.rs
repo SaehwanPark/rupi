@@ -410,6 +410,7 @@ impl TurnError {
         | TurnStatus::Cancelled
         | TurnStatus::BudgetExhausted
         | TurnStatus::ToolBudgetExhausted
+        | TurnStatus::TimeBudgetExhausted
         | TurnStatus::NeedsReconciliation => None,
       },
       Self::Sink(_) | Self::Refused(_) => None,
@@ -561,6 +562,13 @@ struct ToolBatchOutcome {
   budget_exhausted: bool,
 }
 
+struct TurnTimeBudget {
+  limit: Duration,
+  started: Instant,
+  deadline: Instant,
+  caller_cancel: CancelToken,
+}
+
 /// Drives turns against one primary model, with an optional backup.
 ///
 /// Long-lived on purpose: it owns the epoch list, so a failover in turn 7 knows
@@ -581,6 +589,8 @@ pub struct TurnLoop<'a> {
   working_dir: String,
   thinking: ThinkingLevel,
   max_requests: usize,
+  max_turn_duration: Option<Duration>,
+  active_time_budget: Option<TurnTimeBudget>,
   max_tool_calls: usize,
   max_mutating_tool_calls: usize,
   tool_calls_seen: usize,
@@ -684,6 +694,8 @@ impl<'a> TurnLoop<'a> {
       working_dir: String::new(),
       thinking: ThinkingLevel::default(),
       max_requests: MAX_MODEL_REQUESTS_PER_TURN,
+      max_turn_duration: None,
+      active_time_budget: None,
       max_tool_calls: MAX_TOOL_CALLS_PER_TURN,
       max_mutating_tool_calls: MAX_MUTATING_TOOL_CALLS_PER_TURN,
       tool_calls_seen: 0,
@@ -833,6 +845,13 @@ impl<'a> TurnLoop<'a> {
   ) -> Self {
     self.progress_request_limit = max_requests_without_progress.filter(|limit| *limit > 0);
     self.progress_tool_names = progress_tool_names;
+    self
+  }
+
+  /// Set an optional cooperative duration budget, renewed for each admitted turn.
+  /// Expiry cancels work without changing the caller's cancellation state.
+  pub fn with_max_turn_duration(mut self, duration: Option<Duration>) -> Self {
+    self.max_turn_duration = duration;
     self
   }
 
@@ -1494,6 +1513,27 @@ impl<'a> TurnLoop<'a> {
       self.interactive_tool_approval && progress.mutating_approval_available();
     let turn_id = TurnId::new();
     let clock = Instant::now();
+    self.active_time_budget = self
+      .max_turn_duration
+      .map(|limit| {
+        clock
+          .checked_add(limit)
+          .map(|deadline| TurnTimeBudget {
+            limit,
+            started: clock,
+            deadline,
+            caller_cancel: cancel.clone(),
+          })
+          .ok_or_else(|| {
+            TurnError::Refused("turn duration exceeds the monotonic clock range".into())
+          })
+      })
+      .transpose()?;
+    let deadline_cancel = self
+      .active_time_budget
+      .as_ref()
+      .map(|budget| cancel.child_with_deadline(budget.deadline));
+    let cancel = deadline_cancel.as_ref().unwrap_or(cancel);
     let mut report = TurnReport::new(turn_id.clone(), self.epoch_index());
     self.requests.store(0, Ordering::SeqCst);
     self.tool_calls_seen = 0;
@@ -1590,7 +1630,6 @@ impl<'a> TurnLoop<'a> {
       if cancel.is_cancelled() {
         return self.finish(report, TurnStatus::Cancelled, clock, Some(turn_id.clone()));
       }
-
       self.mutating_approval_available =
         self.interactive_tool_approval && progress.mutating_approval_available();
       if self.progress_boundary_active
@@ -2111,6 +2150,26 @@ impl<'a> TurnLoop<'a> {
     clock: Instant,
     turn_id: Option<TurnId>,
   ) -> Result<TurnReport, TurnError> {
+    let expired = self.active_time_budget.take().is_some_and(|budget| {
+      Instant::now() >= budget.deadline && !budget.caller_cancel.is_cancelled()
+    });
+    let status = if expired
+      && matches!(
+        status,
+        TurnStatus::Cancelled
+          | TurnStatus::Failed {
+            kind: ModelFailureKind::Cancelled
+          }
+      ) {
+      self.diagnostic(
+        turn_id.clone(),
+        DiagnosticLevel::Warn,
+        "turn time budget exhausted; work was cancelled and uncertain effects require reconciliation",
+      )?;
+      TurnStatus::TimeBudgetExhausted
+    } else {
+      status
+    };
     report.status = status.clone();
     report.tool_calls_started = u32::try_from(self.tool_calls_started).unwrap_or(u32::MAX);
     report.duration_ms = elapsed_ms(clock);
@@ -2137,8 +2196,12 @@ impl<'a> TurnLoop<'a> {
   ) -> Result<TurnReport, TurnError> {
     report.requests = self.requests.load(Ordering::SeqCst);
     let status = TurnStatus::Failed { kind: failure.kind };
-    let _ = self.finish(report, status, clock, Some(turn_id))?;
-    Err(TurnError::Unavailable(failure))
+    let report = self.finish(report, status, clock, Some(turn_id))?;
+    if report.status == TurnStatus::TimeBudgetExhausted {
+      Ok(report)
+    } else {
+      Err(TurnError::Unavailable(failure))
+    }
   }
 
   /// Prepare one bounded local recovery candidate by compacting only history
@@ -2298,6 +2361,12 @@ impl<'a> TurnLoop<'a> {
     let mut attempts_on_model: u32 = 0;
     let mut epoch_of_attempts = self.epoch_index();
     loop {
+      if cancel.is_cancelled() {
+        return Err(TurnFailure::Cancelled);
+      }
+      self
+        .append_time_budget_instruction(&turn_id)
+        .map_err(TurnFailure::from)?;
       if self.epoch_index() != epoch_of_attempts {
         epoch_of_attempts = self.epoch_index();
         attempts_on_model = 0;
@@ -4271,6 +4340,39 @@ impl<'a> TurnLoop<'a> {
       tool_bindings,
       admissions,
     })
+  }
+
+  /// Record an observed policy snapshot, without attributing it to the user or model.
+  fn append_time_budget_instruction(&mut self, turn_id: &TurnId) -> Result<(), TurnError> {
+    let Some(budget) = self.active_time_budget.as_ref() else {
+      return Ok(());
+    };
+    let elapsed = budget.started.elapsed();
+    let remaining = budget.limit.saturating_sub(elapsed);
+    let text = format!(
+      concat!(
+        "Runtime turn time budget: {} ms total, {} ms elapsed, {} ms remaining as of this ",
+        "request; {} model requests remain. Complete the requested deliverables within this ",
+        "budget. Reuse supplied context, avoid repeated inspection, and group related changes ",
+        "into fewer tool calls. Reserve time for permitted verification. Report incomplete ",
+        "work and unrun checks honestly."
+      ),
+      budget.limit.as_millis(),
+      elapsed.as_millis(),
+      remaining.as_millis(),
+      self
+        .max_requests
+        .saturating_sub(self.requests.load(Ordering::SeqCst)),
+    );
+    let kind = RuntimeControlKind::TurnTimeBudget;
+    let message = Message::runtime_control(text.clone(), kind);
+    let envelope = self.emit_message(
+      Some(turn_id.clone()),
+      AgentEvent::RuntimeControlInjected(RuntimeControlInjected { kind, text }),
+      &message,
+    )?;
+    self.push_message(message, envelope.meta.seq);
+    Ok(())
   }
 
   /// Add the runtime-owned instruction that explains why the final request has no tools.
@@ -10121,6 +10223,7 @@ mod tests {
     assert!(!report.budget_exhausted);
 
     let kinds = trace.kinds();
+    assert!(!kinds.iter().any(|kind| kind == "runtime_control_injected"));
     for expected in [
       "session_started",
       "model_epoch_started",
@@ -13802,6 +13905,362 @@ mod tests {
         .iter()
         .any(|message| message.message.text().contains("final answer"))
     );
+  }
+
+  struct DeadlineProvider {
+    scripted: Scripted,
+    wait_once: std::sync::atomic::AtomicBool,
+  }
+
+  impl ModelProvider for DeadlineProvider {
+    fn provider_id(&self) -> &str {
+      self.scripted.provider_id()
+    }
+
+    fn model(&self) -> &ModelRef {
+      self.scripted.model()
+    }
+
+    fn capabilities(&self) -> ModelCapabilities {
+      self.scripted.capabilities()
+    }
+
+    #[allow(clippy::result_large_err)]
+    fn stream(
+      &self,
+      request: &ModelRequest,
+      sink: &mut dyn ProviderEventSink,
+      cancel: &CancelToken,
+    ) -> Result<CompletionUsage, ModelFailure> {
+      let usage = self.scripted.stream(request, sink, cancel)?;
+      if !self.wait_once.swap(false, Ordering::SeqCst) {
+        return Ok(usage);
+      }
+      let guard = Instant::now();
+      while !cancel.is_cancelled() && guard.elapsed() < Duration::from_secs(2) {
+        std::thread::sleep(Duration::from_millis(2));
+      }
+      assert!(
+        cancel.is_cancelled(),
+        "fixture deadline must cancel the active request"
+      );
+      Err(
+        ModelFailure::new(
+          ModelFailureKind::Cancelled,
+          FailurePhase::Streaming,
+          "owned deadline",
+        )
+        .with_partial_output(true)
+        .with_replay_safety(rupi_core::RequestReplaySafety::CommittedOutput),
+      )
+    }
+  }
+
+  #[test]
+  fn turn_time_budget_cancels_partial_calls_and_renews_without_cancelling_the_caller() {
+    let events = tool_call("write_probe", json!({"content": "owned fixture"}))
+      .into_iter()
+      .chain(text("partial deadline response"))
+      .collect();
+    let provider = DeadlineProvider {
+      scripted: Scripted::new("deadline", vec![events, text("done")]),
+      wait_once: std::sync::atomic::AtomicBool::new(true),
+    };
+    let seen = Arc::new(Mutex::new(Vec::new()));
+    let tools = registry_with(vec![Box::new(MutatingSpy {
+      seen: Arc::clone(&seen),
+      outcome: ToolOutcome::succeeded("mutated"),
+    })]);
+    let policy = rupi_core::ProfilePolicy::new(
+      rupi_core::ContextProfile::Balanced,
+      provider.capabilities().context_window,
+    );
+    let mut trace = Recorder::default();
+    let caller = CancelToken::new();
+    let mut runtime = TurnLoop::new(
+      &provider,
+      &tools,
+      &policy,
+      &mut trace,
+      SessionId::new(),
+      TraceId::new(),
+    )
+    .with_max_turn_duration(Some(Duration::from_millis(150)));
+    let first = runtime
+      .run_turn("first task", &caller, &mut SilentProgress)
+      .unwrap();
+    assert_eq!(first.status, TurnStatus::TimeBudgetExhausted);
+    assert_eq!(provider.scripted.requests().len(), 1);
+    assert!(seen.lock().unwrap().is_empty());
+    assert!(!caller.is_cancelled());
+    assert!(
+      provider.scripted.requests()[0]
+        .messages
+        .iter()
+        .any(|message| {
+          message.origin
+            == rupi_core::MessageOrigin::RuntimeControl {
+              kind: RuntimeControlKind::TurnTimeBudget,
+            }
+        })
+    );
+    let second = runtime
+      .run_turn("next task", &caller, &mut SilentProgress)
+      .unwrap();
+    assert_eq!(second.status, TurnStatus::Completed);
+    assert_eq!(provider.scripted.requests().len(), 2);
+    assert!(seen.lock().unwrap().is_empty());
+    assert!(!caller.is_cancelled());
+    assert!(
+      !provider.scripted.requests()[1]
+        .messages
+        .iter()
+        .any(|message| { message.text().contains("partial deadline response") })
+    );
+    drop(runtime);
+    let controls = trace.all("runtime_control_injected");
+    assert_eq!(controls.len(), 2);
+    assert!(
+      controls
+        .iter()
+        .all(|event| event["kind"] == "turn_time_budget")
+    );
+    assert_eq!(
+      trace.all("turn_completed")[0]["status"],
+      "time_budget_exhausted"
+    );
+    let completions = trace.all("model_request_completed");
+    assert!(completions[0]["output_tokens"].is_null());
+    assert!(completions[0]["finish_reason"].is_null());
+  }
+
+  #[test]
+  fn caller_cancellation_has_precedence_over_an_expired_turn_budget() {
+    let provider = Scripted::new("caller-cancel", vec![text("unused")]);
+    let tools = registry_with(vec![]);
+    let policy = rupi_core::ProfilePolicy::new(
+      rupi_core::ContextProfile::Balanced,
+      provider.capabilities().context_window,
+    );
+    let mut trace = Recorder::default();
+    let caller = CancelToken::new();
+    caller.cancel();
+    let report = TurnLoop::new(
+      &provider,
+      &tools,
+      &policy,
+      &mut trace,
+      SessionId::new(),
+      TraceId::new(),
+    )
+    .with_max_turn_duration(Some(Duration::ZERO))
+    .run_turn("cancelled task", &caller, &mut SilentProgress)
+    .unwrap();
+    assert_eq!(report.status, TurnStatus::Cancelled);
+    assert!(provider.requests().is_empty());
+  }
+
+  struct DeadlineMutation(Arc<Mutex<Vec<serde_json::Value>>>);
+
+  impl Tool for DeadlineMutation {
+    fn metadata(&self) -> ToolMetadata {
+      ToolMetadata::mutating("write_probe", "uncertain deadline fixture", true)
+    }
+
+    fn arguments_schema(&self) -> serde_json::Value {
+      json!({"type":"object"})
+    }
+
+    fn execute(
+      &self,
+      _request: &ToolRequest,
+      _progress: &mut dyn rupi_core::ToolProgress,
+    ) -> Result<ToolOutcome, rupi_core::ToolError> {
+      panic!("the registry must supply execution context")
+    }
+
+    fn execute_with_context(
+      &self,
+      request: &ToolRequest,
+      _progress: &mut dyn rupi_core::ToolProgress,
+      context: &rupi_core::ToolExecutionContext,
+    ) -> Result<ToolOutcome, rupi_core::ToolError> {
+      self.0.lock().unwrap().push(request.arguments.clone());
+      let guard = Instant::now();
+      while !context.is_cancelled() && guard.elapsed() < Duration::from_secs(2) {
+        std::thread::sleep(Duration::from_millis(2));
+      }
+      assert!(context.is_cancelled(), "turn deadline must reach the tool");
+      Ok(ToolOutcome::unknown("fixture effects were not observed"))
+    }
+  }
+
+  #[test]
+  fn turn_time_budget_keeps_uncertain_mutation_blocked_without_replay() {
+    let provider = Scripted::new(
+      "deadline-mutation",
+      vec![tool_call("write_probe", json!({"content":"owned fixture"}))],
+    );
+    let seen = Arc::new(Mutex::new(Vec::new()));
+    let tools = registry_with(vec![Box::new(DeadlineMutation(Arc::clone(&seen)))]);
+    let policy = rupi_core::ProfilePolicy::new(
+      rupi_core::ContextProfile::Balanced,
+      provider.capabilities().context_window,
+    );
+    let mut trace = Recorder::default();
+    let caller = CancelToken::new();
+    let mut runtime = TurnLoop::new(
+      &provider,
+      &tools,
+      &policy,
+      &mut trace,
+      SessionId::new(),
+      TraceId::new(),
+    )
+    .with_max_turn_duration(Some(Duration::from_millis(150)));
+    let first = runtime
+      .run_turn("mutate", &caller, &mut SilentProgress)
+      .unwrap();
+    assert_eq!(first.status, TurnStatus::NeedsReconciliation);
+    assert_eq!(seen.lock().unwrap().len(), 1);
+    let blocked = runtime
+      .run_turn("next task", &caller, &mut SilentProgress)
+      .unwrap();
+    assert_eq!(blocked.status, TurnStatus::NeedsReconciliation);
+    assert_eq!(seen.lock().unwrap().len(), 1);
+    assert_eq!(provider.requests().len(), 1);
+    assert!(!caller.is_cancelled());
+  }
+
+  #[test]
+  fn turn_time_budget_guidance_and_cancelled_partial_calls_restore_safely() {
+    let temp = rupi_store::TempDir::new("runtime-deadline-resume");
+    let store = rupi_store::Store::open(temp.path(), rupi_store::WritePolicy::default()).unwrap();
+    let session_id = SessionId::new();
+    let provider = DeadlineProvider {
+      scripted: Scripted::new(
+        "deadline-resume",
+        vec![
+          tool_call("write_probe", json!({"content":"owned fixture"}))
+            .into_iter()
+            .chain(text("partial deadline response"))
+            .collect(),
+        ],
+      ),
+      wait_once: std::sync::atomic::AtomicBool::new(true),
+    };
+    let seen = Arc::new(Mutex::new(Vec::new()));
+    let tools = registry_with(vec![Box::new(MutatingSpy {
+      seen: Arc::clone(&seen),
+      outcome: ToolOutcome::succeeded("mutated"),
+    })]);
+    let policy = rupi_core::ProfilePolicy::new(
+      rupi_core::ContextProfile::Balanced,
+      provider.capabilities().context_window,
+    );
+    let session = store
+      .begin(SessionHeader {
+        session_id: session_id.clone(),
+        version: rupi_core::session::SESSION_SCHEMA_VERSION,
+        started_at_ms: 1,
+        working_dir: "/workspace".into(),
+        model: provider.model().clone(),
+        parent_session: None,
+        branched_from_event: None,
+        imported_from: None,
+      })
+      .unwrap();
+    let mut trace = StoreTrace::new(session);
+    let report = TurnLoop::new(
+      &provider,
+      &tools,
+      &policy,
+      &mut trace,
+      session_id.clone(),
+      TraceId::new(),
+    )
+    .with_max_turn_duration(Some(Duration::from_millis(150)))
+    .run_turn("first task", &CancelToken::new(), &mut SilentProgress)
+    .unwrap();
+    assert_eq!(report.status, TurnStatus::TimeBudgetExhausted);
+    trace.into_session().finish().unwrap();
+    drop(store);
+
+    let reopened =
+      rupi_store::Store::open(temp.path(), rupi_store::WritePolicy::default()).unwrap();
+    let session = reopened.resume(&session_id).unwrap();
+    let restored = reopened.restore(&session_id).unwrap();
+    assert!(restored.interrupted_tools.is_empty());
+    assert!(restored.unresolved_side_effects.is_empty());
+    assert!(restored.messages.iter().all(|message| {
+      message.message.role != Role::Assistant
+        && !message.message.text().contains("partial deadline response")
+    }));
+    let refused_calls: Vec<_> = restored
+      .messages
+      .iter()
+      .flat_map(|message| &message.message.content)
+      .filter_map(|block| match block {
+        ContentBlock::ToolResult(result) => Some(result),
+        _ => None,
+      })
+      .collect();
+    assert_eq!(refused_calls.len(), 1);
+    assert_eq!(refused_calls[0].state, ToolExecutionState::Failed);
+    assert_eq!(
+      refused_calls[0].effect,
+      rupi_core::ToolEffectDisposition::None
+    );
+    assert!(restored.messages.iter().any(|message| {
+      message.message.origin
+        == rupi_core::MessageOrigin::RuntimeControl {
+          kind: RuntimeControlKind::TurnTimeBudget,
+        }
+    }));
+    let next = Scripted::new("deadline-resume", vec![text("next answer")]);
+    let state = ResumeState {
+      messages: restored
+        .messages
+        .iter()
+        .map(|m| m.message.clone())
+        .collect(),
+      message_seqs: restored.messages.iter().map(|m| m.seq).collect(),
+      epochs: restored
+        .epochs
+        .iter()
+        .map(|epoch| ModelEpoch {
+          index: epoch.epoch,
+          model: epoch.model.clone(),
+          capabilities: next.capabilities(),
+          reason: epoch.reason.clone(),
+          started_by_event: None,
+        })
+        .collect(),
+      context_epoch: restored.context_epoch,
+      checkpoint_floor: usize::from(restored.checkpoint.is_some()),
+      cited_history: restored.last_seq.map(|last| (EventSeq(1), last)),
+      interrupted_tools: restored.interrupted_tools,
+      unresolved_side_effects: restored.unresolved_side_effects,
+    };
+    let mut trace = StoreTrace::new(session);
+    let report = TurnLoop::new(
+      &next,
+      &tools,
+      &policy,
+      &mut trace,
+      session_id.clone(),
+      TraceId::new(),
+    )
+    .with_max_turn_duration(Some(Duration::from_millis(150)))
+    .with_resume_state(state)
+    .unwrap()
+    .run_turn("continue safely", &CancelToken::new(), &mut SilentProgress)
+    .unwrap();
+    assert_eq!(report.status, TurnStatus::Completed);
+    assert_eq!(next.requests().len(), 1);
+    assert!(seen.lock().unwrap().is_empty());
+    trace.into_session().finish().unwrap();
+    reopened.restore(&session_id).unwrap();
   }
 
   #[test]
