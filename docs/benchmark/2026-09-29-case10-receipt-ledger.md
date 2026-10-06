@@ -3302,3 +3302,21 @@ The request cap binds while native time retains550,984ms. Caller feedback first 
 after31, leaving eight ordinary attempts plus finalization; last Failed check after37 leaves
 only two ordinary attempts. Early initial caller checking is the next bounded enhancement.
 No configured win or fresh Pi; PR145 stays draft.
+
+### Retry37 enhancement and freeze — earlier initial caller observation
+
+Retry36 exhausted request40 with all usage known, all required files present and three
+Failed observations first arriving after31. Native time retained551s. Precise semantic
+cause remains uninspected. Runtime/source0e651e2 adds optional initial caller checking
+at a safe request threshold if no observation has occurred, sharing existing cap/helper,
+coalescing with review and retaining fresh final checking and all effect/time barriers.
+No domain command or artifact requirement enters core.
+
+Required local checks (227 runtime/139 core/100 provider/25 CLI plus28 event roundtrips),
+owned chunking comparison/safety/renewal/five-mode real CLI,11 harness guards, unchanged
+prompts/SPEC/reference hashes and startup/five restore/five context budgets pass.
+Parent author review passes. See
+[initial caller-check plan and validation](2026-10-06-case10-initial-check-window.md).
+Retry37 intended screen adds initial check window8 to Retry36's otherwise unchanged
+profile. SourceCI37521853946 and exact frozen-head all3 CI required before inference.
+No configured acceptance or paired win; no blind retry; same physical model/helpers.
