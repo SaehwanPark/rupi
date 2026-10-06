@@ -33,3 +33,12 @@ Update contracts/ledger/roadmap and author invariant review, commit/push/freeze 
 Retry29. Select only the short snapshot root, preserving all Retry28 model/runtime
 controls, prompts/SPEC/reference hashes. One fresh Rupi turn, no replay of Retry28's
 check. Fresh Pi only after acceptance. Any failure requires new analysis and enhancement.
+
+Implemented ina2e156e. Owned baseline reproduces Windows invalid working-directory
+failure; short-root missing-deliverable and fresh repair checks pass, with retained
+artifacts and canonical effect isolation. CLI mailbox repair and child diagnostics pass.
+All five harness fixtures and required Rust checks pass. Startup139.137ms cold/8.211ms
+warm median/8.884ms max meets budget; runtime binary unchanged, so prior restore/context/
+render evidence applies. Parent invariant review passes, with no blocking findings.
+Actual caller exception remains unread; root-cause applicability is an inference from
+matched path layout and terminal scalars. See the Case10 ledger for frozen Retry29 controls.

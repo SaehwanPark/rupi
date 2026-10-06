@@ -2751,3 +2751,51 @@ missing-deliverable and long-path owned fixtures before selecting an enhancement
 Also strengthen the CLI mailbox fixture's timing/child-exit diagnostics before fresh CI.
 Keep unavailable/uncertain checks unreplayed and failures distinct from observation
 outages; no model/helper restart or repeated benchmark without verified enhancement.
+
+### Retry29 short isolated snapshot enhancement and frozen screen
+
+Codebase enhancementa2e156ed1a8a39ef3083cad137fa79889fc8a415 fixes caller snapshot
+path layout. Runtime source043196bc61d42b9ff47a03a011d7e263257534d6 and binary stay
+unchanged. Owned short-path missing files yield Failed; long-path check throws
+Process.Start invalid working-directory on Windows. Actual Retry28 exception is unread;
+its longer derived snapshot path and186ms unavailable result are consistent with the
+verified defect, not direct proof from generated diagnostics.
+
+Optional caller ScratchRoot keeps the original run-local UUID mailbox and isolates
+public snapshots/command artifacts under the same UUID in repo
+.benchmark/completion-scratch. Both roots checked outside canonical workspace; all
+artifacts retained. Default host omission unchanged. Checks/commands/limits/public roots/
+oracle exclusion/atomic publication/once-only handling unchanged; unavailable checks are
+not replayed. Fresh owned long-root/short-scratch failure→later repair Passed proves
+classification, retained artifacts and no canonical verification effects. All five
+owned harness fixtures pass. Full selected profile and original18 other prompt hashes,
+shared prompt230589C5F20B5486CD84216CE5B6A0DB9734CE724C2903D891E4D50D9CFB3270,
+full public SPEC and three reference hashes remain unchanged.
+
+CI mailbox fixture now uses60s native/75s host guard and child-finished notification.
+Child status/stdout/stderr survive missing-observation assertion; two observations,
+same-model repair, exact file/wire/no-exec assertions remain. Focused and full tests pass;
+no rerun of failed CI unchanged. Prior exact child failure remains unknown. Required
+fmt/core-all-features/clippy/workspace tests/docs/debug pass (211 runtime/134 core/
+25 CLI). Startup139.137ms cold/8.211ms median/8.884ms max passes. Unchanged binary/
+production context/render/session code retains prior five restore/five context/render
+budget evidence. Parent invariant review passes with no blocking findings: short-root
+selection is caller-only, mailbox identity remains run-local, effects and artifacts stay
+outside canonical workspace, uncertain observations remain terminal and unreplayed.
+This is author review; acceptance/latency/Pi parity remain unproved. LESSONS.md preserves
+the verified Windows writable-path versus launchable-working-directory distinction.
+
+Frozen Retry29 changes only caller scratch layout relative to Retry28: first argument2048,
+first output8192/later32768, checks8/mutations32, cap40/window3, initial/recurring/review,
+reserve300000ms/native2370000ms/outer2400s/provider2394000ms/grace6/relay1194s,
+same original model27356/relay8003/low4096, sampling/context/tool policies and prompt.
+One fresh Rupi development turn, no replay of Retry28's unavailable check. Fresh Pi only
+after acceptance. Any failure requires new analysis and verified enhancement before retry.
+
+Debug16C6A138241FE560B00B43173E1DB105E7036B5FD5AC13284042FE9F1711B44A;
+harness8390A2E20DD2C52EB8B99CF5ABADA8B3F73B269E6C2BFCC011E0ECAA6AFCEAC8;
+hostDC75BEB0995E0EC00C1D6AFC6AE34FCD53CA18CE5085D85B1C1A7ED70865A8FE;
+relayA0BCAE689139BFD281CB91C209D5D8F6CF9EA42FD7EFF256BE02D97A871387C7.
+Remote refs pruned; only actual main and active Case10 branches remain, detached artifacts
+retained. No inference was active during changes/checks, no actual diagnostic content read.
+Broader project gates and final paired evidence remain active.
