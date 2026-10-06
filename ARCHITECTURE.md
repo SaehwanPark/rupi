@@ -511,6 +511,14 @@ convert budget exhaustion into completion. Explicit recovery assessment skips or
 review. This is generic guidance, not artifact-name enforcement or correctness certification.
 Owned fixtures cover permitted repair, bounded/fresh review, durable native/control
 provenance, cap/no-tools behavior, deadline cancellation without dispatch, and Unknown barriers.
+Optional `completion_review_reserve_ms` requires enabled review and a positive reserve
+below the configured turn duration. When remaining time crosses that reserve during
+continuing work, the same one-shot review can trigger before the next ordinary provider
+attempt. An earlier first-answer review consumes that allowance, and new turns renew it.
+Cancellation is checked first; no unresolved mutation or budget barrier is bypassed.
+Benchmark summaries expose whitelist counts of canonical control kinds and an unknown-kind
+count, without control text or model content; native Pi counts remain unavailable/null.
+These counts measure injected controls, not proof that the model used their guidance.
 
 ## 10. Context engine
 

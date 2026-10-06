@@ -1638,6 +1638,18 @@ TUI rendering passed all budgets (3.31–3.90 µs/unit); checkpointed restore me
   is unchanged from the four passing time-budget measurements. Windows deadline-fixture
   preconditions were corrected; exact7717655 CI passes all three platforms. New review
   source CI, fresh one-turn screening, paired evidence, and delivery remain pending.
+  Retry21 also fails its single development turn: TimeBudgetExhausted closes
+  cooperatively at1,170.385s without an outer watchdog,49,474 recorded work,
+  14 closed requests/13 usage records,16 tools and zero known failures/Unknown.
+  Help passes, tests/acceptance fail; main is listed but no tests/README. Unfinished
+  inference work and review activation remain unmeasured. The optional review reserve
+  is now implemented: a continuing tool loop can receive the existing one-shot review
+  before an ordinary request while time remains, with normal safety/budget gates.
+  Owned reserve/config fixtures and safe control-count/scope/content-exclusion metrics
+  fixture pass; required Rust checks pass. Startup144.344ms cold/9.194ms warm median/
+  9.727ms max and five session-log restore (98.95–4,821.50us) plus five context budgets
+  pass. Parent invariant review passes; new source CI and one-turn screen are pending.
+  No semantic cause, acceptance benefit, or paired Case10 win is established.
   Rupi-first screening and paired
   evidence/delivery checks remain pending. Broader project gates remain active.
   Preserve stable public delivery keys, distinct private fencing, lost-ack retry and

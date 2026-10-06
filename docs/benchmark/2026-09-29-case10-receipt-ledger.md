@@ -2205,3 +2205,41 @@ measure activation on future screens; Retry21 activation remains unmeasured and
 actual trace contents are not inspected. Selected future reserve300,000ms sits
 inside native1,170,000ms; no code/control retry before implementation/checks/review.
 Usage37% five-hour/71% weekly remains below the root95/99% soft-stop thresholds.
+
+### Verified proactive completion-review reserve
+
+Optional `limits.completion_review_reserve_ms` now requires enabled review and
+a positive reserve below the configured turn duration. When time is short during
+continuing work, it injects the existing one-shot CompletionReview before the next
+ordinary provider attempt. An earlier first-answer review consumes the same allowance;
+new turns/resume renew it. Defaults remain omitted/disabled. Cancellation, normal
+request/tool/time budgets, approval, progress and Unknown/Possible barriers remain intact.
+
+Owned fixtures cross the reserve after a known tool outcome, verify proactive review,
+prevent a second trigger after earlier review, renew on another turn, and block inference
+after Unknown mutation. Config omission/round-trip and inactive/no-time/zero/equal/
+oversized rejection pass. All186 runtime tests and130 core tests pass in workspace
+verification. Required fmt/core all-features check/Clippy/workspace tests/docs/debug
+build pass; final fmt/docs/debug rebuild after contract-comment correction pass.
+
+Benchmark summaries now count whitelist canonical control kinds, with unknown-kind
+count and native Pi unavailable/null. Counts measure injected controls, not proof of
+model use. `bench/test-runtime-control-metrics.ps1` verifies counts, SkipLines turn
+scope, content exclusion, and no invented requests/usage using owned synthetic records.
+No actual trace, model output, generated source, or oracle diagnostic contents are read.
+All18 other-case prompt hashes and three acceptance reference hashes are unchanged;
+native config/dry-run and invalid-reserve guards pass. The first owned invalid-guard
+invocation omitted outer1200s and correctly failed the existing watchdog guard; correcting
+that test input verifies the intended inactive/equal-reserve guard without inference.
+
+Startup144.344ms cold/9.194ms warm median/9.727ms max passes250/100ms. Five
+session-log restore budgets pass (98.95..4,821.50us), not complete canonical-validation
+latency; all five context-experiment budgets pass. Rendering is unchanged from the
+previous four passing measurements. Parent invariant review passes, with no independent
+model review claimed. DebugSHA256
+`C8511B7C9E1509CBEEDAE1FD91CCD787875D3469EB51939C840F0C81518A2751`;
+harnessSHA256
+`B4FC326E5EBC3CDBEC8A5F9718FC8DB5E04324AA48B1AD75B96F0DB00EE4269D`.
+New source CI and a fresh one-turn reserve300,000ms/turn1,170,000ms screen are
+pending. Failure still requires analysis and a verified enhancement before another
+attempt. Case10 acceptance benefit and paired win remain unproven.

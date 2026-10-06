@@ -42,6 +42,8 @@ param(
   [ValidateRange(0, 86400000)]
   [long]$Case10MaxTurnDurationMs = 0,
   [switch]$Case10ReviewCompletion,
+  [ValidateRange(0, 86400000)]
+  [long]$Case10CompletionReviewReserveMs = 0,
   [ValidateSet("one_shot", "recurring")]
   [string]$Case10ProgressBoundaryMode = "one_shot",
   [ValidateRange(1, 100)]
@@ -61,6 +63,11 @@ $script:providerRequestTimeoutMs = [int](
 )
 if ($Case10MaxTurnDurationMs -ge ($TurnTimeoutSeconds * 1000)) {
   throw "Case10MaxTurnDurationMs must be below the outer turn watchdog."
+}
+if ($Case10CompletionReviewReserveMs -gt 0 -and
+    (-not $Case10ReviewCompletion -or
+     $Case10CompletionReviewReserveMs -ge $Case10MaxTurnDurationMs)) {
+  throw "Case10CompletionReviewReserveMs requires review and a larger native turn duration."
 }
 $repoRoot = (Resolve-Path (Join-Path $PSScriptRoot "..")).Path
 $artifactRoot = Join-Path $repoRoot ".benchmark\runs"
@@ -2207,6 +2214,10 @@ function New-BenchmarkWorkspace([hashtable]$case, [string]$agentRoot, [string]$t
       $config.limits | Add-Member -MemberType NoteProperty -Force `
         -Name review_completion -Value $true
     }
+    if ($case.Id -eq "10-receipt-ledger" -and $Case10CompletionReviewReserveMs -gt 0) {
+      $config.limits | Add-Member -MemberType NoteProperty -Force `
+        -Name completion_review_reserve_ms -Value $Case10CompletionReviewReserveMs
+    }
     if ($null -eq $config.limits.PSObject.Properties["max_model_requests_per_turn"]) {
       $config.limits | Add-Member -MemberType NoteProperty -Name max_model_requests_per_turn -Value $MaxModelRequestsPerTurn
     } else {
@@ -2292,6 +2303,10 @@ function Read-RupiMetrics([string]$project, [int]$SkipLines = 0) {
   $logical = [int64]0; $uncached = [int64]0; $cacheRead = [int64]0; $cacheWrite = [int64]0
   $output = [int64]0; $providerTotal = [int64]0; $known = 0
   $toolRequested = 0; $toolCompleted = 0; $toolFailed = 0; $toolUnknown = 0
+  $controlCounts = [ordered]@{
+    turn_time_budget = 0; completion_review = 0; progress_boundary = 0
+    progress_correction = 0; request_finalization = 0; unknown = 0
+  }
   $toolNames = [Collections.Generic.List[string]]::new(); $status = $null; $finish = [Collections.Generic.List[string]]::new()
   $seenLines = 0
   foreach ($file in $traceFiles) {
@@ -2300,6 +2315,11 @@ function Read-RupiMetrics([string]$project, [int]$SkipLines = 0) {
       $seenLines++
       try { $record = $line | ConvertFrom-Json } catch { continue }
       switch ($record.type) {
+        "runtime_control_injected" {
+          $kind = [string]$record.kind
+          if ($controlCounts.Contains($kind)) { $controlCounts[$kind]++ }
+          else { $controlCounts["unknown"]++ }
+        }
         "model_request_started" { $started++ }
         "model_request_completed" {
           $completed++
@@ -2341,6 +2361,7 @@ function Read-RupiMetrics([string]$project, [int]$SkipLines = 0) {
     usage_records = $known; tool_requests = $toolRequested; tool_completions = $toolCompleted
     tool_failures = $toolFailed; tool_unknown = $toolUnknown; tool_names = @($toolNames)
     turn_status = $status; finish_reasons = @($finish)
+    runtime_control_counts = $controlCounts
     measurement_scope = "turn"
   }
 }
@@ -2392,6 +2413,7 @@ function Read-PiMetrics([string]$stdoutPath) {
     input_tokens = $input; total_tokens = $providerTotal
     usage_records = $known; tool_requests = $toolCalls; tool_completions = $toolResults
     tool_failures = $null; tool_unknown = $null; tool_names = @($toolNames)
+    runtime_control_counts = $null
     turn_status = $stop; finish_reasons = @($stop); session_id = $session; measurement_scope = "turn"
   }
 }
@@ -2495,6 +2517,9 @@ function Invoke-AgentCase([hashtable]$case, [string]$agent, [string]$root, [stri
         $turnRecord["configured_completion_review"] = if ($agent -eq "rupi") {
           $Case10ReviewCompletion.IsPresent
         } else { $null }
+        $turnRecord["configured_completion_review_reserve_ms"] = if (
+          $agent -eq "rupi" -and $Case10CompletionReviewReserveMs -gt 0
+        ) { $Case10CompletionReviewReserveMs } else { $null }
       }
       $progressControl = Get-BenchmarkProgressControl $case
       if ($null -ne $progressControl) {
@@ -3353,6 +3378,9 @@ $summary = [ordered]@{
     $Case10MaxTurnDurationMs
   } else { $null }
   case10_rupi_review_completion = $Case10ReviewCompletion.IsPresent
+  case10_rupi_completion_review_reserve_ms = if ($Case10CompletionReviewReserveMs -gt 0) {
+    $Case10CompletionReviewReserveMs
+  } else { $null }
   case10_relay_response_timeout_seconds = if ($Case10RelayResponseTimeoutSeconds -gt 0) {
     $Case10RelayResponseTimeoutSeconds
   } else { $null }

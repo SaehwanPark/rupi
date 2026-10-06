@@ -404,9 +404,12 @@ impl ProgressBoundaryMode {
 #[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize)]
 #[serde(deny_unknown_fields)]
 pub struct RuntimeLimits {
-  /// Ask the active model to review its first ordinary completion once per turn.
+  /// Ask the active model to review requested deliverables once per turn.
   #[serde(default, skip_serializing_if = "is_false")]
   pub review_completion: bool,
+  /// Trigger the configured one-shot review when at most this turn time remains.
+  #[serde(default, skip_serializing_if = "Option::is_none")]
+  pub completion_review_reserve_ms: Option<u64>,
   /// Optional cooperative wall-time budget for one turn. Omitted means no turn deadline.
   #[serde(default, skip_serializing_if = "Option::is_none")]
   pub max_turn_duration_ms: Option<u64>,
@@ -436,6 +439,7 @@ impl Default for RuntimeLimits {
   fn default() -> Self {
     Self {
       review_completion: false,
+      completion_review_reserve_ms: None,
       max_turn_duration_ms: None,
       max_model_requests_per_turn: DEFAULT_MAX_MODEL_REQUESTS_PER_TURN,
       max_tool_calls_per_turn: DEFAULT_MAX_TOOL_CALLS_PER_TURN,
@@ -650,6 +654,23 @@ impl RuntimeConfig {
       return Err(ConfigError(
         "limits.max_turn_duration_ms must be between 1 and 86400000".into(),
       ));
+    }
+    if let Some(reserve) = self.limits.completion_review_reserve_ms {
+      let valid = self.limits.review_completion
+        && reserve > 0
+        && self
+          .limits
+          .max_turn_duration_ms
+          .is_some_and(|limit| reserve < limit);
+      if !valid {
+        return Err(ConfigError(
+          concat!(
+            "limits.completion_review_reserve_ms requires review_completion=true and ",
+            "a positive reserve below max_turn_duration_ms"
+          )
+          .into(),
+        ));
+      }
     }
     if self.limits.max_model_requests_per_turn == 0 {
       return Err(ConfigError(
@@ -1075,6 +1096,40 @@ mod tests {
     config.limits.review_completion = true;
     let parsed = RuntimeConfig::parse(&config.to_json_string().unwrap()).unwrap();
     assert!(parsed.limits.review_completion);
+    assert_eq!(parsed.limits.completion_review_reserve_ms, None);
+  }
+
+  #[test]
+  fn completion_review_reserve_requires_an_active_time_budget_and_valid_reserve() {
+    let mut config = sample_config();
+    assert!(
+      serde_json::to_value(&config).unwrap()["limits"]
+        .get("completion_review_reserve_ms")
+        .is_none()
+    );
+    config.limits.review_completion = true;
+    config.limits.max_turn_duration_ms = Some(1_000);
+    config.limits.completion_review_reserve_ms = Some(300);
+    let parsed = RuntimeConfig::parse(&config.to_json_string().unwrap()).unwrap();
+    assert_eq!(parsed.limits.completion_review_reserve_ms, Some(300));
+    for (enabled, duration, reserve) in [
+      (false, Some(1_000), 300),
+      (true, None, 300),
+      (true, Some(1_000), 0),
+      (true, Some(1_000), 1_000),
+      (true, Some(1_000), 1_001),
+    ] {
+      config.limits.review_completion = enabled;
+      config.limits.max_turn_duration_ms = duration;
+      config.limits.completion_review_reserve_ms = Some(reserve);
+      assert!(
+        config
+          .validate()
+          .unwrap_err()
+          .to_string()
+          .contains("completion_review_reserve_ms")
+      );
+    }
   }
 
   #[test]

@@ -590,6 +590,7 @@ pub struct TurnLoop<'a> {
   thinking: ThinkingLevel,
   max_requests: usize,
   review_completion: bool,
+  completion_review_reserve: Option<Duration>,
   max_turn_duration: Option<Duration>,
   active_time_budget: Option<TurnTimeBudget>,
   max_tool_calls: usize,
@@ -696,6 +697,7 @@ impl<'a> TurnLoop<'a> {
       thinking: ThinkingLevel::default(),
       max_requests: MAX_MODEL_REQUESTS_PER_TURN,
       review_completion: false,
+      completion_review_reserve: None,
       max_turn_duration: None,
       active_time_budget: None,
       max_tool_calls: MAX_TOOL_CALLS_PER_TURN,
@@ -857,10 +859,17 @@ impl<'a> TurnLoop<'a> {
     self
   }
 
-  /// Review the first ordinary completion once, within the existing turn budgets.
+  /// Enable one bounded completion review within the existing turn budgets.
   /// The active model may continue authorized work; this does not certify correctness.
   pub fn with_completion_review(mut self, enabled: bool) -> Self {
     self.review_completion = enabled;
+    self
+  }
+
+  /// Trigger the enabled one-shot review before an ordinary request when time is short.
+  /// A configured turn duration supplies the monotonic clock; no extra timer is created.
+  pub fn with_completion_review_reserve(mut self, reserve: Option<Duration>) -> Self {
+    self.completion_review_reserve = reserve;
     self
   }
 
@@ -1639,6 +1648,18 @@ impl<'a> TurnLoop<'a> {
     while self.requests.load(Ordering::SeqCst) < normal_request_limit {
       if cancel.is_cancelled() {
         return self.finish(report, TurnStatus::Cancelled, clock, Some(turn_id.clone()));
+      }
+      if self.review_completion
+        && self.tools_enabled
+        && !completion_review_used
+        && self.completion_review_reserve.is_some_and(|reserve| {
+          self.active_time_budget.as_ref().is_some_and(|budget| {
+            budget.deadline.saturating_duration_since(Instant::now()) <= reserve
+          })
+        })
+      {
+        completion_review_used = true;
+        self.append_completion_review_instruction(&turn_id)?;
       }
       self.mutating_approval_available =
         self.interactive_tool_approval && progress.mutating_approval_available();
@@ -14153,6 +14174,130 @@ mod tests {
     assert!(!has_review(&requests[1]));
     assert!(!has_review(&requests[2]));
     assert!(has_review(&requests[3]));
+  }
+
+  struct SlowToolProgress;
+
+  impl TurnProgress for SlowToolProgress {
+    fn on_tool_finished(&mut self, _call: &ToolCallBlock, _result: &Executed) {
+      std::thread::sleep(Duration::from_millis(1_200));
+    }
+  }
+
+  #[test]
+  fn proactive_completion_review_crosses_the_reserve_once_and_renews() {
+    for initial_answer in [false, true] {
+      let rounds: Vec<_> = (0..2)
+        .flat_map(|_| {
+          let mut turn = Vec::new();
+          if initial_answer {
+            turn.push(text("initial answer"));
+          }
+          turn.push(tool_call("write_probe", json!({"content":"owned fixture"})));
+          turn.push(text("reviewed answer"));
+          turn
+        })
+        .collect();
+      let provider = Scripted::new("reserve-review", rounds);
+      let seen = Arc::new(Mutex::new(Vec::new()));
+      let tools = registry_with(vec![Box::new(MutatingSpy {
+        seen: Arc::clone(&seen),
+        outcome: ToolOutcome::succeeded("written"),
+      })]);
+      let policy = rupi_core::ProfilePolicy::new(
+        rupi_core::ContextProfile::Balanced,
+        provider.capabilities().context_window,
+      );
+      let mut trace = Recorder::default();
+      let mut runtime = TurnLoop::new(
+        &provider,
+        &tools,
+        &policy,
+        &mut trace,
+        SessionId::new(),
+        TraceId::new(),
+      )
+      .with_completion_review(true)
+      .with_max_turn_duration(Some(Duration::from_secs(5)))
+      .with_completion_review_reserve(Some(Duration::from_secs(4)));
+      for task in ["first", "next"] {
+        let report = runtime
+          .run_turn(task, &CancelToken::new(), &mut SlowToolProgress)
+          .unwrap();
+        assert_eq!(report.status, TurnStatus::Completed);
+        assert_eq!(report.requests, if initial_answer { 3 } else { 2 });
+      }
+      assert_eq!(seen.lock().unwrap().len(), 2);
+      let requests = provider.requests();
+      let review_count = |request: &ModelRequest| {
+        request
+          .messages
+          .iter()
+          .filter(|message| {
+            message.origin
+              == rupi_core::MessageOrigin::RuntimeControl {
+                kind: RuntimeControlKind::CompletionReview,
+              }
+          })
+          .count()
+      };
+      assert_eq!(review_count(&requests[0]), 0);
+      assert_eq!(review_count(&requests[1]), 1);
+      drop(runtime);
+      assert_eq!(
+        trace
+          .all("runtime_control_injected")
+          .iter()
+          .filter(|control| control["kind"] == "completion_review")
+          .count(),
+        2
+      );
+    }
+  }
+
+  #[test]
+  fn proactive_completion_review_keeps_unknown_effects_blocked() {
+    let provider = Scripted::new(
+      "reserve-unknown",
+      vec![tool_call("write_probe", json!({"content":"owned fixture"}))],
+    );
+    let seen = Arc::new(Mutex::new(Vec::new()));
+    let tools = registry_with(vec![Box::new(MutatingSpy {
+      seen: Arc::clone(&seen),
+      outcome: ToolOutcome::unknown("not observed"),
+    })]);
+    let policy = rupi_core::ProfilePolicy::new(
+      rupi_core::ContextProfile::Balanced,
+      provider.capabilities().context_window,
+    );
+    let mut trace = Recorder::default();
+    let mut runtime = TurnLoop::new(
+      &provider,
+      &tools,
+      &policy,
+      &mut trace,
+      SessionId::new(),
+      TraceId::new(),
+    )
+    .with_completion_review(true)
+    .with_max_turn_duration(Some(Duration::from_secs(5)))
+    .with_completion_review_reserve(Some(Duration::from_millis(4_900)));
+    let first = runtime
+      .run_turn("task", &CancelToken::new(), &mut SlowAdmission)
+      .unwrap();
+    assert_eq!(first.status, TurnStatus::NeedsReconciliation);
+    let blocked = runtime
+      .run_turn("next", &CancelToken::new(), &mut SilentProgress)
+      .unwrap();
+    assert_eq!(blocked.status, TurnStatus::NeedsReconciliation);
+    assert_eq!(provider.requests().len(), 1);
+    assert_eq!(seen.lock().unwrap().len(), 1);
+    assert!(provider.requests()[0].messages.iter().any(|message| {
+      message.origin
+        == rupi_core::MessageOrigin::RuntimeControl {
+          kind: RuntimeControlKind::CompletionReview,
+        }
+    }));
   }
 
   #[test]

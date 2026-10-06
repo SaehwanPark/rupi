@@ -1276,6 +1276,9 @@ completion. Preserve native assistant evidence and record review instructions wi
 runtime provenance. Continue only through normal request/tool/time budgets, approval,
 and reconciliation barriers on the active model. Do not enforce case-specific artifact
 names or interpret review as external correctness certification. Defaults remain unchanged.
+An optional positive remaining-time reserve below the turn duration may trigger the same
+one-shot review before an ordinary provider attempt, including during ongoing tool work.
+It must not bypass cancellation, budget, approval, or unresolved-effect barriers.
 
 This is a distributed-systems-style reliability invariant.
 

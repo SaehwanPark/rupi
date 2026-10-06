@@ -268,6 +268,12 @@ pub(crate) fn open_session_with_approval(
   .with_thinking(config.thinking)
   .with_max_requests(config.limits.max_model_requests_per_turn as usize)
   .with_completion_review(config.limits.review_completion)
+  .with_completion_review_reserve(
+    config
+      .limits
+      .completion_review_reserve_ms
+      .map(Duration::from_millis),
+  )
   .with_max_turn_duration(
     config
       .limits
