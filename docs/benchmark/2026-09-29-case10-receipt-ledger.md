@@ -1893,3 +1893,29 @@ Future evaluation of changed code must remain frozen across the evaluated
 recovery turns and fresh matched Pi half. Such recovery turns assess one candidate
 rather than constitute new control-only candidate screens. Any further new
 candidate must carry a verified enhancement or explicit evidence justification.
+
+### Retry18 terminal: six acceptance failures; runtime diagnosis next
+Attempt6 reached the1,200,373 ms runner watchdog. Acceptance and project tests
+failed (exit1); all help checks passed (exit0), no verification timeout.
+Recorded work67,647 tokens (51,838 uncached input,15,809 output),15 starts/
+completion events,14 usage records,and17 completed tools; no failed/Unknown
+calls. Filtered app main41,781bytes/public test19,024bytes; other inventory
+sizes unchanged. Contents remain unread; correctness/assertions unverified.
+All six acceptance/project-test checks failed and all help checks passed.
+Totals468,406 recorded work tokens,7,201,822 ms,184 completed tools,seven
+known failures,zero Unknown calls; six runner watchdogs. Unfinished inference
+remains unknown. No request-cap exhaustion was recorded. Frozen inputs,
+native profile, full SPEC/three reference hashes, source/bin/model audits pass.
+Pi was not run; this is not a paired win. Model slots are now idle and runner
+4512/children have exited. Usage18% five-hour/63% weekly is below thresholds.
+Failure analysis: this profile has working help paths but no configured
+acceptance or passing public project tests. More cap headroom alone is unsupported;
+known failed file-tool operations and many reads/edits indicate a recovery path
+worth investigating, without proving the underlying task defect. No model code,
+actual trace, or oracle diagnostics were inspected.
+Before new inference, reproduce and repair the source-observed long-line edit
+diagnostic defect using an owned fixture; verify no mutation on rejected edits,
+honest location hints, and unchanged Unknown/ambiguity semantics. Required Rust
+checks/startup verification and a new frozen binary are prerequisites.
+A subsequent fixed-code screen should retain retry18 profile/prompt/references
+to assess the enhancement; no control-only candidate is planned.
