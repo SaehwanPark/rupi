@@ -1750,3 +1750,13 @@ tests/__init__.py (65bytes); no public test module is listed. Contents remain
 unread. Frozen-input audit passes. Four-attempt recorded totals are110,961 work
 tokens,5,798,781 ms,and twenty completed tools; zero failed/Unknown calls.
 The remaining attempts continue. Pi remains unrun; Case10 is unresolved.
+
+### Retry17 attempt5: watchdog with unmeasured inference
+Attempt5 reached the 1,800,302 ms runner watchdog. Configured acceptance failed
+(exit1), project tests returned exit5, and all four help checks passed (exit0),
+with no verification timeout. One model start, no completion/usage records,
+and no tool requests were recorded. Recorded work is zero; actual inference
+work is unknown. The filtered three-file inventory and sizes are unchanged.
+Frozen-input audit passes. Five-attempt recorded totals are110,961 work tokens,
+7,599,083 ms, twenty completed tools, and zero failed/Unknown calls.
+One Rupi attempt remains; Pi remains unrun and Case10 remains unresolved.
