@@ -57,4 +57,8 @@ retains external evidence provenance, shared caps and semantic stops. No dispatc
 model activation, provider capability, startup dependency, event or rendering change.
 Request-only selection adds no clock measurement; timed cycle observation remains opt-in.
 Configuration validation and runtime builder guards preserve an earlier request and caps.
-Performance, remote CI and actual frozen Retry33 evidence remain pending.
+Performance passes: cold143.185ms, warm median8.578ms/max9.034ms; all five restores
+(85.30,600.00,2689.50,2586.35,4956.55us) and five context budgets (.4,.1,0,0,.3us) pass.
+Runtime/sourcea0e17c63c7040b8a15cad33a71aa7f581ff30ba5 is pushed. Source CI37494871347
+and exact frozen-checkout CI must pass all three platforms before inference. Actual
+Retry33 acceptance and paired evidence remain pending.

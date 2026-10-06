@@ -3053,3 +3053,44 @@ were below the selected 32-mutation and 64-total caps. Finalization deliberately
 invoke tools or checks. Application-specific defects and hidden reasoning remain
 unmeasured. Next slice adds an opt-in request-count review reserve sharing the existing
 one-shot review/check machinery, without enlarging any allowance.
+
+### Verified request reserve and frozen Retry33
+
+Runtime/source a0e17c63c7040b8a15cad33a71aa7f581ff30ba5 adds optional
+limits.completion_review_request_reserve. Enabled review and a positive reserve strictly
+below ordinary requests (cap minus finalization slot) are required. At a safe boundary,
+remaining ordinary requests at or below reserve trigger the same one-shot review as time
+or accepted-answer review. completion_check_on_review accepts a time or request reserve.
+Request-only selection uses no native clock. No budgets, authority or terminal safety
+semantics are relaxed.
+
+Owned chunking comparison: default omission reaches cap4 without tests/checks; reserve2
+obtains missing-test feedback, repairs and passes a fresh final check in3 requests.
+Renewal, competing/earlier-answer triggers, invalid/disabled/no-tools paths, cancellation/
+deadline, Unknown and terminal Failed/Unavailable/oversized feedback fixtures pass.
+Real CLI mailbox repair passes three modes, exactly3 requests/two checks and no exec.
+Required local fmt/core-check/clippy/workspace tests/docs/debug-build pass:
+220 runtime/137 core/100 provider/25 CLI. Eight owned harness fixtures pass. Selected
+profile/public SPEC/three reference hashes and18 other prompt hashes are unchanged.
+Shared prompt SHA remains230589C5F20B5486CD84216CE5B6A0DB9734CE724C2903D891E4D50D9CFB3270.
+Parent author invariant review passes; no independent-review claim.
+
+Startup143.185ms cold/8.578ms warm median/9.034ms max. Five restores
+85.30/600.00/2689.50/2586.35/4956.55us and context .4/.1/0/0/.3us pass all budgets.
+Source CI37494871347 is pending; exact frozen-checkout CI must also pass before launch.
+
+Frozen screen:
+bench-20261006-case10-request-reserve8-template-off-args2048-first8192-check8-mut32-review300-turn2370-retry33-rupi40-screen1-2400s.
+One Rupi turn/cap40 (39 ordinary plus finalization), request reserve8, timedreserve300s,
+native2370s/provider2394s/outer2400s/grace6; direct8000 template enable_thinking globalOff/
+firstOff, firstoutput8192/argument2048, overalloutput32768, checks8/check_on_review,
+mutation32/total64, initial boundary and recurringwindow3. Fresh matched Pi only after
+acceptance. Shared inputs/limits/reference hashes and original physical model/helpers
+preserved; no actual code/caller/model/oracle contents inspected. No configured win yet.
+
+Frozen binary SHA25619E927E28410A07549CBD883C0C774CC7D603E461925C79117EA2E2DE5AA6165;
+harness SHA256FE844EB312B377F1DD6ED65DAF3F0FD91BEC12EE64015302FCA2D3FACD5EA9AF;
+public host SHA256DC75BEB0995E0EC00C1D6AFC6AE34FCD53CA18CE5085D85B1C1A7ED70865A8FE.
+The root user policy remains untouched, verifiedSHA3CEE11E5D4D8C8CA7CCF34F87A64B18BB183D4AF9AF79AB964AE19D4EF39B496.
+Parent usage54%5-hour/9%weekly, below authoritative95%/99% thresholds.
+Only main and active Case10 branches remain locally/remotely; detached artifacts retained.

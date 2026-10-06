@@ -1774,7 +1774,11 @@ TUI rendering passed all budgets (3.31–3.90 µs/unit); checkpointed restore me
   application/README but missing tests; acceptance/tests fail and four help checks pass.
   All frozen audits pass, slots are idle. No review/check ran with about787s remaining.
   Optional request-count review reserve is active work to expose feedback before that cap,
-  sharing the existing one-shot boundary without extending budgets. Full gates pending.
+  sharing the existing one-shot boundary without extending budgets. Local full Rust/debug
+  checks pass (220 runtime/137 core/100 provider/25 CLI), owned comparison and mailbox
+  request-reserve mode pass; prompts/references unchanged. Startup143.185ms cold/
+  8.578ms warm median/9.034ms max and five restores/five context budgets pass. Parent
+  author review passes; remote CI/frozen Retry33/paired evidence remain pending.
   No semantic cause, acceptance benefit, or paired Case10 win is established.
   Rupi-first screening and paired
   evidence/delivery checks remain pending. Broader project gates remain active.
