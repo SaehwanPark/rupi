@@ -1983,3 +1983,26 @@ Fresh Pi 0.86.1 is conditional on Rupi acceptance and uses a matched profile.
 Pi native cap/progress remain unavailable/null. No source changes or builds
 during this evaluation or its Pi half. Acceptance benefit and causality remain
 unproven. Branches remain main plus active Case10; root policy edit SHA preserved.
+
+### Retry19 stopped after first failure; diagnosis before another attempt
+Attempt1 reached the 1,200,549 ms watchdog. Acceptance/project tests failed
+(exit1); all help checks passed (exit0), no verification timeout. Work 70,702
+recorded tokens (54,148 uncached input/16,554 output), 16 model starts,
+15 completions/usage records, 18 completed tools, zero failed/Unknown calls.
+Tool names show 15 read/grep calls and three write/edit calls. Filtered inventory
+contains app init31bytes/main48,614bytes; no tests or README listed. Contents
+remain unread. Frozen source 9ac88a7/binary C58EF706/profile/prompt/SPEC/reference/
+model audit passes. This turn does not establish a benefit from the hint fix;
+no failed tool operation was recorded and whether the fix was exercised is unknown.
+Following the owner's stronger updated objective, automatic continuation was
+stopped for diagnosis before another attempt. Owned runner26760 (pwsh,parent25564,
+created2026-10-05T23:02:33.8817080-04:00) and already-started child27000
+(rupi,parent26760,created2026-10-05T23:22:40.1254040-04:00) were revalidated by PID,
+name,parent,and creation timestamp before stopping. Session exit-1; model27356
+and all three existing relays preserved; all model slots idle.
+Attempt2 is abandoned/unverified and its work is unknown. This screen is incomplete,
+not six failed attempts and not a paired win. Pi remains unrun.
+Further development will diagnose this watchdog/inspection-heavy failure and
+apply a verified runtime enhancement before any new attempt. Development screens
+must avoid automatic continuation that bypasses this analysis; a frozen fresh
+paired verification must still support any eventual win claim.
