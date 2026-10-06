@@ -2575,3 +2575,36 @@ Latest usage46% five-hour/88% weekly is below95%/99% soft stops.
 No new attempt or semantic application fix is claimed yet; no generated contents/
 private diagnostics were inspected. Acceptance benefit/Case10 paired win remain
 unestablished. Fresh matched Pi follows only Rupi acceptance.
+
+### Retry26 terminal: first transport failure before tool dispatch
+
+Frozen run `bench-20261006-case10-mutations32-feedback8-review300-turn2370-window3-budget4096-low-output32768-retry26-rupi40-screen1-2400s` at checkout
+f1f4c8d2ae998612e6c8ca656d786947e3d3ef36/runtime369c65b ends at1,196,199ms,
+Failed(Transport), without outer watchdog expiry. One request starts/closes, zero usage
+records, zero requested/completed/failed/Unknown tools, no generated files listed.
+Recorded work is0 because usage is absent; actual unfinished work is unknown, not zero.
+Acceptance/tests/four help exits are1; no verification timeout. Checks8 and mutation32
+were selected, but no candidate reached completion checking. Safe controls are one
+time guide/one initial progress boundary, zero review/check/other controls.
+
+All frozen source/binary/harness/host/helper, model/control/prompt/full SPEC/three-
+reference audits pass before changes; all four model slots are idle. Runner28864/
+child35232 end, screen process exit0. Frozen f1f4c8d passes all three platforms:
+https://github.com/SaehwanPark/rupi/actions/runs/37449315815 .
+No Pi comparison or Case10 win exists. Generated/model/control/diagnostic contents
+remain unread; output size and exact transport defect are unmeasured.
+
+Root-cause inference is bounded:1,196.199s closely matches the existing relay's hard
+1,194s response window. Source relays one upstream stream and closes at that deadline
+without retry; native2370s/provider2394s budgets are longer. This is consistent with
+first-response transport expiry, not demonstrated mutation-headroom efficacy or a
+proved output-size defect. A completed mutation never arrived. The original model and
+all existing relays remain preserved; previously rejected relay restart/extra-port
+actions will not be retried or circumvented.
+
+Next runtime enhancement: opt-in bounded first-response output for an initial progress
+turn, with explicit small coherent first-change guidance. Preserve later endpoint
+ceiling, ordinary defaults, context admission, complete-response-only tool dispatch,
+native/control provenance, caps/cancel/Unknown and no replay of the failed request.
+Use owned before/after request-budget fixtures and incomplete-response guards before
+another screen. No latency or acceptance benefit is yet established.
