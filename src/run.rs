@@ -17,6 +17,7 @@ use rupi_tools::{Approval, Executed, ToolRegistry, Workspace};
 use rupi_tui::{Palette, Surface, TranscriptOptions, is_streamed, render_event, term};
 
 use crate::cli::SurfaceArgs;
+use crate::completion_feedback::CompletionMailbox;
 
 use crate::cli::RunArgs;
 
@@ -24,11 +25,13 @@ pub fn execute(args: RunArgs) -> Result<(), String> {
   // A one-shot run is a session that holds exactly one turn. It is built on the
   // same handle an interactive loop reuses for many turns, so the composition is
   // written once, in `open_session`.
-  open_session(
+  open_session_with_feedback(
     &args.config,
     &args.cwd,
     &args.surface,
     args.resume.as_deref(),
+    false,
+    args.completion_feedback_dir.as_deref(),
     |session| {
       if args.finalize {
         match session.finalize(&args.prompt) {
@@ -81,6 +84,7 @@ pub fn execute(args: RunArgs) -> Result<(), String> {
 /// `&mut dyn Trace`: a handle that owned both would be self-referential. Scoping
 /// the borrow to this call is what keeps it sound, and it is why a caller closes
 /// from inside `turns` rather than after this function returns.
+#[cfg(test)]
 pub(crate) fn open_session(
   config: &Path,
   cwd: &Path,
@@ -101,10 +105,31 @@ pub(crate) fn open_session_with_approval(
   interactive_approval: bool,
   turns: impl FnOnce(&mut SessionHandle<'_>) -> Result<(), String>,
 ) -> Result<(), String> {
+  open_session_with_feedback(
+    config,
+    cwd,
+    surface,
+    resume,
+    interactive_approval,
+    None,
+    turns,
+  )
+}
+
+fn open_session_with_feedback(
+  config: &Path,
+  cwd: &Path,
+  surface: &SurfaceArgs,
+  resume: Option<&str>,
+  interactive_approval: bool,
+  completion_feedback_dir: Option<&Path>,
+  turns: impl FnOnce(&mut SessionHandle<'_>) -> Result<(), String>,
+) -> Result<(), String> {
   let config_text = fs::read_to_string(config)
     .map_err(|error| format!("cannot read config '{}': {error}", config.display()))?;
   let config =
     RuntimeConfig::parse(&config_text).map_err(|error| format!("invalid config: {error}"))?;
+  let completion_mailbox = CompletionMailbox::configure(completion_feedback_dir, cwd, &config)?;
   // RKB normalization only enriches the cloned manager configuration with the
   // provider's read-only retrieval tool names. No MCP process is started here.
   let mcp_servers = rupi_rkb::RkbSetup::normalize_configs(&config.mcp_servers);
@@ -239,7 +264,8 @@ pub(crate) fn open_session_with_approval(
 
   let options = surface_options(surface);
   let mut trace = ReportingTrace::new(StoreTrace::new(session), options);
-  let progress = CliProgress::new(&tools, options, interactive_approval);
+  let mut progress = CliProgress::new(&tools, options, interactive_approval);
+  progress.completion_mailbox = completion_mailbox;
   let mut system_prompt = format!(
     "You are Rupi, a coding assistant working in the supplied workspace.\n\
      Working directory: {canonical_cwd}.\n\
@@ -271,6 +297,7 @@ pub(crate) fn open_session_with_approval(
   .with_thinking(config.thinking)
   .with_max_requests(config.limits.max_model_requests_per_turn as usize)
   .with_completion_review(config.limits.review_completion)
+  .with_max_completion_checks(config.limits.max_completion_checks_per_turn.unwrap_or(0))
   .with_completion_review_reserve(
     config
       .limits
@@ -327,7 +354,7 @@ pub(crate) fn open_session_with_approval(
 /// The runtime is long-lived on purpose, and the handle is what keeps it that way:
 /// the memory between turns is the history `TurnLoop` already owns, so a caller
 /// that rebuilt a loop per turn would silently discard that history and re-emit
-/// `SessionStarted`. Built by [`open_session`], which owns the providers, tools,
+/// `SessionStarted`. Built by [`open_session_with_feedback`], which owns the providers, tools,
 /// context policy, and sink the handle borrows.
 pub struct SessionHandle<'a> {
   runtime: TurnLoop<'a>,
@@ -780,6 +807,7 @@ fn turn_error(error: &TurnError) -> String {
 /// tool name: `[needs check]` is a claim that the user may have work to do, and it
 /// has to come from the tool's own metadata.
 struct CliProgress<'a> {
+  completion_mailbox: Option<CompletionMailbox>,
   surface: Surface<Stdout, Stderr>,
   tools: &'a ToolRegistry,
   interactive_approval: bool,
@@ -790,6 +818,7 @@ impl<'a> CliProgress<'a> {
   fn new(tools: &'a ToolRegistry, options: TranscriptOptions, interactive_approval: bool) -> Self {
     Self {
       surface: Surface::new(io::stdout(), io::stderr(), options),
+      completion_mailbox: None,
       tools,
       interactive_approval,
       io_error: None,
@@ -814,6 +843,19 @@ impl<'a> CliProgress<'a> {
 }
 
 impl TurnProgress for CliProgress<'_> {
+  fn check_completion(
+    &mut self,
+    request: rupi_runtime::CompletionCheckRequest,
+    cancel: &CancelToken,
+  ) -> rupi_runtime::CompletionCheckResult {
+    match &self.completion_mailbox {
+      Some(mailbox) => mailbox.check(request, cancel),
+      None => rupi_runtime::CompletionCheckResult {
+        status: rupi_runtime::CompletionCheckStatus::Unavailable,
+        feedback: "no completion mailbox attached".into(),
+      },
+    }
+  }
   fn on_user_message(&mut self, text: &str) {
     save(&mut self.io_error, self.surface.user_message(text));
   }

@@ -113,6 +113,147 @@ fn run(config: &Path, cwd: &Path, prompt: &str) -> Output {
 }
 
 #[test]
+fn completion_mailbox_drives_a_real_cli_repair_without_new_execution_authority() {
+  let temp = TempDir::new().unwrap();
+  let workspace = temp.path().join("workspace");
+  let mailbox = temp.path().join("mailbox");
+  fs::create_dir(&workspace).unwrap();
+  fs::create_dir(&mailbox).unwrap();
+  let server = FakeServer::answer(vec![
+    text_response("initial candidate"),
+    tool_response(
+      "repair",
+      "write",
+      r#"{"path":"app.txt","contents":"owned repaired"}"#,
+      None,
+    ),
+    text_response("checked candidate"),
+  ]);
+  let path = write_config(temp.path(), &server.base_url(), true);
+  let mut config = RuntimeConfig::parse(&fs::read_to_string(&path).unwrap()).unwrap();
+  config.limits.max_completion_checks_per_turn = Some(2);
+  config.limits.max_turn_duration_ms = Some(10_000);
+  config.tools.allow = vec!["read".into(), "write".into(), "edit".into(), "grep".into()];
+  fs::write(&path, config.to_json_string().unwrap()).unwrap();
+  let child = Command::new(env!("CARGO_BIN_EXE_rupi"))
+    .args(["run", "--config"])
+    .arg(&path)
+    .arg("--cwd")
+    .arg(&workspace)
+    .args([
+      "--prompt",
+      "deliver owned file",
+      "--completion-feedback-dir",
+    ])
+    .arg(&mailbox)
+    .stdout(std::process::Stdio::piped())
+    .stderr(std::process::Stdio::piped())
+    .spawn()
+    .unwrap();
+  let child_id = child.id();
+  let canonical_workspace = fs::canonicalize(&workspace).unwrap();
+  let host = std::thread::spawn(move || {
+    let deadline = std::time::Instant::now() + std::time::Duration::from_secs(15);
+    let mut seen = std::collections::BTreeSet::new();
+    while seen.len() < 2 {
+      for entry in fs::read_dir(&mailbox).unwrap() {
+        let request_path = entry.unwrap().path();
+        if !request_path
+          .file_name()
+          .unwrap()
+          .to_string_lossy()
+          .starts_with("request-")
+          || request_path.extension().is_none_or(|ext| ext != "json")
+          || !seen.insert(request_path.clone())
+        {
+          continue;
+        }
+        let request: serde_json::Value =
+          serde_json::from_slice(&fs::read(&request_path).unwrap()).unwrap();
+        assert_eq!(request["process_id"], child_id);
+        assert_eq!(
+          Path::new(request["workspace"].as_str().unwrap()),
+          canonical_workspace
+        );
+        let ordinal = request["ordinal"].as_u64().unwrap();
+        assert_eq!(ordinal as usize, seen.len());
+        let id = request["request_id"].as_str().unwrap();
+        let reply = serde_json::json!({"version":1,"request_id":id,
+          "status":if ordinal == 1 { "failed" } else { "passed" },
+          "feedback":if ordinal == 1 { "owned public failure" } else { "owned pass" }});
+        let temporary = mailbox.join(format!("reply-{id}.tmp"));
+        fs::write(&temporary, serde_json::to_vec(&reply).unwrap()).unwrap();
+        fs::rename(temporary, mailbox.join(format!("reply-{id}.json"))).unwrap();
+      }
+      assert!(
+        std::time::Instant::now() < deadline,
+        "owned CLI mailbox did not finish"
+      );
+      std::thread::sleep(std::time::Duration::from_millis(5));
+    }
+  });
+  let output = child.wait_with_output().unwrap();
+  host.join().unwrap();
+  assert!(
+    output.status.success(),
+    "{}",
+    String::from_utf8_lossy(&output.stderr)
+  );
+  assert_eq!(
+    fs::read_to_string(workspace.join("app.txt")).unwrap(),
+    "owned repaired"
+  );
+  let requests = server.requests();
+  assert_eq!(requests.len(), 3);
+  assert!(requests[1].body.contains("owned public failure"));
+  assert!(!requests[1].body.contains("\"name\":\"exec\""));
+}
+
+#[test]
+fn completion_mailbox_preflight_rejects_missing_and_exposed_handlers_before_requests() {
+  for (configured, supplied, exposed) in [
+    (true, false, false),
+    (false, true, false),
+    (true, true, true),
+  ] {
+    let temp = TempDir::new().unwrap();
+    let workspace = temp.path().join("workspace");
+    let mailbox = temp.path().join("mailbox");
+    fs::create_dir(&workspace).unwrap();
+    fs::create_dir(&mailbox).unwrap();
+    let listener = TcpListener::bind("127.0.0.1:0").unwrap();
+    listener.set_nonblocking(true).unwrap();
+    let path = write_config(
+      temp.path(),
+      &format!("http://{}/v1", listener.local_addr().unwrap()),
+      true,
+    );
+    let mut config = RuntimeConfig::parse(&fs::read_to_string(&path).unwrap()).unwrap();
+    config.limits.max_completion_checks_per_turn = configured.then_some(2);
+    config.tools.allow_search_outside = exposed;
+    fs::write(&path, config.to_json_string().unwrap()).unwrap();
+    let mut command = Command::new(env!("CARGO_BIN_EXE_rupi"));
+    command
+      .args(["run", "--config"])
+      .arg(&path)
+      .arg("--cwd")
+      .arg(&workspace)
+      .args(["--prompt", "unused"]);
+    if supplied {
+      command.arg("--completion-feedback-dir").arg(&mailbox);
+    }
+    let output = command.output().unwrap();
+    assert!(!output.status.success());
+    assert!(String::from_utf8_lossy(&output.stderr).contains("completion"));
+    assert_eq!(
+      listener.accept().unwrap_err().kind(),
+      std::io::ErrorKind::WouldBlock
+    );
+    assert_eq!(fs::read_dir(&mailbox).unwrap().count(), 0);
+  }
+}
+
+#[test]
 fn configured_recurring_progress_rejects_completion_until_a_file_change_is_observed() {
   let temp = TempDir::new().unwrap();
   let workspace = temp.path().join("workspace");

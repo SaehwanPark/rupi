@@ -51,6 +51,7 @@ fn a_second_turn_on_one_handle_sends_the_first_turn_with_it() {
   // `RunArgs::prompt` belongs to a single-turn run; this caller supplies its own
   // prompts per turn, which is the whole point of the handle.
   let args = RunArgs {
+    completion_feedback_dir: None,
     config,
     cwd: workspace.clone(),
     prompt: String::new(),
@@ -124,6 +125,7 @@ fn a_recoverable_fatal_error_closes_the_durable_session_before_reporting_it() {
   let server = FakeServer::answer(vec![answer("ok")]);
   let config = write_config(temp.path(), &server.base_url());
   let args = RunArgs {
+    completion_feedback_dir: None,
     config,
     cwd: workspace.clone(),
     prompt: String::new(),
@@ -161,6 +163,7 @@ fn a_sink_error_does_not_fabricate_session_closure() {
   let server = FakeServer::answer(vec![answer("ok")]);
   let config = write_config(temp.path(), &server.base_url());
   let args = RunArgs {
+    completion_feedback_dir: None,
     config,
     cwd: workspace.clone(),
     prompt: String::new(),
@@ -203,6 +206,7 @@ fn a_canceled_turn_ends_cancelled_and_the_same_handle_answers_again() {
   ]);
   let config = write_config(temp.path(), &server.base_url());
   let args = RunArgs {
+    completion_feedback_dir: None,
     config,
     cwd: workspace.clone(),
     prompt: String::new(),
@@ -278,6 +282,7 @@ fn a_cancel_during_a_mutating_tool_leaves_that_call_unknown() {
     config.tools.auto_approve_mutating = true;
   });
   let args = RunArgs {
+    completion_feedback_dir: None,
     config,
     cwd: workspace.clone(),
     prompt: String::new(),
