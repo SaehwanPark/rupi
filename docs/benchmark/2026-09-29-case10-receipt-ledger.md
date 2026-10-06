@@ -3384,3 +3384,39 @@ Selected next enhancement: optional final-check reservation, preventing checkpoi
 from consuming the last check while retaining a fresh final check, all allowances,
 review and existing effect/terminal safeguards. No blind repeat, paired Pi or merge.
 PR145 remains draft; no configured win and precise semantic cause remains uninspected.
+### Retry39 terminal — caller observation unavailable before final reservation
+
+Run: bench-20261006-case10-finalreserve-retry39-rupi40-screen1-2400s.
+Frozena5f239cd9ec76973d71236cb1e6d673995ac71eb, source/runtime34e920785f0a76ad114a662e4f57e81aa4c9eed9.
+Ends Failed(Semantic) at1,729,921ms, no outer timeout or typed provider failures.
+All23 starts close with usage:95,095 known work=73,039 uncached input+22,056 output.
+Twenty-five tool requests/23 completions/2 failures/0 Unknown; all23 finish reasons
+are tool_calls, no unknown kinds. Failed checks after8/11/14/17/20 at166/104/105/42/
+739ms, then Unavailable after23 at180,326ms. No review/finalization;3 progress
+boundaries/23 time controls/6 checks/0 unknown kinds. Two checks remain unused.
+All required files listed: README5725B, receiptledger/init821B, app32349B,
+tests/init70B, tests/test_receiptledger28932B; extra app _epochtmp.py1230B and
+helpers.py11245B. Post-tests exitnull/timedout, acceptance1, help0x4;1 verification timeout.
+
+All frozen binary/runtime/harness/caller/helper/model/profile/control/prompt/SPEC/reference
+audits pass before source/build changes. SourceCI37535719010/frozenCI37536001488 all3 pass.
+Runner13672/Rupi28448/session82596 exit0 ended; all4 slots idle and root policy SHA
+3CEE11E5D4D8C8CA7CCF34F87A64B18BB183D4AF9AF79AB964AE19D4EF39B496 intact.
+No actual trace/model/application/test/feedback/private-oracle diagnostics inspected.
+Precise application cause and exact timed caller command remain unknown. The180s
+unavailability plus independent project-test timeout supports a public-test nontermination
+hypothesis, not a proven traceback or provider fault. No canonical mutating tool is Unknown.
+
+Final-check reservation was selected but not reached: Unavailable stops while two
+observations remain, before the one-check boundary and before review. Do not claim
+benefit/failure of that mechanism or convert unavailable evidence to a pass/repairable
+failure. Runtime correctly preserves uncertainty and does not replay the check.
+
+Justified next attempt changes the request profile, not runtime code: all ordinary
+requests so far declared Off, and no new runtime contract defect is evidenced by this
+failure. Existing verified initial-thinking/template controls allow Off first/Low later
+on the same physical model. This is a bounded quality hypothesis for generated work,
+not a hidden-reasoning/enforcement/correctness claim. Preserve fresh workspace, public
+checks, unavailable terminal handling and all allowances; no uncertain check replay.
+Re-verify selected config and owned wire behavior, record exact freeze/all3 CI before
+Retry40. No blind duplicate, fresh Pi, merge or configured win; PR145 remains draft.
