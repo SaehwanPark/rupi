@@ -1713,7 +1713,9 @@ TUI rendering passed all budgets (3.31–3.90 µs/unit); checkpointed restore me
   Owned fixtures prove first8192/later32768, fresh-turn renewal, skipped paths and no
   incomplete-call dispatch/replay. The real CLI wire and harness configuration tests pass.
   Required Rust checks pass (209 runtime/133 core); startup145.705ms cold/8.825ms median/
-  9.735ms max. Session/context checks and the next frozen screen remain pending.
+  9.735ms max. All five session restores (109.95–5233.80us) and five context cases pass.
+  Parent invariant review passes; the next frozen screen selects first8192/later32768
+  with checks8/mutations32 and the other Retry26 controls preserved. Screen remains pending.
   No semantic cause, acceptance benefit, or paired Case10 win is established.
   Rupi-first screening and paired
   evidence/delivery checks remain pending. Broader project gates remain active.

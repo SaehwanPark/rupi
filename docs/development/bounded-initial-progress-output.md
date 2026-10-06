@@ -36,3 +36,9 @@ it does not promise latency, reinterpret unknown work as zero or replay that fai
    turn with first8192/later32768, same model/prompt. Any failure needs analysis and
    another verified enhancement. Fresh matched Pi only after Rupi acceptance; native
    initial-output parity is not claimed, nor any latency/token/acceptance/paired win.
+
+Implementation source c97d652 is verified: five focused runtime fixtures, config and
+CLI wire tests, four harness fixtures, required Rust checks, startup and five restore/
+five context cases pass. Parent invariant review passes with no blocking findings.
+See the Case10 benchmark ledger for frozen hashes/controls. Actual benefit is unmeasured;
+Retry27 remains the next single development screen.

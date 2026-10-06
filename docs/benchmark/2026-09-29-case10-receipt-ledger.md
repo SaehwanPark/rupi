@@ -2608,3 +2608,42 @@ ceiling, ordinary defaults, context admission, complete-response-only tool dispa
 native/control provenance, caps/cancel/Unknown and no replay of the failed request.
 Use owned before/after request-budget fixtures and incomplete-response guards before
 another screen. No latency or acceptance benefit is yet established.
+
+### Retry27 runtime enhancement and frozen screen
+
+Source c97d652223963fc92c53e35cfec333367e42d5f0 adds optional initial progress output
+bounding. An owned before fixture fails with first32768 instead of8192; after passes.
+Five runtime fixtures prove first8192/later32768, renewal, endpoint/context clamping,
+disabled/no-limit/no-tools paths, no-effect non-renewal and incomplete-call no-dispatch/
+no-replay. Config omission/range/dependency/round-trip and real CLI provider-wire pass.
+The CLI fixture initially retained its separate endpoint1024 override; correcting the
+owned fixture's endpoint ceiling proves the intended composition without a runtime retry.
+
+Required fmt/core-all-features/clippy/workspace tests/docs/debug checks pass, including
+209 runtime/133 core tests and25 CLI tests. Startup145.705ms cold/8.825ms warm median/
+9.735ms max is within budget. All five restores pass (109.95–5233.80us); all five context
+cases pass (0.4/0.1/0/0/0.3us). Rendering has no changed event/status; prior budgets apply.
+All four owned harness fixtures pass. Selected native profile, shared prompt SHA
+230589C5F20B5486CD84216CE5B6A0DB9734CE724C2903D891E4D50D9CFB3270,
+18 other prompts and full public SPEC/three reference hashes remain unchanged.
+
+Parent invariant review: pass, no blocking findings. First-request accounting resets
+each turn, subsequent requests use the endpoint maximum even without Changed progress,
+normal context admission retains desired/effective budgets, and no new event, timer,
+authority, provider retry or partial-call dispatch exists. Native/control provenance,
+approval/cancel/Unknown barriers and disabled behavior remain intact. This is an author
+review, not an independent review or proof of latency, acceptance or native Pi parity.
+
+Frozen Retry27 selects initial8192/later32768, checks8/mutations32, cap40/window3,
+initial progress/recurring mode/review enabled, review reserve300000ms, native2370000ms,
+outer2400s/provider2394000ms/grace6s, preserved relay8003 hard1194s/low4096.
+Same model PID27356, prompt, sampling, context and tool policies; one fresh development
+turn only. Fresh Pi remains conditional on Rupi acceptance. Any failure requires fresh
+analysis and another verified enhancement before another attempt.
+
+Debug SHA256 ECBCBA944F87EF2D94323F30ACA82E51EBF11A89EA426E1D439AD455BB2C3EF1;
+harness SHA256 2BDABF37229BFDCE9C1371E9B2580CF51986893893B47FF6DF0518BCF88738E8;
+host699C871BE5AA9F141363ECC628AF7CE93A241097EFC9F587E01BE494A613AF69 and
+relayA0BCAE689139BFD281CB91C209D5D8F6CF9EA42FD7EFF256BE02D97A871387C7 unchanged.
+No inference was active during implementation/verification. Remote refs pruned; actual
+local/remote branches are only main and active Case10, with detached artifacts retained.
