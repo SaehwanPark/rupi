@@ -590,6 +590,12 @@ Unavailable observations end a semantic failure without retry or failover. Cance
 and native deadlines take precedence, no-tools finalization skips checking, and Unknown
 mutations stop before either checking or inference. New turns renew the local allowance.
 
+The Case10 caller's bounded public snapshot preflight returns Failed immediately for
+missing requested files, explicitly reporting that commands were not run. A known
+missing-file failure must not be masked by launching an incomplete suite that times out.
+Complete workspaces still require all original public command gates. Snapshot/deadline/
+protocol/process uncertainty remains Unavailable; the runtime stop is unchanged.
+
 `TurnProgress::check_completion` supplies typed status/data and receives the current
 cancel token plus ordinal/remaining native time. Core does not execute checks. The caller
 must isolate effects outside the canonical task workspace.

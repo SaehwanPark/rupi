@@ -1786,7 +1786,13 @@ TUI rendering passed all budgets (3.31–3.90 µs/unit); checkpointed restore me
   existing budgets. Local full Rust/debug checks pass (225 runtime/138 core/100 provider/
   25 CLI), owned comparative and four-mode mailbox fixtures plus nine harness guards pass.
   Startup139.675ms cold/9.039ms warm median/11.095ms max and five restore/five context
-  budgets pass. Parent author review passes; remote CI/new frozen Retry34 remain pending.
+  budgets pass. Parent author review/source and exact-freeze Retry34 all3 CI pass.
+  Retry34 fails semantically at1961.638s with121,262 known work/all34 usage records;
+  Failed check after31, Unavailable after34 at180.196s, post-run tests timeout and required
+  tests/__init__.py absent; help passes/acceptance fails. Frozen audits pass/slots idle.
+  Caller source records missing files before commands but a later timeout masks that
+  known failure. Immediate public missing-file feedback is active caller work; runtime
+  Unavailable/timeout semantics remain. Full gates/new frozen Retry35 remain pending.
   No semantic cause, acceptance benefit, or paired Case10 win is established.
   Rupi-first screening and paired
   evidence/delivery checks remain pending. Broader project gates remain active.

@@ -28,3 +28,24 @@ owned harness/config/prompt/reference guards, startup budgets and author invaria
 ongoing commit/push and source/exact-freeze all3 CI precede Retry35. Runtime/source4cc8425,
 all Retry34 model/limits/controls and same physical model/helpers are preserved. One Rupi
 screen, fresh matched Pi only after acceptance. No manual solution/acceptance weakening.
+
+Owned preflight comparison against explicit historical4cc8425 passes: baseline launches
+one simulated uncertain command and publishes Unavailable for missing init; new host
+publishes Failed with zero command starts and explicitly reports skipped commands. Restore
+the missing file and a fresh request runs both real public commands and passes. Default
+fixture requires no historical commit; optional comparison validates an explicit40-hex
+revision. The initial HEAD-dependent comparison was made stable before committing.
+Genuine command-timeout/startup, invalid request, once/stale process, short-root isolation
+and long-path complete-workspace Process.Start fixtures retain their assertions and pass.
+Nine harness fixtures/full config/shared SPEC/reference hashes and18 other prompts pass.
+Shared prompt hash remains230589C5F20B5486CD84216CE5B6A0DB9734CE724C2903D891E4D50D9CFB3270.
+
+Parent author invariant review: pass after the fixture revision. No blocking findings.
+The caller returns a known public missing-file failure only after safe bounded snapshot
+and a fresh deadline check; no check is certified as executed or successful. Complete
+workspaces retain the original full gates. Handler identity/once marking/atomic reply,
+UTF8 bounds, snapshot/link/size/budget safeguards and runtime Unavailable stop are unchanged.
+No Rust/runtime/CLI/provider/schema/model/authority/event/storage/rendering change; optional
+caller work remains outside startup/core. Required local fmt/core-check/clippy/workspace
+tests/docs/debug-build pass (225 runtime/138 core/100 provider/25 CLI). Binary/runtime
+source are unchanged. Performance/remote CI/freeze and actual acceptance remain pending.

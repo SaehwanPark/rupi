@@ -107,6 +107,13 @@ function Invoke-CompletionPublicCheck([object]$HostState, [object]$Request, [lon
       $failed = $true; $lines.Add("Missing requested public deliverable: $required")
     }
   }
+  # A missing requested file is already a determinate public failure. Running the
+  # incomplete suite could hide it behind an unrelated timeout or launch failure.
+  if ($failed) {
+    if ($clock.ElapsedMilliseconds -ge $budgetMs) { throw 'completion observation deadline expired' }
+    $lines.Add('Public command checks were not run because requested deliverables are missing.')
+    return [pscustomobject]@{ status = 'failed'; feedback = $lines -join "`n" }
+  }
   $commands = [Collections.Generic.List[object]]::new()
   $commands.Add([pscustomobject]@{ name = 'project tests'; seconds = 180;
     arguments = @('-W', 'error::ResourceWarning', '-m', 'unittest', 'discover', '-s', 'tests', '-p', 'test_*.py', '-v') })

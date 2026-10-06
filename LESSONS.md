@@ -142,3 +142,14 @@ reserve. It returned Unavailable before the expected command artifact existed. U
 with a10s simulated command so the fixture can complete snapshot/setup and then verify
 actual command timeout. Keep Unavailable and command-start assertions; do not relax
 production deadlines or retry uncertain observations.
+
+## Preserve a known missing-file failure before optional command observations
+
+The caller recorded absent required files but still launched an incomplete public suite.
+A later timeout threw and replaced that determinate failure with Unavailable. Return
+Failed after the bounded safe snapshot/preflight, explicitly saying commands were not run;
+then require full commands on a fresh request after repair. Keep genuine command/snapshot/
+deadline/protocol uncertainty Unavailable. Owned missing-init comparison verifies the old
+masking, zero new command starts and fresh full-check success. Use an explicit historical
+revision for optional comparisons; default fixtures must survive commits/squash merges.
+Long-path launch fixtures need complete workspaces to reach Process.Start after preflight.

@@ -543,6 +543,8 @@ Expected divergences include:
   default omission, fresh final checks and existing terminal safety semantics remain;
 - optional request-window refresh of Failed caller feedback during ongoing repair, sharing
   the existing check allowance and preserving final checking; native Pi selection is null;
+- caller public snapshot preflight preserves missing-file failures before command execution;
+  repaired workspaces still require full public checks, with no native Pi parity claim;
 - caller public-check snapshots use a short isolated root for Windows process startup;
   owned long-path/missing-deliverable/repair fixtures preserve observation classification;
 - potentially different internal session storage.

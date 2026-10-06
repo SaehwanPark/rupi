@@ -1,3 +1,7 @@
+param(
+  [ValidatePattern('^$|^[0-9a-f]{40}$')]
+  [string]$LegacyHostCommit = ''
+)
 $ErrorActionPreference = 'Stop'
 $repoRoot = Split-Path $PSScriptRoot -Parent
 . (Join-Path $PSScriptRoot 'completion-feedback.ps1')
@@ -113,13 +117,95 @@ if (-not (Test-Path -LiteralPath (Join-Path $state.root "check-$id/1.stderr.txt"
 }
 Write-Owned 'tests/test_receiptledger.py' $passingTest
 
+# Preserve a known missing-init failure even when launching commands would be unavailable.
+# Optional historical comparison uses an explicit owned revision; the default fixture
+# must keep working after the enhancement is committed or squash-merged.
+if ($LegacyHostCommit) {
+  $baselineSource = (& git show ($LegacyHostCommit + ':bench/completion-feedback.ps1')) -join "`n"
+  if ($LASTEXITCODE -ne 0) { throw 'Cannot load owned host baseline.' }
+  $baselineAst = [Management.Automation.Language.Parser]::ParseInput(
+    $baselineSource, [ref]$tokens, [ref]$errors)
+  if ($errors.Count) { throw 'Owned baseline parse failed.' }
+  $baselineDefinition = @($baselineAst.EndBlock.Statements | Where-Object {
+    $_ -is [Management.Automation.Language.FunctionDefinitionAst] -and
+      $_.Name -eq 'Invoke-CompletionPublicCheck'
+  })
+  if ($baselineDefinition.Count -ne 1) { throw 'Owned baseline check missing.' }
+  Invoke-Expression ($baselineDefinition[0].Extent.Text.Replace(
+    'function Invoke-CompletionPublicCheck(', 'function Invoke-OwnedLegacyPublicCheck('))
+}
+$preflightProject = Join-Path $fixture 'owned-preflight'
+New-Item -ItemType Directory -Path $preflightProject | Out-Null
+foreach ($name in @('receiptledger', 'tests', 'README.md')) {
+  Copy-Item -LiteralPath (Join-Path $project $name) -Destination $preflightProject -Recurse
+}
+Move-Item -LiteralPath (Join-Path $preflightProject 'tests/__init__.py') `
+  -Destination (Join-Path $preflightProject 'tests/__init__.saved')
+$preflightState = New-CompletionFeedbackHost $preflightProject `
+  (Join-Path $fixture 'preflight-turn') $python @(@('--help'))
+function Submit-OwnedPreflight([int]$Ordinal) {
+  $id = [Guid]::NewGuid().ToString()
+  $request = [ordered]@{ version=1;request_id=$id;process_id=$PID;ordinal=$Ordinal;
+    workspace=$preflightState.project;wait_timeout_ms=30000 }
+  [IO.File]::WriteAllText((Join-Path $preflightState.mailbox "request-$id.json"),
+    ($request | ConvertTo-Json -Compress), $utf8)
+  $id
+}
+$actualExternal = (Get-Item Function:Invoke-External).ScriptBlock
+$actualPublicCheck = (Get-Item Function:Invoke-CompletionPublicCheck).ScriptBlock
+$script:ownedCommandStarts = 0
+try {
+  Set-Item Function:Invoke-External -Value {
+    $script:ownedCommandStarts++
+    [pscustomobject]@{timed_out=$true;callback_failed=$false;exit_code=$null}
+  }
+  if ($LegacyHostCommit) {
+    Set-Item Function:Invoke-CompletionPublicCheck -Value {
+      param($HostState,$Request,$OuterRemainingMs)
+      Invoke-OwnedLegacyPublicCheck $HostState $Request $OuterRemainingMs
+    }
+    $baselineId = Submit-OwnedPreflight 8
+    Invoke-CompletionFeedbackHost $preflightState $PID 30000
+    $baselineReply = Get-Content -Raw (Join-Path $preflightState.mailbox "reply-$baselineId.json") |
+      ConvertFrom-Json
+    if ($baselineReply.status -cne 'unavailable' -or $script:ownedCommandStarts -ne 1) {
+      throw 'Owned baseline did not mask missing-init failure behind command uncertainty.'
+    }
+  }
+  Set-Item Function:Invoke-CompletionPublicCheck -Value $actualPublicCheck
+  $script:ownedCommandStarts = 0
+  $preflightId = Submit-OwnedPreflight 9
+  Invoke-CompletionFeedbackHost $preflightState $PID 30000
+  $preflightReply = Get-Content -Raw (Join-Path $preflightState.mailbox "reply-$preflightId.json") |
+    ConvertFrom-Json
+  if ($preflightReply.status -cne 'failed' -or $script:ownedCommandStarts -ne 0 -or
+      -not $preflightReply.feedback.Contains('tests/__init__.py') -or
+      -not $preflightReply.feedback.Contains('were not run') -or
+      $preflightReply.feedback.Contains('project tests: passed')) {
+    throw 'Missing-init preflight was masked or misreported as executed checks.'
+  }
+} finally {
+  Set-Item Function:Invoke-External -Value $actualExternal
+  Set-Item Function:Invoke-CompletionPublicCheck -Value $actualPublicCheck
+}
+Move-Item -LiteralPath (Join-Path $preflightProject 'tests/__init__.saved') `
+  -Destination (Join-Path $preflightProject 'tests/__init__.py')
+$repairedId = Submit-OwnedPreflight 10
+Invoke-CompletionFeedbackHost $preflightState $PID 30000
+$repairedReply = Get-Content -Raw (Join-Path $preflightState.mailbox "reply-$repairedId.json") |
+  ConvertFrom-Json
+if ($repairedReply.status -cne 'passed' -or
+    -not (Test-Path -LiteralPath (Join-Path $preflightState.root "check-$repairedId/2.stderr.txt"))) {
+  throw 'Repaired workspace skipped full public commands or did not pass.'
+}
+
 # Long run paths must not become Windows child working directories. All data is owned.
 $missingProject = Join-Path $fixture 'owned-incomplete'
 New-Item -ItemType Directory -Path (Join-Path $missingProject 'receiptledger') -Force | Out-Null
 [IO.File]::WriteAllText((Join-Path $missingProject 'receiptledger/__init__.py'), '', $utf8)
 [IO.File]::WriteAllText((Join-Path $missingProject 'receiptledger/__main__.py'), "print('owned help')", $utf8)
 $longTurn = Join-Path $fixture ('long-run-' + 'x' * 150)
-$legacy = New-CompletionFeedbackHost $missingProject $longTurn $python @(@('--help'))
+$legacy = New-CompletionFeedbackHost $project $longTurn $python @(@('--help'))
 if ($IsWindows) {
   $failedStart = $false
   try {
@@ -198,4 +284,4 @@ $default = Invoke-External -FileName $python -Arguments @('-c', 'print("owned de
   -WorkingDirectory $fixture -StdoutPath (Join-Path $fixture 'default.stdout.txt') `
   -StderrPath (Join-Path $fixture 'default.stderr.txt') -TimeoutSeconds 5
 if ($default.exit_code -ne 0 -or $default.timed_out) { throw 'Default wait path changed.' }
-Write-Output 'Owned completion host fixtures passed: public checks, long/short roots, isolation, once, timeout, live callback.'
+Write-Output 'Owned host fixtures passed: preflight/repair,checks,paths,isolation,timeout,callback.'
