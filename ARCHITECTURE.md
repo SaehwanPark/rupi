@@ -498,6 +498,17 @@ Owned fixtures verify active native HTTP cancellation, no repeated POST or fabri
 completion, caller isolation, fresh-turn renewal, durable control restore, exclusion of
 partial assistant text, no mutation replay, and the uncertain-effect safety barrier.
 
+Optional `initial_progress_boundary` requires a configured progress request window.
+For an already authorized implementation turn with sufficient context, it activates
+the same boundary before the first ordinary provider attempt. Admission, cancellation,
+unresolved-effect checks and current approval availability precede activation. Confirmed
+Changed progress releases it; no-effect success does not. New turns renew the initial
+selection; explicit no-tools assessment skips it. The default remains false. It does
+not select artifact names or authorize a mutation that tool policy would otherwise deny.
+Owned fixtures cover initial exposure/choice, release/renewal, unavailable/denied tools,
+mutation capacity, caller cancellation, no-effect/Unknown barriers, interactive approval,
+default/no-limit/no-tools behavior and durable runtime-control provenance.
+
 ### Opt-in completion review
 
 `RuntimeLimits::review_completion` defaults to false. When enabled, the first otherwise

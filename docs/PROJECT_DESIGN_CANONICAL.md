@@ -1271,6 +1271,13 @@ mutations, or initiate recovery inference. Unknown/Possible effects keep the
 reconciliation barrier. The default remains disabled, and foreign operations that do
 not cooperate may exceed the deadline.
 
+A caller with already authorized implementation work and sufficient context may select
+an initial progress boundary when a progress window is configured. Activate it only
+after admission, cancellation, reconciliation and current approval-availability checks;
+reuse normal tool eligibility and confirmed Changed evidence. Renew selection each turn,
+skip explicit no-tools assessment, and keep the default disabled. This does not infer
+task intent, enforce case artifacts or expand mutation authorization.
+
 A caller may opt into one bounded review after the first otherwise accepted ordinary
 completion. Preserve native assistant evidence and record review instructions with
 runtime provenance. Continue only through normal request/tool/time budgets, approval,

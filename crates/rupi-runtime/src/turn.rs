@@ -604,6 +604,7 @@ pub struct TurnLoop<'a> {
   /// progress instead of spending the request budget on inspection alone.
   progress_request_limit: Option<usize>,
   progress_boundary_mode: ProgressBoundaryMode,
+  initial_progress_boundary: bool,
   /// Explicit progress tools, or an empty list meaning every permitted
   /// mutating tool when the boundary is active.
   progress_tool_names: Vec<String>,
@@ -708,6 +709,7 @@ impl<'a> TurnLoop<'a> {
       prompt_calibration: BTreeMap::new(),
       progress_request_limit: None,
       progress_boundary_mode: ProgressBoundaryMode::OneShot,
+      initial_progress_boundary: false,
       progress_tool_names: Vec::new(),
       progress_requests_without_progress: 0,
       progress_boundary_active: false,
@@ -849,6 +851,13 @@ impl<'a> TurnLoop<'a> {
   ) -> Self {
     self.progress_request_limit = max_requests_without_progress.filter(|limit| *limit > 0);
     self.progress_tool_names = progress_tool_names;
+    self
+  }
+
+  /// Start ordinary turns with the configured progress boundary active.
+  /// Callers must already authorize implementation and supply sufficient context.
+  pub fn with_initial_progress_boundary(mut self, enabled: bool) -> Self {
+    self.initial_progress_boundary = enabled;
     self
   }
 
@@ -1646,9 +1655,19 @@ impl<'a> TurnLoop<'a> {
     let mut truncation_recovery_used = false;
     let mut completion_review_used = false;
     let mut previous_cycle_started: Option<Instant> = None;
+    let mut initial_progress_pending =
+      self.initial_progress_boundary && self.tools_enabled && self.progress_request_limit.is_some();
     while self.requests.load(Ordering::SeqCst) < normal_request_limit {
       if cancel.is_cancelled() {
         return self.finish(report, TurnStatus::Cancelled, clock, Some(turn_id.clone()));
+      }
+      self.mutating_approval_available =
+        self.interactive_tool_approval && progress.mutating_approval_available();
+      if initial_progress_pending {
+        initial_progress_pending = false;
+        if let Some(reason) = self.activate_progress_boundary(&turn_id)? {
+          return self.finish_unsatisfied_progress(report, reason, clock, turn_id.clone());
+        }
       }
       if self.review_completion
         && self.tools_enabled
@@ -1670,8 +1689,6 @@ impl<'a> TurnLoop<'a> {
         completion_review_used = true;
         self.append_completion_review_instruction(&turn_id)?;
       }
-      self.mutating_approval_available =
-        self.interactive_tool_approval && progress.mutating_approval_available();
       if self.progress_boundary_active
         && self.tools_enabled
         && self.effective_progress_tools().is_empty()
@@ -4020,25 +4037,37 @@ impl<'a> TurnLoop<'a> {
     } else {
       self.progress_tool_names.join(", ")
     };
-    let text = match self.progress_boundary_mode {
-      ProgressBoundaryMode::OneShot => format!(
+    let text = if self.initial_progress_boundary && self.requests.load(Ordering::SeqCst) == 0 {
+      format!(
         concat!(
-          "Runtime progress boundary: this implementation turn has spent the configured ",
-          "inspection budget without calling a progress tool. In your next response, call one ",
-          "of {} to make the requested change. Do not spend another request reading, probing, ",
-          "or planning; the turn remains incomplete until the change is attempted."
+          "Runtime progress boundary: this implementation turn is configured to begin with ",
+          "an authorized change using supplied context. In your first response, call one of {} ",
+          "to implement the requested work. Do not claim completion until a successful change ",
+          "is observed. Normal approval, safety and reconciliation requirements still apply."
         ),
         tools
-      ),
-      ProgressBoundaryMode::Recurring => format!(
-        concat!(
-          "Runtime progress boundary: the configured progress requirement remains unsatisfied. ",
-          "In your next response, call one of {} to make the requested change. Do not spend ",
-          "another request reading, probing, or planning; the turn remains incomplete until ",
-          "a successful change is observed."
+      )
+    } else {
+      match self.progress_boundary_mode {
+        ProgressBoundaryMode::OneShot => format!(
+          concat!(
+            "Runtime progress boundary: this implementation turn has spent the configured ",
+            "inspection budget without calling a progress tool. In your next response, call one ",
+            "of {} to make the requested change. Do not spend another request reading, probing, ",
+            "or planning; the turn remains incomplete until the change is attempted."
+          ),
+          tools
         ),
-        tools
-      ),
+        ProgressBoundaryMode::Recurring => format!(
+          concat!(
+            "Runtime progress boundary: the configured progress requirement remains unsatisfied. ",
+            "In your next response, call one of {} to make the requested change. Do not spend ",
+            "another request reading, probing, or planning; the turn remains incomplete until ",
+            "a successful change is observed."
+          ),
+          tools
+        ),
+      }
     };
     let kind = RuntimeControlKind::ProgressBoundary;
     let message = Message::runtime_control(text.clone(), kind);
@@ -11485,6 +11514,349 @@ mod tests {
         .iter()
         .any(|message| { message.contains("became unavailable") })
     );
+  }
+
+  #[test]
+  fn initial_progress_boundary_narrows_first_request_and_renews_each_turn() {
+    let writes = Arc::new(Mutex::new(Vec::new()));
+    let tools = registry_with(vec![
+      Box::new(Spy(Arc::new(Mutex::new(Vec::new())))),
+      Box::new(MutatingSpy {
+        seen: Arc::clone(&writes),
+        outcome: ToolOutcome::succeeded("changed")
+          .with_effect(rupi_core::ToolEffectDisposition::Changed),
+      }),
+    ]);
+    let provider = Scripted::new(
+      "initial-progress",
+      vec![
+        tool_call("write_probe", json!({})),
+        text("first done"),
+        tool_call("write_probe", json!({})),
+        text("next done"),
+      ],
+    );
+    let policy = rupi_core::ProfilePolicy::new(
+      rupi_core::ContextProfile::Balanced,
+      provider.capabilities().context_window,
+    );
+    let mut trace = Recorder::default();
+    let mut runtime = TurnLoop::new(
+      &provider,
+      &tools,
+      &policy,
+      &mut trace,
+      SessionId::new(),
+      TraceId::new(),
+    )
+    .with_progress_boundary(Some(3), vec!["write_probe".into()])
+    .with_initial_progress_boundary(true);
+    for task in ["first", "next"] {
+      let report = runtime
+        .run_turn(task, &CancelToken::new(), &mut SilentProgress)
+        .unwrap();
+      assert_eq!(report.status, TurnStatus::Completed);
+      assert_eq!(report.requests, 2);
+    }
+    let requests = provider.requests();
+    for pair in requests.chunks_exact(2) {
+      assert_eq!(pair[0].tool_choice, ToolChoice::Required);
+      assert_eq!(pair[0].tools.len(), 1);
+      assert_eq!(pair[0].tools[0].name, "write_probe");
+      assert_eq!(pair[1].tool_choice, ToolChoice::Auto);
+      assert_eq!(pair[1].tools.len(), 2);
+    }
+    assert_eq!(writes.lock().unwrap().len(), 2);
+    drop(runtime);
+    assert_eq!(
+      trace
+        .all("runtime_control_injected")
+        .iter()
+        .filter(|control| control["kind"] == "progress_boundary")
+        .count(),
+      2
+    );
+  }
+
+  #[test]
+  fn initial_progress_boundary_requires_changed_evidence_and_blocks_unknown_replay() {
+    for unknown in [false, true] {
+      let writes = Arc::new(Mutex::new(Vec::new()));
+      let tools = registry_with(vec![Box::new(MutatingSpy {
+        seen: Arc::clone(&writes),
+        outcome: if unknown {
+          ToolOutcome::unknown("not observed")
+        } else {
+          ToolOutcome::succeeded("already equal")
+            .with_effect(rupi_core::ToolEffectDisposition::None)
+        },
+      })]);
+      let provider = Scripted::new("initial-effect", vec![tool_call("write_probe", json!({}))]);
+      let policy = rupi_core::ProfilePolicy::new(
+        rupi_core::ContextProfile::Balanced,
+        provider.capabilities().context_window,
+      );
+      let mut trace = Recorder::default();
+      let mut runtime = TurnLoop::new(
+        &provider,
+        &tools,
+        &policy,
+        &mut trace,
+        SessionId::new(),
+        TraceId::new(),
+      )
+      .with_progress_boundary(Some(3), vec!["write_probe".into()])
+      .with_initial_progress_boundary(true)
+      .with_max_requests(2);
+      let report = runtime
+        .run_turn("implement", &CancelToken::new(), &mut SilentProgress)
+        .unwrap();
+      assert_eq!(
+        report.status,
+        if unknown {
+          TurnStatus::NeedsReconciliation
+        } else {
+          TurnStatus::BudgetExhausted
+        }
+      );
+      if unknown {
+        let blocked = runtime
+          .run_turn("next", &CancelToken::new(), &mut SilentProgress)
+          .unwrap();
+        assert_eq!(blocked.status, TurnStatus::NeedsReconciliation);
+      }
+      assert_eq!(provider.requests().len(), 1);
+      assert_eq!(provider.requests()[0].tool_choice, ToolChoice::Required);
+      assert_eq!(writes.lock().unwrap().len(), 1);
+    }
+  }
+
+  #[test]
+  fn initial_progress_boundary_checks_availability_and_mutation_capacity_before_inference() {
+    for case in ["missing", "denied", "capacity", "unsupported"] {
+      let writes = Arc::new(Mutex::new(Vec::new()));
+      let candidates: Vec<Box<dyn Tool>> = if case == "missing" {
+        vec![Box::new(Spy(Arc::new(Mutex::new(Vec::new()))))]
+      } else {
+        vec![Box::new(MutatingSpy {
+          seen: Arc::clone(&writes),
+          outcome: ToolOutcome::succeeded("changed")
+            .with_effect(rupi_core::ToolEffectDisposition::Changed),
+        })]
+      };
+      let tools = if case == "denied" {
+        registry_with_default_deny(candidates)
+      } else {
+        registry_with(candidates)
+      };
+      let mut provider = Scripted::new("initial-unavailable", vec![text("must not run")]);
+      if case == "unsupported" {
+        provider.capabilities.tools = false;
+      }
+      let policy = rupi_core::ProfilePolicy::new(
+        rupi_core::ContextProfile::Balanced,
+        provider.capabilities().context_window,
+      );
+      let mut trace = Recorder::default();
+      let result = TurnLoop::new(
+        &provider,
+        &tools,
+        &policy,
+        &mut trace,
+        SessionId::new(),
+        TraceId::new(),
+      )
+      .with_progress_boundary(Some(3), vec!["write_probe".into()])
+      .with_initial_progress_boundary(true)
+      .with_tool_call_budgets(4, if case == "capacity" { 0 } else { 4 })
+      .run_turn("implement", &CancelToken::new(), &mut SilentProgress);
+      if case == "capacity" {
+        assert_eq!(result.unwrap().status, TurnStatus::ToolBudgetExhausted);
+      } else {
+        assert!(matches!(result, Err(TurnError::Unavailable(_))));
+      }
+      assert!(provider.requests().is_empty());
+      assert!(writes.lock().unwrap().is_empty());
+    }
+  }
+
+  #[test]
+  fn initial_progress_boundary_cancellation_precedes_unavailable_progress() {
+    struct CancelAtUser(CancelToken);
+    impl TurnProgress for CancelAtUser {
+      fn on_user_message(&mut self, _text: &str) {
+        self.0.cancel();
+      }
+    }
+    let provider = Scripted::new("initial-cancel", vec![text("must not run")]);
+    let tools = registry_with(vec![]);
+    let policy = rupi_core::ProfilePolicy::new(
+      rupi_core::ContextProfile::Balanced,
+      provider.capabilities().context_window,
+    );
+    let mut trace = Recorder::default();
+    let cancel = CancelToken::new();
+    let report = TurnLoop::new(
+      &provider,
+      &tools,
+      &policy,
+      &mut trace,
+      SessionId::new(),
+      TraceId::new(),
+    )
+    .with_progress_boundary(Some(3), vec!["missing".into()])
+    .with_initial_progress_boundary(true)
+    .run_turn("implement", &cancel, &mut CancelAtUser(cancel.clone()))
+    .unwrap();
+    assert_eq!(report.status, TurnStatus::Cancelled);
+    assert!(provider.requests().is_empty());
+    assert!(trace.all("runtime_control_injected").is_empty());
+  }
+
+  #[test]
+  fn initial_progress_boundary_preserves_defaults_no_limit_and_no_tools_assessment() {
+    for case in ["default", "no_limit", "assessment"] {
+      let provider = Scripted::new("initial-optional", vec![text("assessment")]);
+      let tools = registry_with(vec![Box::new(Spy(Arc::new(Mutex::new(Vec::new()))))]);
+      let policy = rupi_core::ProfilePolicy::new(
+        rupi_core::ContextProfile::Balanced,
+        provider.capabilities().context_window,
+      );
+      let mut trace = Recorder::default();
+      let mut runtime = TurnLoop::new(
+        &provider,
+        &tools,
+        &policy,
+        &mut trace,
+        SessionId::new(),
+        TraceId::new(),
+      )
+      .with_progress_boundary((case != "no_limit").then_some(3), vec![])
+      .with_initial_progress_boundary(case != "default");
+      let report = if case == "assessment" {
+        runtime.run_finalization("assess", &CancelToken::new(), &mut SilentProgress)
+      } else {
+        runtime.run_turn("answer", &CancelToken::new(), &mut SilentProgress)
+      }
+      .unwrap();
+      assert_eq!(report.status, TurnStatus::Completed);
+      assert_eq!(report.text, "assessment");
+      assert_eq!(provider.requests().len(), 1);
+      assert_eq!(provider.requests()[0].tool_choice, ToolChoice::Auto);
+      assert_eq!(
+        provider.requests()[0].tools.len(),
+        usize::from(case != "assessment")
+      );
+      drop(runtime);
+      assert!(trace.all("runtime_control_injected").is_empty());
+    }
+  }
+
+  #[test]
+  fn initial_progress_boundary_refreshes_and_obeys_interactive_approval() {
+    let writes = Arc::new(Mutex::new(Vec::new()));
+    let tools = registry_with_default_deny(vec![Box::new(MutatingSpy {
+      seen: Arc::clone(&writes),
+      outcome: ToolOutcome::succeeded("changed")
+        .with_effect(rupi_core::ToolEffectDisposition::Changed),
+    })]);
+    let provider = Scripted::new(
+      "initial-approved",
+      vec![tool_call("write_probe", json!({})), text("done")],
+    );
+    let policy = rupi_core::ProfilePolicy::new(
+      rupi_core::ContextProfile::Balanced,
+      provider.capabilities().context_window,
+    );
+    let mut trace = Recorder::default();
+    let mut progress = ApprovalProgress {
+      decision: Approval::Allow,
+      prompts: 0,
+    };
+    let report = TurnLoop::new(
+      &provider,
+      &tools,
+      &policy,
+      &mut trace,
+      SessionId::new(),
+      TraceId::new(),
+    )
+    .with_progress_boundary(Some(3), vec!["write_probe".into()])
+    .with_initial_progress_boundary(true)
+    .with_interactive_tool_approval(true)
+    .run_turn("implement", &CancelToken::new(), &mut progress)
+    .unwrap();
+    assert_eq!(report.status, TurnStatus::Completed);
+    assert_eq!(provider.requests()[0].tool_choice, ToolChoice::Required);
+    assert_eq!(progress.prompts, 1);
+    assert_eq!(writes.lock().unwrap().len(), 1);
+  }
+
+  #[test]
+  fn initial_progress_control_restores_with_runtime_provenance() {
+    let temp = rupi_store::TempDir::new("initial-progress-restore");
+    let store = rupi_store::Store::open(temp.path(), rupi_store::WritePolicy::default()).unwrap();
+    let provider = Scripted::new(
+      "durable-initial-progress",
+      vec![tool_call("write_probe", json!({})), text("done")],
+    );
+    let tools = registry_with(vec![Box::new(MutatingSpy {
+      seen: Arc::new(Mutex::new(Vec::new())),
+      outcome: ToolOutcome::succeeded("changed")
+        .with_effect(rupi_core::ToolEffectDisposition::Changed),
+    })]);
+    let policy = rupi_core::ProfilePolicy::new(
+      rupi_core::ContextProfile::Balanced,
+      provider.capabilities().context_window,
+    );
+    let session_id = SessionId::new();
+    let session = store
+      .begin(SessionHeader {
+        session_id: session_id.clone(),
+        version: rupi_core::session::SESSION_SCHEMA_VERSION,
+        started_at_ms: 1,
+        working_dir: "/workspace".into(),
+        model: provider.model().clone(),
+        parent_session: None,
+        branched_from_event: None,
+        imported_from: None,
+      })
+      .unwrap();
+    let mut trace = StoreTrace::new(session);
+    let report = TurnLoop::new(
+      &provider,
+      &tools,
+      &policy,
+      &mut trace,
+      session_id.clone(),
+      TraceId::new(),
+    )
+    .with_progress_boundary(Some(3), vec!["write_probe".into()])
+    .with_initial_progress_boundary(true)
+    .run_turn("implement", &CancelToken::new(), &mut SilentProgress)
+    .unwrap();
+    assert_eq!(report.status, TurnStatus::Completed);
+    trace.into_session().finish().unwrap();
+    drop(store);
+    let reopened =
+      rupi_store::Store::open(temp.path(), rupi_store::WritePolicy::default()).unwrap();
+    reopened.resume(&session_id).unwrap().finish().unwrap();
+    let restored = reopened.restore(&session_id).unwrap();
+    let controls: Vec<_> = restored
+      .messages
+      .iter()
+      .filter(|message| {
+        message.message.origin
+          == rupi_core::MessageOrigin::RuntimeControl {
+            kind: RuntimeControlKind::ProgressBoundary,
+          }
+      })
+      .collect();
+    assert_eq!(controls.len(), 1);
+    assert!(controls[0].seq.is_some());
+    let instruction = controls[0].message.text();
+    assert!(instruction.contains("configured to begin with an authorized change"));
+    assert!(!instruction.contains("spent the configured inspection budget"));
   }
 
   #[test]

@@ -2384,3 +2384,51 @@ CI and paired/final delivery checks remain required.
 - Analysis must address remaining requested delivery before another attempt. The
   twenty-minute screen reaches its deadline with13/40 requests started; unused request
   allowance cannot supply more wall time. No unchanged retry or paired win is claimed.
+
+### Optional initial progress boundary verified; Retry24 freeze
+
+- Plan `docs/development/initial-progress-boundary.md`, commitbab7525. Retry23's
+  first three tool calls are inspections despite a supplied-context first-write request;
+  requested public tests remain absent at native expiry. Source starts the progress
+  boundary inactive. The enhancement permits an explicitly selected initial boundary,
+  independent of the unobserved application semantic/failure-mapping causes.
+- Add default-false/omitted `limits.initial_progress_boundary`, requiring a configured
+  progress window, TurnLoop builder and CLI wiring. After admission/reconciliation and
+  cancellation/current approval checks, activate the existing eligible-progress-tool
+  boundary before the first ordinary request. Confirmed Changed evidence releases it;
+  no-effect success does not. Fresh turns renew it, explicit no-tools assessment skips
+  it, and default/no-limit builder behavior remains unchanged. Initial control wording
+  states selection honestly instead of claiming an inspection budget was spent.
+- Owned first-request/fresh-turn fixture fails before (Auto vs Required, exit101)
+  and passes after. Seven runtime fixtures cover narrowing/release/renewal, no-effect,
+  Unknown/no replay, unavailable/denied/unsupported tools, zero mutation capacity,
+  cancellation precedence, default/no-limit/no-tools, interactive approval, and durable
+  initial-control provenance. Core omission/round-trip/missing-policy rejection passes.
+- Required fmt/core-all-features check/workspace Clippy/tests/docs/debug build pass:
+  all194 runtime/131 core tests. Parent invariant review passes; no independent model
+  review claimed. No new event kind, model, timer, task classifier, artifact enforcement,
+  permission bypass, incomplete dispatch, replay, or fabricated usage.
+- Startup140.454ms cold/8.051ms warm median/8.608ms max meets250/100ms. Five session-log
+  restore budgets pass (74.80/576.75/2,575.65/2,409.00/4,706.25us), without measuring full
+  canonical validation; five context budgets pass (0.30/0.10/0/0/0.30us). Rendering
+  remains unchanged from four passing time-budget measurements.
+- Harness adds selected initial-boundary native config and Rupi boolean/Pi null metadata.
+  Selected profile dryrun/config, full SPEC/three acceptance hashes, safe control
+  metrics fixture and unchanged shared Case10 prompt230589C5/18 other-case hashes pass.
+  No acceptance fixtures, generated solution, actual trace/model output or oracle
+  diagnostics are inspected or modified.
+- Planned run `bench-20261006-case10-initial-progress-review300-turn2370-window3-budget4096-low-output32768-retry24-rupi40-screen1-2400s`.
+  Debug SHA256 `5C330350E6776B6083D9DE695B05712F95D178A7F5462DC582BAACDBFEC18045`;
+  harness `65FE78FCD77C6F14306E45879A43B943DE86EB850C35197CE3DD1376E7F777A8`;
+  helperA0BCAE68, original model27356 and existing relay23732 remain unchanged.
+- Select initial boundary=true, native duration2,370,000ms, review=true/reserve300,000ms,
+  cap40/window3, same low/budget4096/output32768/relay8003 response1194s. Matched outer
+  2400s/grace6s gives provider timeout2,394,000ms; each relay response still has1194s.
+  The larger whole-turn grant addresses repeated wall-time expiry with unused request
+  allowance; it is not a semantic fix. Any outcome is configured, not causal attribution.
+  Native Pi duration/review/reserve/initial/cap/progress/count/position parity is null.
+- One fresh Rupi turn, then terminal frozen audits and idle slots before changes.
+  No source/build changes during inference. A failure requires analysis and a verified
+  enhancement before another attempt. Fresh matched Pi0.86.1 follows only Rupi acceptance.
+  No result/acceptance benefit/paired win exists yet; exact new head CI and eventual
+  paired delivery remain pending. Root user policy edit hash3CEE11E5 is preserved.

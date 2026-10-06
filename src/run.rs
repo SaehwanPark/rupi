@@ -292,6 +292,7 @@ pub(crate) fn open_session_with_approval(
     config.limits.progress_tool_names.clone(),
   )
   .with_progress_boundary_mode(config.limits.progress_boundary_mode)
+  .with_initial_progress_boundary(config.limits.initial_progress_boundary)
   .with_compaction_strategy(rupi_runtime::CompactionStrategy::Summarize);
   runtime = runtime.with_system(system_prompt);
   if let Some(backup) = &backup {

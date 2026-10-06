@@ -1661,7 +1661,22 @@ TUI rendering passed all budgets (3.31–3.90 µs/unit); checkpointed restore me
   positions and their scope/content-exclusion fixture pass. Startup134.972ms cold/
   7.863ms warm median/9.147ms max and all five session-log restore (92.10–4,652.60us)
   plus five context-experiment budgets pass. Rendering is unchanged. Parent invariant
-  review passes; source CI, fresh single-turn screening, and paired evidence remain pending.
+  review passes; exact896d565 source CI passes all three platforms. Retry23 also fails
+  at1,170.426s: review is injected after three started requests,13 closed requests/
+  12 usage records,53,909 recorded work,12 completed tools/three known failures/no
+  Unknown. Help passes and requested __main__/README are listed, but public tests are
+  absent. No semantic cause or model-use claim is established. The first three tools
+  are inspection despite a supplied-context first-write request. Source starts its
+  progress boundary inactive; optional initial activation is now implemented using
+  the existing eligibility/control/Changed-effect contract. Owned initial/fresh-turn,
+  safety/cap/approval/default/no-tools and durable-control fixtures plus configuration
+  omission/round-trip/inactive-policy rejection pass. Required Rust checks pass
+  (194 runtime/131 core tests). Startup140.454ms cold/8.051ms warm median/8.608ms max
+  and all five session-log restore (74.80–4,706.25us) plus five context-experiment
+  budgets pass. Parent invariant review passes; rendering is unchanged. Source CI
+  and fresh screening remain pending. The next configured screen grants a
+  matched outer2400s/native2370s to address repeated wall-time expiry with unused
+  request allowance; it cannot establish a causal attribution to one change.
   No semantic cause, acceptance benefit, or paired Case10 win is established.
   Rupi-first screening and paired
   evidence/delivery checks remain pending. Broader project gates remain active.

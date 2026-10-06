@@ -429,6 +429,9 @@ pub struct RuntimeLimits {
   /// Recurring enforcement is explicit; omitted mode preserves the one-shot contract.
   #[serde(default, skip_serializing_if = "ProgressBoundaryMode::is_one_shot")]
   pub progress_boundary_mode: ProgressBoundaryMode,
+  /// Start an authorized implementation turn with its configured progress boundary active.
+  #[serde(default, skip_serializing_if = "is_false")]
+  pub initial_progress_boundary: bool,
   /// Tool names that count as progress when the progress boundary is active.
   /// An empty list uses every permitted mutating tool instead.
   #[serde(default, skip_serializing_if = "Vec::is_empty")]
@@ -446,6 +449,7 @@ impl Default for RuntimeLimits {
       max_mutating_tool_calls_per_turn: DEFAULT_MAX_MUTATING_TOOL_CALLS_PER_TURN,
       max_model_requests_without_progress: None,
       progress_boundary_mode: ProgressBoundaryMode::OneShot,
+      initial_progress_boundary: false,
       progress_tool_names: Vec::new(),
     }
   }
@@ -709,6 +713,10 @@ impl RuntimeConfig {
           "limits.max_model_requests_without_progress must not exceed {MAX_CONFIGURED_MODEL_REQUESTS_PER_TURN}"
         )));
       }
+    } else if self.limits.initial_progress_boundary {
+      return Err(ConfigError(
+        "limits.initial_progress_boundary requires max_model_requests_without_progress".into(),
+      ));
     } else if !self.limits.progress_tool_names.is_empty() {
       return Err(ConfigError(
         "limits.progress_tool_names requires max_model_requests_without_progress".into(),
@@ -1204,6 +1212,29 @@ mod tests {
         .0
         .contains("max_mutating_tool_calls_per_turn")
     );
+  }
+
+  #[test]
+  fn initial_progress_boundary_is_omitted_by_default_and_requires_a_progress_policy() {
+    let mut config = sample_config();
+    assert!(!config.limits.initial_progress_boundary);
+    assert!(
+      serde_json::to_value(&config).unwrap()["limits"]
+        .get("initial_progress_boundary")
+        .is_none()
+    );
+    config.limits.initial_progress_boundary = true;
+    assert!(
+      config
+        .validate()
+        .unwrap_err()
+        .0
+        .contains("initial_progress_boundary requires")
+    );
+    config.limits.max_model_requests_without_progress = Some(3);
+    let parsed = RuntimeConfig::parse(&config.to_json_string().unwrap()).unwrap();
+    assert!(parsed.limits.initial_progress_boundary);
+    assert_eq!(parsed.limits.max_model_requests_without_progress, Some(3));
   }
 
   #[test]

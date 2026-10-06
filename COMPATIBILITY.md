@@ -519,6 +519,8 @@ Expected divergences include:
 - stricter tool transaction state;
 - optional cooperative turn-time limits with runtime-owned guidance and an explicit
   exhausted status; native Pi control parity is not claimed;
+- optional initial progress boundary for explicitly selected implementation turns;
+  native Pi control parity is not claimed;
 - optional bounded same-model completion review; this is runtime guidance rather than
   certification that the user's task is correct, and native Pi parity is not claimed;
 - potentially different internal session storage.

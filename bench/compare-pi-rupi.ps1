@@ -44,6 +44,7 @@ param(
   [switch]$Case10ReviewCompletion,
   [ValidateRange(0, 86400000)]
   [long]$Case10CompletionReviewReserveMs = 0,
+  [switch]$Case10InitialProgressBoundary,
   [ValidateSet("one_shot", "recurring")]
   [string]$Case10ProgressBoundaryMode = "one_shot",
   [ValidateRange(1, 100)]
@@ -2206,6 +2207,10 @@ function New-BenchmarkWorkspace([hashtable]$case, [string]$agentRoot, [string]$t
       $config | Add-Member -MemberType NoteProperty -Name limits -Value ([pscustomobject]@{})
     }
     Set-BenchmarkProgressBoundary $case $config.limits
+    if ($case.Id -eq "10-receipt-ledger" -and $Case10InitialProgressBoundary) {
+      $config.limits | Add-Member -MemberType NoteProperty -Force `
+        -Name initial_progress_boundary -Value $true
+    }
     if ($case.Id -eq "10-receipt-ledger" -and $Case10MaxTurnDurationMs -gt 0) {
       $config.limits | Add-Member -MemberType NoteProperty -Force `
         -Name max_turn_duration_ms -Value $Case10MaxTurnDurationMs
@@ -2518,6 +2523,9 @@ function Invoke-AgentCase([hashtable]$case, [string]$agent, [string]$root, [stri
         $Case10MaxTurnDurationMs -gt 0
       ) { $Case10MaxTurnDurationMs } else { $null }
       if ($case.Id -eq "10-receipt-ledger") {
+        $turnRecord["configured_initial_progress_boundary"] = if ($agent -eq "rupi") {
+          $Case10InitialProgressBoundary.IsPresent
+        } else { $null }
         $turnRecord["configured_completion_review"] = if ($agent -eq "rupi") {
           $Case10ReviewCompletion.IsPresent
         } else { $null }
@@ -3377,6 +3385,7 @@ $summary = [ordered]@{
     $Case10ReasoningBudgetTokens
   } else { $null }
   case10_rupi_progress_boundary_mode = $Case10ProgressBoundaryMode
+  case10_rupi_initial_progress_boundary = $Case10InitialProgressBoundary.IsPresent
   case10_max_output_tokens = $Case10MaxOutputTokens
   case10_rupi_max_turn_duration_ms = if ($Case10MaxTurnDurationMs -gt 0) {
     $Case10MaxTurnDurationMs

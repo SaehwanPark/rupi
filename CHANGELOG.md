@@ -10,6 +10,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Added
 
+- Added an optional initial progress boundary for authorized implementation turns with
+  supplied context, reusing existing tool eligibility, approval and effect-safety checks.
 - Added an opt-in bounded completion review so the active model can check requested
   deliverables and continue permitted work within existing turn budgets and safety barriers.
   An optional remaining-time reserve triggers the same one-shot review during ongoing work.
