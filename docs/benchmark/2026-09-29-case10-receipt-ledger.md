@@ -1781,3 +1781,25 @@ Source review also verified the distinction between the configured1,794,000 ms
 total provider deadline and inherited300,000 ms idle timeout. The metadata
 does not identify which timeout mechanism fired; no benchmark-output
 diagnostics were read. Case10 and broad roadmap stage gates remain active.
+
+### Retry18 pinned: bounded reasoning with larger output allowance and fixed resume
+Next screen: bench-20261005-case10-reconcile-window3-budget4096-relay1194-low-output32768-retry18-rupi40-screen6-1200s.
+Same model PID27356, runtime source6a2e531, B60ABB58 debug binary, harness
+source9d0de2a/D4CA3482, helper A0BCAE68, shared prompt230589C5, unchanged full SPEC
+and three acceptance hashes. Controls: low thinking with4,096-token budget
+through existing relay23732/port8003, verified1,194-second response deadline,
+provider1,194,000 ms, outer1,200 seconds/grace6, max output32,768, Rupi cap40,
+recurring progress window3, up to six Rupi attempts. No source or build changes.
+This combines the previously exercised bounded-reasoning profile with the
+larger output allowance and verified resume fix; the outcome is unproven and
+multiple controls differ from retry17, so no isolated causal benefit is claimed.
+Pi0.86.1 remains conditional on Rupi acceptance and must use a fresh matched
+profile with frozen source/binary/model; Pi native cap/progress stay null.
+Automatic approval review rejected starting an additional relay on port8004,
+with reason blocked by policy. That command did not execute. Existing model
+and all relays remain untouched; using the healthy existing1194-second relay
+keeps the next screen within its verified deadline.
+Selected native configuration, copied public SPEC/reference hashes, initial
+prompt hash,18 non-Case10 prompt hashes,and dry-run guards pass. All model
+slots are idle. Parent usage8% five-hour/61% weekly is below policy thresholds;
+only main and the active Case10 branch remain locally/remotely after pruning.
