@@ -2835,3 +2835,38 @@ renewal and all existing output/argument/approval/Unknown safeguards. Select req
 Off first then Low/4096 later in the next screen, with honest native/Pi metadata.
 Verify config/owned runtime/wire/disable encoding before inference. Do not claim hidden
 reasoning composition, guaranteed no-reasoning behavior, latency, acceptance or Pi parity.
+
+### Verified initial thinking selection and frozen Retry30
+
+Source 81574edc1bc5e3d6e539056c52a9b0bdc1ec841b adds optional first-active-initial-request thinking selection.
+Owned fixtures prove Off first/Low later, renewal, omission and skipped/no-effect paths;
+CLI wire verifies reasoning_effort none then low with explicit disable encoding.
+Later requests retain normal thinking; no new timer/event/authority, incomplete dispatch
+or uncertain-effect replay. Native isolated Case10 scalar; Pi null. Shared prompt
+230589C5F20B5486CD84216CE5B6A0DB9734CE724C2903D891E4D50D9CFB3270,
+18 other prompt hashes, full public SPEC and three reference hashes remain unchanged.
+
+Required fmt/core-all-features/clippy/workspace tests/docs/debug pass:212 runtime/135 core/
+25 CLI plus six harness fixtures. Startup143.715ms cold/8.908ms warm median/9.921ms max;
+five restore cases89.40/586.95/2618.65/2542.90/4858.55us and five context cases
+0.4/0.1/0/0/0.3us pass. Parent author invariant review passes; no independent-review
+claim. Exact source81574ed CI37463956750 passes all three platforms.
+
+The previous planned Off-first/Low-later relay profile is superseded before inference:
+preserved relay8003 accepts only low, so none would be rejected. Frozen Retry30 instead
+uses existing direct8000, global Off for both agents, explicit native first Off,
+reasoning-budget selection0/omitted and no relay deadline. This changes the comparison
+profile; same physical model27356, all original helpers remain unchanged. Effective
+backend no-reasoning enforcement and actual acceptance/latency/Pi benefit remain unproved.
+
+Run bench-20261006-case10-direct-off-firstoff-args2048-first8192-check8-mut32-review300-turn2370-retry30-rupi40-screen1-2400s: one fresh Rupi development turn,
+first output8192/later32768/first strings2048/checks8/mutations32/cap40/window3,
+initial/recurring/review/reserve300000ms/native2370000ms/provider2394000ms/outer2400s/
+grace6; sampling/context/tool policies unchanged. Fresh matched direct-Off Pi only
+after Rupi acceptance. Any failure requires analysis and verified enhancement before retry.
+DebugB53B6FD42F9E4522F79F99CF38E29968ACCFEDFB14AF69D467B22176418E0107;
+harness5D3310C4848BCDD98EAF46970F8F0E294E879606E262495EE2A7780F613378E3;
+hostDC75BEB0995E0EC00C1D6AFC6AE34FCD53CA18CE5085D85B1C1A7ED70865A8FE;
+helperA0BCAE689139BFD281CB91C209D5D8F6CF9EA42FD7EFF256BE02D97A871387C7.
+Quota wait completed after reset+2min; provider reports0% five-hour/0% weekly at13:52UTC.
+Root user policy remains untouched. Broader gates and final paired evidence remain active.
