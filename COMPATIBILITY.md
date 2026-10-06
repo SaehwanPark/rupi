@@ -538,7 +538,8 @@ Expected divergences include:
   public feedback may permit bounded same-model repair, and unavailable observations stop
   without replay. Owned protocol/runtime/host fixtures cover this Rupi-specific behavior;
   native Pi control parity and acceptance benefit are not claimed;
-- optional caller observation at timed completion review, sharing the check allowance;
+- optional time/request completion review reserves and caller observation at reserved
+  review, sharing the one-shot review and check allowance;
   default omission, fresh final checks and existing terminal safety semantics remain;
 - caller public-check snapshots use a short isolated root for Windows process startup;
   owned long-path/missing-deliverable/repair fixtures preserve observation classification;

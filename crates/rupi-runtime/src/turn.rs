@@ -630,6 +630,7 @@ pub struct TurnLoop<'a> {
   max_completion_checks: u32,
   completion_check_on_review: bool,
   completion_review_reserve: Option<Duration>,
+  completion_review_request_reserve: Option<usize>,
   max_turn_duration: Option<Duration>,
   active_time_budget: Option<TurnTimeBudget>,
   max_tool_calls: usize,
@@ -743,6 +744,7 @@ impl<'a> TurnLoop<'a> {
       max_completion_checks: 0,
       completion_check_on_review: false,
       completion_review_reserve: None,
+      completion_review_request_reserve: None,
       max_turn_duration: None,
       active_time_budget: None,
       max_tool_calls: MAX_TOOL_CALLS_PER_TURN,
@@ -949,7 +951,7 @@ impl<'a> TurnLoop<'a> {
     self
   }
 
-  /// Share the ordinary check allowance with a fresh observation at timed review.
+  /// Share the ordinary check allowance with a fresh observation at reserved review.
   pub fn with_completion_check_on_review(mut self, enabled: bool) -> Self {
     self.completion_check_on_review = enabled;
     self
@@ -959,6 +961,13 @@ impl<'a> TurnLoop<'a> {
   /// A configured turn duration supplies the monotonic clock; no extra timer is created.
   pub fn with_completion_review_reserve(mut self, reserve: Option<Duration>) -> Self {
     self.completion_review_reserve = reserve;
+    self
+  }
+
+  /// Retain ordinary requests for the enabled review and repair, within the existing cap.
+  /// Zero or a reserve that leaves no earlier ordinary request is inactive.
+  pub fn with_completion_review_request_reserve(mut self, reserve: Option<usize>) -> Self {
+    self.completion_review_request_reserve = reserve;
     self
   }
 
@@ -1754,19 +1763,27 @@ impl<'a> TurnLoop<'a> {
       if self.review_completion
         && self.tools_enabled
         && !completion_review_used
-        && self.completion_review_reserve.is_some_and(|reserve| {
-          self.active_time_budget.as_ref().is_some_and(|budget| {
-            // Review before another cycle of the observed cost could spend the reserve.
-            // This estimate neither interrupts a committed batch nor guarantees future latency.
-            budget
-              .deadline
-              .saturating_duration_since(Instant::now())
-              .saturating_sub(
-                previous_cycle_started.map_or(Duration::ZERO, |start| start.elapsed()),
-              )
-              <= reserve
+        && (self
+          .completion_review_request_reserve
+          .is_some_and(|reserve| {
+            reserve > 0
+              && reserve < self.max_requests.saturating_sub(1)
+              && normal_request_limit.saturating_sub(self.requests.load(Ordering::SeqCst))
+                <= reserve
           })
-        })
+          || self.completion_review_reserve.is_some_and(|reserve| {
+            self.active_time_budget.as_ref().is_some_and(|budget| {
+              // Review before another cycle of the observed cost could spend the reserve.
+              // This estimate neither interrupts a committed batch nor guarantees future latency.
+              budget
+                .deadline
+                .saturating_duration_since(Instant::now())
+                .saturating_sub(
+                  previous_cycle_started.map_or(Duration::ZERO, |start| start.elapsed()),
+                )
+                <= reserve
+            })
+          }))
       {
         completion_review_used = true;
         self.append_completion_review_instruction(&turn_id)?;
@@ -14886,6 +14903,9 @@ mod tests {
       SessionId::new(),
       TraceId::new(),
     )
+    .with_max_requests(4)
+    .with_completion_review_request_reserve(Some(2))
+    .with_completion_check_on_review(true)
     .with_max_completion_checks(2)
     .with_completion_review(true);
     for input in ["first", "next"] {
@@ -15116,6 +15136,8 @@ mod tests {
       SessionId::new(),
       TraceId::new(),
     )
+    .with_max_requests(4)
+    .with_completion_review_request_reserve(Some(2))
     .with_max_completion_checks(2)
     .with_completion_review(true)
     .with_completion_check_on_review(true)
@@ -16023,8 +16045,368 @@ mod tests {
 
   struct SlowToolProgress;
 
+  #[test]
+  fn request_review_reserve_exposes_missing_tests_before_the_request_cap() {
+    use std::sync::atomic::AtomicBool;
+
+    struct ChunkingProvider {
+      identity: Scripted,
+      requests: Mutex<Vec<ModelRequest>>,
+      repaired: AtomicBool,
+    }
+    impl ModelProvider for ChunkingProvider {
+      fn provider_id(&self) -> &str {
+        self.identity.provider_id()
+      }
+      fn model(&self) -> &ModelRef {
+        self.identity.model()
+      }
+      fn capabilities(&self) -> ModelCapabilities {
+        self.identity.capabilities()
+      }
+      #[allow(clippy::result_large_err)]
+      fn stream(
+        &self,
+        request: &ModelRequest,
+        sink: &mut dyn ProviderEventSink,
+        cancel: &CancelToken,
+      ) -> Result<CompletionUsage, ModelFailure> {
+        let mut requests = self.requests.lock().unwrap();
+        let index = requests.len();
+        requests.push(request.clone());
+        drop(requests);
+        let events = if request.tools.is_empty() || self.repaired.load(Ordering::SeqCst) {
+          text("owned candidate")
+        } else if request.messages.iter().any(|m| {
+          matches!(m.origin, MessageOrigin::ExternalContext { .. })
+            && m.text().contains("missing owned tests")
+        }) {
+          self.repaired.store(true, Ordering::SeqCst);
+          tool_call("write_probe", json!({"content":"owned tests"}))
+        } else {
+          tool_call(
+            "write_probe",
+            json!({"content":format!("owned app chunk {index}")}),
+          )
+        };
+        Scripted::new("chunking", vec![events]).stream(request, sink, cancel)
+      }
+    }
+    for reserve in [None, Some(2)] {
+      let provider = ChunkingProvider {
+        identity: Scripted::new("chunking", vec![]),
+        requests: Mutex::new(vec![]),
+        repaired: AtomicBool::new(false),
+      };
+      let writes = Arc::new(Mutex::new(vec![]));
+      let tools = registry_with(vec![Box::new(MutatingSpy {
+        seen: Arc::clone(&writes),
+        outcome: ToolOutcome::succeeded("written")
+          .with_effect(rupi_core::ToolEffectDisposition::Changed),
+      })]);
+      let policy = rupi_core::ProfilePolicy::new(
+        rupi_core::ContextProfile::Balanced,
+        provider.capabilities().context_window,
+      );
+      let mut trace = Recorder::default();
+      let mut progress = CheckProgress {
+        results: VecDeque::from([
+          check_result(CompletionCheckStatus::Failed, "missing owned tests"),
+          check_result(CompletionCheckStatus::Passed, "owned public pass"),
+        ]),
+        requests: vec![],
+      };
+      let report = TurnLoop::new(
+        &provider,
+        &tools,
+        &policy,
+        &mut trace,
+        SessionId::new(),
+        TraceId::new(),
+      )
+      .with_max_requests(4)
+      .with_completion_review(true)
+      .with_max_completion_checks(2)
+      .with_completion_check_on_review(true)
+      .with_completion_review_request_reserve(reserve)
+      .run_turn(
+        "deliver owned application and tests",
+        &CancelToken::new(),
+        &mut progress,
+      )
+      .unwrap();
+      assert_eq!(
+        report.status,
+        if reserve.is_some() {
+          TurnStatus::Completed
+        } else {
+          TurnStatus::BudgetExhausted
+        }
+      );
+      assert_eq!(report.requests, if reserve.is_some() { 3 } else { 4 });
+      let writes = writes.lock().unwrap();
+      assert_eq!(writes.len(), if reserve.is_some() { 2 } else { 3 });
+      assert_eq!(
+        writes.iter().any(|args| args["content"] == "owned tests"),
+        reserve.is_some()
+      );
+      assert_eq!(
+        progress.requests.len(),
+        if reserve.is_some() { 2 } else { 0 }
+      );
+      assert!(
+        progress
+          .requests
+          .iter()
+          .all(|r| r.remaining_turn_time.is_none())
+      );
+      let requests = provider.requests.lock().unwrap();
+      assert!(requests.iter().all(|r| r.model == requests[0].model));
+      assert_eq!(
+        requests[1].messages.iter().any(|m| {
+          matches!(m.origin, MessageOrigin::ExternalContext { .. })
+            && m.text().contains("missing owned tests")
+        }),
+        reserve.is_some()
+      );
+      assert_eq!(
+        trace.all("external_context_retrieved").len(),
+        progress.requests.len()
+      );
+      assert!(trace.all("model_retry").is_empty());
+      assert!(trace.all("model_failover").is_empty());
+    }
+  }
+
+  #[test]
+  fn request_review_reserve_renews_and_shares_one_review_with_other_triggers() {
+    for timed in [false, true] {
+      let provider = Scripted::new(
+        "request-renew",
+        (0..2)
+          .flat_map(|_| {
+            [
+              tool_call("write_probe", json!({"content":"owned"})),
+              text("candidate"),
+            ]
+          })
+          .collect(),
+      );
+      let tools = registry_with(vec![Box::new(MutatingSpy {
+        seen: Arc::new(Mutex::new(vec![])),
+        outcome: ToolOutcome::succeeded("written"),
+      })]);
+      let policy = rupi_core::ProfilePolicy::new(
+        rupi_core::ContextProfile::Balanced,
+        provider.capabilities().context_window,
+      );
+      let mut trace = Recorder::default();
+      let mut progress = ReviewCheckProgress {
+        checks: CheckProgress {
+          results: (0..4)
+            .map(|_| check_result(CompletionCheckStatus::Passed, "owned pass"))
+            .collect(),
+          requests: vec![],
+        },
+      };
+      let mut runtime = TurnLoop::new(
+        &provider,
+        &tools,
+        &policy,
+        &mut trace,
+        SessionId::new(),
+        TraceId::new(),
+      )
+      .with_max_requests(4)
+      .with_completion_review(true)
+      .with_max_completion_checks(2)
+      .with_completion_check_on_review(true)
+      .with_completion_review_request_reserve(Some(2))
+      .with_max_turn_duration(timed.then_some(Duration::from_secs(60)))
+      .with_completion_review_reserve(timed.then_some(Duration::from_secs(59)));
+      for input in ["first", "fresh"] {
+        let report = runtime
+          .run_turn(input, &CancelToken::new(), &mut progress)
+          .unwrap();
+        assert_eq!(report.status, TurnStatus::Completed);
+        assert_eq!(report.requests, 2);
+      }
+      drop(runtime);
+      assert_eq!(
+        progress
+          .checks
+          .requests
+          .iter()
+          .map(|r| r.ordinal)
+          .collect::<Vec<_>>(),
+        [1, 2, 1, 2]
+      );
+      assert_eq!(
+        trace
+          .all("runtime_control_injected")
+          .iter()
+          .filter(|c| c["kind"] == "completion_review")
+          .count(),
+        2
+      );
+      assert_eq!(trace.all("external_context_retrieved").len(), 4);
+      let requests = provider.requests();
+      assert!(!requests[0].messages.iter().any(|m| matches!(
+        m.origin,
+        MessageOrigin::RuntimeControl {
+          kind: RuntimeControlKind::CompletionReview
+        }
+      )));
+      assert!(requests[1].messages.iter().any(|m| matches!(
+        m.origin,
+        MessageOrigin::RuntimeControl {
+          kind: RuntimeControlKind::CompletionReview
+        }
+      )));
+    }
+  }
+
+  #[test]
+  fn request_review_reserve_skips_invalid_disabled_and_no_tools_paths() {
+    for (reserve, review, tools_enabled) in [
+      (None, true, true),
+      (Some(0), true, true),
+      (Some(3), true, true),
+      (Some(usize::MAX), true, true),
+      (Some(2), false, true),
+      (Some(2), true, false),
+    ] {
+      let provider = Scripted::new(
+        "request-skip",
+        if tools_enabled {
+          vec![
+            tool_call("write_probe", json!({"content":"owned"})),
+            text("candidate"),
+            text("reviewed"),
+          ]
+        } else {
+          vec![text("no-tools candidate")]
+        },
+      );
+      let tools = registry_with(vec![Box::new(MutatingSpy {
+        seen: Arc::new(Mutex::new(vec![])),
+        outcome: ToolOutcome::succeeded("written"),
+      })]);
+      let policy = rupi_core::ProfilePolicy::new(
+        rupi_core::ContextProfile::Balanced,
+        provider.capabilities().context_window,
+      );
+      let mut trace = Recorder::default();
+      let mut runtime = TurnLoop::new(
+        &provider,
+        &tools,
+        &policy,
+        &mut trace,
+        SessionId::new(),
+        TraceId::new(),
+      )
+      .with_max_requests(4)
+      .with_completion_review(review)
+      .with_completion_review_request_reserve(reserve);
+      runtime.tools_enabled = tools_enabled;
+      runtime
+        .run_turn("task", &CancelToken::new(), &mut SilentProgress)
+        .unwrap();
+      assert!(
+        provider.requests()[usize::from(tools_enabled)]
+          .messages
+          .iter()
+          .all(|m| !matches!(
+            m.origin,
+            MessageOrigin::RuntimeControl {
+              kind: RuntimeControlKind::CompletionReview
+            }
+          ))
+      );
+    }
+  }
+
   struct ReviewCheckProgress {
     checks: CheckProgress,
+  }
+
+  #[test]
+  fn request_review_check_preserves_cancellation_and_deadline_before_feedback_use() {
+    struct CancelReview {
+      caller: CancelToken,
+      native_deadline: bool,
+      calls: usize,
+    }
+    impl TurnProgress for CancelReview {
+      fn check_completion(
+        &mut self,
+        request: CompletionCheckRequest,
+        cancel: &CancelToken,
+      ) -> CompletionCheckResult {
+        self.calls += 1;
+        assert_eq!(request.ordinal, 1);
+        assert_eq!(request.remaining_turn_time.is_some(), self.native_deadline);
+        if self.native_deadline {
+          while !cancel.is_cancelled() {
+            std::thread::sleep(Duration::from_millis(5));
+          }
+        } else {
+          self.caller.cancel();
+        }
+        check_result(CompletionCheckStatus::Passed, "must not enter context")
+      }
+    }
+    for native_deadline in [false, true] {
+      let provider = Scripted::new(
+        "request-cancel",
+        vec![
+          tool_call("write_probe", json!({"content":"owned"})),
+          text("unused"),
+        ],
+      );
+      let tools = registry_with(vec![Box::new(MutatingSpy {
+        seen: Arc::new(Mutex::new(vec![])),
+        outcome: ToolOutcome::succeeded("written"),
+      })]);
+      let policy = rupi_core::ProfilePolicy::new(
+        rupi_core::ContextProfile::Balanced,
+        provider.capabilities().context_window,
+      );
+      let mut trace = Recorder::default();
+      let caller = CancelToken::new();
+      let mut progress = CancelReview {
+        caller: caller.clone(),
+        native_deadline,
+        calls: 0,
+      };
+      let report = TurnLoop::new(
+        &provider,
+        &tools,
+        &policy,
+        &mut trace,
+        SessionId::new(),
+        TraceId::new(),
+      )
+      .with_max_requests(4)
+      .with_completion_review(true)
+      .with_completion_review_request_reserve(Some(2))
+      .with_max_completion_checks(2)
+      .with_completion_check_on_review(true)
+      .with_max_turn_duration(native_deadline.then_some(Duration::from_secs(2)))
+      .run_turn("owned task", &caller, &mut progress)
+      .unwrap();
+      assert_eq!(
+        report.status,
+        if native_deadline {
+          TurnStatus::TimeBudgetExhausted
+        } else {
+          TurnStatus::Cancelled
+        }
+      );
+      assert_eq!(progress.calls, 1);
+      assert_eq!(provider.requests().len(), 1);
+      assert!(trace.all("external_context_retrieved").is_empty());
+    }
   }
 
   impl TurnProgress for ReviewCheckProgress {
@@ -16350,68 +16732,72 @@ mod tests {
 
   #[test]
   fn completion_check_on_review_retains_terminal_observation_failures_and_caps() {
-    for (status, feedback) in [
-      (CompletionCheckStatus::Failed, "owned failure".into()),
-      (CompletionCheckStatus::Passed, "owned pass".into()),
-      (
-        CompletionCheckStatus::Unavailable,
-        "owned unavailable".into(),
-      ),
-      (
-        CompletionCheckStatus::Passed,
-        "x".repeat(MAX_COMPLETION_FEEDBACK_BYTES + 1),
-      ),
-    ] {
-      let unavailable = status == CompletionCheckStatus::Unavailable
-        || feedback.len() > MAX_COMPLETION_FEEDBACK_BYTES;
-      let provider = Scripted::new(
-        "review-stop",
-        vec![
-          tool_call("write_probe", json!({"content":"owned"})),
-          text("answer"),
-        ],
-      );
-      let tools = registry_with(vec![Box::new(MutatingSpy {
-        seen: Arc::new(Mutex::new(vec![])),
-        outcome: ToolOutcome::succeeded("written"),
-      })]);
-      let policy = rupi_core::ProfilePolicy::new(
-        rupi_core::ContextProfile::Balanced,
-        provider.capabilities().context_window,
-      );
-      let mut trace = Recorder::default();
-      let mut progress = ReviewCheckProgress {
-        checks: CheckProgress {
-          results: VecDeque::from([check_result(status, &feedback)]),
-          requests: vec![],
-        },
-      };
-      let result = TurnLoop::new(
-        &provider,
-        &tools,
-        &policy,
-        &mut trace,
-        SessionId::new(),
-        TraceId::new(),
-      )
-      .with_max_completion_checks(1)
-      .with_completion_review(true)
-      .with_completion_check_on_review(true)
-      .with_max_turn_duration(Some(Duration::from_secs(60)))
-      .with_completion_review_reserve(Some(Duration::from_secs(59)))
-      .run_turn("owned task", &CancelToken::new(), &mut progress);
-      if unavailable {
-        assert_eq!(result.unwrap_err().kind(), Some(ModelFailureKind::Semantic));
-      } else {
-        assert_eq!(result.unwrap().status, TurnStatus::CompletionCheckExhausted);
+    for request_only in [false, true] {
+      for (status, feedback) in [
+        (CompletionCheckStatus::Failed, "owned failure".into()),
+        (CompletionCheckStatus::Passed, "owned pass".into()),
+        (
+          CompletionCheckStatus::Unavailable,
+          "owned unavailable".into(),
+        ),
+        (
+          CompletionCheckStatus::Passed,
+          "x".repeat(MAX_COMPLETION_FEEDBACK_BYTES + 1),
+        ),
+      ] {
+        let unavailable = status == CompletionCheckStatus::Unavailable
+          || feedback.len() > MAX_COMPLETION_FEEDBACK_BYTES;
+        let provider = Scripted::new(
+          "review-stop",
+          vec![
+            tool_call("write_probe", json!({"content":"owned"})),
+            text("answer"),
+          ],
+        );
+        let tools = registry_with(vec![Box::new(MutatingSpy {
+          seen: Arc::new(Mutex::new(vec![])),
+          outcome: ToolOutcome::succeeded("written"),
+        })]);
+        let policy = rupi_core::ProfilePolicy::new(
+          rupi_core::ContextProfile::Balanced,
+          provider.capabilities().context_window,
+        );
+        let mut trace = Recorder::default();
+        let mut progress = ReviewCheckProgress {
+          checks: CheckProgress {
+            results: VecDeque::from([check_result(status, &feedback)]),
+            requests: vec![],
+          },
+        };
+        let result = TurnLoop::new(
+          &provider,
+          &tools,
+          &policy,
+          &mut trace,
+          SessionId::new(),
+          TraceId::new(),
+        )
+        .with_max_requests(4)
+        .with_completion_review_request_reserve(request_only.then_some(2))
+        .with_max_completion_checks(1)
+        .with_completion_review(true)
+        .with_completion_check_on_review(true)
+        .with_max_turn_duration(Some(Duration::from_secs(60)))
+        .with_completion_review_reserve((!request_only).then_some(Duration::from_secs(59)))
+        .run_turn("owned task", &CancelToken::new(), &mut progress);
+        if unavailable {
+          assert_eq!(result.unwrap_err().kind(), Some(ModelFailureKind::Semantic));
+        } else {
+          assert_eq!(result.unwrap().status, TurnStatus::CompletionCheckExhausted);
+        }
+        assert_eq!(
+          provider.requests().len(),
+          usize::from(status == CompletionCheckStatus::Passed && !unavailable) + 1
+        );
+        assert_eq!(progress.checks.requests.len(), 1);
+        assert!(trace.all("model_retry").is_empty());
+        assert!(trace.all("model_failover").is_empty());
       }
-      assert_eq!(
-        provider.requests().len(),
-        usize::from(status == CompletionCheckStatus::Passed && !unavailable) + 1
-      );
-      assert_eq!(progress.checks.requests.len(), 1);
-      assert!(trace.all("model_retry").is_empty());
-      assert!(trace.all("model_failover").is_empty());
     }
   }
 

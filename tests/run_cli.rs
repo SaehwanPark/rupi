@@ -114,7 +114,8 @@ fn run(config: &Path, cwd: &Path, prompt: &str) -> Output {
 
 #[test]
 fn completion_mailbox_drives_a_real_cli_repair_without_new_execution_authority() {
-  for early_review in [false, true] {
+  for review_mode in ["ordinary", "timed", "requests"] {
+    let early_review = review_mode != "ordinary";
     let temp = TempDir::new().unwrap();
     let workspace = temp.path().join("workspace");
     let mailbox = temp.path().join("mailbox");
@@ -139,7 +140,7 @@ fn completion_mailbox_drives_a_real_cli_repair_without_new_execution_authority()
       ),
       text_response("checked candidate"),
     ];
-    let server = if early_review {
+    let server = if review_mode == "timed" {
       FakeServer::answer_delayed(responses, std::time::Duration::from_secs(3))
     } else {
       FakeServer::answer(responses)
@@ -151,8 +152,13 @@ fn completion_mailbox_drives_a_real_cli_repair_without_new_execution_authority()
     config.limits.max_turn_duration_ms = Some(60_000);
     if early_review {
       config.limits.review_completion = true;
-      config.limits.completion_review_reserve_ms = Some(55_000);
       config.limits.completion_check_on_review = true;
+      if review_mode == "timed" {
+        config.limits.completion_review_reserve_ms = Some(55_000);
+      } else {
+        config.limits.max_model_requests_per_turn = 4;
+        config.limits.completion_review_request_reserve = Some(2);
+      }
     }
     config.tools.allow = vec!["read".into(), "write".into(), "edit".into(), "grep".into()];
     fs::write(&path, config.to_json_string().unwrap()).unwrap();

@@ -409,7 +409,7 @@ pub struct RuntimeLimits {
   /// Caller observations required before ordinary completion; omitted disables checks.
   #[serde(default, skip_serializing_if = "Option::is_none")]
   pub max_completion_checks_per_turn: Option<u32>,
-  /// Request a caller observation when the timed one-shot completion review begins.
+  /// Request a caller observation when a reserved one-shot completion review begins.
   #[serde(default, skip_serializing_if = "is_false")]
   pub completion_check_on_review: bool,
   /// Ask the active model to review requested deliverables once per turn.
@@ -418,6 +418,9 @@ pub struct RuntimeLimits {
   /// Desired time reserve for review; the preceding cycle's observed cost can trigger it early.
   #[serde(default, skip_serializing_if = "Option::is_none")]
   pub completion_review_reserve_ms: Option<u64>,
+  /// Ordinary requests to retain for review/repair, excluding no-tools finalization.
+  #[serde(default, skip_serializing_if = "Option::is_none")]
+  pub completion_review_request_reserve: Option<u32>,
   /// Optional cooperative wall-time budget for one turn. Omitted means no turn deadline.
   #[serde(default, skip_serializing_if = "Option::is_none")]
   pub max_turn_duration_ms: Option<u64>,
@@ -462,6 +465,7 @@ impl Default for RuntimeLimits {
       max_completion_checks_per_turn: None,
       completion_check_on_review: false,
       completion_review_reserve_ms: None,
+      completion_review_request_reserve: None,
       max_turn_duration_ms: None,
       max_model_requests_per_turn: DEFAULT_MAX_MODEL_REQUESTS_PER_TURN,
       max_tool_calls_per_turn: DEFAULT_MAX_TOOL_CALLS_PER_TURN,
@@ -733,15 +737,29 @@ impl RuntimeConfig {
         ));
       }
     }
+    if let Some(reserve) = self.limits.completion_review_request_reserve
+      && (!self.limits.review_completion
+        || reserve == 0
+        || reserve >= self.limits.max_model_requests_per_turn.saturating_sub(1))
+    {
+      return Err(ConfigError(
+        concat!(
+          "limits.completion_review_request_reserve requires review_completion=true and ",
+          "a positive reserve below the ordinary request allowance"
+        )
+        .into(),
+      ));
+    }
     if self.limits.completion_check_on_review
       && (!self.limits.review_completion
-        || self.limits.completion_review_reserve_ms.is_none()
+        || (self.limits.completion_review_reserve_ms.is_none()
+          && self.limits.completion_review_request_reserve.is_none())
         || self.limits.max_completion_checks_per_turn.is_none())
     {
       return Err(ConfigError(
         concat!(
           "limits.completion_check_on_review requires review_completion=true, ",
-          "completion_review_reserve_ms and max_completion_checks_per_turn"
+          "a time or request review reserve and max_completion_checks_per_turn"
         )
         .into(),
       ));
@@ -1178,7 +1196,7 @@ mod tests {
   }
 
   #[test]
-  fn completion_check_on_review_is_opt_in_and_requires_a_timed_review_with_checks() {
+  fn completion_check_on_review_is_opt_in_and_requires_a_reserved_review_with_checks() {
     let mut config = sample_config();
     assert!(!config.limits.completion_check_on_review);
     assert!(
@@ -1203,6 +1221,47 @@ mod tests {
     config.limits.max_completion_checks_per_turn = Some(2);
     let parsed = RuntimeConfig::parse(&config.to_json_string().unwrap()).unwrap();
     assert!(parsed.limits.completion_check_on_review);
+    config.limits.completion_review_reserve_ms = None;
+    config.limits.max_turn_duration_ms = None;
+    config.limits.completion_review_request_reserve = Some(2);
+    let parsed = RuntimeConfig::parse(&config.to_json_string().unwrap()).unwrap();
+    assert!(parsed.limits.completion_check_on_review);
+    assert_eq!(parsed.limits.max_turn_duration_ms, None);
+  }
+
+  #[test]
+  fn completion_review_request_reserve_is_opt_in_and_preserves_an_earlier_request() {
+    let mut config = sample_config();
+    assert!(
+      serde_json::to_value(&config).unwrap()["limits"]
+        .get("completion_review_request_reserve")
+        .is_none()
+    );
+    for (enabled, max, reserve, valid) in [
+      (true, 40, 8, true),
+      (true, 3, 1, true),
+      (false, 40, 8, false),
+      (true, 40, 0, false),
+      (true, 40, 39, false),
+      (true, 40, 40, false),
+      (true, 2, 1, false),
+      (true, 1, 1, false),
+      (true, 0, 1, false),
+      (true, 40, u32::MAX, false),
+    ] {
+      config.limits.review_completion = enabled;
+      config.limits.max_model_requests_per_turn = max;
+      config.limits.completion_review_request_reserve = Some(reserve);
+      let parsed = RuntimeConfig::parse(&serde_json::to_string(&config).unwrap());
+      assert_eq!(parsed.is_ok(), valid, "{enabled}/{max}/{reserve}");
+      if let Ok(parsed) = parsed {
+        assert_eq!(
+          parsed.limits.completion_review_request_reserve,
+          Some(reserve)
+        );
+        assert_eq!(parsed.limits.max_turn_duration_ms, None);
+      }
+    }
   }
 
   #[test]

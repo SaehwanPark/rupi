@@ -299,6 +299,12 @@ fn open_session_with_feedback(
   .with_completion_review(config.limits.review_completion)
   .with_max_completion_checks(config.limits.max_completion_checks_per_turn.unwrap_or(0))
   .with_completion_check_on_review(config.limits.completion_check_on_review)
+  .with_completion_review_request_reserve(
+    config
+      .limits
+      .completion_review_request_reserve
+      .map(|reserve| reserve as usize),
+  )
   .with_completion_review_reserve(
     config
       .limits

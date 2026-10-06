@@ -568,6 +568,12 @@ projected remainder is within the reserve, trigger the same one-shot review. The
 cycle uses zero observed cost. This estimate cannot guarantee future latency. An earlier
 first-answer review consumes that allowance, and new turns reset the cycle observation.
 Cancellation is checked first; no unresolved mutation or budget barrier is bypassed.
+Optional `completion_review_request_reserve` requires enabled review and a positive count
+strictly below the ordinary request allowance (the cap minus its finalization slot).
+At a safe ordinary boundary, remaining ordinary requests at or below that count trigger
+the same one-shot review. Either reserve can trigger first; accepted-answer review also
+shares the allowance. Request-only selection requires no native timer or cycle estimate.
+Direct builders ignore invalid counts; configuration rejects them. No budget is extended.
 Benchmark summaries expose whitelist counts of canonical control kinds, an unknown-kind
 count, and review positions as counts of started requests at injection, without control
 text or model content; native Pi control metrics remain unavailable/null.
@@ -589,9 +595,9 @@ cancel token plus ordinal/remaining native time. Core does not execute checks. T
 must isolate effects outside the canonical task workspace.
 
 Optional `limits.completion_check_on_review` defaults to false and requires configured
-checks, enabled review and a valid timed reserve. The one-shot timed review can request
-a fresh caller observation before its next model request, even without a final assistant
-answer. This shares the ordinary allowance; a pass still proceeds through model review
+checks, enabled review and a valid time or request reserve. The one-shot reserved review
+can request a fresh caller observation before its next model request, even without a final
+assistant answer. This shares the ordinary allowance; a pass still proceeds through model review
 and a later fresh completion check. A repairable failure permits bounded same-model work;
 last failure/exhaustion and unavailable/oversized results retain their existing stops.
 Progress/tool-budget and uncertain-effect barriers precede the observation. Observations

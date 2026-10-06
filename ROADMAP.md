@@ -1769,7 +1769,12 @@ TUI rendering passed all budgets (3.31–3.90 µs/unit); checkpointed restore me
   (216 runtime/136 core/100 provider/25 CLI); startup158.146ms cold/9.688ms median/
   11.706ms max and all five restores/five context budgets pass. Two timing fixtures now
   verify command startup and cancel after observed streaming, preserving assertions.
-  Parent author invariant review passes. Remote CI/frozen screen/paired win remain pending.
+  Parent author invariant review passes; source and frozen Retry32 three-platform CI pass.
+  Retry32 reaches the40-request cap at1583.277s with118,092 known work, all40 usage records,
+  application/README but missing tests; acceptance/tests fail and four help checks pass.
+  All frozen audits pass, slots are idle. No review/check ran with about787s remaining.
+  Optional request-count review reserve is active work to expose feedback before that cap,
+  sharing the existing one-shot boundary without extending budgets. Full gates pending.
   No semantic cause, acceptance benefit, or paired Case10 win is established.
   Rupi-first screening and paired
   evidence/delivery checks remain pending. Broader project gates remain active.

@@ -1331,6 +1331,11 @@ one-shot review before an ordinary provider attempt, including during ongoing to
 The observed preceding provider/tool cycle may anticipate spending that reserve; this
 estimate resets each turn and cannot guarantee future latency or extend the deadline.
 It must not bypass cancellation, budget, approval, or unresolved-effect barriers.
+An optional positive ordinary-request reserve may trigger the same review before request
+exhaustion. Keep an earlier ordinary request and the existing no-tools finalization slot;
+never extend the cap. Time, request and accepted-answer triggers share one review per turn.
+Request-only selection needs no clock. Caller observations at a reserved review retain
+their shared allowance, external provenance and fresh final-check requirement.
 
 This is a distributed-systems-style reliability invariant.
 

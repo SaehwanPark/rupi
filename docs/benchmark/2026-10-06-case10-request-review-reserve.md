@@ -32,3 +32,29 @@ author invariant review, durable commits/push and source/frozen three-platform C
 Retry33. Proposed screen: request reserve 8 of 39 ordinary requests, existing cap40 and all
 Retry32 controls unchanged. One Rupi turn; fresh matched Pi only after Rupi acceptance.
 Never read generated content, actual feedback, model output or oracle diagnostics.
+
+Owned implementation evidence: the chunking fake provider reaches cap4 with three distinct
+application changes and no tests/checks when the reserve is omitted. With request reserve2
+and the same cap, missing-test feedback permits repair and fresh final pass in3 requests.
+Request-only observations have no native time budget. Renewed turns, simultaneous time and
+request triggers, earlier accepted-answer review, disabled/invalid/no-tools selection,
+Unknown mutation barrier, callback cancellation/deadline and terminal feedback fixtures pass.
+The real CLI mailbox repair fixture passes ordinary, timed and request-reserve modes while
+preserving exactly3 requests, two observations, no exec authority and owned artifacts.
+
+Required local fmt/core-check/clippy/workspace-test/docs/debug-build gates pass, including
+220 runtime,137 core,100 provider and25 CLI tests. Eight owned harness fixtures pass;
+request-only dependencies, native selection and Pi-null/case isolation are covered. The
+selected config/public SPEC/three reference hashes and all18 other prompt hashes pass.
+Shared initial prompt hash remains230589C5F20B5486CD84216CE5B6A0DB9734CE724C2903D891E4D50D9CFB3270.
+An initial Windows PowerShell child rejected script files under its execution policy;
+running the owned fixtures through the existing PowerShell tool session resolves the
+launcher mismatch without changing machine policy or production code. No inference rerun.
+
+Parent author invariant review: pass, no blocking findings. The predicate only enters at
+the existing ordinary boundary; review remains one-shot and the existing check helper
+retains external evidence provenance, shared caps and semantic stops. No dispatch/replay,
+model activation, provider capability, startup dependency, event or rendering change.
+Request-only selection adds no clock measurement; timed cycle observation remains opt-in.
+Configuration validation and runtime builder guards preserve an earlier request and caps.
+Performance, remote CI and actual frozen Retry33 evidence remain pending.

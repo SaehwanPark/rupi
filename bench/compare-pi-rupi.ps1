@@ -44,6 +44,8 @@ param(
   [switch]$Case10ReviewCompletion,
   [ValidateRange(0, 86400000)]
   [long]$Case10CompletionReviewReserveMs = 0,
+  [ValidateRange(0, 100)]
+  [int]$Case10CompletionReviewRequestReserve = 0,
   [switch]$Case10InitialProgressBoundary,
   [ValidateRange(0, 65536)]
   [int]$Case10InitialProgressMaxOutputTokens = 0,
@@ -70,10 +72,16 @@ if ($Case10ThinkingInput -eq 'chat_template_enable_thinking' -and
     $Case10ReasoningBudgetTokens -gt 0) {
   throw 'Case10 enable_thinking requires direct endpoint with reasoning budget selection0.'
 }
+if ($Case10CompletionReviewRequestReserve -gt 0 -and
+    (-not $Case10ReviewCompletion -or
+     $Case10CompletionReviewRequestReserve -ge ($MaxModelRequestsPerTurn - 1))) {
+  throw 'Case10 request review reserve requires review and a larger ordinary request allowance.'
+}
 if ($Case10CompletionCheckOnReview -and
-    (-not $Case10ReviewCompletion -or $Case10CompletionReviewReserveMs -le 0 -or
+    (-not $Case10ReviewCompletion -or
+     ($Case10CompletionReviewReserveMs -le 0 -and $Case10CompletionReviewRequestReserve -le 0) -or
      $Case10CompletionChecks -le 0)) {
-  throw 'Case10CompletionCheckOnReview requires timed review and completion checks.'
+  throw 'Case10CompletionCheckOnReview requires reserved review and completion checks.'
 }
 if ($Case10InitialProgressThinking -ne 'inherit' -and -not $Case10InitialProgressBoundary) {
   throw "Case10InitialProgressThinking requires Case10InitialProgressBoundary."
@@ -2203,11 +2211,28 @@ function Get-BenchmarkReviewCheck([hashtable]$case, [string]$agent) {
 
 function Set-BenchmarkReviewCheck([hashtable]$case, [object]$limits) {
   if ($case.Id -ne '10-receipt-ledger' -or -not $Case10CompletionCheckOnReview) { return }
-  if (-not $Case10ReviewCompletion -or $Case10CompletionReviewReserveMs -le 0 -or
+  if (-not $Case10ReviewCompletion -or
+      ($Case10CompletionReviewReserveMs -le 0 -and $Case10CompletionReviewRequestReserve -le 0) -or
       $Case10CompletionChecks -le 0) {
-    throw 'Case10CompletionCheckOnReview requires timed review and completion checks.'
+    throw 'Case10CompletionCheckOnReview requires reserved review and completion checks.'
   }
   $limits | Add-Member -MemberType NoteProperty -Force -Name completion_check_on_review -Value $true
+}
+
+function Get-BenchmarkReviewRequestReserve([hashtable]$case, [string]$agent) {
+  if ($case.Id -eq '10-receipt-ledger' -and $agent -eq 'rupi' -and
+      $Case10CompletionReviewRequestReserve -gt 0) { return $Case10CompletionReviewRequestReserve }
+  return $null
+}
+
+function Set-BenchmarkReviewRequestReserve([hashtable]$case, [object]$limits) {
+  $selected = Get-BenchmarkReviewRequestReserve $case 'rupi'
+  if ($null -eq $selected) { return }
+  if (-not $Case10ReviewCompletion -or $selected -ge ($MaxModelRequestsPerTurn - 1)) {
+    throw 'Case10 request review reserve requires review and a larger ordinary request allowance.'
+  }
+  $limits | Add-Member -MemberType NoteProperty -Force `
+    -Name completion_review_request_reserve -Value $selected
 }
 
 function Get-BenchmarkInitialThinking([hashtable]$case, [string]$agent) {
@@ -2353,6 +2378,7 @@ function New-BenchmarkWorkspace([hashtable]$case, [string]$agentRoot, [string]$t
     Set-BenchmarkInitialArgumentLimit $case $config.limits
     Set-BenchmarkInitialThinking $case $config.limits
     Set-BenchmarkReviewCheck $case $config.limits
+    Set-BenchmarkReviewRequestReserve $case $config.limits
     if ($case.Id -eq "10-receipt-ledger" -and $Case10CompletionChecks -gt 0) {
       $config.limits | Add-Member -MemberType NoteProperty -Force `
         -Name max_completion_checks_per_turn -Value $Case10CompletionChecks
@@ -2712,6 +2738,8 @@ function Invoke-AgentCase([hashtable]$case, [string]$agent, [string]$root, [stri
           $agent -eq "rupi" -and $Case10CompletionChecks -gt 0
         ) { $Case10CompletionChecks } else { $null }
         $turnRecord["configured_completion_check_on_review"] = Get-BenchmarkReviewCheck $case $agent
+        $turnRecord["configured_completion_review_request_reserve"] =
+          Get-BenchmarkReviewRequestReserve $case $agent
         $turnRecord["configured_max_mutating_tool_calls_per_turn"] =
           Get-BenchmarkMutatingBudget $case $agent
         $turnRecord["configured_initial_progress_max_output_tokens"] =
@@ -3582,6 +3610,8 @@ $summary = [ordered]@{
     $Case10CompletionChecks
   } else { $null }
   case10_rupi_completion_check_on_review = Get-BenchmarkReviewCheck @{Id='10-receipt-ledger'} 'rupi'
+  case10_rupi_completion_review_request_reserve =
+    Get-BenchmarkReviewRequestReserve @{Id='10-receipt-ledger'} 'rupi'
   case10_rupi_max_mutating_tool_calls_per_turn =
     Get-BenchmarkMutatingBudget @{Id="10-receipt-ledger"} "rupi"
   case10_rupi_initial_progress_max_output_tokens =
