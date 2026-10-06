@@ -3124,3 +3124,43 @@ remained about219,925ms and total/mutation tool caps were not exhausted. Applica
 specific defects remain unknown. Next enhancement: opt-in bounded follow-up observation
 after a failed check and a request window, sharing the existing check allowance and safe
 boundary. No budget extensions, oracle exposure, manual solution or acceptance weakening.
+
+### Verified failed-check repair window and frozen Retry34
+
+Runtime/source4cc8425ffda7fc5af5eaaae619055748f4cab226 adds optional
+limits.completion_check_repair_request_window, default omitted. Failed observations arm
+a request window; another safe ordinary boundary obtains fresh feedback after the window.
+Failed rearms/Passed disarms; fresh final checking remains required. Coincident review and
+repair triggers use one callback. Shared allowance and terminal/cancel/deadline/Unknown/
+progress/tool/approval barriers remain. No timer/event/authority/budget extension.
+
+Owned comparison: omission repairs app chunks on stale feedback until cap8; window2
+refreshes public feedback, repairs tests and passes fresh final checking in5 requests.
+Disarm/renewal/coalescing/invalid/finalization/terminal and cancel/Unknown fixtures pass.
+Real CLI mailbox fourth mode has5 requests/3 observations, intermediate workspace assertion,
+fresh feedback/repair/final pass; original modes retain their counts/assertions/no-exec.
+Required local fmt/core-check/clippy/workspace tests/docs/debug-build pass:
+225 runtime/138 core/100 provider/25 CLI. Nine harness fixtures and selected profile/public
+SPEC/three reference hashes/18 other prompt hashes pass. Shared prompt SHA remains
+230589C5F20B5486CD84216CE5B6A0DB9734CE724C2903D891E4D50D9CFB3270.
+Parent author invariant review passes; no independent-review claim.
+
+Startup139.675ms cold/9.039ms warm median/11.095ms max; five restores
+70.45/455.10/2698.55/2841.90/5306.55us and context .4/.1/0/0/.3us pass all budgets.
+SourceCI37502259113 and exact frozen-checkout all3 CI must pass before launch.
+
+Frozen screen:
+bench-20261006-case10-repair-window3-request-reserve8-template-off-args2048-first8192-check8-mut32-review300-turn2370-retry34-rupi40-screen1-2400s.
+Adds repair window3, retaining Retry33 request reserve8/check allowance8/check_on_review,
+cap40 (39 ordinary plus finalization), timedreserve300s/native2370s/provider2394s/outer2400s/
+grace6; original direct8000 template globalOff/firstOff/first8192/argument2048/overall32768,
+initial boundary/recurringwindow3, mutation32/total64 and shared inputs/reference hashes.
+One Rupi turn; fresh matched Pi only after acceptance. Same physical model/original helpers.
+Actual generated/model/caller/oracle contents remain unread; no configured win yet.
+
+Frozen binary SHA256C0E143AF4476CF8D1405E4E360168C55976DC1FC58ABBA4CCED3392ED6DA0A5B;
+harness SHA2565BB67EFC561150739849A67A5E3E975FE330BA18CEE8CE4EC97A7A522533C88C;
+public host SHA256DC75BEB0995E0EC00C1D6AFC6AE34FCD53CA18CE5085D85B1C1A7ED70865A8FE.
+Root user policy SHA remains3CEE11E5D4D8C8CA7CCF34F87A64B18BB183D4AF9AF79AB964AE19D4EF39B496,
+never staged/modified. Parent usage68%5-hour/11%weekly, below authoritative95%/99%.
+Only main and active Case10 branches remain locally/remotely; detached artifacts retained.

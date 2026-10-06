@@ -55,4 +55,8 @@ claim completion. Existing counters, provenance transactions and native model re
 request-only selection adds no timer/dependency/startup I/O/event/rendering path. Config
 and direct-builder bounds preserve default omission and existing caps. Required local
 fmt/core-check/clippy/workspace-test/docs/debug-build gates pass:225 runtime,138 core,
-100 provider and25 CLI tests. Performance, remote CI and frozen screen remain pending.
+100 provider and25 CLI tests. Startup139.675ms cold/9.039ms warm median/11.095ms max;
+five restores70.45/455.10/2698.55/2841.90/5306.55us and five context .4/.1/0/0/.3us pass
+all budgets. Source4cc8425ffda7fc5af5eaaae619055748f4cab226 is pushed; sourceCI37502259113
+and exact frozen-checkout CI must pass all3 platforms before inference. Actual frozen
+Retry34 and paired evidence remain pending.

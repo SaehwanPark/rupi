@@ -1783,7 +1783,10 @@ TUI rendering passed all budgets (3.31–3.90 µs/unit); checkpointed restore me
   tests/acceptance fail/help pass. Reserved review and Failed check run after31 starts;
   no follow-up check before cap exhaustion. Frozen audits pass/slots idle. An optional
   failed-check repair request window is active work to refresh that feedback within
-  existing budgets. Full gates and newly frozen screen remain pending.
+  existing budgets. Local full Rust/debug checks pass (225 runtime/138 core/100 provider/
+  25 CLI), owned comparative and four-mode mailbox fixtures plus nine harness guards pass.
+  Startup139.675ms cold/9.039ms warm median/11.095ms max and five restore/five context
+  budgets pass. Parent author review passes; remote CI/new frozen Retry34 remain pending.
   No semantic cause, acceptance benefit, or paired Case10 win is established.
   Rupi-first screening and paired
   evidence/delivery checks remain pending. Broader project gates remain active.
