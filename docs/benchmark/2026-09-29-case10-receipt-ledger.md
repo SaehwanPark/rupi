@@ -2332,3 +2332,23 @@ CI and paired/final delivery checks remain required.
   and exact-head CI precede final delivery; fresh matched Pi follows only Rupi acceptance.
   No semantic/acceptance/causal/default/token benefit or paired Case10 win is established.
   Broad project gates remain active.
+
+### Retry23 frozen profile: anticipatory review
+
+- Planned run: `bench-20261006-case10-anticipatory-review300-turn1170-window3-budget4096-low-output32768-retry23-rupi40-screen1-1200s`; source/runtime
+  `a938b6ceb5450934d8a5f1a51282a79041312992`. Debug SHA256
+  `E435AB3BD081BD660108C078BDE3415DD9F84929A89EAD5A82DA5FBA30399D24`,
+  harness `ABC12977210CA2D8D565F4F70ED66EDCE2C9D20641DE72EA99F213A87463243A`,
+  unchanged helperA0BCAE68/model27356/relay23732.
+- Same selected Retry22 profile: low/budget4096/output32768, relay8003/deadline1194s,
+  cap40/window3, native turn1,170,000ms/review=true/reserve300,000ms,
+  outer1200s/grace6s. Shared prompt230589C5/full SPEC/three acceptance hashes unchanged.
+  Native Pi controls and control-count/position metadata remain unavailable/null.
+- One fresh Rupi development turn; no builds or source changes during inference.
+  Terminal frozen audits and idle model slots precede changes. Failure requires
+  analysis and a verified enhancement before any new attempt. Fresh matched Pi0.86.1
+  follows only Rupi acceptance. No result, paired win, or acceptance benefit exists yet.
+- Main plus active Case10 are the only actual local/remote branches after fetch/prune.
+  Active PR145 is retained; historical detached artifacts and root user policy edit
+  remain preserved. Required local checks/performance and parent review pass;
+  new exact-head CI and eventual paired delivery evidence remain pending.
