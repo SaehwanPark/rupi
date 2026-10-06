@@ -2978,3 +2978,47 @@ verify firstOff/later inheritance and paired Pi support from pinned adapter code
 selecting a comparison profile. No speculative capability claim, backend restart/helper
 replacement, hidden-reasoning claim or unchanged retry. Required verification and freeze
 must precede any new screen. Usage before next slice:19% five-hour/3% weekly.
+
+### Verified template dialect and frozen Retry32
+
+Sourcebe0c03268da20106d248f81616c3b7c63f3e40e1 adds explicit typed ChatTemplateEnableThinking;
+Off maps to chat_template_kwargs.enable_thinking=false and other levels true.
+Legacy thinking-key and default reasoning-effort encodings preserved; no arbitrary payload
+map, capability/effort-intensity/backend compliance/hidden-reasoning claim. Isolated
+Case10ThinkingInput selection requires direct budget0; both agents record selected dialect/
+false off_value. Pinned Pi chat-template thinking.enabled variable emits the exact tested
+boolean without adding preserve_thinking or effort. Pi implementation unchanged.
+
+Owned mapping covers all levels; config/derived-provider roundtrips and Rupi real CLI
+firstOff/laterLow wire preserve output/string limits and reasoning replay. Pinned Pi fake
+HTTP verifies exact Off false/Low true/no effort. Eight harness fixtures/full paired profile/
+shared prompt230589C5F20B5486CD84216CE5B6A0DB9734CE724C2903D891E4D50D9CFB3270/
+original18 case/phase/prompt hashes/full public SPEC/three reference hashes pass.
+
+Initial workspace verification found150ms timed cancel could fire PreRequest instead of
+Streaming. The fixture now cancels after the observed first delta, drains the fake POST,
+and preserves partial-output/quarantine/no-repost assertions. Caller timeout fixture had
+only1.1s after cleanup reserve and failed before command artifacts;18s/10s simulated work
+now verifies actual startup and Unavailable timeout. Production deadlines unchanged;
+focused and full corrected checks pass, no unchanged failure rerun. LESSONS.md records both.
+
+Required fmt/core-all-features/clippy/workspace tests/docs/debug pass (216 runtime/136 core/
+100 provider/25 CLI). Startup158.146ms cold/9.688ms median/11.706ms max; five restores
+69.60/432.10/2604.50/2564.30/4949.30us and five context0.4/0.1/0/0/0.3us pass.
+Parent author invariant review passes; no new event/status/render/timer/dependency/authority/
+startup network work, legacy/default semantics and tool/cancel/Unknown barriers retained.
+Source CI37487417266 running at freeze; no independent review or actual win claim.
+
+Run bench-20261006-case10-template-off-review-check-args2048-first8192-check8-mut32-review300-turn2370-retry32-rupi40-screen1-2400s: one fresh Rupi screen.
+Only requested template dialect changes from Retry31: direct8000/globalOff/firstOff,
+first output8192/later32768/first strings2048/checks8/check-on-review/mutations32/cap40/
+window3/initial/recurring/review/reserve300000ms/native2370000ms/provider2394000ms/
+outer2400s/grace6; same original model27356/helpers/sampling/context/tool policies.
+No budget selection/relay deadline/restart. Fresh matched Pi only after Rupi acceptance.
+Any failure requires new analysis and verified enhancement before another attempt.
+Debug9C269C404198134B4F7E1387D1E339399EAEAB97C7C493B3C7C80A8BC01C9BE0;
+harnessB64E015CAC4B5841BEC214FCD5230057E54E519124BBAFE4B196FEE16DD5DC74;
+hostDC75BEB0995E0EC00C1D6AFC6AE34FCD53CA18CE5085D85B1C1A7ED70865A8FE;
+helperA0BCAE689139BFD281CB91C209D5D8F6CF9EA42FD7EFF256BE02D97A871387C7.
+Root user policy hash unchanged; only main and active Case10 branches remain.
+Usage before freeze32% five-hour/5% weekly. Remote CI and final paired evidence pending.
