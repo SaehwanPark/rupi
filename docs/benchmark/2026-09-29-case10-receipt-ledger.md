@@ -3348,3 +3348,39 @@ are not coordinated: review never runs before failed observations are exhausted.
 Next bounded enhancement: optional review reserve based on remaining caller checks,
 activated only after fresh repairable Failed evidence, retaining existing review/allowance/
 final-check/effect/terminal contracts. No blind repeat, fresh Pi or merge; PR145 draft.
+
+### Retry38 terminal — review reached, periodic observations still exhaust the cap
+
+Run: bench-20261006-case10-checkreserve2-retry38-rupi40-screen1-2400s.
+Frozen91621e1416af91587cda59e3f720f22f91b828cf, source/runtimec8367a507a62a0d918222326ca86b4b835bc2aa9.
+Ends completion_check_exhausted at1,817,770ms, no outer/provider/verification timeout.
+All29 starts close with usage:103,407 known work=77,066 uncached input+26,341 output.
+Thirty tool requests/29 completions/1 observed failure/0 Unknown.
+All8 checks Failed after8/11/14/17/20/23/26/29, elapsed165/104/43/44/104/144/785/1557ms.
+One review after23, no finalization;2 progress boundaries/29 time controls/0 unknown kinds.
+Required files listed: README10469B, receiptledger/init81B, app35472B,
+tests/init35B, tests/test_receiptledger29232B. Tests/acceptance exits1, help0 four times.
+
+All frozen binary/runtime/harness/caller/helper/model/profile/control/prompt/SPEC/reference
+audits pass before source/build changes. SourceCI37529332167/frozenCI37529571462 all3 pass.
+Runner13200/Rupi7332/session95945 exit0 ended; all4 slots idle; root user-policy SHA
+3CEE11E5D4D8C8CA7CCF34F87A64B18BB183D4AF9AF79AB964AE19D4EF39B496 intact.
+Actual trace/model/generated files/caller feedback/private oracle diagnostics uninspected.
+Request-failure list is empty; acceptance/correctness is not established.
+
+The first launch setup produced a259-character Windows working directory. It stopped
+before any runtime state or turn summary; no Rupi process and slots idle. Owned no-model
+ProcessStartInfo fixture at259 chars reproduces Win32Exception/native267; at82 chars
+starts/exits0. Shortening only artifact ID yields159-character cwd and successful launch.
+Failed setup artifacts retained. This justified launch correction was not an inference
+retry and did not change frozen code/profile/acceptance or count unknown work as zero.
+See PR145 comment6025337719; all six CI jobs were already passed before runtime launch.
+
+Check reserve activates review at23 as configured, reusing the sixth fresh failure.
+Injection does not prove model use/correctness. The eighth periodic observation ends
+repair at29 while11 request slots and552,230ms native time remain. No final candidate
+or finalization check is reached; the periodic cadence consumes the final observation.
+Selected next enhancement: optional final-check reservation, preventing checkpoints
+from consuming the last check while retaining a fresh final check, all allowances,
+review and existing effect/terminal safeguards. No blind repeat, paired Pi or merge.
+PR145 remains draft; no configured win and precise semantic cause remains uninspected.
