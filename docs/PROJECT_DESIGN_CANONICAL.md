@@ -1278,6 +1278,8 @@ and reconciliation barriers on the active model. Do not enforce case-specific ar
 names or interpret review as external correctness certification. Defaults remain unchanged.
 An optional positive remaining-time reserve below the turn duration may trigger the same
 one-shot review before an ordinary provider attempt, including during ongoing tool work.
+The observed preceding provider/tool cycle may anticipate spending that reserve; this
+estimate resets each turn and cannot guarantee future latency or extend the deadline.
 It must not bypass cancellation, budget, approval, or unresolved-effect barriers.
 
 This is a distributed-systems-style reliability invariant.

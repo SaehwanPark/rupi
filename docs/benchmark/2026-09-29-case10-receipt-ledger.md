@@ -2288,3 +2288,47 @@ CI and paired/final delivery checks remain required.
   https://github.com/SaehwanPark/rupi/actions/runs/37417024915 .
 - Failure analysis and a verified code/runtime enhancement are required before the next
   single-turn screen. No unchanged retry is authorized by this result.
+
+### Anticipatory review scheduling verified before Retry23
+
+- Source analysis after Retry22 identifies a generic timing limitation: the reserve
+  check considers only current remaining time. Another slow provider/tool cycle can
+  spend the desired reserve before the next check. This source gap is distinct from
+  the unobserved application semantic cause; Retry22 proves review injection only,
+  not its timing/model use or a causal explanation of acceptance failure.
+- Plan: `docs/development/anticipatory-completion-review.md` (commit00042d8).
+  The ordinary loop now uses the preceding cycle's observed elapsed duration to
+  anticipate crossing the reserve with saturating arithmetic. First cycle uses zero;
+  fresh turn resets the observation. It triggers the existing one-shot control through
+  the same model, budgets, admission/cancellation and Unknown barriers. No new config,
+  timer, event kind, artifact enforcement, partial dispatch, or replay is introduced.
+  Unconfigured/default turns do not take an extra observation clock.
+- Owned slow/fast/fresh-turn runtime fixture fails before (exit101,
+  `.benchmark/anticipatory-review-before.log`) and passes after. It verifies that
+  slow-cycle review arrives while actual remaining time is above the literal reserve,
+  fast work retains first-answer review, and each fresh turn resets timing/one-shot state.
+  The estimate cannot guarantee future latency or extend a deadline.
+- Safe harness metrics add `completion_review_after_started_requests`: counts of
+  started requests at injection, scoped by SkipLines; native Pi null. Synthetic fixture
+  verifies positions1,2 and scoped1, counts/unknown kind, no control/model content,
+  and no invented usage. No actual old trace is parsed retrospectively.
+- Required fmt, core-all-features check, workspace Clippy/tests/docs/debug build pass:
+  all187 runtime/130 core tests. A final public-field doc correction is followed by
+  fmt/docs/debug rebuild; it changes no runtime semantics. Parent invariant review
+  passes; no independent model review is claimed.
+- Startup134.972ms cold/7.863ms warm median/9.147ms max meets250/100ms.
+  All five session-log restore budgets pass (92.10/594.50/2,562.00/2,449.40/4,652.60us);
+  this does not measure full canonical validation. All five context-experiment budgets
+  pass (0.40/0.10/0/0/0.30us). Rendering remains unchanged from the four passing
+  time-budget measurements.
+- Selected native profile/SPEC/three acceptance hashes pass; shared Case10 initial
+  prompt230589C5 and18 other-case initial/recovery prompt hashes remain unchanged.
+  Frozen candidate debug SHA256
+  `E435AB3BD081BD660108C078BDE3415DD9F84929A89EAD5A82DA5FBA30399D24`;
+  harness `ABC12977210CA2D8D565F4F70ED66EDCE2C9D20641DE72EA99F213A87463243A`;
+  helperA0BCAE68 and model27356/relay23732 remain unchanged. Root user policy edit
+  hash3CEE11E5 remains preserved; no acceptance fixtures/generated solution are modified.
+- Next screen is one fresh Rupi turn with the same Retry22 selected profile. Freeze
+  and exact-head CI precede final delivery; fresh matched Pi follows only Rupi acceptance.
+  No semantic/acceptance/causal/default/token benefit or paired Case10 win is established.
+  Broad project gates remain active.

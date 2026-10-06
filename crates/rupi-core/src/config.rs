@@ -407,7 +407,7 @@ pub struct RuntimeLimits {
   /// Ask the active model to review requested deliverables once per turn.
   #[serde(default, skip_serializing_if = "is_false")]
   pub review_completion: bool,
-  /// Trigger the configured one-shot review when at most this turn time remains.
+  /// Desired time reserve for review; the preceding cycle's observed cost can trigger it early.
   #[serde(default, skip_serializing_if = "Option::is_none")]
   pub completion_review_reserve_ms: Option<u64>,
   /// Optional cooperative wall-time budget for one turn. Omitted means no turn deadline.

@@ -1648,7 +1648,20 @@ TUI rendering passed all budgets (3.31–3.90 µs/unit); checkpointed restore me
   Owned reserve/config fixtures and safe control-count/scope/content-exclusion metrics
   fixture pass; required Rust checks pass. Startup144.344ms cold/9.194ms warm median/
   9.727ms max and five session-log restore (98.95–4,821.50us) plus five context budgets
-  pass. Parent invariant review passes; new source CI and one-turn screen are pending.
+  pass. Parent invariant review passes; exact5f86959 CI passes all three platforms.
+  Retry22 fails its single development turn at1,170.377s without an outer watchdog:
+  43,628 recorded work, eight closed requests/seven usage records, eight completed
+  tools and zero known failures/Unknown. Acceptance/tests/help fail; delivery metadata
+  lacks main/public tests/README. Safe telemetry proves one review injection and eight
+  time guides, but not model use; unfinished inference remains unknown. Source review
+  identifies a scheduling gap independent of the unobserved semantic cause: a slow
+  provider/tool cycle may spend the reserve before the next boundary check. The runtime
+  now anticipates that cost from the preceding cycle. An owned slow/fast/fresh-turn
+  fixture fails before and passes after; required Rust checks pass. Safe review request
+  positions and their scope/content-exclusion fixture pass. Startup134.972ms cold/
+  7.863ms warm median/9.147ms max and all five session-log restore (92.10–4,652.60us)
+  plus five context-experiment budgets pass. Rendering is unchanged. Parent invariant
+  review passes; source CI, fresh single-turn screening, and paired evidence remain pending.
   No semantic cause, acceptance benefit, or paired Case10 win is established.
   Rupi-first screening and paired
   evidence/delivery checks remain pending. Broader project gates remain active.

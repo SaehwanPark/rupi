@@ -2307,6 +2307,7 @@ function Read-RupiMetrics([string]$project, [int]$SkipLines = 0) {
     turn_time_budget = 0; completion_review = 0; progress_boundary = 0
     progress_correction = 0; request_finalization = 0; unknown = 0
   }
+  $reviewPositions = [Collections.Generic.List[int]]::new()
   $toolNames = [Collections.Generic.List[string]]::new(); $status = $null; $finish = [Collections.Generic.List[string]]::new()
   $seenLines = 0
   foreach ($file in $traceFiles) {
@@ -2319,6 +2320,7 @@ function Read-RupiMetrics([string]$project, [int]$SkipLines = 0) {
           $kind = [string]$record.kind
           if ($controlCounts.Contains($kind)) { $controlCounts[$kind]++ }
           else { $controlCounts["unknown"]++ }
+          if ($kind -eq "completion_review") { [void]$reviewPositions.Add($started) }
         }
         "model_request_started" { $started++ }
         "model_request_completed" {
@@ -2362,6 +2364,7 @@ function Read-RupiMetrics([string]$project, [int]$SkipLines = 0) {
     tool_failures = $toolFailed; tool_unknown = $toolUnknown; tool_names = @($toolNames)
     turn_status = $status; finish_reasons = @($finish)
     runtime_control_counts = $controlCounts
+    completion_review_after_started_requests = @($reviewPositions)
     measurement_scope = "turn"
   }
 }
@@ -2414,6 +2417,7 @@ function Read-PiMetrics([string]$stdoutPath) {
     usage_records = $known; tool_requests = $toolCalls; tool_completions = $toolResults
     tool_failures = $null; tool_unknown = $null; tool_names = @($toolNames)
     runtime_control_counts = $null
+    completion_review_after_started_requests = $null
     turn_status = $stop; finish_reasons = @($stop); session_id = $session; measurement_scope = "turn"
   }
 }

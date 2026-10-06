@@ -512,12 +512,15 @@ review. This is generic guidance, not artifact-name enforcement or correctness c
 Owned fixtures cover permitted repair, bounded/fresh review, durable native/control
 provenance, cap/no-tools behavior, deadline cancellation without dispatch, and Unknown barriers.
 Optional `completion_review_reserve_ms` requires enabled review and a positive reserve
-below the configured turn duration. When remaining time crosses that reserve during
-continuing work, the same one-shot review can trigger before the next ordinary provider
-attempt. An earlier first-answer review consumes that allowance, and new turns renew it.
+below the configured turn duration. Before another ordinary provider attempt, subtract
+the observed duration of the preceding provider/tool cycle from remaining time; if that
+projected remainder is within the reserve, trigger the same one-shot review. The first
+cycle uses zero observed cost. This estimate cannot guarantee future latency. An earlier
+first-answer review consumes that allowance, and new turns reset the cycle observation.
 Cancellation is checked first; no unresolved mutation or budget barrier is bypassed.
-Benchmark summaries expose whitelist counts of canonical control kinds and an unknown-kind
-count, without control text or model content; native Pi counts remain unavailable/null.
+Benchmark summaries expose whitelist counts of canonical control kinds, an unknown-kind
+count, and review positions as counts of started requests at injection, without control
+text or model content; native Pi control metrics remain unavailable/null.
 These counts measure injected controls, not proof that the model used their guidance.
 
 ## 10. Context engine

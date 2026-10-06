@@ -13,6 +13,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Added an opt-in bounded completion review so the active model can check requested
   deliverables and continue permitted work within existing turn budgets and safety barriers.
   An optional remaining-time reserve triggers the same one-shot review during ongoing work.
+  The preceding model/tool cycle's observed duration anticipates spending that reserve.
 - Added an optional cooperative turn-time budget with runtime-owned remaining-time
   guidance and an explicit exhausted status, preserving uncertain-mutation recovery.
 - Added an opt-in model progress boundary for bounded implementation turns. It can

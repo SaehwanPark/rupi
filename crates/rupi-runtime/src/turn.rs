@@ -1645,6 +1645,7 @@ impl<'a> TurnLoop<'a> {
     };
     let mut truncation_recovery_used = false;
     let mut completion_review_used = false;
+    let mut previous_cycle_started: Option<Instant> = None;
     while self.requests.load(Ordering::SeqCst) < normal_request_limit {
       if cancel.is_cancelled() {
         return self.finish(report, TurnStatus::Cancelled, clock, Some(turn_id.clone()));
@@ -1654,7 +1655,15 @@ impl<'a> TurnLoop<'a> {
         && !completion_review_used
         && self.completion_review_reserve.is_some_and(|reserve| {
           self.active_time_budget.as_ref().is_some_and(|budget| {
-            budget.deadline.saturating_duration_since(Instant::now()) <= reserve
+            // Review before another cycle of the observed cost could spend the reserve.
+            // This estimate neither interrupts a committed batch nor guarantees future latency.
+            budget
+              .deadline
+              .saturating_duration_since(Instant::now())
+              .saturating_sub(
+                previous_cycle_started.map_or(Duration::ZERO, |start| start.elapsed()),
+              )
+              <= reserve
           })
         })
       {
@@ -1680,6 +1689,14 @@ impl<'a> TurnLoop<'a> {
           clock,
           Some(turn_id.clone()),
         );
+      }
+      if self.review_completion
+        && self.tools_enabled
+        && !completion_review_used
+        && self.completion_review_reserve.is_some()
+        && self.active_time_budget.is_some()
+      {
+        previous_cycle_started = Some(Instant::now());
       }
       let response = match self.attempt(turn_id.clone(), &mut turn_history_start, cancel, progress)
       {
@@ -14252,6 +14269,107 @@ mod tests {
           .count(),
         2
       );
+    }
+  }
+
+  #[test]
+  fn proactive_review_anticipates_a_slow_cycle_and_resets_on_a_fresh_turn() {
+    struct CycleProgress(Duration);
+    impl TurnProgress for CycleProgress {
+      fn on_tool_finished(&mut self, _call: &ToolCallBlock, _result: &Executed) {
+        std::thread::sleep(self.0);
+      }
+    }
+    for slow in [true, false] {
+      let rounds: Vec<_> = (0..2)
+        .flat_map(|_| {
+          let mut turn = vec![
+            tool_call("write_probe", json!({"content":"owned fixture"})),
+            text("answer"),
+          ];
+          if !slow {
+            turn.push(text("reviewed answer"));
+          }
+          turn
+        })
+        .collect();
+      let provider = Scripted::new("anticipatory-review", rounds);
+      let seen = Arc::new(Mutex::new(Vec::new()));
+      let tools = registry_with(vec![Box::new(MutatingSpy {
+        seen: Arc::clone(&seen),
+        outcome: ToolOutcome::succeeded("written"),
+      })]);
+      let policy = rupi_core::ProfilePolicy::new(
+        rupi_core::ContextProfile::Balanced,
+        provider.capabilities().context_window,
+      );
+      let mut trace = Recorder::default();
+      let mut runtime = TurnLoop::new(
+        &provider,
+        &tools,
+        &policy,
+        &mut trace,
+        SessionId::new(),
+        TraceId::new(),
+      )
+      .with_completion_review(true)
+      .with_max_turn_duration(Some(Duration::from_secs(12)))
+      .with_completion_review_reserve(Some(Duration::from_secs(8)));
+      let mut progress = CycleProgress(if slow {
+        Duration::from_millis(2_400)
+      } else {
+        Duration::ZERO
+      });
+      let review_count = |request: &ModelRequest| {
+        request
+          .messages
+          .iter()
+          .filter(|message| {
+            message.origin
+              == rupi_core::MessageOrigin::RuntimeControl {
+                kind: RuntimeControlKind::CompletionReview,
+              }
+          })
+          .count()
+      };
+      for (turn, task) in ["first", "next"].into_iter().enumerate() {
+        let start = provider.requests().len();
+        let report = runtime
+          .run_turn(task, &CancelToken::new(), &mut progress)
+          .unwrap();
+        assert_eq!(report.status, TurnStatus::Completed);
+        assert_eq!(report.requests, if slow { 2 } else { 3 });
+        let requests = provider.requests();
+        assert_eq!(review_count(&requests[start]), turn);
+        assert_eq!(review_count(&requests[start + 1]), turn + usize::from(slow));
+        assert_eq!(review_count(requests.last().unwrap()), turn + 1);
+        let guide = requests[start + 1]
+          .messages
+          .iter()
+          .rev()
+          .find(|message| {
+            message.origin
+              == rupi_core::MessageOrigin::RuntimeControl {
+                kind: RuntimeControlKind::TurnTimeBudget,
+              }
+          })
+          .unwrap()
+          .text();
+        let remaining: u64 = guide
+          .split(", ")
+          .nth(2)
+          .unwrap()
+          .split_whitespace()
+          .next()
+          .unwrap()
+          .parse()
+          .unwrap();
+        assert!(
+          remaining > 8_000,
+          "fixture must precede the literal reserve"
+        );
+      }
+      assert_eq!(seen.lock().unwrap().len(), 2);
     }
   }
 
