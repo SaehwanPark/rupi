@@ -3276,3 +3276,29 @@ request40/native2370s/provider2394s/outer2400s, firstOff/templateOff/direct8000/
 first8192/args2048/check8/mut32/timeReserve300s/requestReserve8/repairWindow3.
 Same physical model and original helpers; no inference starts before sourceCI37514973343
 and exact frozen-head all3 CI pass. No configured acceptance or paired win; PR145 stays draft.
+
+### Retry36 terminal — complete deliverable set, late failed checks, request exhaustion
+
+Run: bench-20261006-case10-idle2394-preflight-repair3-reserve8-template-off-args2048-first8192-check8-mut32-review300-turn2370-retry36-rupi40-screen1-2400s.
+Frozen9ff5e4b73ad7811170d58cbfe8d58e3169ad4172, runtime/source8d046aa7b87683989c0277294b63e98b8dc8f96d.
+Ends budget_exhausted at1,819,016ms without outer/verification timeout or recorded request
+failure. All40 starts close with usage:124,891 known work=103,220 uncached input+21,671 output.
+Forty tool requests/38 completions/2 observed failures/0 Unknown.
+Review and first Failed caller check after31 (125ms), repair checks Failed after34 (43ms)
+and37 (2089ms). Three progress boundaries/40 time controls/one finalization/no unknown kinds.
+Required files all listed: README4043B, receiptledger/init824B, app57035B,
+tests/init45B, tests/test_receiptledger5320B; extra tests/test_cli_service5036B.
+Post-run tests/acceptance exits1, all four help exits0; no verification timeout.
+
+Every frozen binary/runtime/harness/caller/helper/model/profile/control/prompt/SPEC/reference
+audit passes before any source/build change. SourceCI37514973343 and frozenCI37515507168
+all3 jobs pass. Runner37852/Rupi26472 ended, session82349 exit0; all four model slots idle.
+Root user-policy hash remains3CEE11E5D4D8C8CA7CCF34F87A64B18BB183D4AF9AF79AB964AE19D4EF39B496.
+
+No provider timeout occurred on this path; causal benefit of the new idle limit is unproven.
+Recorded request-failure list is empty; that does not certify turn acceptance. Semantic
+diagnostics/model outputs/feedback/generated files/private oracle were not inspected.
+The request cap binds while native time retains550,984ms. Caller feedback first arrives
+after31, leaving eight ordinary attempts plus finalization; last Failed check after37 leaves
+only two ordinary attempts. Early initial caller checking is the next bounded enhancement.
+No configured win or fresh Pi; PR145 stays draft.
