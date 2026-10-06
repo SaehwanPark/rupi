@@ -3094,3 +3094,33 @@ public host SHA256DC75BEB0995E0EC00C1D6AFC6AE34FCD53CA18CE5085D85B1C1A7ED70865A8
 The root user policy remains untouched, verifiedSHA3CEE11E5D4D8C8CA7CCF34F87A64B18BB183D4AF9AF79AB964AE19D4EF39B496.
 Parent usage54%5-hour/9%weekly, below authoritative95%/99% thresholds.
 Only main and active Case10 branches remain locally/remotely; detached artifacts retained.
+
+### Retry33 terminal audit and repair-feedback root cause
+
+Frozen checkout6627ff72b5c08f985db51f65d94490dffe4a2bc6/runtime
+a0e17c63c7040b8a15cad33a71aa7f581ff30ba5:
+bench-20261006-case10-request-reserve8-template-off-args2048-first8192-check8-mut32-review300-turn2370-retry33-rupi40-screen1-2400s.
+One Rupi screen ended budget_exhausted at2,150,075ms without outer timeout.
+All40 started requests closed with usage:158,564 known work (132,913 uncached input,
+25,651 output).40 tool requests,37 completions,3 known failures,zero Unknown.
+Filename/byte metadata:README.md5751;receiptledger/__init__.py213;
+receiptledger/__main__.py61170;tests/__init__.py358;tests/test_receiptledger.py19561.
+All required files exist. Tests/acceptance exit1; four help checks exit0, no verification
+timeout. One review after31 starts and caller ordinal1 Failed after31 starts (779ms);
+six progress boundaries,40 time controls,one check control,one finalization,zero unknown
+control kinds. No ordinary final check or acceptance. All runtime requests have accounting.
+
+Every frozen binary/runtime/harness/host/helper/model/config/control/full prompt/SPEC/
+reference audit passed BEFORE subsequent changes. Source37494871347 and exact-freeze
+37495146902 CI pass all3 platforms; model slots idle and runner/child ended, screen exit0.
+Root user policy SHA unchanged. No generated/model/caller diagnostic/oracle contents read.
+
+The request reserve reached its intended boundary; actual compliance and causality of
+file creation remain unmeasured. Verified remaining gap: the only failed observation was
+followed by eight ordinary requests plus finalization, with no refreshed caller check.
+Checking currently waits for final assistant text or the one-shot review; tool-bearing
+repair can therefore spend its remaining cap using one old observation. Native time
+remained about219,925ms and total/mutation tool caps were not exhausted. Application-
+specific defects remain unknown. Next enhancement: opt-in bounded follow-up observation
+after a failed check and a request window, sharing the existing check allowance and safe
+boundary. No budget extensions, oracle exposure, manual solution or acceptance weakening.
