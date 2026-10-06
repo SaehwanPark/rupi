@@ -2647,3 +2647,33 @@ host699C871BE5AA9F141363ECC628AF7CE93A241097EFC9F587E01BE494A613AF69 and
 relayA0BCAE689139BFD281CB91C209D5D8F6CF9EA42FD7EFF256BE02D97A871387C7 unchanged.
 No inference was active during implementation/verification. Remote refs pruned; actual
 local/remote branches are only main and active Case10, with detached artifacts retained.
+
+### Retry27 terminal failure before mutation
+
+Frozen source c97d652223963fc92c53e35cfec333367e42d5f0 / checkout
+8f51674cb1885a1310c823e7238c8e587801c069 ends after404.128s without outer timeout:
+Failed(Semantic), finish reason length, output exactly8192. One request starts/closes and
+one usage record reports14,297 work (6,105 uncached input +8,192 output). One write is
+requested, zero tools complete, one known failure/zero Unknown; files list is empty.
+No completion candidate/check/review occurs. Controls: one time guide/one initial
+boundary, zero other controls. Acceptance/tests/four help exits are1, no verify timeout.
+No Pi or paired win exists.
+
+All frozen binary/harness/host/helper/source, selected controls/config, shared full
+prompt/SPEC/three-reference audits pass before changes; all four model slots are idle.
+Runner26068/child23500 end, screen process exit0. Exact frozen checkout passes Ubuntu,
+macOS and Windows CI: https://github.com/SaehwanPark/rupi/actions/runs/37454055170 .
+Parent did not inspect generated/model/diagnostic contents.
+
+Root cause is verified at the response boundary: the selected initial8192 ceiling is
+exhausted with length, so the first write cannot be treated as complete. Existing
+semantic rejection safely prevents dispatch/replay. This replaces Retry26's unmeasured
+first-response Transport with measured output truncation, but does not prove any net
+latency, token, tool-progress or acceptance benefit. Smaller coherent-change guidance
+did not produce a completed first mutation. The ceiling alone is insufficient.
+
+Before another attempt, investigate a bounded initial tool-payload contract and explicit
+incremental complete-call guidance using owned fixtures. Preserve failed-response
+no-dispatch/no-replay, canonical provenance, original model/relay and all safety barriers.
+Do not merely rerun this configuration or increase its output ceiling without a justified
+verified enhancement.
