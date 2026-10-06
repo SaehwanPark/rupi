@@ -1677,6 +1677,14 @@ TUI rendering passed all budgets (3.31–3.90 µs/unit); checkpointed restore me
   and fresh screening remain pending. The next configured screen grants a
   matched outer2400s/native2370s to address repeated wall-time expiry with unused
   request allowance; it cannot establish a causal attribution to one change.
+  Retry24 ends Completed at2,134.228s with37 closed requests/37 usage records,
+  134,740 recorded work and48 completed tools/zero known failures or Unknown.
+  First tools are writes and public tests are listed; help passes, README is absent,
+  acceptance/tests fail. Review follows six started requests. Frozen audits and
+  exact057e827 three-platform CI pass. Application semantic cause remains unmeasured.
+  A delegated completion-check investigation is pending: permitted public feedback
+  currently arrives after turn closure. No implementation is selected; effect,
+  provenance, budget and authority boundaries must be resolved before another screen.
   No semantic cause, acceptance benefit, or paired Case10 win is established.
   Rupi-first screening and paired
   evidence/delivery checks remain pending. Broader project gates remain active.
