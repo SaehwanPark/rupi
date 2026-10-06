@@ -7,18 +7,26 @@ function Get-CompletionCanonicalPath([string]$Path) {
 }
 
 function New-CompletionFeedbackHost(
-  [string]$Project, [string]$TurnRoot, [string]$Python, [object[]]$HelpArguments
+  [string]$Project, [string]$TurnRoot, [string]$Python, [object[]]$HelpArguments,
+  [string]$ScratchRoot = ''
 ) {
-  $root = Join-Path $TurnRoot ('completion-' + [Guid]::NewGuid().ToString('N'))
+  $name = 'completion-' + [Guid]::NewGuid().ToString('N')
+  $mailboxRoot = Join-Path $TurnRoot $name
+  $root = if ($ScratchRoot) { Join-Path $ScratchRoot $name } else { $mailboxRoot }
   $canonicalProject = Get-CompletionCanonicalPath $Project
-  $canonicalRoot = Get-CompletionCanonicalPath $root
-  if ($canonicalRoot -eq $canonicalProject -or
-      $canonicalRoot.StartsWith($canonicalProject + [IO.Path]::DirectorySeparatorChar,
-        [StringComparison]::OrdinalIgnoreCase)) {
-    throw 'Completion host artifacts must be outside the model workspace.'
+  foreach ($candidate in @($root, $mailboxRoot)) {
+    $canonicalRoot = Get-CompletionCanonicalPath $candidate
+    if ($canonicalRoot -eq $canonicalProject -or
+        $canonicalRoot.StartsWith($canonicalProject + [IO.Path]::DirectorySeparatorChar,
+          [StringComparison]::OrdinalIgnoreCase)) {
+      throw 'Completion host artifacts must be outside the model workspace.'
+    }
   }
-  $mailbox = Join-Path $root 'mailbox'
+  # Windows Process.Start cannot launch from the long run-local snapshot path.
+  # Keep the mailbox with the run, while a caller-selected short root retains check artifacts.
+  $mailbox = Join-Path $mailboxRoot 'mailbox'
   New-Item -ItemType Directory -Path $mailbox -Force | Out-Null
+  New-Item -ItemType Directory -Path $root -Force | Out-Null
   [pscustomobject]@{
     project = $canonicalProject
     root = [IO.Path]::GetFullPath($root)

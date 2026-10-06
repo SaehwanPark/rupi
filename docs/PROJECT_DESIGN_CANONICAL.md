@@ -390,6 +390,10 @@ workspace. Diagnostic feedback is external evidence, separate from static runtim
 and native assistant output. Cancellation and Unknown-effect barriers retain precedence.
 Unavailable observations end semantic failure without retry, failover or check replay.
 Neither an observation nor model self-review certifies overall task correctness.
+Caller snapshot and artifact paths must support child process startup as well as file
+creation. A short isolated scratch root may coexist with a run-local mailbox; preserve
+artifacts and keep both outside the canonical workspace. Path-layout failures remain
+unavailable observations and cannot justify replaying an uncertain check.
 
 A conceptual schema:
 

@@ -114,3 +114,15 @@ check `$LASTEXITCODE` explicitly after native programs, including `pwsh -File`. 
 native status incorrectly rejected a successful synthetic template probe. Immediate script
 status checks verified two ordered-fixture invocations with identical output. Keep these
 checks next to the command, before another operation replaces its status.
+
+## A writable Windows path may still be an invalid child working directory
+
+The completion host could create/copy a long run-derived snapshot, while Process.Start
+rejected its working directory before public checks ran. An owned short-path missing-file
+fixture returned Failed; the same long-path fixture threw "directory name is invalid".
+Select a short independent scratch root for snapshots/command artifacts while retaining
+the run-local mailbox and all evidence. Both roots must remain outside the canonical
+workspace. `bench/test-completion-feedback.ps1` reproduces the Windows baseline and checks
+short-root missing-deliverable failure, fresh repair success and canonical effect isolation.
+Keep observation Unavailable distinct from known failed checks; do not replay an uncertain
+check to hide a path-layout failure.

@@ -533,6 +533,8 @@ Expected divergences include:
   public feedback may permit bounded same-model repair, and unavailable observations stop
   without replay. Owned protocol/runtime/host fixtures cover this Rupi-specific behavior;
   native Pi control parity and acceptance benefit are not claimed;
+- caller public-check snapshots use a short isolated root for Windows process startup;
+  owned long-path/missing-deliverable/repair fixtures preserve observation classification;
 - potentially different internal session storage.
 
 These divergences should not unnecessarily break ecosystem-level reuse.

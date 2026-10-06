@@ -589,6 +589,11 @@ requires nonzero discovered tests. Private acceptance remains after the turn; no
 is copied or supplied. Host scratch effects/cleanup belong to the caller. Safe summaries
 retain control counts and check ordinal/status/elapsed/request-position scalars only;
 native Pi controls remain null. Counts do not prove that the model acted on feedback.
+The run-local mailbox stays associated with its turn. Public snapshots and command
+artifacts use an independent UUID below `.benchmark/completion-scratch`, avoiding Windows
+Process.Start failure on long run-derived working directories. Both roots are checked
+outside the canonical workspace; artifacts remain retained. Caller unavailability stays
+distinct from known missing-deliverable failure, and uncertain checks are never replayed.
 The harness can explicitly select a bounded Case10 mutation allowance within the total
 tool cap. Runtime defaults remain16 mutations/64 total; selecting headroom cannot bypass
 Unknown reconciliation, progress authorization, request/time limits or completion checks.

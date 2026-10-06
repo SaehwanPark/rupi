@@ -132,7 +132,8 @@ fn completion_mailbox_drives_a_real_cli_repair_without_new_execution_authority()
   let path = write_config(temp.path(), &server.base_url(), true);
   let mut config = RuntimeConfig::parse(&fs::read_to_string(&path).unwrap()).unwrap();
   config.limits.max_completion_checks_per_turn = Some(2);
-  config.limits.max_turn_duration_ms = Some(10_000);
+  // This fixture tests mailbox repair, not scheduling against a short deadline.
+  config.limits.max_turn_duration_ms = Some(60_000);
   config.tools.allow = vec!["read".into(), "write".into(), "edit".into(), "grep".into()];
   fs::write(&path, config.to_json_string().unwrap()).unwrap();
   let child = Command::new(env!("CARGO_BIN_EXE_rupi"))
@@ -151,9 +152,11 @@ fn completion_mailbox_drives_a_real_cli_repair_without_new_execution_authority()
     .spawn()
     .unwrap();
   let child_id = child.id();
+  let child_finished = std::sync::Arc::new(std::sync::atomic::AtomicBool::new(false));
+  let host_finished = std::sync::Arc::clone(&child_finished);
   let canonical_workspace = fs::canonicalize(&workspace).unwrap();
   let host = std::thread::spawn(move || {
-    let deadline = std::time::Instant::now() + std::time::Duration::from_secs(15);
+    let deadline = std::time::Instant::now() + std::time::Duration::from_secs(75);
     let mut seen = std::collections::BTreeSet::new();
     while seen.len() < 2 {
       for entry in fs::read_dir(&mailbox).unwrap() {
@@ -185,19 +188,29 @@ fn completion_mailbox_drives_a_real_cli_repair_without_new_execution_authority()
         fs::write(&temporary, serde_json::to_vec(&reply).unwrap()).unwrap();
         fs::rename(temporary, mailbox.join(format!("reply-{id}.json"))).unwrap();
       }
-      assert!(
-        std::time::Instant::now() < deadline,
-        "owned CLI mailbox did not finish"
-      );
+      if host_finished.load(std::sync::atomic::Ordering::SeqCst)
+        || std::time::Instant::now() >= deadline
+      {
+        break;
+      }
       std::thread::sleep(std::time::Duration::from_millis(5));
     }
+    seen.len()
   });
   let output = child.wait_with_output().unwrap();
-  host.join().unwrap();
-  assert!(
-    output.status.success(),
-    "{}",
+  child_finished.store(true, std::sync::atomic::Ordering::SeqCst);
+  let observations = host.join();
+  let diagnostics = format!(
+    "status {}; stdout: {}; stderr: {}",
+    output.status,
+    String::from_utf8_lossy(&output.stdout),
     String::from_utf8_lossy(&output.stderr)
+  );
+  assert!(output.status.success(), "{diagnostics}");
+  assert_eq!(
+    observations.expect("owned mailbox host failed"),
+    2,
+    "owned CLI exited without both mailbox observations: {diagnostics}"
   );
   assert_eq!(
     fs::read_to_string(workspace.join("app.txt")).unwrap(),

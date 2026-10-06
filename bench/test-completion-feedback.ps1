@@ -112,6 +112,56 @@ if (-not (Test-Path -LiteralPath (Join-Path $state.root "check-$id/1.stderr.txt"
 }
 Write-Owned 'tests/test_receiptledger.py' $passingTest
 
+# Long run paths must not become Windows child working directories. All data is owned.
+$missingProject = Join-Path $fixture 'owned-incomplete'
+New-Item -ItemType Directory -Path (Join-Path $missingProject 'receiptledger') -Force | Out-Null
+[IO.File]::WriteAllText((Join-Path $missingProject 'receiptledger/__init__.py'), '', $utf8)
+[IO.File]::WriteAllText((Join-Path $missingProject 'receiptledger/__main__.py'), "print('owned help')", $utf8)
+$longTurn = Join-Path $fixture ('long-run-' + 'x' * 150)
+$legacy = New-CompletionFeedbackHost $missingProject $longTurn $python @(@('--help'))
+if ($IsWindows) {
+  $failedStart = $false
+  try {
+    Invoke-CompletionPublicCheck $legacy ([pscustomobject]@{
+      request_id = [Guid]::NewGuid().ToString(); wait_timeout_ms = 30000
+    }) 30000 | Out-Null
+  } catch { $failedStart = $_.Exception.Message.Contains('directory name is invalid') }
+  if (-not $failedStart) { throw 'Owned baseline did not reproduce the long working-directory failure.' }
+}
+$shortRoot = Join-Path $repoRoot '.benchmark/completion-scratch-owned'
+$short = New-CompletionFeedbackHost $missingProject $longTurn $python @(@('--help')) -ScratchRoot $shortRoot
+$rejectedScratch = $false
+try {
+  New-CompletionFeedbackHost $missingProject $longTurn $python @(@('--help')) `
+    -ScratchRoot $missingProject | Out-Null
+} catch { $rejectedScratch = $true }
+if (-not $rejectedScratch -or -not $short.mailbox.StartsWith($longTurn) -or
+    -not $short.root.StartsWith($shortRoot) -or $short.root.Length + 60 -ge 260) {
+  throw 'Short snapshot root or run-local mailbox isolation failed.'
+}
+for ($ordinal = 1; $ordinal -le 2; $ordinal++) {
+  $requestId = [Guid]::NewGuid().ToString()
+  $request = [ordered]@{version=1;request_id=$requestId;process_id=$PID;ordinal=$ordinal;
+    workspace=$missingProject;wait_timeout_ms=30000}
+  [IO.File]::WriteAllText((Join-Path $short.mailbox "request-$requestId.json"),
+    ($request | ConvertTo-Json -Compress), $utf8)
+  Invoke-CompletionFeedbackHost $short $PID 30000
+  $reply = [IO.File]::ReadAllText((Join-Path $short.mailbox "reply-$requestId.json")) | ConvertFrom-Json
+  $expected = if ($ordinal -eq 1) {'failed'} else {'passed'}
+  if ($reply.status -cne $expected -or
+      ($ordinal -eq 1 -and -not $reply.feedback.Contains('tests/test_receiptledger.py')) -or
+      (Test-Path -LiteralPath (Join-Path $missingProject 'owned-observation.txt'))) {
+    throw 'Short-root public failure/repair or canonical effect isolation failed.'
+  }
+  if (-not (Test-Path -LiteralPath (Join-Path $short.root "check-$requestId/public-project"))) {
+    throw 'Caller snapshot artifacts were not retained.'
+  }
+  if ($ordinal -eq 1) {
+    Copy-Item -LiteralPath (Join-Path $project 'tests') -Destination $missingProject -Recurse
+    Copy-Item -LiteralPath (Join-Path $project 'README.md') -Destination $missingProject
+  }
+}
+
 # The real process wait path must service the callback while the child is still alive.
 $childScript = Join-Path $fixture 'owned-mailbox-child.py'
 $childSource = @'
@@ -147,4 +197,4 @@ $default = Invoke-External -FileName $python -Arguments @('-c', 'print("owned de
   -WorkingDirectory $fixture -StdoutPath (Join-Path $fixture 'default.stdout.txt') `
   -StderrPath (Join-Path $fixture 'default.stderr.txt') -TimeoutSeconds 5
 if ($default.exit_code -ne 0 -or $default.timed_out) { throw 'Default wait path changed.' }
-Write-Output 'Owned completion host fixtures passed: snapshots, public feedback, exclusion, once, timeout, live callback.'
+Write-Output 'Owned completion host fixtures passed: public checks, long/short roots, isolation, once, timeout, live callback.'

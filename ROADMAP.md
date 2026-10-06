@@ -1726,7 +1726,19 @@ TUI rendering passed all budgets (3.31–3.90 µs/unit); checkpointed restore me
   smaller schema bounds and real CLI wire; disabled/incomplete-response guards pass.
   Required Rust checks pass (211 runtime/134 core); startup140.496ms cold/8.711ms median/
   9.624ms max. All five restores (103.10–4937.90us) and context cases pass. Parent
-  invariant review passes; a frozen first2048-character screen remains pending.
+  invariant review passes. Retry28 ends Failed(Semantic) after1,928.185s:37 requests/
+  all usage record163,378 work,39 tools complete/one known failure/zero Unknown. App/init
+  are listed, public tests/README absent; acceptance/tests fail and all help passes.
+  First delegated observation is unavailable after186ms at request37. Frozen audits pass;
+  Windows CI fails the existing mailbox fixture's15s guard while Ubuntu/macOS pass.
+  Owned host investigation proves a long snapshot working directory fails Windows
+  Process.Start, while missing deliverables at a short path produce Failed feedback.
+  Short isolated snapshot roots are implemented, preserving run-local mailboxes and
+  artifacts; owned long-path failure/fresh repair/effect-isolation fixtures pass.
+  CLI mailbox fixture retains child diagnostics with60s/75s test-only budgets. Required
+  checks pass (211 runtime/134 core/25 CLI); startup139.137ms cold/8.211ms median/
+  8.884ms max meets budget. Unchanged runtime binary retains prior restore/context/render
+  evidence. A newly frozen screen remains pending; no actual caller exception was read.
   No semantic cause, acceptance benefit, or paired Case10 win is established.
   Rupi-first screening and paired
   evidence/delivery checks remain pending. Broader project gates remain active.

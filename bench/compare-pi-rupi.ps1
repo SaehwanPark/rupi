@@ -2576,7 +2576,8 @@ function Invoke-AgentCase([hashtable]$case, [string]$agent, [string]$root, [stri
       $args.Add("--prompt"); $args.Add($prompt); $args.Add("--no-color"); $args.Add("--no-reasoning"); $args.Add("--verbose")
       $completionCallback = $null
       if ($case.Id -eq "10-receipt-ledger" -and $Case10CompletionChecks -gt 0) {
-        $completionHost = New-CompletionFeedbackHost $workspace.project $turnRoot $python $case.Help
+        $completionHost = New-CompletionFeedbackHost $workspace.project $turnRoot $python $case.Help `
+          -ScratchRoot (Join-Path $repoRoot '.benchmark/completion-scratch')
         $args.Add("--completion-feedback-dir"); $args.Add($completionHost.mailbox)
         $completionCallback = {
           param($processId, $remainingMs)
