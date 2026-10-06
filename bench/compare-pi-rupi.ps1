@@ -66,6 +66,7 @@ param(
   [ValidateRange(0, 100)]
   [int]$Case10CompletionCheckRepairRequestWindow = 0,
   [switch]$Case10CompletionCheckOnReview,
+  [switch]$Case10CompletionCheckReserveFinal,
   [ValidateRange(0, 64)]
   [int]$Case10MaxMutatingToolCalls = 0,
   [ValidateSet("one_shot", "recurring")]
@@ -76,6 +77,9 @@ param(
 )
 
 $ErrorActionPreference = "Stop"
+if ($Case10CompletionCheckReserveFinal -and $Case10CompletionChecks -lt 2) {
+  throw 'Case10 final check reserve requires at least two completion checks.'
+}
 if ($Case10CompletionReviewCheckReserve -gt 0 -and
     (-not $Case10ReviewCompletion -or $Case10CompletionChecks -lt 2 -or
      $Case10CompletionReviewCheckReserve -ge $Case10CompletionChecks)) {
@@ -2304,6 +2308,22 @@ function Get-BenchmarkReviewRequestReserve([hashtable]$case, [string]$agent) {
   return $null
 }
 
+function Get-BenchmarkFinalCheckReserve([hashtable]$case, [string]$agent) {
+  if ($case.Id -eq '10-receipt-ledger' -and $agent -eq 'rupi' -and
+      $Case10CompletionCheckReserveFinal) { return $true }
+  return $null
+}
+
+function Set-BenchmarkFinalCheckReserve([hashtable]$case, [object]$limits) {
+  $selected = Get-BenchmarkFinalCheckReserve $case 'rupi'
+  if ($null -eq $selected) { return }
+  if ($Case10CompletionChecks -lt 2) {
+    throw 'Case10 final check reserve requires at least two completion checks.'
+  }
+  $limits | Add-Member -MemberType NoteProperty -Force `
+    -Name completion_check_reserve_final -Value $true
+}
+
 function Get-BenchmarkReviewCheckReserve([hashtable]$case, [string]$agent) {
   if ($case.Id -eq '10-receipt-ledger' -and $agent -eq 'rupi' -and
       $Case10CompletionReviewCheckReserve -gt 0) { return $Case10CompletionReviewCheckReserve }
@@ -2478,6 +2498,7 @@ function New-BenchmarkWorkspace([hashtable]$case, [string]$agentRoot, [string]$t
     Set-BenchmarkInitialCheckWindow $case $config.limits
     Set-BenchmarkReviewRequestReserve $case $config.limits
     Set-BenchmarkReviewCheckReserve $case $config.limits
+    Set-BenchmarkFinalCheckReserve $case $config.limits
     if ($case.Id -eq "10-receipt-ledger" -and $Case10CompletionChecks -gt 0) {
       $config.limits | Add-Member -MemberType NoteProperty -Force `
         -Name max_completion_checks_per_turn -Value $Case10CompletionChecks
@@ -2863,6 +2884,8 @@ function Invoke-AgentCase([hashtable]$case, [string]$agent, [string]$root, [stri
           Get-BenchmarkReviewRequestReserve $case $agent
         $turnRecord['configured_completion_review_check_reserve'] =
           Get-BenchmarkReviewCheckReserve $case $agent
+        $turnRecord['configured_completion_check_reserve_final'] =
+          Get-BenchmarkFinalCheckReserve $case $agent
         $turnRecord["configured_max_mutating_tool_calls_per_turn"] =
           Get-BenchmarkMutatingBudget $case $agent
         $turnRecord["configured_initial_progress_max_output_tokens"] =
@@ -3741,6 +3764,8 @@ $summary = [ordered]@{
     Get-BenchmarkReviewRequestReserve @{Id='10-receipt-ledger'} 'rupi'
   case10_rupi_completion_review_check_reserve =
     Get-BenchmarkReviewCheckReserve @{Id='10-receipt-ledger'} 'rupi'
+  case10_rupi_completion_check_reserve_final =
+    Get-BenchmarkFinalCheckReserve @{Id='10-receipt-ledger'} 'rupi'
   case10_rupi_max_mutating_tool_calls_per_turn =
     Get-BenchmarkMutatingBudget @{Id="10-receipt-ledger"} "rupi"
   case10_rupi_initial_progress_max_output_tokens =

@@ -153,3 +153,12 @@ deadline/protocol uncertainty Unavailable. Owned missing-init comparison verifie
 masking, zero new command starts and fresh full-check success. Use an explicit historical
 revision for optional comparisons; default fixtures must survive commits/squash merges.
 Long-path launch fixtures need complete workspaces to reach Process.Start after preflight.
+
+## Renewal fixtures must separate retained history from new turn controls
+
+Model requests on a fresh turn retain prior canonical runtime controls. Testing whether
+any review message exists therefore mistakes a historical review for a new trigger.
+Compare review counts against the first request of each turn, and independently assert
+new trace events and renewed observation ordinals. The final-check reservation fixture
+verifies one new review per turn, its ordering and fresh final checks without discarding
+legitimate history or changing runtime behavior to satisfy a test.

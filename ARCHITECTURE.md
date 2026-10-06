@@ -646,6 +646,15 @@ triggers share the review flag. Passed, Unavailable, last Failed, cancellation, 
 requests and no-tools paths cannot activate this trigger. Fresh final checks and all
 existing budgets/effect barriers remain; counters/review state reset each turn.
 
+Optional `completion_check_reserve_final` defaults to false and requires at least two
+checks. Initial/repair/review checkpoints pause when only the last observation remains.
+The next ordinary final candidate still needs a fresh check. If one-shot review is unused,
+perform that review before consuming this last check, then check a new final candidate.
+No allowance grows and latest Failed evidence remains external data. Last Failed and
+Unavailable still terminate; no-tools request-budget assessment stays incomplete and
+does not consume the reserved check. Invalid direct builders retain legacy behavior.
+All effect/progress/tool/approval/cancel/deadline barriers and per-turn renewal remain.
+
 Static `CompletionCheck` guidance is a runtime control; bounded UTF-8 feedback (16KiB)
 is separate external context
 from `delegated_completion_check`, with citation and ordinal/status/elapsed metadata.

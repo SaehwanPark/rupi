@@ -1349,6 +1349,12 @@ review after fresh repairable Failed evidence, while ordinary work remains. Reus
 observation rather than checking twice on the boundary; share review with time, request
 and accepted-answer triggers. Passed, Unavailable and last Failed evidence cannot activate
 this trigger. Fresh final checking and existing check/request/time/effect barriers remain.
+Optional final-check reservation, requiring at least two checks, prevents periodic
+checkpoints from consuming the last observation. Continue bounded authorized work with
+the latest evidence; an ordinary final candidate still needs a fresh check. If review
+is unused, perform it before consuming the last check and require a new final candidate.
+No-tools request-budget assessment remains incomplete and does not gain checks/effects.
+No execution allowance increases; all terminal/effect/cancel/deadline safeguards remain.
 
 This is a distributed-systems-style reliability invariant.
 

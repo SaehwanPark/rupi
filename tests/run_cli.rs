@@ -121,14 +121,16 @@ fn completion_mailbox_drives_a_real_cli_repair_without_new_execution_authority()
     "repair_window",
     "initial_window",
     "check_reserve",
+    "final_reserve",
   ] {
     let early_review = matches!(review_mode, "timed" | "requests");
     let initial_window = review_mode == "initial_window";
     let repair_window = review_mode == "repair_window";
     let check_reserve = review_mode == "check_reserve";
+    let final_reserve = review_mode == "final_reserve";
     let expected_checks = if check_reserve {
       4
-    } else if repair_window {
+    } else if repair_window || final_reserve {
       3
     } else {
       2
@@ -139,7 +141,7 @@ fn completion_mailbox_drives_a_real_cli_repair_without_new_execution_authority()
     fs::create_dir(&workspace).unwrap();
     fs::create_dir(&mailbox).unwrap();
     let mut responses = vec![
-      if early_review || initial_window || check_reserve {
+      if early_review || initial_window || check_reserve || final_reserve {
         tool_response(
           "initial",
           "write",
@@ -157,13 +159,24 @@ fn completion_mailbox_drives_a_real_cli_repair_without_new_execution_authority()
       ),
       text_response("checked candidate"),
     ];
-    if check_reserve {
+    if check_reserve || final_reserve {
       responses.insert(
         1,
         tool_response(
           "intermediate",
           "write",
           r#"{"path":"app.txt","contents":"owned intermediate"}"#,
+          None,
+        ),
+      );
+    }
+    if final_reserve {
+      responses.insert(
+        2,
+        tool_response(
+          "remaining-repair",
+          "write",
+          r#"{"path":"app.txt","contents":"owned remaining repair"}"#,
           None,
         ),
       );
@@ -189,6 +202,15 @@ fn completion_mailbox_drives_a_real_cli_repair_without_new_execution_authority()
     let path = write_config(temp.path(), &server.base_url(), true);
     let mut config = RuntimeConfig::parse(&fs::read_to_string(&path).unwrap()).unwrap();
     config.limits.max_completion_checks_per_turn = Some(expected_checks);
+    if final_reserve {
+      config.limits.max_model_requests_per_turn = 6;
+      config.limits.completion_check_initial_request_window = Some(1);
+      config.limits.completion_check_repair_request_window = Some(1);
+      config.limits.review_completion = true;
+      config.limits.completion_review_check_reserve = Some(1);
+      config.limits.completion_check_on_review = true;
+      config.limits.completion_check_reserve_final = true;
+    }
     if check_reserve {
       config.limits.max_model_requests_per_turn = 8;
       config.limits.completion_check_initial_request_window = Some(1);
@@ -263,16 +285,22 @@ fn completion_mailbox_drives_a_real_cli_repair_without_new_execution_authority()
           );
           let ordinal = request["ordinal"].as_u64().unwrap();
           assert_eq!(ordinal as usize, seen.len());
-          if (early_review || initial_window || check_reserve) && ordinal == 1 {
+          if (early_review || initial_window || check_reserve || final_reserve) && ordinal == 1 {
             assert_eq!(
               fs::read_to_string(canonical_workspace.join("app.txt")).unwrap(),
               "owned initial"
             );
           }
-          if (repair_window || check_reserve) && ordinal == 2 {
+          if (repair_window || check_reserve || final_reserve) && ordinal == 2 {
             assert_eq!(
               fs::read_to_string(canonical_workspace.join("app.txt")).unwrap(),
               "owned intermediate"
+            );
+          }
+          if final_reserve && ordinal == expected_checks as u64 {
+            assert_eq!(
+              fs::read_to_string(canonical_workspace.join("app.txt")).unwrap(),
+              "owned repaired"
             );
           }
           let id = request["request_id"].as_str().unwrap();
@@ -318,13 +346,13 @@ fn completion_mailbox_drives_a_real_cli_repair_without_new_execution_authority()
       requests.len(),
       if check_reserve {
         4
-      } else if repair_window {
+      } else if repair_window || final_reserve {
         5
       } else {
         3
       }
     );
-    if check_reserve {
+    if check_reserve || final_reserve {
       assert!(requests[2].body.contains("bounded review"));
       assert!(requests[2].body.contains("owned remaining failure"));
     }

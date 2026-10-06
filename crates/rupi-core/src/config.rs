@@ -418,6 +418,9 @@ pub struct RuntimeLimits {
   /// Request a caller observation when a reserved one-shot completion review begins.
   #[serde(default, skip_serializing_if = "is_false")]
   pub completion_check_on_review: bool,
+  /// Preserve the last observation for an ordinary final candidate after any review.
+  #[serde(default, skip_serializing_if = "is_false")]
+  pub completion_check_reserve_final: bool,
   /// Ask the active model to review requested deliverables once per turn.
   #[serde(default, skip_serializing_if = "is_false")]
   pub review_completion: bool,
@@ -475,6 +478,7 @@ impl Default for RuntimeLimits {
       completion_check_repair_request_window: None,
       completion_check_initial_request_window: None,
       completion_check_on_review: false,
+      completion_check_reserve_final: false,
       completion_review_reserve_ms: None,
       completion_review_request_reserve: None,
       completion_review_check_reserve: None,
@@ -755,6 +759,16 @@ impl RuntimeConfig {
           "checks and a positive window below the ordinary request allowance"
         )
         .into(),
+      ));
+    }
+    if self.limits.completion_check_reserve_final
+      && self
+        .limits
+        .max_completion_checks_per_turn
+        .is_none_or(|checks| checks < 2)
+    {
+      return Err(ConfigError(
+        "limits.completion_check_reserve_final requires at least two completion checks".into(),
       ));
     }
     if let Some(duration) = self.limits.max_turn_duration_ms
@@ -1390,6 +1404,30 @@ mod tests {
     assert!(parsed.limits.completion_check_on_review);
     assert_eq!(parsed.limits.completion_review_request_reserve, None);
     assert_eq!(parsed.limits.completion_review_reserve_ms, None);
+  }
+
+  #[test]
+  fn completion_check_reserve_final_is_opt_in_and_requires_two_checks() {
+    let mut config = sample_config();
+    assert!(
+      serde_json::to_value(&config).unwrap()["limits"]
+        .get("completion_check_reserve_final")
+        .is_none()
+    );
+    for checks in [None, Some(1), Some(2), Some(8)] {
+      config.limits.max_completion_checks_per_turn = checks;
+      config.limits.completion_check_reserve_final = true;
+      let parsed = RuntimeConfig::parse(&config.to_json_string().unwrap());
+      assert_eq!(parsed.is_ok(), checks.is_some_and(|c| c >= 2));
+      if let Ok(parsed) = parsed {
+        assert!(parsed.limits.completion_check_reserve_final);
+        assert!(!parsed.limits.review_completion);
+        assert_eq!(parsed.limits.max_turn_duration_ms, None);
+      }
+    }
+    config.limits.max_completion_checks_per_turn = None;
+    config.limits.completion_check_reserve_final = false;
+    assert!(RuntimeConfig::parse(&config.to_json_string().unwrap()).is_ok());
   }
 
   #[test]

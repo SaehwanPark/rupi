@@ -311,6 +311,7 @@ fn open_session_with_feedback(
       .map(|window| window as usize),
   )
   .with_completion_check_on_review(config.limits.completion_check_on_review)
+  .with_completion_check_reserve_final(config.limits.completion_check_reserve_final)
   .with_completion_review_check_reserve(config.limits.completion_review_check_reserve)
   .with_completion_review_request_reserve(
     config

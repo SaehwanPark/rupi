@@ -1813,6 +1813,12 @@ TUI rendering passed all budgets (3.31–3.90 µs/unit); checkpointed restore me
   review31. All29 usage known, required files present, tests/acceptance fail/help passes;
   frozen audits pass/slots idle/no timeouts. Caller-check reserve for one-shot review is
   active work to coordinate the two caps; no semantic cause or configured win established.
+  Check-review sourcec8367a5/frozen91621e1 all3 CI pass. Retry38 reaches review23;
+  eight Failed periodic observations still exhaust the check cap29 before a final
+  candidate, leaving11 request slots/552s native time. All29 usage known/required files
+  listed, tests/acceptance fail/help passes, frozen audits pass/slots idle/no timeouts.
+  Optional final-check reservation is active to retain one fresh observation for the
+  final candidate while preserving all allowances; no acceptance or configured win yet.
   No semantic cause, acceptance benefit, or paired Case10 win is established.
   Rupi-first screening and paired
   evidence/delivery checks remain pending. Broader project gates remain active.

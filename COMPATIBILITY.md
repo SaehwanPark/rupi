@@ -550,6 +550,8 @@ Expected divergences include:
   sharing that allowance and retaining review/final checking; native Pi selection is null;
 - optional caller-check reserve activates review after fresh repairable Failed evidence,
   reusing that check and preserving all allowances; native Pi selection is null;
+- optional final-check reservation pauses checkpoints before the last observation,
+  orders pending review first and requires fresh final checking; native Pi selection is null;
 - caller public snapshot preflight preserves missing-file failures before command execution;
   repaired workspaces still require full public checks, with no native Pi parity claim;
 - caller public-check snapshots use a short isolated root for Windows process startup;
