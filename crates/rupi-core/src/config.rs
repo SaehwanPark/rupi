@@ -438,6 +438,9 @@ pub struct RuntimeLimits {
   /// Optional output ceiling for the first request of an active initial progress boundary.
   #[serde(default, skip_serializing_if = "Option::is_none")]
   pub initial_progress_max_output_tokens: Option<u64>,
+  /// Optional Unicode character limit per string argument in the first mutating request.
+  #[serde(default, skip_serializing_if = "Option::is_none")]
+  pub initial_progress_max_argument_chars: Option<u64>,
   /// Tool names that count as progress when the progress boundary is active.
   /// An empty list uses every permitted mutating tool instead.
   #[serde(default, skip_serializing_if = "Vec::is_empty")]
@@ -458,6 +461,7 @@ impl Default for RuntimeLimits {
       progress_boundary_mode: ProgressBoundaryMode::OneShot,
       initial_progress_boundary: false,
       initial_progress_max_output_tokens: None,
+      initial_progress_max_argument_chars: None,
       progress_tool_names: Vec::new(),
     }
   }
@@ -659,6 +663,18 @@ impl RuntimeConfig {
     }
     if self.state_dir.trim().is_empty() {
       return Err(ConfigError("state_dir is required".into()));
+    }
+    if let Some(limit) = self.limits.initial_progress_max_argument_chars
+      && (!(1..=65_536).contains(&limit)
+        || self.limits.initial_progress_max_output_tokens.is_none())
+    {
+      return Err(ConfigError(
+        concat!(
+          "limits.initial_progress_max_argument_chars requires an initial progress output ",
+          "ceiling and a value between 1 and 65536"
+        )
+        .into(),
+      ));
     }
     if let Some(limit) = self.limits.initial_progress_max_output_tokens
       && (!(1..=65_536).contains(&limit) || !self.limits.initial_progress_boundary)
@@ -1265,6 +1281,47 @@ mod tests {
         .0
         .contains("max_mutating_tool_calls_per_turn")
     );
+  }
+
+  #[test]
+  fn initial_argument_limit_requires_output_selection_and_is_bounded() {
+    let mut config = sample_config();
+    assert!(
+      serde_json::to_value(&config).unwrap()["limits"]
+        .get("initial_progress_max_argument_chars")
+        .is_none()
+    );
+    config.limits.initial_progress_max_argument_chars = Some(2_048);
+    assert!(
+      config
+        .validate()
+        .unwrap_err()
+        .0
+        .contains("max_argument_chars")
+    );
+    config.limits.initial_progress_max_output_tokens = Some(8_192);
+    config.limits.initial_progress_boundary = true;
+    config.limits.max_model_requests_without_progress = Some(3);
+    for limit in [1, 2_048, 65_536] {
+      config.limits.initial_progress_max_argument_chars = Some(limit);
+      assert_eq!(
+        RuntimeConfig::parse(&config.to_json_string().unwrap())
+          .unwrap()
+          .limits
+          .initial_progress_max_argument_chars,
+        Some(limit)
+      );
+    }
+    for limit in [0, 65_537, u64::MAX] {
+      config.limits.initial_progress_max_argument_chars = Some(limit);
+      assert!(
+        config
+          .validate()
+          .unwrap_err()
+          .0
+          .contains("max_argument_chars")
+      );
+    }
   }
 
   #[test]

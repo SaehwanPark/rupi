@@ -10,6 +10,10 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Added
 
+- Added optional initial mutating-tool string argument bounds, with request-local schema
+  constraints and pre-dispatch rejection of oversized completed calls. Unicode counting,
+  first-request capture and fresh-turn renewal are verified; later calls remain available.
+
 - Added an optional initial progress output ceiling for the first ordinary request only,
   with smaller-change guidance, endpoint/context clamping and renewal each turn. Later
   requests retain the endpoint ceiling. The Case10 harness can select this independently;

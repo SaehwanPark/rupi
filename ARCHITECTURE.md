@@ -518,6 +518,17 @@ coherent completed change without claiming delivery or correctness. Omission pre
 existing behavior. Owned runtime and CLI wire fixtures cover renewal, endpoint/context
 clamping, skipped paths and incomplete-response no-dispatch/no-replay.
 
+Optional `initial_progress_max_argument_chars` (1..=65536) requires the initial output
+ceiling. The first request captures a per-string Unicode scalar limit for mutating
+tools: request-local schemas add `maxLength` without enlarging existing constraints or
+changing registry identities, and descriptions state the generic restriction. Completed
+oversized calls use the existing rejected-call lifecycle before dispatch, with known no
+effect and total-call accounting; they cannot release progress. Nested string values
+and arrays are checked. Later requests are unrestricted by this selection, and fresh
+turns renew it. Initial guidance asks for one small coherent complete mutation followed
+by incremental complete calls. It enforces no artifact names or task correctness, and
+neither partial responses nor failed mutations are replayed. Omission preserves behavior.
+
 ### Opt-in completion review
 
 `RuntimeLimits::review_completion` defaults to false. When enabled, the first otherwise

@@ -1715,7 +1715,17 @@ TUI rendering passed all budgets (3.31–3.90 µs/unit); checkpointed restore me
   Required Rust checks pass (209 runtime/133 core); startup145.705ms cold/8.825ms median/
   9.735ms max. All five session restores (109.95–5233.80us) and five context cases pass.
   Parent invariant review passes; the next frozen screen selects first8192/later32768
-  with checks8/mutations32 and the other Retry26 controls preserved. Screen remains pending.
+  with checks8/mutations32 and the other Retry26 controls preserved. Retry27 ends
+  Failed(Semantic) after404.128s, length at exactly8192 output tokens. One write is
+  requested, none complete; files are absent and14,297 known work is recorded. All
+  acceptance/tests/help gates fail. Frozen audits and three-platform8f51674 CI pass.
+  The output ceiling alone safely prevents truncated dispatch but is insufficient.
+  Optional initial mutating-tool string bounds are implemented with request-local
+  schema constraints and pre-dispatch known-no-effect rejection. Owned fixtures prove
+  omission versus enforcement, first-only/fresh renewal, Unicode/nesting, existing
+  smaller schema bounds and real CLI wire; disabled/incomplete-response guards pass.
+  Required Rust checks pass (211 runtime/134 core); startup140.496ms cold/8.711ms median/
+  9.624ms max. Session/context checks and a frozen first2048-character screen remain pending.
   No semantic cause, acceptance benefit, or paired Case10 win is established.
   Rupi-first screening and paired
   evidence/delivery checks remain pending. Broader project gates remain active.

@@ -275,6 +275,7 @@ fn configured_initial_output_ceiling_reaches_the_provider_wire_first_only() {
   config.limits.max_model_requests_without_progress = Some(3);
   config.limits.initial_progress_boundary = true;
   config.limits.initial_progress_max_output_tokens = Some(8_192);
+  config.limits.initial_progress_max_argument_chars = Some(2_048);
   fs::write(&path, config.to_json_string().unwrap()).unwrap();
   let output = run(&path, &workspace, "create owned.txt");
   assert!(
@@ -287,7 +288,28 @@ fn configured_initial_output_ceiling_reaches_the_provider_wire_first_only() {
   let first: serde_json::Value = serde_json::from_str(&requests[0].body).unwrap();
   let later: serde_json::Value = serde_json::from_str(&requests[1].body).unwrap();
   assert_eq!(first["max_tokens"], 8_192);
+  let first_write = first["tools"]
+    .as_array()
+    .unwrap()
+    .iter()
+    .find(|tool| tool["function"]["name"] == "write")
+    .unwrap();
+  assert_eq!(
+    first_write["function"]["parameters"]["properties"]["contents"]["maxLength"],
+    2_048
+  );
   assert_eq!(later["max_tokens"], 32_768);
+  let later_write = later["tools"]
+    .as_array()
+    .unwrap()
+    .iter()
+    .find(|tool| tool["function"]["name"] == "write")
+    .unwrap();
+  assert!(
+    later_write["function"]["parameters"]["properties"]["contents"]
+      .get("maxLength")
+      .is_none()
+  );
   assert_eq!(first["model"], later["model"]);
   assert_eq!(
     fs::read_to_string(workspace.join("owned.txt")).unwrap(),

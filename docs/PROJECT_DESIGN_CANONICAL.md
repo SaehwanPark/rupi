@@ -1293,6 +1293,14 @@ limits on later requests even if progress is still unsatisfied. Guidance may ask
 small coherent completed first change; it cannot claim correctness, enforce artifacts,
 dispatch incomplete tool calls or replay a failed response. Default omission is unchanged.
 
+A separately selected initial string-argument limit may constrain mutating tools in
+that first request. Capture the restriction with the request, advertise Unicode scalar
+bounds in request-local schemas without changing registry identities, and reject
+completed oversized calls before dispatch with known no effect. Count total calls,
+retain progress requirements, and renew only on a new turn. Later requests keep normal
+tool contracts. Guidance may ask for incremental complete changes, but cannot authorize
+new effects, impose domain artifacts or turn incomplete responses into executable calls.
+
 A caller may opt into one bounded review after the first otherwise accepted ordinary
 completion. Preserve native assistant evidence and record review instructions with
 runtime provenance. Continue only through normal request/tool/time budgets, approval,

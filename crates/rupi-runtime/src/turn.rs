@@ -576,6 +576,7 @@ impl RequestToolBinding {
 struct BuiltRequest {
   request: ModelRequest,
   tool_bindings: BTreeMap<String, RequestToolBinding>,
+  initial_argument_chars: Option<u64>,
 }
 
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]
@@ -643,6 +644,7 @@ pub struct TurnLoop<'a> {
   progress_boundary_mode: ProgressBoundaryMode,
   initial_progress_boundary: bool,
   initial_progress_max_output_tokens: Option<u64>,
+  initial_progress_max_argument_chars: Option<u64>,
   /// Explicit progress tools, or an empty list meaning every permitted
   /// mutating tool when the boundary is active.
   progress_tool_names: Vec<String>,
@@ -750,6 +752,7 @@ impl<'a> TurnLoop<'a> {
       progress_boundary_mode: ProgressBoundaryMode::OneShot,
       initial_progress_boundary: false,
       initial_progress_max_output_tokens: None,
+      initial_progress_max_argument_chars: None,
       progress_tool_names: Vec::new(),
       progress_requests_without_progress: 0,
       progress_boundary_active: false,
@@ -905,6 +908,13 @@ impl<'a> TurnLoop<'a> {
   /// Later requests keep the endpoint ceiling; context admission may further clamp either.
   pub fn with_initial_progress_max_output_tokens(mut self, limit: Option<u64>) -> Self {
     self.initial_progress_max_output_tokens = limit;
+    self
+  }
+
+  /// Bound string arguments of mutating tools only in the selected initial request.
+  /// Counts Unicode scalar values, matching JSON Schema `maxLength`.
+  pub fn with_initial_progress_max_argument_chars(mut self, limit: Option<u64>) -> Self {
+    self.initial_progress_max_argument_chars = limit;
     self
   }
 
@@ -2565,6 +2575,7 @@ impl<'a> TurnLoop<'a> {
       let BuiltRequest {
         request,
         tool_bindings,
+        initial_argument_chars,
       } = self
         .build_bound_request(&turn_id, turn_history_start)
         .map_err(TurnFailure::from)?;
@@ -2630,7 +2641,7 @@ impl<'a> TurnLoop<'a> {
       let Collector {
         text,
         calls,
-        rejected_calls,
+        mut rejected_calls,
         committed,
         surface_output_emitted,
         reasoning_provenance: provenance,
@@ -2640,6 +2651,24 @@ impl<'a> TurnLoop<'a> {
         first_delta_ms,
         ..
       } = collector;
+      if let Some(limit) = initial_argument_chars {
+        for call in &calls {
+          if tool_bindings
+            .get(&call.name)
+            .is_some_and(|binding| !binding.read_only())
+            && arguments_exceed_string_limit(&call.arguments, limit)
+          {
+            rejected_calls
+              .entry(call.id.as_str().to_owned())
+              .or_insert_with(|| {
+                format!(
+                  "initial mutating call exceeds {limit} Unicode characters per string argument; \
+                 no tool was executed; use a smaller coherent complete call"
+                )
+              });
+          }
+        }
+      }
       if let Some(error) = sink_error {
         return Err(TurnFailure::Sink(error));
       }
@@ -3882,6 +3911,7 @@ impl<'a> TurnLoop<'a> {
     let max_output_tokens = self
       .initial_progress_output_limit(capabilities.max_output_tokens)
       .or(capabilities.max_output_tokens);
+    let initial_argument_chars = self.initial_argument_limit();
     let exposed = self.exposed_tool_bindings_for(&capabilities);
     let tool_choice = if self.progress_boundary_active && !exposed.is_empty() {
       ToolChoice::Required
@@ -3890,7 +3920,13 @@ impl<'a> TurnLoop<'a> {
     };
     let mut tools = Vec::with_capacity(exposed.len());
     let mut tool_bindings = BTreeMap::new();
-    for (spec, binding) in exposed {
+    for (mut spec, binding) in exposed {
+      if let Some(limit) = initial_argument_chars.filter(|_| !binding.read_only()) {
+        bound_schema_strings(&mut spec.parameters, limit);
+        spec.description.push_str(&format!(
+          " This initial request limits every string argument to {limit} Unicode characters."
+        ));
+      }
       tool_bindings.insert(spec.name.clone(), binding);
       tools.push(spec);
     }
@@ -3908,6 +3944,7 @@ impl<'a> TurnLoop<'a> {
     BuiltRequest {
       request,
       tool_bindings,
+      initial_argument_chars,
     }
   }
 
@@ -3922,6 +3959,11 @@ impl<'a> TurnLoop<'a> {
     self
       .initial_progress_max_output_tokens
       .map(|limit| endpoint_limit.map_or(limit, |endpoint| endpoint.min(limit)))
+  }
+
+  fn initial_argument_limit(&self) -> Option<u64> {
+    self.initial_progress_output_limit(None)?;
+    self.initial_progress_max_argument_chars
   }
 
   fn calibrated_prompt_estimate(
@@ -4216,6 +4258,14 @@ impl<'a> TurnLoop<'a> {
       ));
     }
     let kind = RuntimeControlKind::ProgressBoundary;
+    if let Some(limit) = self.initial_argument_limit() {
+      text.push_str(&format!(
+        " Every string argument in the first mutating request is limited to {limit} Unicode \
+         characters. Make one small coherent complete mutation now; extend it through later \
+         complete calls rather than placing the entire implementation in this first payload. \
+         Keep required behavior and verification as remaining work until completed."
+      ));
+    }
     let message = Message::runtime_control(text.clone(), kind);
     let envelope = self.emit_message(
       Some(turn_id.clone()),
@@ -5941,6 +5991,64 @@ fn payload_read_notice_matches(text: &str, reference: &str) -> bool {
     "\n\n[Archived output is available through payload_read: ref={reference}; offset=0; limit up to {MAX_PAYLOAD_READ_CHUNK_BYTES} bytes.]"
   );
   text.ends_with(&notice)
+}
+
+/// Restrict request-local schemas without changing registry definition identities.
+fn bound_schema_strings(schema: &mut serde_json::Value, limit: u64) {
+  let Some(object) = schema.as_object_mut() else {
+    return;
+  };
+  let string_type = object.get("type").is_some_and(|value| {
+    value.as_str() == Some("string")
+      || value
+        .as_array()
+        .is_some_and(|types| types.iter().any(|v| v == "string"))
+  });
+  if string_type {
+    let selected = object
+      .get("maxLength")
+      .and_then(serde_json::Value::as_u64)
+      .map_or(limit, |existing| existing.min(limit));
+    object.insert("maxLength".into(), selected.into());
+  }
+  for key in ["properties", "patternProperties", "$defs", "definitions"] {
+    if let Some(children) = object
+      .get_mut(key)
+      .and_then(serde_json::Value::as_object_mut)
+    {
+      for child in children.values_mut() {
+        bound_schema_strings(child, limit);
+      }
+    }
+  }
+  for key in ["items", "additionalProperties", "not", "if", "then", "else"] {
+    if let Some(child) = object.get_mut(key) {
+      bound_schema_strings(child, limit);
+    }
+  }
+  for key in ["prefixItems", "allOf", "anyOf", "oneOf"] {
+    if let Some(children) = object
+      .get_mut(key)
+      .and_then(serde_json::Value::as_array_mut)
+    {
+      for child in children {
+        bound_schema_strings(child, limit);
+      }
+    }
+  }
+}
+
+fn arguments_exceed_string_limit(arguments: &serde_json::Value, limit: u64) -> bool {
+  match arguments {
+    serde_json::Value::String(value) => value.chars().count() as u64 > limit,
+    serde_json::Value::Array(values) => values
+      .iter()
+      .any(|v| arguments_exceed_string_limit(v, limit)),
+    serde_json::Value::Object(values) => values
+      .values()
+      .any(|v| arguments_exceed_string_limit(v, limit)),
+    _ => false,
+  }
 }
 
 fn payload_read_tool_spec() -> rupi_core::ToolSpec {
@@ -8183,7 +8291,7 @@ mod tests {
     }
 
     fn arguments_schema(&self) -> serde_json::Value {
-      serde_json::json!({"type":"object"})
+      serde_json::json!({"type":"object", "properties":{"content":{"type":"string"}}})
     }
 
     #[allow(clippy::result_large_err)]
@@ -15048,6 +15156,122 @@ mod tests {
   }
 
   #[test]
+  fn initial_argument_bound_rejects_before_dispatch_and_renews_without_restricting_later_calls() {
+    for limit in [None, Some(2)] {
+      let provider = Scripted::new(
+        "bounded-arguments",
+        (0..2)
+          .flat_map(|_| {
+            [
+              tool_call("write_probe", json!({"content":"too long"})),
+              tool_call(
+                "write_probe",
+                json!({"content":"later larger complete change"}),
+              ),
+              text("done"),
+            ]
+          })
+          .collect(),
+      )
+      .with_output_limit(32_768);
+      let changed = Arc::new(Mutex::new(Vec::new()));
+      let tools = registry_with(vec![Box::new(MutatingSpy {
+        seen: Arc::clone(&changed),
+        outcome: ToolOutcome::succeeded("changed")
+          .with_effect(rupi_core::ToolEffectDisposition::Changed),
+      })]);
+      let policy = rupi_core::ProfilePolicy::new(
+        rupi_core::ContextProfile::Balanced,
+        provider.capabilities().context_window,
+      );
+      let mut trace = Recorder::default();
+      let mut runtime = TurnLoop::new(
+        &provider,
+        &tools,
+        &policy,
+        &mut trace,
+        SessionId::new(),
+        TraceId::new(),
+      )
+      .with_progress_boundary(Some(3), vec!["write_probe".into()])
+      .with_initial_progress_boundary(true)
+      .with_initial_progress_max_output_tokens(Some(8_192))
+      .with_initial_progress_max_argument_chars(limit);
+      for task in ["first", "fresh"] {
+        assert_eq!(
+          runtime
+            .run_turn(task, &CancelToken::new(), &mut SilentProgress)
+            .unwrap()
+            .status,
+          TurnStatus::Completed
+        );
+      }
+      drop(runtime);
+      let requests = provider.requests();
+      for first in [0, 3] {
+        assert_eq!(
+          requests[first].tools[0].parameters["properties"]["content"]["maxLength"],
+          limit.map_or(serde_json::Value::Null, |n| json!(n))
+        );
+        assert!(
+          requests[first + 1].tools[0].parameters["properties"]["content"]
+            .get("maxLength")
+            .is_none()
+        );
+        if limit.is_some() {
+          assert_eq!(requests[first + 1].tool_choice, ToolChoice::Required);
+          assert!(
+            requests[first]
+              .messages
+              .iter()
+              .any(|m| m.text().contains("2 Unicode"))
+          );
+        }
+      }
+      assert_eq!(
+        changed.lock().unwrap().len(),
+        if limit.is_some() { 2 } else { 4 }
+      );
+      assert_eq!(
+        trace.all("tool_started").len(),
+        if limit.is_some() { 2 } else { 4 }
+      );
+      assert!(trace.all("tool_unknown").is_empty());
+      let failed = trace.all("tool_failed");
+      assert_eq!(failed.len(), if limit.is_some() { 2 } else { 0 });
+      assert!(failed.iter().all(|event| event["effect"] == "none"));
+      assert!(trace.all("model_retry").is_empty());
+    }
+  }
+
+  #[test]
+  fn initial_argument_bounds_use_unicode_values_and_preserve_smaller_schema_constraints() {
+    assert!(!arguments_exceed_string_limit(
+      &json!({"nested":["é🙂", 123, true]}),
+      2
+    ));
+    assert!(arguments_exceed_string_limit(
+      &json!({"nested":[{"value":"é🙂界"}]}),
+      2
+    ));
+    let mut schema = json!({"type":"object", "properties":{
+      "small":{"type":"string", "maxLength":1},
+      "large":{"type":"string", "maxLength":100},
+      "nested":{"type":"array", "items":{"anyOf":[{"type":"string"},{"type":"number"}]}},
+      "union":{"type":["string","null"]}
+    }, "examples":[{"type":"string"}]});
+    bound_schema_strings(&mut schema, 2);
+    assert_eq!(schema["properties"]["small"]["maxLength"], 1);
+    assert_eq!(schema["properties"]["large"]["maxLength"], 2);
+    assert_eq!(
+      schema["properties"]["nested"]["items"]["anyOf"][0]["maxLength"],
+      2
+    );
+    assert_eq!(schema["properties"]["union"]["maxLength"], 2);
+    assert!(schema["examples"][0].get("maxLength").is_none());
+  }
+
+  #[test]
   fn initial_progress_output_ceiling_is_first_only_and_renews_per_turn() {
     let provider = Scripted::new(
       "bounded-initial",
@@ -15206,7 +15430,8 @@ mod tests {
       )
       .with_progress_boundary(window, vec!["write_probe".into()])
       .with_initial_progress_boundary(initial)
-      .with_initial_progress_max_output_tokens(ceiling);
+      .with_initial_progress_max_output_tokens(ceiling)
+      .with_initial_progress_max_argument_chars(Some(2));
       runtime.tools_enabled = enabled;
       assert_eq!(
         runtime
@@ -15216,6 +15441,11 @@ mod tests {
         TurnStatus::Completed
       );
       assert_eq!(provider.requests()[0].max_output_tokens, Some(32_768));
+      assert!(provider.requests()[0].tools.iter().all(|tool| {
+        tool.parameters["properties"]["content"]
+          .get("maxLength")
+          .is_none()
+      }));
     }
   }
 
@@ -15300,6 +15530,7 @@ mod tests {
     .with_progress_boundary(Some(3), vec!["write_probe".into()])
     .with_initial_progress_boundary(true)
     .with_initial_progress_max_output_tokens(Some(8_192))
+    .with_initial_progress_max_argument_chars(Some(2))
     .run_turn("task", &CancelToken::new(), &mut SilentProgress)
     .unwrap_err();
     assert_eq!(error.kind(), Some(ModelFailureKind::Semantic));
