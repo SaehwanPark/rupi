@@ -1,0 +1,34 @@
+# Follow-up observations during failed-check repair
+
+Status: active; actual acceptance and paired improvement remain unproved.
+
+Retry33 triggered its reserved review and Failed caller observation after31 starts. Eight
+ordinary requests followed before finalization, without another observation; all required
+files exist but tests/acceptance fail. All40 requests have usage, frozen audits pass and
+model slots are idle. Actual generated code, feedback and oracle content remain unread.
+
+Add optional limits.completion_check_repair_request_window, omitted by default. Require
+at least two allowed checks and a positive window below the ordinary request allowance.
+After a Failed observation, count provider requests from that observation; at a safe
+ordinary boundary with at least the selected window spent, request fresh caller feedback.
+Failed rearms the window; Passed disarms it and still requires a fresh final check.
+Ordinary final text and reserved review may request checks earlier. Coincident triggers
+perform one callback. New turns reset the repair state. Direct builders skip invalid
+windows. No clock, event, authority, domain-artifact policy or budget extension is added.
+
+Share existing check allowance, observation helper/provenance and terminal behavior.
+Last Failed/exhausted checks stop; Unavailable/oversized feedback remains semantic failure.
+Cancellation/deadline discards callback results. Tool/progress/Unknown/approval barriers
+precede callback or dispatch. No-tools/finalization paths skip follow-up checks.
+
+Owned comparison must reproduce repair drifting on stale feedback without selection and
+fresh public feedback enabling test repair/final pass within the same cap with selection.
+Cover Passed disarm/fresh final check, renewal, terminal checks, disabled/invalid/no-tools
+paths, Unknown and callback cancellation/deadline. Extend real CLI mailbox coverage,
+native config/harness scalar/Pi-null/case-isolation and unchanged prompt/reference guards.
+
+Owner: parent single agent. Config/TurnLoop/run/harness and owned fixtures only. Required
+local Rust/debug checks, startup/five restore/five context budgets, parent author invariant
+review, ongoing commits/push and source/exact-freeze all3 CI precede Retry34. Proposed
+repair window3, preserving all Retry33 controls including request reserve8/check allowance8.
+One Rupi screen; fresh matched Pi only after acceptance. No manual solution/oracle exposure.
