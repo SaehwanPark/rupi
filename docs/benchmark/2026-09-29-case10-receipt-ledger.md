@@ -1803,3 +1803,16 @@ Selected native configuration, copied public SPEC/reference hashes, initial
 prompt hash,18 non-Case10 prompt hashes,and dry-run guards pass. All model
 slots are idle. Parent usage8% five-hour/61% weekly is below policy thresholds;
 only main and the active Case10 branch remain locally/remotely after pruning.
+
+### Retry18 attempt1: application files and README present, acceptance failing
+Attempt1 reached the1,200,237 ms runner watchdog. Configured acceptance and
+project tests failed (exit1); all four help checks passed (exit0), with no
+verification timeout. Recorded work was87,535 tokens (72,526 uncached input,
+15,009 output), with28 model starts,27 completions/usage records,28 tool
+requests,26 completed tools,two known failures,and zero Unknown calls.
+Filtered file metadata lists README.md (702bytes), receiptledger/__init__.py
+(331bytes), and receiptledger/__main__.py (44,080bytes); no public test module
+is listed. Contents remain unread. File presence and help success do not prove
+contract correctness or documentation accuracy. Frozen controls/prompt/SPEC/
+reference/source/binary/model audit passes. Cap40 was not reached; unfinished
+inference is unmeasured. Remaining attempts continue; Pi remains unrun.
