@@ -2113,3 +2113,42 @@ state, and unchanged Unknown barriers. It does not enforce case artifact names o
 certify external task correctness. Implementation and verification precede any new
 benchmark screen. Retry20 inspection-name breakdown is corrected to12grep/three
 read, still15 inspections/20 completed tools.
+
+### Verified bounded completion-review enhancement
+
+After Retry20's premature closure, optional `limits.review_completion` now
+records one canonical/projected `CompletionReview` after the first otherwise accepted
+ordinary answer. The same active model may check requested deliverables and continue
+authorized work. Native assistant evidence remains distinct. Default false is omitted
+from serialized configuration; no case-specific artifact enforcement or external
+correctness certification is added.
+
+Review is at most once per turn and resets on new turns/resume. Normal request/tool/
+time budgets, progress rejection, approval, exact admission and Unknown/Possible
+barriers remain authoritative. Reserved no-tools finalization cannot perform repairs
+or convert exhaustion into completion. Explicit recovery assessment skips ordinary
+review. No timer/service or model orchestration is introduced.
+
+Six owned runtime fixtures verify permitted repair, fresh/one-shot review, request caps,
+no-tools assessment, durable native/control provenance, deadline cancellation without
+partial mutation dispatch or fabricated usage, Unknown barriers, and progress before
+review. The progress fixture initially lacked independent Changed effect evidence;
+its rejection confirmed existing safety semantics. Correcting the owned fixture to
+provide Changed evidence passes without weakening production admission.
+All184 runtime tests pass. Config omission/round-trip passes. Required fmt/core
+all-features check/workspace Clippy/workspace tests/docs/debug build pass; final fmt,
+runtime suite/Clippy/debug build pass after the additional progress fixture.
+
+Startup157.257ms cold/9.995ms warm median/10.650ms max passes250/100ms budgets.
+All five session-log restore budgets pass (99.70..4,680.45us), as do all five context
+experiments; complete canonical validation latency is not measured. Rendering is
+unchanged from the previous four passing measurements. Parent invariant review passes;
+no independent model review is claimed. All18 other-case prompt hashes, public SPEC
+and three acceptance reference hashes remain unchanged. Native config/dry-run guards
+enable review only for the next Case10 screen and record Pi parity as unavailable/null.
+
+Windows deadline-fixture correction commit7717655 passes all three exact-head CI
+platforms in run37413256929. New completion-review source CI remains pending.
+The final debugSHA is
+`A615D45AA0D89F9C7A92268D59F3A9A71D998121107E1CE43A6B0ADFD3220B1A`.
+A new frozen one-turn screen is pending; no Case10 acceptance benefit or win is claimed.

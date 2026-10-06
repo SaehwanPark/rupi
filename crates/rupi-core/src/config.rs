@@ -404,6 +404,9 @@ impl ProgressBoundaryMode {
 #[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize)]
 #[serde(deny_unknown_fields)]
 pub struct RuntimeLimits {
+  /// Ask the active model to review its first ordinary completion once per turn.
+  #[serde(default, skip_serializing_if = "is_false")]
+  pub review_completion: bool,
   /// Optional cooperative wall-time budget for one turn. Omitted means no turn deadline.
   #[serde(default, skip_serializing_if = "Option::is_none")]
   pub max_turn_duration_ms: Option<u64>,
@@ -432,6 +435,7 @@ pub struct RuntimeLimits {
 impl Default for RuntimeLimits {
   fn default() -> Self {
     Self {
+      review_completion: false,
       max_turn_duration_ms: None,
       max_model_requests_per_turn: DEFAULT_MAX_MODEL_REQUESTS_PER_TURN,
       max_tool_calls_per_turn: DEFAULT_MAX_TOOL_CALLS_PER_TURN,
@@ -1057,6 +1061,20 @@ mod tests {
           .contains("max_turn_duration_ms")
       );
     }
+  }
+
+  #[test]
+  fn completion_review_is_opt_in_and_round_trips() {
+    let mut config = sample_config();
+    assert!(!config.limits.review_completion);
+    assert!(
+      serde_json::to_value(&config).unwrap()["limits"]
+        .get("review_completion")
+        .is_none()
+    );
+    config.limits.review_completion = true;
+    let parsed = RuntimeConfig::parse(&config.to_json_string().unwrap()).unwrap();
+    assert!(parsed.limits.review_completion);
   }
 
   #[test]

@@ -267,6 +267,7 @@ pub(crate) fn open_session_with_approval(
   .with_interactive_tool_approval(interactive_approval)
   .with_thinking(config.thinking)
   .with_max_requests(config.limits.max_model_requests_per_turn as usize)
+  .with_completion_review(config.limits.review_completion)
   .with_max_turn_duration(
     config
       .limits

@@ -1271,6 +1271,12 @@ mutations, or initiate recovery inference. Unknown/Possible effects keep the
 reconciliation barrier. The default remains disabled, and foreign operations that do
 not cooperate may exceed the deadline.
 
+A caller may opt into one bounded review after the first otherwise accepted ordinary
+completion. Preserve native assistant evidence and record review instructions with
+runtime provenance. Continue only through normal request/tool/time budgets, approval,
+and reconciliation barriers on the active model. Do not enforce case-specific artifact
+names or interpret review as external correctness certification. Defaults remain unchanged.
+
 This is a distributed-systems-style reliability invariant.
 
 ---

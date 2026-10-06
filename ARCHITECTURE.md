@@ -498,6 +498,20 @@ Owned fixtures verify active native HTTP cancellation, no repeated POST or fabri
 completion, caller isolation, fresh-turn renewal, durable control restore, exclusion of
 partial assistant text, no mutation replay, and the uncertain-effect safety barrier.
 
+### Opt-in completion review
+
+`RuntimeLimits::review_completion` defaults to false. When enabled, the first otherwise
+accepted text-only completion in an ordinary tools-enabled turn is retained as native
+assistant evidence and followed by a canonical/projected `CompletionReview` control.
+The active model compares requested deliverables with observed actions and may continue
+authorized work. The review is one-shot per turn, renewed after resume/new turns, and
+uses existing request/tool/time budgets. Progress rejection precedes review; unresolved
+mutations still stop inference. Reserved no-tools finalization cannot execute repairs or
+convert budget exhaustion into completion. Explicit recovery assessment skips ordinary
+review. This is generic guidance, not artifact-name enforcement or correctness certification.
+Owned fixtures cover permitted repair, bounded/fresh review, durable native/control
+provenance, cap/no-tools behavior, deadline cancellation without dispatch, and Unknown barriers.
+
 ## 10. Context engine
 
 The context engine owns model-visible working memory.

@@ -41,6 +41,7 @@ param(
   [int]$Case10MaxOutputTokens = 16384,
   [ValidateRange(0, 86400000)]
   [long]$Case10MaxTurnDurationMs = 0,
+  [switch]$Case10ReviewCompletion,
   [ValidateSet("one_shot", "recurring")]
   [string]$Case10ProgressBoundaryMode = "one_shot",
   [ValidateRange(1, 100)]
@@ -2202,6 +2203,10 @@ function New-BenchmarkWorkspace([hashtable]$case, [string]$agentRoot, [string]$t
       $config.limits | Add-Member -MemberType NoteProperty -Force `
         -Name max_turn_duration_ms -Value $Case10MaxTurnDurationMs
     }
+    if ($case.Id -eq "10-receipt-ledger" -and $Case10ReviewCompletion) {
+      $config.limits | Add-Member -MemberType NoteProperty -Force `
+        -Name review_completion -Value $true
+    }
     if ($null -eq $config.limits.PSObject.Properties["max_model_requests_per_turn"]) {
       $config.limits | Add-Member -MemberType NoteProperty -Name max_model_requests_per_turn -Value $MaxModelRequestsPerTurn
     } else {
@@ -2486,6 +2491,11 @@ function Invoke-AgentCase([hashtable]$case, [string]$agent, [string]$root, [stri
         $case.Id -eq "10-receipt-ledger" -and $agent -eq "rupi" -and
         $Case10MaxTurnDurationMs -gt 0
       ) { $Case10MaxTurnDurationMs } else { $null }
+      if ($case.Id -eq "10-receipt-ledger") {
+        $turnRecord["configured_completion_review"] = if ($agent -eq "rupi") {
+          $Case10ReviewCompletion.IsPresent
+        } else { $null }
+      }
       $progressControl = Get-BenchmarkProgressControl $case
       if ($null -ne $progressControl) {
         $turnRecord["configured_progress_boundary_mode"] = if ($agent -eq "rupi") {
@@ -3342,6 +3352,7 @@ $summary = [ordered]@{
   case10_rupi_max_turn_duration_ms = if ($Case10MaxTurnDurationMs -gt 0) {
     $Case10MaxTurnDurationMs
   } else { $null }
+  case10_rupi_review_completion = $Case10ReviewCompletion.IsPresent
   case10_relay_response_timeout_seconds = if ($Case10RelayResponseTimeoutSeconds -gt 0) {
     $Case10RelayResponseTimeoutSeconds
   } else { $null }

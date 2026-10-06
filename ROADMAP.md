@@ -1625,6 +1625,19 @@ TUI rendering passed all budgets (3.31–3.90 µs/unit); checkpointed restore me
   experiment budgets pass; this does not measure complete canonical restore latency.
   A fresh one-turn development screen remains pending; a failed screen requires
   analysis and a verified enhancement.
+  Retry20 fails its single development turn: runtimeCompleted after905.693s,
+  36,161 recorded work,17 completed requests/20 tools, zero known failures/Unknown;
+  all help passes, acceptance/tests fail. App files are listed but no tests/README.
+  No semantic cause or deadline benefit is established. An opt-in bounded completion
+  review now lets the active model check requested deliverables and continue permitted
+  work with native/runtime provenance kept distinct. Owned fixtures verify repair,
+  one-shot/fresh review, caps/no-tools finalization, durable restore, deadline interruption,
+  Unknown barriers, and progress rejection before review. Required Rust checks pass;
+  startup157.257ms cold/9.995ms warm median/10.650ms max and all five session-log
+  restore (99.70–4,680.45us) and five context-experiment budgets pass. Render behavior
+  is unchanged from the four passing time-budget measurements. Windows deadline-fixture
+  preconditions were corrected; exact7717655 CI passes all three platforms. New review
+  source CI, fresh one-turn screening, paired evidence, and delivery remain pending.
   Rupi-first screening and paired
   evidence/delivery checks remain pending. Broader project gates remain active.
   Preserve stable public delivery keys, distinct private fencing, lost-ack retry and
