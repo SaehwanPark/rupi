@@ -10,6 +10,10 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Added
 
+- Added explicit bounded Case10 benchmark mutation-budget selection, preserving runtime
+  defaults and total/request/time limits. Owned fixtures show mutation headroom can permit
+  later delivery/checking; acceptance improvement and native Pi control parity remain unproved.
+
 - Added optional bounded caller completion observations and a run-only private mailbox.
   Failed public feedback can guide same-model repair; unavailable observations stop without
   replay or failover. Core/CLI execute no checks; the caller isolates verification effects.

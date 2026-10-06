@@ -1693,6 +1693,15 @@ TUI rendering passed all budgets (3.31–3.90 µs/unit); checkpointed restore me
   prompt/profile/reference guards and parent invariant review pass. Fresh screening
   remains pending. The next screen adds checks8 to Retry24's
   controls; native Pi parity is not claimed, and oracle checks stay after the turn.
+  Retry25 ends ToolBudgetExhausted at2,017.297s:16 mutating requests spend the
+  inherited allowance before any completion observation/review. Only the application
+  file is listed; init/tests/README are absent.29 requests/all29 usage record109,397
+  work;36 tools complete,2 known failures/0 Unknown; acceptance/tests fail and help
+  passes. Frozen audits and fea3ca8 CI pass. No feedback benefit was measured.
+  Explicit bounded Case10 mutation selection is implemented, with an owned fixture
+  proving16 stops before delivery/checking and32 reaches them. General defaults and
+  other caps stay authoritative; source/harness fixtures prove omission, case isolation,
+  total rejection and native Pi null. Required checks/startup/fresh screen remain pending.
   No semantic cause, acceptance benefit, or paired Case10 win is established.
   Rupi-first screening and paired
   evidence/delivery checks remain pending. Broader project gates remain active.

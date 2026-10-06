@@ -47,6 +47,8 @@ param(
   [switch]$Case10InitialProgressBoundary,
   [ValidateRange(0, 16)]
   [int]$Case10CompletionChecks = 0,
+  [ValidateRange(0, 64)]
+  [int]$Case10MaxMutatingToolCalls = 0,
   [ValidateSet("one_shot", "recurring")]
   [string]$Case10ProgressBoundaryMode = "one_shot",
   [ValidateRange(1, 100)]
@@ -2135,6 +2137,24 @@ function Set-BenchmarkProgressBoundary([hashtable]$case, [object]$limits) {
     -Value $control.window
 }
 
+function Get-BenchmarkMutatingBudget([hashtable]$case, [string]$agent) {
+  if ($case.Id -eq "10-receipt-ledger" -and $agent -eq "rupi" -and
+      $Case10MaxMutatingToolCalls -gt 0) { return $Case10MaxMutatingToolCalls }
+  return $null
+}
+
+function Set-BenchmarkMutatingBudget([hashtable]$case, [object]$limits) {
+  $selected = Get-BenchmarkMutatingBudget $case "rupi"
+  if ($null -eq $selected) { return }
+  # Omission inherits64 total calls; selecting mutations never raises that total cap.
+  $total = if ($null -eq $limits.PSObject.Properties["max_tool_calls_per_turn"]) {
+    64
+  } else { [int]$limits.max_tool_calls_per_turn }
+  if ($selected -gt $total) { throw "Case10 mutation allowance exceeds the total tool cap." }
+  $limits | Add-Member -MemberType NoteProperty -Force `
+    -Name max_mutating_tool_calls_per_turn -Value $selected
+}
+
 function Get-BenchmarkEndpoint([hashtable]$case) {
   if ((Get-BenchmarkReasoningBudget $case) -gt 0) {
     if ($case.Id -eq "10-receipt-ledger") {
@@ -2224,6 +2244,7 @@ function New-BenchmarkWorkspace([hashtable]$case, [string]$agentRoot, [string]$t
       $config | Add-Member -MemberType NoteProperty -Name limits -Value ([pscustomobject]@{})
     }
     Set-BenchmarkProgressBoundary $case $config.limits
+    Set-BenchmarkMutatingBudget $case $config.limits
     if ($case.Id -eq "10-receipt-ledger" -and $Case10CompletionChecks -gt 0) {
       $config.limits | Add-Member -MemberType NoteProperty -Force `
         -Name max_completion_checks_per_turn -Value $Case10CompletionChecks
@@ -2573,6 +2594,8 @@ function Invoke-AgentCase([hashtable]$case, [string]$agent, [string]$root, [stri
         $turnRecord["configured_completion_checks"] = if (
           $agent -eq "rupi" -and $Case10CompletionChecks -gt 0
         ) { $Case10CompletionChecks } else { $null }
+        $turnRecord["configured_max_mutating_tool_calls_per_turn"] =
+          Get-BenchmarkMutatingBudget $case $agent
         $turnRecord["configured_initial_progress_boundary"] = if ($agent -eq "rupi") {
           $Case10InitialProgressBoundary.IsPresent
         } else { $null }
@@ -3439,6 +3462,8 @@ $summary = [ordered]@{
   case10_rupi_completion_checks = if ($Case10CompletionChecks -gt 0) {
     $Case10CompletionChecks
   } else { $null }
+  case10_rupi_max_mutating_tool_calls_per_turn =
+    Get-BenchmarkMutatingBudget @{Id="10-receipt-ledger"} "rupi"
   case10_max_output_tokens = $Case10MaxOutputTokens
   case10_rupi_max_turn_duration_ms = if ($Case10MaxTurnDurationMs -gt 0) {
     $Case10MaxTurnDurationMs

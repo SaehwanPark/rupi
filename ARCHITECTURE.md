@@ -569,6 +569,9 @@ requires nonzero discovered tests. Private acceptance remains after the turn; no
 is copied or supplied. Host scratch effects/cleanup belong to the caller. Safe summaries
 retain control counts and check ordinal/status/elapsed/request-position scalars only;
 native Pi controls remain null. Counts do not prove that the model acted on feedback.
+The harness can explicitly select a bounded Case10 mutation allowance within the total
+tool cap. Runtime defaults remain16 mutations/64 total; selecting headroom cannot bypass
+Unknown reconciliation, progress authorization, request/time limits or completion checks.
 
 ## 10. Context engine
 

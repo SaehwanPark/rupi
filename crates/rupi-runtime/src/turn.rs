@@ -15011,6 +15011,91 @@ mod tests {
   }
 
   #[test]
+  fn configured_mutation_headroom_allows_delivery_before_completion_checking() {
+    for mutations in [16, 32] {
+      let mut rounds: Vec<_> = (0..16)
+        .map(|index| {
+          tool_call(
+            "write_probe",
+            json!({"content":format!("owned change {index}")}),
+          )
+        })
+        .collect();
+      rounds.extend((0..3).map(|_| tool_call("spy", json!({"read":"owned"}))));
+      rounds.push(tool_call(
+        "write_probe",
+        json!({"content":"missing owned deliverable"}),
+      ));
+      rounds.push(text("candidate with owned deliverables"));
+      let provider = Scripted::new("mutation-headroom", rounds);
+      let changed = Arc::new(Mutex::new(Vec::new()));
+      let reads = Arc::new(Mutex::new(Vec::new()));
+      let tools = registry_with(vec![
+        Box::new(MutatingSpy {
+          seen: Arc::clone(&changed),
+          outcome: ToolOutcome::succeeded("changed")
+            .with_effect(rupi_core::ToolEffectDisposition::Changed),
+        }),
+        Box::new(Spy(Arc::clone(&reads))),
+      ]);
+      let policy = rupi_core::ProfilePolicy::new(
+        rupi_core::ContextProfile::Balanced,
+        provider.capabilities().context_window,
+      );
+      let mut trace = Recorder::default();
+      let mut progress = CheckProgress {
+        results: VecDeque::from([check_result(
+          CompletionCheckStatus::Passed,
+          "owned delivery passes",
+        )]),
+        requests: vec![],
+      };
+      let report = TurnLoop::new(
+        &provider,
+        &tools,
+        &policy,
+        &mut trace,
+        SessionId::new(),
+        TraceId::new(),
+      )
+      .with_max_requests(40)
+      .with_tool_call_budgets(64, mutations)
+      .with_progress_boundary(Some(3), vec!["write_probe".into()])
+      .with_progress_boundary_mode(ProgressBoundaryMode::Recurring)
+      .with_initial_progress_boundary(true)
+      .with_max_completion_checks(8)
+      .run_turn("deliver owned task", &CancelToken::new(), &mut progress)
+      .unwrap();
+      let sufficient = mutations == 32;
+      assert_eq!(
+        report.status,
+        if sufficient {
+          TurnStatus::Completed
+        } else {
+          TurnStatus::ToolBudgetExhausted
+        }
+      );
+      assert_eq!(
+        changed.lock().unwrap().len(),
+        if sufficient { 17 } else { 16 }
+      );
+      assert_eq!(reads.lock().unwrap().len(), 3);
+      assert_eq!(progress.requests.len(), usize::from(sufficient));
+      let requests = provider.requests();
+      assert_eq!(requests.len(), if sufficient { 21 } else { 19 });
+      assert!(
+        requests
+          .iter()
+          .all(|request| request.model == requests[0].model)
+      );
+      if sufficient {
+        assert_eq!(requests[19].tool_choice, ToolChoice::Required);
+      }
+      assert!(trace.all("tool_unknown").is_empty());
+    }
+  }
+
+  #[test]
   fn completion_review_allows_a_repair_and_renews_once_on_the_next_turn() {
     let provider = Scripted::new(
       "review",
