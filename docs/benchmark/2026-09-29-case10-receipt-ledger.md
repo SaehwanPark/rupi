@@ -1872,3 +1872,24 @@ Contents remain unread; sizes do not establish correctness or assertions.
 Frozen-input audit passes. Five-attempt totals400,759 recorded work tokens,
 6,001,449 ms,167 completed tools,seven known failures,zero Unknown calls.
 The final attempt is confirmed running; Pi remains unrun and Case10 unresolved.
+
+### Delivery policy clarified: enhancements before new retry screens
+The owner clarified that rupi code/runtime may and should change: after failure,
+perform root cause analysis and implement an enhancement addressing the failure.
+Control-only retries require a specific evidence-based justification. This
+supersedes the prior control-search workflow for new screens.
+Retry18 attempt6 was already running when clarification arrived. Letting this
+bounded existing attempt finish preserves terminal evidence and avoids creating
+an additional abandoned inference; no new screen is authorized by elapsed time.
+Next work is source/owned-fixture diagnosis before any new inference screen.
+Source review found a missed-edit diagnostic candidate at
+crates/rupi-tools/src/edit.rs:266: it compares a full trimmed current file line
+against only20 characters of the requested first line, after an initial40-char
+truncation. Long matching first lines can therefore fail to receive the intended
+similar-line hint. This is source evidence, not yet a reproduced fixture or a
+proven cause of any Case10 failure. Reproduce before fixing; preserve exact-match,
+no-change, ambiguity refusal, and Unknown reconciliation semantics.
+Future evaluation of changed code must remain frozen across the evaluated
+recovery turns and fresh matched Pi half. Such recovery turns assess one candidate
+rather than constitute new control-only candidate screens. Any further new
+candidate must carry a verified enhancement or explicit evidence justification.
