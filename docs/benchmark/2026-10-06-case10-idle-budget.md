@@ -55,7 +55,7 @@ The benchmark idle override is opt-in, Case10-native only and no larger than the
 total deadline. Native cancellation remains authoritative; there is no extra request,
 backup activation, hidden reasoning claim, acceptance change or actual-trace backfill.
 
-Startup139.750ms cold/7.959ms warm median/8.520ms max passes. Five restores
+Startup139.745ms cold/7.955ms warm median/8.520ms max passes. Five restores
 117.50/725.20/2890.00/2780.35/5309.95us and contexts.4/.1/0/0/.3us pass.
 No rendering path changed. SourceCI37514973343 and exact freeze CI must both pass all3
 platforms before Retry36 starts.
