@@ -2243,3 +2243,19 @@ harnessSHA256
 New source CI and a fresh one-turn reserve300,000ms/turn1,170,000ms screen are
 pending. Failure still requires analysis and a verified enhancement before another
 attempt. Case10 acceptance benefit and paired win remain unproven.
+
+### Retry22 frozen proactive-review screen
+
+Run `bench-20261006-case10-proactive-review300-turn1170-window3-budget4096-low-output32768-retry22-rupi40-screen1-1200s` will screen one fresh turn against verified412cf58.
+DebugC8511B7C/harnessB4FC326E (full SHA256 values in the previous verification entry),
+helperA0BCAE68 and model27356 unchanged. Explicit review=true/reserve300,000ms
+is selected inside native turn1,170,000ms. Other controls stay low/budget4096/
+relay8003+1194s/output32,768/cap40/window3/provider1194s/outer1200s/grace6.
+Native Pi duration/review/reserve/cap/progress/control-count parity is unavailable/null.
+Shared prompt230589C5, public SPEC and three acceptance reference hashes stay fixed.
+
+One fresh Rupi turn only; no automatic retries or source changes/builds during inference.
+Control-count metadata measures injection, not proof of model use. Failure requires
+analysis and a verified enhancement before another attempt. Fresh matched Pi0.86.1
+follows only Rupi acceptance; no Case10 acceptance benefit/win is claimed. New exact-head
+CI and paired/final delivery checks remain required.
