@@ -2514,3 +2514,34 @@ review/reserve300s; add caller checks8. Debug SHA
 No attempt is yet claimed. No generated content or oracle diagnostics were inspected;
 semantic application cause, acceptance benefit, isolated causality and Case10 paired
 win remain unestablished. Fresh matched Pi follows only Rupi acceptance.
+
+### Retry25 terminal: mutation allowance stops before completion observations
+
+Frozen run `bench-20261006-case10-feedback8-initial-progress-review300-turn2370-window3-budget4096-low-output32768-retry25-rupi40-screen1-2400s` at checkout
+fea3ca896228959f0e130e9219f1ef05be965130/runtime02ecdf9 ends at2,017,297ms,
+ToolBudgetExhausted, without outer expiry. Independent acceptance1/project tests1;
+all four help exits0, no verification timeouts. Recorded work109,397
+(input79,265/output30,132),29 started/29 closed requests/29 usage records.
+There are38 requested tools,36 complete,2 known failures and0 Unknown:
+1write/15edit/14read/8grep. Only `receiptledger/__main__.py` is listed,48,883bytes;
+requested init/test/README artifacts are absent. Generated contents and private
+diagnostics remain unread; the two known failure meanings are unmeasured.
+
+Selected checks8 have zero recorded observations/controls: no eligible text-only
+candidate reached checking. Safe counts are29 time guides,5 progress boundaries,
+zero review/correction/finalization controls. Thus this run supplies no empirical
+evidence that delegated feedback helps acceptance. Frozen source/binary/harness/host/
+helper, model/prompt/control/SPEC/three-reference audits pass before changes; all
+model slots are idle. Frozen fea3ca8 CI passes all three platforms:
+https://github.com/SaehwanPark/rupi/actions/runs/37444149563 .
+Runner30848/child5856 ended; screen process exits0. No Pi pair or Case10 win exists.
+
+Root-cause evidence: the native config omits tool budgets and inherits64 total/
+16 mutating calls. All16 mutating requests consume allowance even when a call fails.
+The38 total calls and29 requests are below their64/40 caps, and352.703s native time
+remains at closure. Source stops an unsatisfied recurring progress boundary once no
+mutation allowance remains; missing artifacts cannot be repaired or checked then.
+This is a configured resource barrier, not evidence of an incorrect safety guard.
+Next enhancement: explicit bounded Case10 mutation headroom, with defaults and total/
+request/time/check safety caps preserved, proved using owned delivery/check fixtures.
+Do not retry until that code/config enhancement is implemented and verified.
