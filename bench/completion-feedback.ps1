@@ -85,7 +85,8 @@ function Copy-CompletionPublicSnapshot([string]$Project, [string]$Snapshot, [Dia
 
 function Invoke-CompletionPublicCheck([object]$HostState, [object]$Request, [long]$OuterRemainingMs) {
   $clock = [Diagnostics.Stopwatch]::StartNew()
-  $budgetMs = [long][math]::Min(300000, [math]::Min($Request.wait_timeout_ms, $OuterRemainingMs)) - 2000
+  # Leave the existing process-tree cleanup's ten-second wait plus reply-publication margin.
+  $budgetMs = [long][math]::Min(300000, [math]::Min($Request.wait_timeout_ms, $OuterRemainingMs)) - 12000
   if ($budgetMs -lt 1000) { throw 'insufficient completion observation time' }
   $checkRoot = Join-Path $HostState.root ('check-' + $Request.request_id)
   New-Item -ItemType Directory -Path $checkRoot | Out-Null

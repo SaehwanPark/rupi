@@ -4566,7 +4566,7 @@ impl<'a> TurnLoop<'a> {
     Ok(())
   }
 
-  /// Preserve native completion separately from this runtime-owned review request.
+  /// Keep caller diagnostics in external evidence, separate from static runtime authority.
   fn append_completion_check_observation(
     &mut self,
     turn_id: &TurnId,
@@ -4625,6 +4625,7 @@ impl<'a> TurnLoop<'a> {
     Ok(())
   }
 
+  /// Preserve native completion separately from this runtime-owned review request.
   fn append_completion_review_instruction(&mut self, turn_id: &TurnId) -> Result<(), TurnError> {
     let text = concat!(
       "Before ending this turn, review the user's requested deliverables against the observed ",

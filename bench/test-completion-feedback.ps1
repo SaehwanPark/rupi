@@ -44,7 +44,7 @@ $rejectedInside = $false
 try { New-CompletionFeedbackHost $project $project $python @(@('--help')) | Out-Null }
 catch { $rejectedInside = $true }
 if (-not $rejectedInside) { throw 'Host artifacts inside the model workspace were accepted.' }
-function Submit-Owned([int]$Ordinal, [long]$WaitMs = 10000, [int]$OwnerId = $PID, [bool]$Invalid = $false) {
+function Submit-Owned([int]$Ordinal, [long]$WaitMs = 30000, [int]$OwnerId = $PID, [bool]$Invalid = $false) {
   $id = [Guid]::NewGuid().ToString()
   $request = [ordered]@{ version=1; request_id=$id; process_id=$OwnerId; ordinal=$Ordinal;
     workspace=$project; wait_timeout_ms=$WaitMs }
@@ -104,7 +104,7 @@ if ((Read-OwnedReply $id).status -cne 'unavailable' -or
     (Test-Path -LiteralPath (Join-Path $state.root "check-$id"))) { throw 'Invalid request ran checks.' }
 Write-Owned 'tests/test_receiptledger.py' $passingTest.Replace('self.assertEqual(1, 1)',
   '__import__("time").sleep(2)')
-$id = Submit-Owned 6 3100
+$id = Submit-Owned 6 13100
 Invoke-CompletionFeedbackHost $state $PID 30000
 if ((Read-OwnedReply $id).status -cne 'unavailable') { throw 'Uncertain timed check accepted.' }
 if (-not (Test-Path -LiteralPath (Join-Path $state.root "check-$id/1.stderr.txt"))) {
@@ -120,12 +120,12 @@ from pathlib import Path
 mailbox, project = map(Path, sys.argv[1:])
 request_id = str(uuid.uuid4())
 request = dict(version=1, request_id=request_id, process_id=os.getpid(), ordinal=7,
-               workspace=str(project), wait_timeout_ms=10000)
+               workspace=str(project), wait_timeout_ms=25000)
 temporary = mailbox / ('request-' + request_id + '.tmp')
 temporary.write_text(json.dumps(request), encoding='utf-8')
 temporary.rename(mailbox / ('request-' + request_id + '.json'))
 reply_path = mailbox / ('reply-' + request_id + '.json')
-deadline = time.monotonic() + 12
+deadline = time.monotonic() + 27
 while not reply_path.exists() and time.monotonic() < deadline:
     time.sleep(0.02)
 reply = json.loads(reply_path.read_text(encoding='utf-8'))
@@ -139,7 +139,7 @@ $callback = { param($processId, $remainingMs)
 }
 $result = Invoke-External -FileName $python -Arguments @($childScript, $state.mailbox, $project) `
   -WorkingDirectory $fixture -StdoutPath (Join-Path $fixture 'child.stdout.txt') `
-  -StderrPath (Join-Path $fixture 'child.stderr.txt') -TimeoutSeconds 15 -WhileRunning $callback
+  -StderrPath (Join-Path $fixture 'child.stderr.txt') -TimeoutSeconds 30 -WhileRunning $callback
 if ($result.exit_code -ne 0 -or $result.timed_out -or $result.callback_failed) {
   throw "Owned live callback failed: $($state.callback_error)"
 }
