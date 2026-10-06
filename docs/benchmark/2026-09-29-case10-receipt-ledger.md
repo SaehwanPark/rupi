@@ -2169,3 +2169,29 @@ inference. A failure requires analysis and a verified enhancement before another
 attempt. Fresh matched Pi0.86.1 follows only Rupi acceptance. Native controls are
 not external correctness certification. No Case10 win or acceptance benefit is
 claimed. New exact-head CI and paired/final delivery checks remain pending.
+
+### Retry21 terminal failed one-turn screen
+
+Frozen4626e31/debugA615D45A/harness573124D0/helperA0BCAE68/model27356
+audits pass, including native review=true/time1170s/cap40/window3, shared prompt,
+SPEC and three acceptance reference hashes. Exact frozen head6663145 passes all
+three CI platforms (run37414082403). Runner exits0; all model slots are idle.
+Pi was not run.
+
+One turn:1,170,385ms, no outer watchdog,49,474 recorded work (29,821 uncached
+input/19,653 output),14 started/completed requests but13 usage records. Unfinished
+inference work remains unknown. Runtime status is `time_budget_exhausted`, not
+successful task completion. Sixteen completed tools have zero known failures/Unknown:
+11 inspections (sixgrep/fiveread), five mutations (onewrite/fouredits).
+Acceptance and project tests exit1, all four help checks exit0, no verification
+timeout. Filtered inventory lists main43,193bytes only; no init/tests/README listed.
+Contents remain unread. No acceptance benefit, causal result, or paired win claimed.
+
+Cooperative deadline closure is observed; review activation is not captured in current
+per-turn metadata. Source verifies that completion review can trigger only after an
+otherwise accepted text-only answer. The next generic enhancement allows an explicit
+remaining-time reserve to trigger one review before the next provider attempt during
+a continuing tool loop, while preserving normal budgets/admission/Unknown barriers.
+Canonical runtime-control counts will be exposed as safe metadata, without control
+text, model outputs, generated code, or oracle diagnostics. Implementation, fixtures,
+checks and invariant review precede any new screen; no unchanged/control-only retry.
