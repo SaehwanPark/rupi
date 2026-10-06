@@ -2276,7 +2276,7 @@ CI and paired/final delivery checks remain required.
   requests/seven usage records. Unfinished inference work remains unknown.
 - Eight completed tools, zero known failures/Unknown: five inspections (four read/one
   grep), three writes. Filtered inventory lists `receiptledger/__init__.py`40,595bytes
-  and empty `tests/__init__.py`; no main.py, public test module, or README listed.
+  and empty `tests/__init__.py`; no __main__.py, public test module, or README listed.
   Generated contents, model outputs/traces, and oracle diagnostics remain unread.
 - Whitelist control telemetry records eight turn-time guides, one completion review,
   one progress boundary, zero progress corrections/finalization/unknown kinds.
@@ -2352,3 +2352,35 @@ CI and paired/final delivery checks remain required.
   Active PR145 is retained; historical detached artifacts and root user policy edit
   remain preserved. Required local checks/performance and parent review pass;
   new exact-head CI and eventual paired delivery evidence remain pending.
+
+### Retry23: early review injected; public tests still absent
+
+- Run: `bench-20261006-case10-anticipatory-review300-turn1170-window3-budget4096-low-output32768-retry23-rupi40-screen1-1200s`.
+  Runtime/source `a938b6ceb5450934d8a5f1a51282a79041312992`, frozen checkout
+  `896d565bc18f054e748005e4d30e56d58b966603`; debugE435AB3B/harnessABC12977,
+  unchanged helperA0/model27356/relay23732. Same selected Retry22 profile.
+- One fresh Rupi turn ends `time_budget_exhausted` after1,170,426ms without an
+  outer watchdog. Acceptance exit1, project tests exit1, all four help checks exit0;
+  no verification timeout. No Pi run or paired win.
+- Recorded work53,909 (uncached input35,771/output18,138),13 starts/closed requests/
+  12 usage records; unfinished inference work remains unknown.15 tool requests:
+  seven grep/five read/three write;12 tools complete, three known failures, zero Unknown.
+  Failure-to-tool mapping and semantic cause are unmeasured.
+- Filtered filename/size metadata lists README7,565bytes,
+  `receiptledger/__init__.py`86bytes and `receiptledger/__main__.py`37,852bytes;
+  no public tests listed. The requested application path is __main__.py, not main.py.
+  An initial commentary incorrectly called it main.py; corrected after reading the
+  own shared prompt. The application was delivered at its requested path and help passes;
+  the observed delivery omission is public tests. Generated contents, model outputs/
+  actual traces/control text, and oracle diagnostics remain unread.
+- Safe telemetry records13 turn-time guides, one completion review after three started
+  requests, two progress boundaries, zero correction/finalization/unknown kinds.
+  This proves early injection, not trigger cause, model use, or semantic correctness.
+  The timing estimate's owned correctness is established; acceptance benefit is not.
+- Frozen source/binary/harness/helper, prompt/control/SPEC/three acceptance hashes pass
+  before source changes/builds. Runner exits0; all four model slots idle. Exact frozen
+  head passes Linux/macOS/Windows:
+  https://github.com/SaehwanPark/rupi/actions/runs/37419673142 .
+- Analysis must address remaining requested delivery before another attempt. The
+  twenty-minute screen reaches its deadline with13/40 requests started; unused request
+  allowance cannot supply more wall time. No unchanged retry or paired win is claimed.
