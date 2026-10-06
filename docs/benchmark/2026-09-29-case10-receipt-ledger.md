@@ -2903,3 +2903,43 @@ Owned comparative tests must prove early failed public feedback permits repair b
 final assistant completion, counts once, renews, and respects cancellation/deadline/
 Unknown/no-tools/exhaustion. Verify config/CLI/harness/public host/frozen metadata and
 required gates before Retry31. Usage before this slice:5% five-hour/1% weekly.
+
+### Verified observation at timed review and frozen Retry31
+
+Source06da417b2530136d97582e4e53aa7642d2af8ab8 adds optional limits.completion_check_on_review,
+default false/omitted; requires enabled review, valid timed reserve and check allowance.
+One fresh caller observation at timed review shares the normal allowance and current
+cancel/remaining-time token. Passed still proceeds to model review and a later fresh
+final check; Failed with allowance permits repair. Last Failed/exhaustion and Unavailable/
+oversized results preserve existing stops. This explicitly supersedes the preliminary
+terminal sketch to continue after Unavailable. Progress/tool-budget/Unknown barriers,
+approval, model identity and no incomplete dispatch/replay remain unchanged. No new event/
+status/render/timer/dependency or core/CLI verification execution authority.
+
+Owned feedback-directed comparison: early external evidence permits repair before the first
+final answer in3 requests versus4 with omission. Renewal/fresh final checks, inactive
+paths/request caps, last failure/unavailable/oversized and cancellation/deadline/Unknown
+fixtures pass; real CLI mailbox tests both ordinary and timed-review paths with no-exec
+assertions. Seven owned harness fixtures and full selected profile pass. Required fmt/
+core-all-features/clippy/workspace tests/docs/debug pass (216 runtime/136 core/25 CLI).
+Startup141.594ms cold/8.317ms median/9.421ms max; five restore cases69.55/469.30/2837.50/
+2813.20/5306.00us and five context cases0.4/0.1/0/0/0.3us pass. Parent author invariant
+review passes; no independent-review claim. Source CI37482779844 is running at freeze.
+
+Shared prompt230589C5F20B5486CD84216CE5B6A0DB9734CE724C2903D891E4D50D9CFB3270,
+original18 case/phase/prompt hashes, full public SPEC and three reference hashes unchanged.
+Frozen run bench-20261006-case10-review-check-direct-off-firstoff-args2048-first8192-check8-mut32-review300-turn2370-retry31-rupi40-screen1-2400s: one fresh Rupi turn,
+adds only timed-review observation to Retry30's direct8000/globalOff/firstOff, first output
+8192/later32768/first strings2048/checks8/mutations32/cap40/window3/initial/recurring/
+review/reserve300000ms/native2370000ms/provider2394000ms/outer2400s/grace6. No reasoning
+budget or relay deadline; same model27356 and original helpers/sampling/context/tools.
+Fresh matched direct-Off Pi only after Rupi acceptance. Any failure requires new analysis
+and verified enhancement before another attempt. No actual acceptance or paired win.
+
+Debug4B644926DF8E8C27CE6C70BE1E7BB083CF5B078F857CFDFA4771A8C63AE12532;
+harnessFD8AB32797BF8F0DF3063F230D88D4B48CE158BD159E280252622149A1A01AF5;
+hostDC75BEB0995E0EC00C1D6AFC6AE34FCD53CA18CE5085D85B1C1A7ED70865A8FE;
+helperA0BCAE689139BFD281CB91C209D5D8F6CF9EA42FD7EFF256BE02D97A871387C7.
+Root user policy hash unchanged; headroom15% five-hour/2% weekly before freeze. Fetch/prune
+confirms only actual main and active Case10 branches; detached artifacts retained.
+Performance/author evidence recorded before launch; exact CI results remain pending.
