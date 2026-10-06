@@ -404,6 +404,9 @@ impl ProgressBoundaryMode {
 #[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize)]
 #[serde(deny_unknown_fields)]
 pub struct RuntimeLimits {
+  /// Caller observations required before ordinary completion; omitted disables checks.
+  #[serde(default, skip_serializing_if = "Option::is_none")]
+  pub max_completion_checks_per_turn: Option<u32>,
   /// Ask the active model to review requested deliverables once per turn.
   #[serde(default, skip_serializing_if = "is_false")]
   pub review_completion: bool,
@@ -442,6 +445,7 @@ impl Default for RuntimeLimits {
   fn default() -> Self {
     Self {
       review_completion: false,
+      max_completion_checks_per_turn: None,
       completion_review_reserve_ms: None,
       max_turn_duration_ms: None,
       max_model_requests_per_turn: DEFAULT_MAX_MODEL_REQUESTS_PER_TURN,
@@ -651,6 +655,13 @@ impl RuntimeConfig {
     }
     if self.state_dir.trim().is_empty() {
       return Err(ConfigError("state_dir is required".into()));
+    }
+    if let Some(checks) = self.limits.max_completion_checks_per_turn
+      && !(1..=16).contains(&checks)
+    {
+      return Err(ConfigError(
+        "limits.max_completion_checks_per_turn must be between 1 and 16".into(),
+      ));
     }
     if let Some(duration) = self.limits.max_turn_duration_ms
       && !(1..=86_400_000).contains(&duration)
@@ -1105,6 +1116,33 @@ mod tests {
     let parsed = RuntimeConfig::parse(&config.to_json_string().unwrap()).unwrap();
     assert!(parsed.limits.review_completion);
     assert_eq!(parsed.limits.completion_review_reserve_ms, None);
+  }
+
+  #[test]
+  fn completion_checks_are_opt_in_bounded_and_round_trip() {
+    let mut config = sample_config();
+    assert_eq!(config.limits.max_completion_checks_per_turn, None);
+    let json = serde_json::to_value(&config).unwrap();
+    assert!(
+      json["limits"]
+        .get("max_completion_checks_per_turn")
+        .is_none()
+    );
+    for count in [1, 8, 16] {
+      config.limits.max_completion_checks_per_turn = Some(count);
+      let parsed = RuntimeConfig::parse(&serde_json::to_string(&config).unwrap()).unwrap();
+      assert_eq!(parsed.limits.max_completion_checks_per_turn, Some(count));
+    }
+    for count in [0, 17, u32::MAX] {
+      config.limits.max_completion_checks_per_turn = Some(count);
+      assert!(
+        config
+          .validate()
+          .unwrap_err()
+          .to_string()
+          .contains("max_completion_checks")
+      );
+    }
   }
 
   #[test]

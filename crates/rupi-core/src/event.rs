@@ -165,6 +165,8 @@ pub enum TurnStatus {
   Cancelled,
   /// The optional turn duration expired; cancellation preserves uncertain effects.
   TimeBudgetExhausted,
+  /// The caller's last permitted completion observation failed.
+  CompletionCheckExhausted,
   /// The turn consumed its model-request budget without a final answer.
   BudgetExhausted,
   /// The turn consumed its total or mutating tool-call budget; excess calls were not executed.

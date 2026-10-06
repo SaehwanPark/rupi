@@ -50,6 +50,9 @@ pub fn execute(args: RunArgs) -> Result<(), String> {
             TurnStatus::TimeBudgetExhausted => session
               .close_interrupted("turn time budget exhausted")
               .map_err(session_error),
+            TurnStatus::CompletionCheckExhausted => session
+              .close_interrupted("completion checks exhausted")
+              .map_err(session_error),
             TurnStatus::NeedsReconciliation => session
               .close_interrupted("mutating tool side effect needs reconciliation")
               .map_err(session_error),
