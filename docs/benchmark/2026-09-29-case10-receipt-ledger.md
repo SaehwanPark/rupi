@@ -2720,3 +2720,34 @@ host699C871BE5AA9F141363ECC628AF7CE93A241097EFC9F587E01BE494A613AF69 and
 relayA0BCAE689139BFD281CB91C209D5D8F6CF9EA42FD7EFF256BE02D97A871387C7 unchanged.
 No inference active during implementation/checks. Root's user policy hash is unchanged.
 Generated/model/oracle/diagnostic contents remain unread; broader stage gates remain active.
+
+### Retry28 terminal failure at caller observation
+
+Frozen source043196bc61d42b9ff47a03a011d7e263257534d6 / checkout
+47ec4fd5224484fa2c374222a0620b0dac816994 ends Failed(Semantic) after1,928.185s,
+no outer timeout. All37 requests close with37 usage records:163,378 work
+(142,752 uncached input +20,626 output).40 tools requested,39 complete, one known
+failure/zero Unknown. Listed files:receiptledger/__main__.py28,395bytes and
+receiptledger/__init__.py29bytes; public tests/README absent. Acceptance/tests1,
+all four help exits0, no verification timeout. Safe controls:37 time guides/six
+progress boundaries/one completion check/zero review/other. First delegated check
+returns unavailable after186ms, after37 started requests. No Pi or paired win.
+
+All frozen source/binary/harness/host/helper/model/config/control/full shared
+prompt/SPEC/three-reference audits pass before changes; all four model slots idle.
+Runner17976/child32116 end, screen exit0. CI37456020024:Ubuntu/macOS pass, Windows
+fails the pre-existing CLI mailbox fixture. Its host panics after15s awaiting two
+checks, native fixture budget10s; join unwrap suppresses child status/stderr, so exact
+child failure remains unmeasured. New initial schema/wire fixture passes. CI failure
+recorded on PR; no blind rerun. Generated/model/caller/oracle diagnostics stay unread.
+
+Initial bounding no longer prevents all tool progress in this screen, but isolated
+causality/model compliance/acceptance benefit is unproved. The terminal boundary is
+verified: first caller observation is unavailable and core safely stops without replay.
+Missing public tests/README should yield known failed public feedback according to
+host source, not by themselves unavailable. Exact caller exception is unmeasured:
+the host catches failures and deliberately returns generic unavailable. Investigate
+missing-deliverable and long-path owned fixtures before selecting an enhancement.
+Also strengthen the CLI mailbox fixture's timing/child-exit diagnostics before fresh CI.
+Keep unavailable/uncertain checks unreplayed and failures distinct from observation
+outages; no model/helper restart or repeated benchmark without verified enhancement.
