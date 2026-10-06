@@ -645,6 +645,7 @@ pub struct TurnLoop<'a> {
   initial_progress_boundary: bool,
   initial_progress_max_output_tokens: Option<u64>,
   initial_progress_max_argument_chars: Option<u64>,
+  initial_progress_thinking: Option<ThinkingLevel>,
   /// Explicit progress tools, or an empty list meaning every permitted
   /// mutating tool when the boundary is active.
   progress_tool_names: Vec<String>,
@@ -753,6 +754,7 @@ impl<'a> TurnLoop<'a> {
       initial_progress_boundary: false,
       initial_progress_max_output_tokens: None,
       initial_progress_max_argument_chars: None,
+      initial_progress_thinking: None,
       progress_tool_names: Vec::new(),
       progress_requests_without_progress: 0,
       progress_boundary_active: false,
@@ -915,6 +917,13 @@ impl<'a> TurnLoop<'a> {
   /// Counts Unicode scalar values, matching JSON Schema `maxLength`.
   pub fn with_initial_progress_max_argument_chars(mut self, limit: Option<u64>) -> Self {
     self.initial_progress_max_argument_chars = limit;
+    self
+  }
+
+  /// Select thinking only for the first request of an active initial progress boundary.
+  /// Later requests inherit the turn's configured thinking; the endpoint owns wire encoding.
+  pub fn with_initial_progress_thinking(mut self, level: Option<ThinkingLevel>) -> Self {
+    self.initial_progress_thinking = level;
     self
   }
 
@@ -3933,7 +3942,7 @@ impl<'a> TurnLoop<'a> {
     let mut request = ModelRequest::new(provider.model().clone(), capabilities, messages)
       .with_tools(tools)
       .with_tool_choice(tool_choice)
-      .with_thinking(self.thinking);
+      .with_thinking(self.initial_request_thinking().unwrap_or(self.thinking));
     let mut system = self.system.clone().unwrap_or_default();
     if !system.is_empty() {
       system.push_str("\n\n");
@@ -3949,16 +3958,27 @@ impl<'a> TurnLoop<'a> {
   }
 
   fn initial_progress_output_limit(&self, endpoint_limit: Option<u64>) -> Option<u64> {
-    if !self.tools_enabled
-      || !self.initial_progress_boundary
-      || !self.progress_boundary_active
-      || self.requests.load(Ordering::SeqCst) != 0
-    {
+    if !self.initial_progress_request_active() {
       return None;
     }
     self
       .initial_progress_max_output_tokens
       .map(|limit| endpoint_limit.map_or(limit, |endpoint| endpoint.min(limit)))
+  }
+
+  fn initial_progress_request_active(&self) -> bool {
+    self.tools_enabled
+      && self.initial_progress_boundary
+      && self.progress_boundary_active
+      && self.requests.load(Ordering::SeqCst) == 0
+  }
+
+  fn initial_request_thinking(&self) -> Option<ThinkingLevel> {
+    if self.initial_progress_request_active() {
+      self.initial_progress_thinking
+    } else {
+      None
+    }
   }
 
   fn initial_argument_limit(&self) -> Option<u64> {
@@ -4258,6 +4278,14 @@ impl<'a> TurnLoop<'a> {
       ));
     }
     let kind = RuntimeControlKind::ProgressBoundary;
+    if let Some(level) = self.initial_request_thinking() {
+      text.push_str(&format!(
+        " The caller requests thinking '{}' for this first request only; later requests use \
+         the turn's normal thinking setting. This is a requested generation policy, not an \
+         observation of hidden reasoning or a guarantee of endpoint enforcement.",
+        level.as_str()
+      ));
+    }
     if let Some(limit) = self.initial_argument_limit() {
       text.push_str(&format!(
         " Every string argument in the first mutating request is limited to {limit} Unicode \
@@ -15156,6 +15184,73 @@ mod tests {
   }
 
   #[test]
+  fn initial_thinking_selection_is_first_only_and_renews_without_output_selection() {
+    for selected in [None, Some(ThinkingLevel::Off)] {
+      let provider = Scripted::new(
+        "initial-thinking",
+        (0..2)
+          .flat_map(|_| {
+            [
+              tool_call("write_probe", json!({"content":"owned"})),
+              text("done"),
+            ]
+          })
+          .collect(),
+      );
+      let tools = registry_with(vec![Box::new(MutatingSpy {
+        seen: Arc::new(Mutex::new(Vec::new())),
+        outcome: ToolOutcome::succeeded("changed")
+          .with_effect(rupi_core::ToolEffectDisposition::Changed),
+      })]);
+      let policy = rupi_core::ProfilePolicy::new(
+        rupi_core::ContextProfile::Balanced,
+        provider.capabilities().context_window,
+      );
+      let mut trace = Recorder::default();
+      let mut runtime = TurnLoop::new(
+        &provider,
+        &tools,
+        &policy,
+        &mut trace,
+        SessionId::new(),
+        TraceId::new(),
+      )
+      .with_thinking(ThinkingLevel::Low)
+      .with_progress_boundary(Some(3), vec!["write_probe".into()])
+      .with_initial_progress_boundary(true)
+      .with_initial_progress_thinking(selected);
+      for task in ["first", "fresh"] {
+        assert_eq!(
+          runtime
+            .run_turn(task, &CancelToken::new(), &mut SilentProgress)
+            .unwrap()
+            .status,
+          TurnStatus::Completed
+        );
+      }
+      let requests = provider.requests();
+      assert_eq!(
+        requests.iter().map(|r| r.thinking).collect::<Vec<_>>(),
+        vec![
+          selected.unwrap_or(ThinkingLevel::Low),
+          ThinkingLevel::Low,
+          selected.unwrap_or(ThinkingLevel::Low),
+          ThinkingLevel::Low
+        ]
+      );
+      assert!(requests.iter().all(|r| r.model == requests[0].model));
+      if selected.is_some() {
+        assert!(
+          requests[0]
+            .messages
+            .iter()
+            .any(|m| m.text().contains("requests thinking 'off'"))
+        );
+      }
+    }
+  }
+
+  #[test]
   fn initial_argument_bound_rejects_before_dispatch_and_renews_without_restricting_later_calls() {
     for limit in [None, Some(2)] {
       let provider = Scripted::new(
@@ -15431,7 +15526,9 @@ mod tests {
       .with_progress_boundary(window, vec!["write_probe".into()])
       .with_initial_progress_boundary(initial)
       .with_initial_progress_max_output_tokens(ceiling)
-      .with_initial_progress_max_argument_chars(Some(2));
+      .with_initial_progress_max_argument_chars(Some(2))
+      .with_thinking(ThinkingLevel::Low)
+      .with_initial_progress_thinking(ceiling.map(|_| ThinkingLevel::Off));
       runtime.tools_enabled = enabled;
       assert_eq!(
         runtime
@@ -15441,6 +15538,7 @@ mod tests {
         TurnStatus::Completed
       );
       assert_eq!(provider.requests()[0].max_output_tokens, Some(32_768));
+      assert_eq!(provider.requests()[0].thinking, ThinkingLevel::Low);
       assert!(provider.requests()[0].tools.iter().all(|tool| {
         tool.parameters["properties"]["content"]
           .get("maxLength")
@@ -15480,8 +15578,10 @@ mod tests {
       TraceId::new(),
     )
     .with_max_requests(3)
+    .with_thinking(ThinkingLevel::Low)
     .with_progress_boundary(Some(3), vec!["write_probe".into()])
     .with_initial_progress_boundary(true)
+    .with_initial_progress_thinking(Some(ThinkingLevel::Off))
     .with_initial_progress_max_output_tokens(Some(8_192))
     .run_turn("task", &CancelToken::new(), &mut SilentProgress)
     .unwrap();
@@ -15490,6 +15590,8 @@ mod tests {
     assert_eq!(requests.len(), 2);
     assert_eq!(requests[0].max_output_tokens, Some(8_192));
     assert_eq!(requests[1].max_output_tokens, Some(32_768));
+    assert_eq!(requests[0].thinking, ThinkingLevel::Off);
+    assert_eq!(requests[1].thinking, ThinkingLevel::Low);
     assert!(
       requests
         .iter()

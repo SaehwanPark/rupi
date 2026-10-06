@@ -325,6 +325,7 @@ fn open_session_with_feedback(
   .with_initial_progress_boundary(config.limits.initial_progress_boundary)
   .with_initial_progress_max_output_tokens(config.limits.initial_progress_max_output_tokens)
   .with_initial_progress_max_argument_chars(config.limits.initial_progress_max_argument_chars)
+  .with_initial_progress_thinking(config.limits.initial_progress_thinking)
   .with_compaction_strategy(rupi_runtime::CompactionStrategy::Summarize);
   runtime = runtime.with_system(system_prompt);
   if let Some(backup) = &backup {

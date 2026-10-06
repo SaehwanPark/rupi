@@ -441,6 +441,9 @@ pub struct RuntimeLimits {
   /// Optional Unicode character limit per string argument in the first mutating request.
   #[serde(default, skip_serializing_if = "Option::is_none")]
   pub initial_progress_max_argument_chars: Option<u64>,
+  /// Optional thinking selection for the first request of an active initial boundary.
+  #[serde(default, skip_serializing_if = "Option::is_none")]
+  pub initial_progress_thinking: Option<ThinkingLevel>,
   /// Tool names that count as progress when the progress boundary is active.
   /// An empty list uses every permitted mutating tool instead.
   #[serde(default, skip_serializing_if = "Vec::is_empty")]
@@ -462,6 +465,7 @@ impl Default for RuntimeLimits {
       initial_progress_boundary: false,
       initial_progress_max_output_tokens: None,
       initial_progress_max_argument_chars: None,
+      initial_progress_thinking: None,
       progress_tool_names: Vec::new(),
     }
   }
@@ -663,6 +667,11 @@ impl RuntimeConfig {
     }
     if self.state_dir.trim().is_empty() {
       return Err(ConfigError("state_dir is required".into()));
+    }
+    if self.limits.initial_progress_thinking.is_some() && !self.limits.initial_progress_boundary {
+      return Err(ConfigError(
+        "limits.initial_progress_thinking requires initial_progress_boundary=true".into(),
+      ));
     }
     if let Some(limit) = self.limits.initial_progress_max_argument_chars
       && (!(1..=65_536).contains(&limit)
@@ -1281,6 +1290,36 @@ mod tests {
         .0
         .contains("max_mutating_tool_calls_per_turn")
     );
+  }
+
+  #[test]
+  fn initial_thinking_selection_is_omitted_and_requires_initial_progress() {
+    let mut config = sample_config();
+    assert!(
+      serde_json::to_value(&config).unwrap()["limits"]
+        .get("initial_progress_thinking")
+        .is_none()
+    );
+    config.limits.initial_progress_thinking = Some(ThinkingLevel::Off);
+    assert!(
+      config
+        .validate()
+        .unwrap_err()
+        .0
+        .contains("initial_progress_thinking")
+    );
+    config.limits.initial_progress_boundary = true;
+    config.limits.max_model_requests_without_progress = Some(3);
+    for level in [ThinkingLevel::Off, ThinkingLevel::Low, ThinkingLevel::High] {
+      config.limits.initial_progress_thinking = Some(level);
+      assert_eq!(
+        RuntimeConfig::parse(&config.to_json_string().unwrap())
+          .unwrap()
+          .limits
+          .initial_progress_thinking,
+        Some(level)
+      );
+    }
   }
 
   #[test]

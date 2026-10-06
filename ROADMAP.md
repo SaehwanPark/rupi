@@ -1739,6 +1739,18 @@ TUI rendering passed all budgets (3.31–3.90 µs/unit); checkpointed restore me
   checks pass (211 runtime/134 core/25 CLI); startup139.137ms cold/8.211ms median/
   8.884ms max meets budget. Unchanged runtime binary retains prior restore/context/render
   evidence. A newly frozen screen remains pending; no actual caller exception was read.
+  Retry29 ends Failed(Semantic) after409.515s: length at8192 output, zero decoded
+  tools/files/checks,14,435 known work. All acceptance/tests/help fail. Frozen audits and
+  three-platform4167463 CI pass. The caller root is not reached. Optional first-request
+  thinking selection is implemented: owned fixtures/wire prove Off first/Low later,
+  renewal, skipped/no-effect paths and requested disable encoding. Required Rust checks
+  pass (212 runtime/135 core/25 CLI); startup143.715ms cold/8.908ms median/9.921ms max,
+  five restores89.40–4858.55us and five context cases pass. Author invariant review passes.
+  The existing relay deterministically rejects non-low effort, discovered before launch.
+  The next matched profile selects globalOff/firstOff on existing direct8000, no reasoning
+  budget/relay deadline, preserving native2370s/provider2394s/outer2400s and other controls.
+  Model/processes/prompts/references stay unchanged; native/Pi first-control parity and
+  backend enforcement/latency/acceptance remain unproved. Usage and frozen screen pending.
   No semantic cause, acceptance benefit, or paired Case10 win is established.
   Rupi-first screening and paired
   evidence/delivery checks remain pending. Broader project gates remain active.

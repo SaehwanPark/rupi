@@ -289,6 +289,13 @@ fn configured_initial_output_ceiling_reaches_the_provider_wire_first_only() {
   config.limits.initial_progress_boundary = true;
   config.limits.initial_progress_max_output_tokens = Some(8_192);
   config.limits.initial_progress_max_argument_chars = Some(2_048);
+  config.limits.initial_progress_thinking = Some(rupi_core::ThinkingLevel::Off);
+  config.thinking = rupi_core::ThinkingLevel::Low;
+  config.endpoints[0].openai_compat.thinking_input =
+    Some(rupi_core::OpenAiThinkingInput::ReasoningEffort);
+  config.endpoints[0].openai_compat.thinking_disable =
+    Some(rupi_core::OpenAiThinkingDisable::ReasoningEffortNone);
+  config.endpoints[0].openai_compat.preserve_reasoning = true;
   fs::write(&path, config.to_json_string().unwrap()).unwrap();
   let output = run(&path, &workspace, "create owned.txt");
   assert!(
@@ -301,6 +308,8 @@ fn configured_initial_output_ceiling_reaches_the_provider_wire_first_only() {
   let first: serde_json::Value = serde_json::from_str(&requests[0].body).unwrap();
   let later: serde_json::Value = serde_json::from_str(&requests[1].body).unwrap();
   assert_eq!(first["max_tokens"], 8_192);
+  assert_eq!(first["reasoning_effort"], "none");
+  assert_eq!(later["reasoning_effort"], "low");
   let first_write = first["tools"]
     .as_array()
     .unwrap()

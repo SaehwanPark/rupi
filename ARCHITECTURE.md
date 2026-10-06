@@ -529,6 +529,15 @@ turns renew it. Initial guidance asks for one small coherent complete mutation f
 by incremental complete calls. It enforces no artifact names or task correctness, and
 neither partial responses nor failed mutations are replayed. Omission preserves behavior.
 
+Optional `initial_progress_thinking` requires initial progress selection and overrides
+requested thinking only in its first ordinary active-boundary request. Later requests
+inherit the normal level even without Changed evidence; new turns renew selection.
+Output/argument budgeting and safety gates remain unchanged. The endpoint's explicit
+encoding owns the wire request; runtime control describes intent rather than observed
+hidden reasoning or guaranteed backend enforcement. Owned fresh/skipped/no-effect and
+CLI wire fixtures verify Off first/Low later, including `reasoning_effort: none` when
+the endpoint declares that disable encoding. The default inherits normal thinking.
+
 ### Opt-in completion review
 
 `RuntimeLimits::review_completion` defaults to false. When enabled, the first otherwise

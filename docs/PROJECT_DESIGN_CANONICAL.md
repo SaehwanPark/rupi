@@ -1305,6 +1305,12 @@ retain progress requirements, and renew only on a new turn. Later requests keep 
 tool contracts. Guidance may ask for incremental complete changes, but cannot authorize
 new effects, impose domain artifacts or turn incomplete responses into executable calls.
 
+An optional initial thinking selection may override only that first active-boundary
+request, using the endpoint's declared encoding. Later requests inherit normal thinking,
+even before progress is satisfied; fresh turns renew selection. Describe requested intent
+without claiming observed hidden reasoning or backend compliance. Do not relax output,
+tool, approval, cancellation or unresolved-effect safeguards to apply this selection.
+
 A caller may opt into one bounded review after the first otherwise accepted ordinary
 completion. Preserve native assistant evidence and record review instructions with
 runtime provenance. Continue only through normal request/tool/time budgets, approval,

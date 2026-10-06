@@ -524,6 +524,8 @@ Expected divergences include:
 - optional first-request output ceiling within that initial boundary; owned runtime and
   provider-wire fixtures establish budgeting behavior, not acceptance or latency benefit;
   native Pi selection remains null;
+- optional first-request thinking selection within initial progress; owned renewal and
+  wire fixtures verify requested levels, while backend enforcement and Pi parity are unproved;
 - optional first-request string argument limits for mutating tools, advertised through
   request-local schemas and enforced before dispatch. Owned Unicode/schema/renewal/wire
   fixtures cover this Rupi-specific contract; acceptance benefit and Pi parity are unproved;

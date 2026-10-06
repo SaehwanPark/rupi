@@ -17,8 +17,14 @@ incomplete-response no-dispatch/no-replay remain intact. No timer, retry, event 
 Owned comparative fixtures must prove Off first/Low later/renewal, default/skipped paths,
 config omission/dependency/round-trip and real CLI wire reasoning_effort none/low using
 the endpoint's explicit disable encoding. Reasoning preservation remains configured.
-Add isolated Case10 option none(default/inherit) or selected thinking level and native
-scalar/Pi null. Select Off first, Low/4096 later; all other Retry29 controls unchanged.
+Add isolated Case10 option inherit(default) or selected thinking level and native
+scalar/Pi null. Owned fixtures select Off first/Low later. The preserved relay rejects
+every effort except low; sending none there is deterministically invalid, discovered
+before inference. Do not restart/replace it or add another helper. The next comparable
+profile instead uses existing direct8000 with Off globally for both Rupi/Pi, first Off
+selected explicitly, and reasoning budget selection0/omitted. Later requests inherit Off.
+The physical model is unchanged. Native2370s/provider2394s/outer2400s remain authoritative;
+there is no relay1194s limit on the direct route. Preserve other Retry29 runtime controls.
 Verify shared prompt/18 other prompts/SPEC/three references, required Rust/debug/startup/
 restore/context checks and parent invariant review. Commit/push/freeze before Retry30.
 No actual latency/acceptance/token/Pi benefit or recovered hidden reasoning is claimed.

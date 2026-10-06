@@ -10,6 +10,10 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Added
 
+- Added optional first-request thinking selection within initial progress, renewed each
+  turn and inherited normally afterward. The endpoint owns disable encoding; requested
+  Off is not a claim about observed hidden reasoning or guaranteed backend enforcement.
+
 - Added optional initial mutating-tool string argument bounds, with request-local schema
   constraints and pre-dispatch rejection of oversized completed calls. Unicode counting,
   first-request capture and fresh-turn renewal are verified; later calls remain available.

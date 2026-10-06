@@ -49,6 +49,8 @@ param(
   [int]$Case10InitialProgressMaxOutputTokens = 0,
   [ValidateRange(0, 65536)]
   [int]$Case10InitialProgressMaxArgumentChars = 0,
+  [ValidateSet('inherit', 'off', 'minimal', 'low', 'medium', 'high', 'xhigh')]
+  [string]$Case10InitialProgressThinking = 'inherit',
   [ValidateRange(0, 16)]
   [int]$Case10CompletionChecks = 0,
   [ValidateRange(0, 64)]
@@ -61,6 +63,9 @@ param(
 )
 
 $ErrorActionPreference = "Stop"
+if ($Case10InitialProgressThinking -ne 'inherit' -and -not $Case10InitialProgressBoundary) {
+  throw "Case10InitialProgressThinking requires Case10InitialProgressBoundary."
+}
 if ($Case10InitialProgressMaxArgumentChars -gt 0 -and $Case10InitialProgressMaxOutputTokens -le 0) {
   throw "Case10InitialProgressMaxArgumentChars requires Case10InitialProgressMaxOutputTokens."
 }
@@ -2165,6 +2170,21 @@ function Get-BenchmarkInitialArgumentLimit([hashtable]$case, [string]$agent) {
   return $null
 }
 
+function Get-BenchmarkInitialThinking([hashtable]$case, [string]$agent) {
+  if ($case.Id -eq "10-receipt-ledger" -and $agent -eq "rupi" -and
+      $Case10InitialProgressThinking -ne 'inherit') {
+    return $Case10InitialProgressThinking.ToLowerInvariant()
+  }
+  return $null
+}
+
+function Set-BenchmarkInitialThinking([hashtable]$case, [object]$limits) {
+  $selected = Get-BenchmarkInitialThinking $case "rupi"
+  if ($null -eq $selected) { return }
+  if (-not $Case10InitialProgressBoundary) { throw "Initial thinking requires initial progress." }
+  $limits | Add-Member -MemberType NoteProperty -Force -Name initial_progress_thinking -Value $selected
+}
+
 function Set-BenchmarkInitialArgumentLimit([hashtable]$case, [object]$limits) {
   $selected = Get-BenchmarkInitialArgumentLimit $case "rupi"
   if ($null -eq $selected) { return }
@@ -2287,6 +2307,7 @@ function New-BenchmarkWorkspace([hashtable]$case, [string]$agentRoot, [string]$t
     Set-BenchmarkMutatingBudget $case $config.limits
     Set-BenchmarkInitialOutputLimit $case $config.limits
     Set-BenchmarkInitialArgumentLimit $case $config.limits
+    Set-BenchmarkInitialThinking $case $config.limits
     if ($case.Id -eq "10-receipt-ledger" -and $Case10CompletionChecks -gt 0) {
       $config.limits | Add-Member -MemberType NoteProperty -Force `
         -Name max_completion_checks_per_turn -Value $Case10CompletionChecks
@@ -2643,6 +2664,7 @@ function Invoke-AgentCase([hashtable]$case, [string]$agent, [string]$root, [stri
           Get-BenchmarkInitialOutputLimit $case $agent
         $turnRecord["configured_initial_progress_max_argument_chars"] =
           Get-BenchmarkInitialArgumentLimit $case $agent
+        $turnRecord["configured_initial_progress_thinking"] = Get-BenchmarkInitialThinking $case $agent
         $turnRecord["configured_initial_progress_boundary"] = if ($agent -eq "rupi") {
           $Case10InitialProgressBoundary.IsPresent
         } else { $null }
@@ -3515,6 +3537,7 @@ $summary = [ordered]@{
     Get-BenchmarkInitialOutputLimit @{Id="10-receipt-ledger"} "rupi"
   case10_rupi_initial_progress_max_argument_chars =
     Get-BenchmarkInitialArgumentLimit @{Id="10-receipt-ledger"} "rupi"
+  case10_rupi_initial_progress_thinking = Get-BenchmarkInitialThinking @{Id="10-receipt-ledger"} "rupi"
   case10_max_output_tokens = $Case10MaxOutputTokens
   case10_rupi_max_turn_duration_ms = if ($Case10MaxTurnDurationMs -gt 0) {
     $Case10MaxTurnDurationMs
