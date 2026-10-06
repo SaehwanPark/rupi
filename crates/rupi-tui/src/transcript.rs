@@ -1285,6 +1285,7 @@ mod tests {
         tool_calls: 2,
         reasoning_provenance: Some(ReasoningProvenance::Reconstructed),
         first_delta_ms: None,
+        failure: None,
       }),
       AgentEvent::ModelRetry(rupi_core::ModelRetry {
         attempt: 1,

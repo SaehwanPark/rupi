@@ -157,6 +157,13 @@ The outer request loop still enforces the total deadline and cancellation; ambig
 retain adapter quarantine and replay-safety classification. Transport activity creates no
 synthetic model output, usage, reasoning, or journal events.
 
+Each failed model request closes with optional typed `ModelRequestFailure` metadata on
+`ModelRequestCompleted`: category, lifecycle phase, replay safety and partial-output status.
+It copies the already classified runtime failure and excludes provider messages and payloads.
+Usage remains independent and may be unknown. Older records and Pi imports omit the field;
+absence alone proves no success. The metadata does not change retry, failover, quarantine,
+projection or replay behavior, and is not added to model context or normal rendering.
+
 OpenAI-compatible endpoint quirks travel through `ModelEndpoint.openai_compat`, not provider
 adapter defaults that the CLI cannot reach. Streaming, usage inclusion, token-limit field,
 thinking-control dialect and safe extra headers are endpoint-scoped. An explicit thinking-off

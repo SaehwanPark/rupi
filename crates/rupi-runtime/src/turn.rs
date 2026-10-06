@@ -2807,6 +2807,7 @@ impl<'a> TurnLoop<'a> {
                   tool_calls,
                   reasoning_provenance: provenance,
                   first_delta_ms,
+                  failure: None,
                 }),
               );
               return Ok(Response {
@@ -2866,6 +2867,12 @@ impl<'a> TurnLoop<'a> {
             })?,
             reasoning_provenance: provenance,
             first_delta_ms,
+            failure: Some(rupi_core::ModelRequestFailure {
+              kind: failure.kind,
+              phase: failure.phase,
+              replay_safety: failure.replay_safety,
+              partial_output_emitted: failure.partial_output_emitted,
+            }),
           }),
         )
         .map_err(TurnFailure::from)?;
@@ -13612,6 +13619,16 @@ mod tests {
     assert_eq!(backup.requests().len(), 1);
     assert_eq!(trace.count("model_retry"), 0);
     assert_eq!(trace.count("model_failover"), 1);
+    let completion = trace.find("model_request_completed").unwrap();
+    assert_eq!(completion["failure"]["kind"], "timeout");
+    assert_eq!(completion["failure"]["phase"], "waiting_for_response");
+    assert_eq!(
+      completion["failure"]["replay_safety"],
+      "ambiguous_post_boundary"
+    );
+    assert_eq!(completion["failure"]["partial_output_emitted"], false);
+    assert!(completion.get("input_tokens").is_none());
+    assert!(completion.get("output_tokens").is_none());
     assert!(
       trace
         .diagnostics()
@@ -17690,6 +17707,14 @@ mod tests {
     let completions = trace.all("model_request_completed");
     assert!(completions[0]["output_tokens"].is_null());
     assert!(completions[0]["finish_reason"].is_null());
+    assert_eq!(completions[0]["failure"]["kind"], "cancelled");
+    assert_eq!(completions[0]["failure"]["phase"], "streaming");
+    assert_eq!(
+      completions[0]["failure"]["replay_safety"],
+      "committed_output"
+    );
+    assert_eq!(completions[0]["failure"]["partial_output_emitted"], true);
+    assert!(completions[1].get("failure").is_none());
   }
 
   #[test]

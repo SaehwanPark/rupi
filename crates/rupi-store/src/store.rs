@@ -1458,6 +1458,7 @@ impl Session {
           tool_calls: 0,
           reasoning_provenance: None,
           first_delta_ms: None,
+          failure: None,
         }),
       );
       self.emit(&mut completion)?;
@@ -5622,6 +5623,7 @@ mod tests {
                   tool_calls: 0,
                   reasoning_provenance: None,
                   first_delta_ms: Some(0),
+                  failure: None,
                 }),
               ),
               Message::assistant("assistant text"),
@@ -5659,6 +5661,7 @@ mod tests {
                   tool_calls: calls.len() as u32,
                   reasoning_provenance: None,
                   first_delta_ms: Some(0),
+                  failure: None,
                 }),
               ),
               Message::new(
@@ -6503,6 +6506,7 @@ mod tests {
           tool_calls: 1,
           reasoning_provenance: None,
           first_delta_ms: Some(0),
+          failure: None,
         }),
       );
       session.emit_message(&mut completion, &assistant).unwrap();
@@ -6597,6 +6601,7 @@ mod tests {
           tool_calls: 1,
           reasoning_provenance: None,
           first_delta_ms: Some(0),
+          failure: None,
         }),
       );
       session.emit_message(&mut completion, &assistant).unwrap();
@@ -6692,6 +6697,7 @@ mod tests {
           tool_calls: 3,
           reasoning_provenance: None,
           first_delta_ms: Some(0),
+          failure: None,
         }),
       );
       session.emit_message(&mut completion, &assistant).unwrap();
@@ -6834,6 +6840,7 @@ mod tests {
           tool_calls: 1,
           reasoning_provenance: None,
           first_delta_ms: Some(0),
+          failure: None,
         }),
       );
       session.emit_message(&mut completion, &assistant).unwrap();
@@ -7401,6 +7408,7 @@ mod tests {
           tool_calls: 0,
           reasoning_provenance: None,
           first_delta_ms: Some(1),
+          failure: None,
         }),
       ))
       .unwrap();
@@ -7442,6 +7450,7 @@ mod tests {
         tool_calls: 0,
         reasoning_provenance: None,
         first_delta_ms: Some(1),
+        failure: None,
       }),
     );
     session
@@ -7568,6 +7577,7 @@ mod tests {
           tool_calls: 0,
           reasoning_provenance: None,
           first_delta_ms: Some(1),
+          failure: None,
         }),
       ] {
         session

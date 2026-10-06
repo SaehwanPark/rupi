@@ -781,6 +781,7 @@ mod tests {
         duration_ms: 12,
         tool_calls: 0,
         first_delta_ms: None,
+        failure: None,
       }),
       AgentEvent::ModelFailover(ModelFailover {
         from: rupi_core::capability::ModelRef::new("a", "a"),

@@ -37,6 +37,8 @@ param(
   [int]$Case10ReasoningRelayPort = 8001,
   [ValidateRange(0, 3600)]
   [int]$Case10RelayResponseTimeoutSeconds = 0,
+  [ValidateRange(0, 3600000)]
+  [long]$Case10ProviderReadTimeoutMs = 0,
   [ValidateRange(1, 65536)]
   [int]$Case10MaxOutputTokens = 16384,
   [ValidateRange(0, 86400000)]
@@ -109,6 +111,9 @@ $script:providerTimeoutGraceSeconds = [int][math]::Min(
 $script:providerRequestTimeoutMs = [int](
   ($TurnTimeoutSeconds - $script:providerTimeoutGraceSeconds) * 1000
 )
+if ($Case10ProviderReadTimeoutMs -gt $script:providerRequestTimeoutMs) {
+  throw 'Case10 provider read timeout must not exceed the total provider deadline.'
+}
 if ($Case10MaxTurnDurationMs -ge ($TurnTimeoutSeconds * 1000)) {
   throw "Case10MaxTurnDurationMs must be below the outer turn watchdog."
 }
@@ -2216,6 +2221,21 @@ function Get-BenchmarkReviewCheck([hashtable]$case, [string]$agent) {
   return [bool]$Case10CompletionCheckOnReview
 }
 
+function Get-BenchmarkReadTimeout([hashtable]$case, [string]$agent) {
+  if ($case.Id -eq '10-receipt-ledger' -and $agent -eq 'rupi' -and
+      $Case10ProviderReadTimeoutMs -gt 0) { return $Case10ProviderReadTimeoutMs }
+  return $null
+}
+
+function Set-BenchmarkReadTimeout([hashtable]$case, [object]$endpoint) {
+  $selected = Get-BenchmarkReadTimeout $case 'rupi'
+  if ($null -eq $selected) { return }
+  if ($selected -gt $script:providerRequestTimeoutMs) {
+    throw 'Case10 provider read timeout must not exceed the total provider deadline.'
+  }
+  $endpoint | Add-Member -MemberType NoteProperty -Force -Name read_timeout_ms -Value $selected
+}
+
 function Get-BenchmarkRepairCheckWindow([hashtable]$case, [string]$agent) {
   if ($case.Id -eq '10-receipt-ledger' -and $agent -eq 'rupi' -and
       $Case10CompletionCheckRepairRequestWindow -gt 0) {
@@ -2445,6 +2465,7 @@ function New-BenchmarkWorkspace([hashtable]$case, [string]$agentRoot, [string]$t
       } else {
         $config.endpoints[0].request_timeout_ms = $reqTimeout
       }
+      Set-BenchmarkReadTimeout $case $config.endpoints[0]
     }
     Write-Json $configPath $config
   }
@@ -2524,6 +2545,7 @@ function Read-RupiMetrics([string]$project, [int]$SkipLines = 0) {
   }
   $reviewPositions = [Collections.Generic.List[int]]::new()
   $completionChecks = [Collections.Generic.List[object]]::new()
+  $requestFailures = [Collections.Generic.List[object]]::new()
   $toolNames = [Collections.Generic.List[string]]::new(); $status = $null; $finish = [Collections.Generic.List[string]]::new()
   $seenLines = 0
   foreach ($file in $traceFiles) {
@@ -2555,6 +2577,20 @@ function Read-RupiMetrics([string]$project, [int]$SkipLines = 0) {
         "model_request_started" { $started++ }
         "model_request_completed" {
           $completed++
+          $failure = $record.failure
+          if ($null -ne $failure -and
+              $failure.kind -in @('transport','timeout','rate_limited','provider_unavailable',
+                'authentication','protocol','context_overflow','semantic','cancelled') -and
+              $failure.phase -in @('pre_request','waiting_for_response','streaming','normalizing') -and
+              $failure.replay_safety -in @('safe','ambiguous_post_boundary','committed_output') -and
+              $failure.partial_output_emitted -is [bool]) {
+            [void]$requestFailures.Add([pscustomobject]@{
+              kind = [string]$failure.kind; phase = [string]$failure.phase
+              replay_safety = [string]$failure.replay_safety
+              partial_output_emitted = $failure.partial_output_emitted
+              after_started_requests = $started
+            })
+          }
           $hasInput = $null -ne $record.input_tokens
           $hasOutput = $null -ne $record.output_tokens
           $requestLogical = if ($null -ne $record.logical_prompt_tokens) { [int64]$record.logical_prompt_tokens } elseif ($hasInput) { [int64]$record.input_tokens } else { [int64]0 }
@@ -2596,6 +2632,7 @@ function Read-RupiMetrics([string]$project, [int]$SkipLines = 0) {
     runtime_control_counts = $controlCounts
     completion_review_after_started_requests = @($reviewPositions)
     completion_checks = @($completionChecks)
+    model_request_failures = @($requestFailures)
     measurement_scope = "turn"
   }
 }
@@ -2760,6 +2797,7 @@ function Invoke-AgentCase([hashtable]$case, [string]$agent, [string]$root, [stri
         $Case10MaxTurnDurationMs -gt 0
       ) { $Case10MaxTurnDurationMs } else { $null }
       if ($case.Id -eq "10-receipt-ledger") {
+        $turnRecord['configured_provider_read_timeout_ms'] = Get-BenchmarkReadTimeout $case $agent
         $turnRecord["configured_completion_checks"] = if (
           $agent -eq "rupi" -and $Case10CompletionChecks -gt 0
         ) { $Case10CompletionChecks } else { $null }
@@ -3666,6 +3704,7 @@ $summary = [ordered]@{
   turn_timeout_seconds = $TurnTimeoutSeconds
   provider_timeout_grace_seconds = $script:providerTimeoutGraceSeconds
   provider_request_timeout_ms = $script:providerRequestTimeoutMs
+  case10_rupi_provider_read_timeout_ms = Get-BenchmarkReadTimeout @{Id='10-receipt-ledger'} 'rupi'
   results = @($results)
 }
 Write-Json (Join-Path $runRoot "results.json") $summary

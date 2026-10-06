@@ -1795,7 +1795,12 @@ TUI rendering passed all budgets (3.31–3.90 µs/unit); checkpointed restore me
   Unavailable/timeout semantics remain. Required local Rust/debug checks, owned preflight
   comparison/fresh repair/default post-commit fixture, nine harness/prompt/reference guards
   and startup/five restore/five context budgets pass. Parent author review passes; caller
-  sourcefa68218/runtime4cc8425 pushed, remote CI/new frozen Retry35 remain pending.
+  sourcefa68218/runtime4cc8425 and frozen Retry35 all3 CI pass. Retry35 ends in Timeout
+  at1295.184s before review/checking; only the application file is listed, and one of16
+  requests has unknown usage. Frozen audits pass/slots idle. Owned config inspection
+  verifies omitted idle limit resolves to300s despite total2394s/native2370s. Exact
+  failure phase is unavailable in old summaries. Optional typed request-failure evidence
+  and explicit Case10 idle-budget selection are active; causal benefit is unproven.
   No semantic cause, acceptance benefit, or paired Case10 win is established.
   Rupi-first screening and paired
   evidence/delivery checks remain pending. Broader project gates remain active.

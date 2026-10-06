@@ -19,9 +19,21 @@ New-Item -ItemType Directory -Force -Path $sessions | Out-Null
 $marker = "owned-content-must-not-enter-metrics"
 $records = @(
   @{ type = "model_request_started" },
+  @{ type = 'model_request_completed'; failure = @{kind='timeout';phase='waiting_for_response';
+    replay_safety='ambiguous_post_boundary';partial_output_emitted=$false;message=$marker} },
   @{ type = "runtime_control_injected"; kind = "completion_review"; text = $marker },
   @{ type = "runtime_control_injected"; kind = "turn_time_budget"; text = $marker },
   @{ type = "model_request_started" },
+  @{ type = 'model_request_completed'; failure = @{kind='transport';phase='streaming';
+    replay_safety='committed_output';partial_output_emitted=$true;message=$marker} },
+  @{ type = 'model_request_completed'; failure = @{kind=$marker;phase='streaming';
+    replay_safety='safe';partial_output_emitted=$true} },
+  @{ type = 'model_request_completed'; failure = @{kind='timeout';phase=$marker;
+    replay_safety='safe';partial_output_emitted=$true} },
+  @{ type = 'model_request_completed'; failure = @{kind='timeout';phase='streaming';
+    replay_safety=$marker;partial_output_emitted=$true} },
+  @{ type = 'model_request_completed'; failure = @{kind='timeout';phase='streaming';
+    replay_safety='safe';partial_output_emitted='false'} },
   @{ type = "runtime_control_injected"; kind = "completion_review"; text = $marker },
   @{ type = "runtime_control_injected"; kind = "future_control"; text = $marker },
   @{ type = "assistant_delta"; text = $marker },
@@ -39,7 +51,16 @@ $lines = @($records | ForEach-Object { $_ | ConvertTo-Json -Compress })
   (Join-Path $sessions "owned.trace.jsonl"), $lines, [Text.UTF8Encoding]::new($false)
 )
 $all = Read-RupiMetrics $fixture
-$scoped = Read-RupiMetrics $fixture 3
+$scoped = Read-RupiMetrics $fixture 4
+if ($all.model_request_failures.Count -ne 2 -or $scoped.model_request_failures.Count -ne 1 -or
+    $all.model_request_failures[0].kind -cne 'timeout' -or
+    $all.model_request_failures[0].phase -cne 'waiting_for_response' -or
+    $all.model_request_failures[0].partial_output_emitted -ne $false -or
+    $scoped.model_request_failures[0].replay_safety -cne 'committed_output' -or
+    $scoped.model_request_failures[0].partial_output_emitted -ne $true -or
+    $scoped.model_request_failures[0].after_started_requests -ne 1) {
+  throw 'Failure metadata whitelist, typed flags or turn scope mismatch.'
+}
 if ($all.runtime_control_counts.completion_review -ne 2 -or
     $all.runtime_control_counts.turn_time_budget -ne 1 -or
     $all.runtime_control_counts.unknown -ne 1 -or

@@ -368,6 +368,9 @@ Summary of metadata that cannot round-trip between Pi and `rupi`:
    import with explicit stderr warnings.
 10. **Provider billing metadata**: Pi's `cost` is omitted because `rupi` records token quantities,
     not billing amounts. Its input, cache-read, and cache-write counts are preserved on import.
+11. **Request failure metadata**: Native request completions may carry a typed failure category,
+    phase, replay safety and partial-output flag. Pi imports leave this absent; exports omit it.
+    Legacy native records also omit it. Absence does not certify success or known usage.
 
 ## 11. Themes and UI
 
