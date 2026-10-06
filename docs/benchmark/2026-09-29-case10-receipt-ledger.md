@@ -1830,3 +1830,17 @@ Contents remain unread; public test file presence does not establish meaningful
 assertions or preserved tests. Frozen-input audit passes. Two-attempt recorded
 totals:168,376 work tokens,2,400,493 ms,63 completed tools,two known failures,
 zero Unknown calls. Remaining attempts continue; Pi remains unrun.
+
+### Retry18 attempt3: continued edits, acceptance still failing
+Attempt3 reached the1,200,578 ms runner watchdog. Configured acceptance and
+project tests failed (exit1); all four help checks passed (exit0), with no
+verification timeout. Recorded work82,550 tokens (69,162 uncached input,
+13,388 output),30 model starts/completion events,29 usage records,and42
+completed tools; zero failed/Unknown calls. Previous abandoned request closure
+can contribute a completion event.
+Filtered metadata lists README702bytes,app init554bytes/main44,912bytes,
+util224bytes,tests init0bytes,and test_receiptledger.py14,686bytes. Contents
+remain unread; sizes do not verify preserved assertions or contract correctness.
+Frozen-input audit passes. Three-attempt totals250,926 recorded work tokens,
+3,601,071 ms,105 completed tools,two known failures,zero Unknown calls.
+Remaining attempts continue; Pi remains unrun and Case10 remains unresolved.
