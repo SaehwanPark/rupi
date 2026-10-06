@@ -2870,3 +2870,36 @@ hostDC75BEB0995E0EC00C1D6AFC6AE34FCD53CA18CE5085D85B1C1A7ED70865A8FE;
 helperA0BCAE689139BFD281CB91C209D5D8F6CF9EA42FD7EFF256BE02D97A871387C7.
 Quota wait completed after reset+2min; provider reports0% five-hour/0% weekly at13:52UTC.
 Root user policy remains untouched. Broader gates and final paired evidence remain active.
+
+### Retry30 terminal time-budget failure
+
+Frozen source81574ed/checkout5fba487f19669f23fd523a720de722dcae222a46 ends
+TimeBudgetExhausted after2370.112s with no outer timeout.27 requests start/close,26 usage
+records;143,756 known work=109,281 uncached input+34,475 output. The unfinished request's
+actual work remains unknown, never zero.33 tool requests/32 completions/one known failure/
+zero Unknown; one write plus edit/read/grep activity. Only receiptledger/__main__.py
+29,883 bytes is listed; init/tests/README absent. Acceptance/tests exits1; four help exits0;
+no verification timeout. No completion checks, one completion review after21 started
+requests, six progress boundaries/27 time guides. No Pi or configured win.
+
+All frozen binary/runtime/harness/public-host/helper/model/config/control/full prompt/SPEC/
+three-reference audits pass before changes. Runner24420/child33940 exit, screen exit0;
+all four model slots idle. Exact frozen5fba487 CI37475008449 passes all three platforms.
+Generated/model/caller/oracle/diagnostic contents remain unread. The first request
+progressed beyond earlier no-tool failure, but direct-global-Off changes are confounded;
+no isolated causal thinking or effective backend no-reasoning claim.
+
+Verified feedback gap: caller public observations run only after accepted final assistant
+text. This turn reaches a bounded completion review but never reaches a caller check;
+runtime safe boundaries therefore have no fresh public observation of missing deliverables.
+Application-only artifact progression and time exhaustion are verified; precise model
+reasoning and application defects remain unmeasured.
+
+Next bounded enhancement: opt-in caller completion observation at the one-shot completion
+review boundary, sharing the existing allowance/mailbox/provenance/remaining-time/cancel/
+Unknown safeguards. Failed or Unavailable observations continue bounded same-model review;
+Passed does not itself finish the turn. Default omission preserves prior behavior.
+Owned comparative tests must prove early failed public feedback permits repair before
+final assistant completion, counts once, renews, and respects cancellation/deadline/
+Unknown/no-tools/exhaustion. Verify config/CLI/harness/public host/frozen metadata and
+required gates before Retry31. Usage before this slice:5% five-hour/1% weekly.
