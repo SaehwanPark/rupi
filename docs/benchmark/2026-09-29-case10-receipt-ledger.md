@@ -3022,3 +3022,34 @@ hostDC75BEB0995E0EC00C1D6AFC6AE34FCD53CA18CE5085D85B1C1A7ED70865A8FE;
 helperA0BCAE689139BFD281CB91C209D5D8F6CF9EA42FD7EFF256BE02D97A871387C7.
 Root user policy hash unchanged; only main and active Case10 branches remain.
 Usage before freeze32% five-hour/5% weekly. Remote CI and final paired evidence pending.
+
+### Retry32 terminal audit and request-cap root cause
+
+Frozen checkout 575129b34f344329bdea549ee1c331a09d7ef882, runtime
+be0c03268da20106d248f81616c3b7c63f3e40e1:
+bench-20261006-case10-template-off-review-check-args2048-first8192-check8-mut32-review300-turn2370-retry32-rupi40-screen1-2400s.
+The single Rupi screen ended budget_exhausted at 1,583,277 ms without an outer timeout.
+All 40 started requests closed with usage: 118,092 known work (102,257 uncached input,
+15,835 output). There were 44 tool requests, 39 completions, five known failures, and
+zero Unknown operations. Requested names: write 7, edit 12, read 10, grep 15.
+
+Filename/byte metadata lists README.md (9,783), receiptledger/__init__.py (300),
+receiptledger/__main__.py (40,414), and receiptledger/audit.py (834); both required test
+files are absent. Acceptance and tests exited 1; all four public help checks exited 0,
+with no verification timeout. There were seven progress boundaries, 40 time-budget
+controls, one request finalization, zero reviews and zero caller checks. No acceptance
+or configured win is established.
+
+All frozen binary/runtime/harness/host/helper/model/config/control/full-prompt/SPEC/
+three-reference audits passed before any subsequent changes. Exact shared prompt hash
+remains 230589C5F20B5486CD84216CE5B6A0DB9734CE724C2903D891E4D50D9CFB3270.
+All model slots are idle; runner and child ended. Source CI 37487417266 and exact frozen
+checkout CI 37487811299 passed all three platforms. Actual generated content, model
+outputs, caller diagnostics and oracle content remain unread by the parent.
+
+Verified failure: the 40-request cap bound before ordinary final text or the time reserve
+could trigger review/checking; approximately 786,723 ms of native time remained. Tools
+were below the selected 32-mutation and 64-total caps. Finalization deliberately cannot
+invoke tools or checks. Application-specific defects and hidden reasoning remain
+unmeasured. Next slice adds an opt-in request-count review reserve sharing the existing
+one-shot review/check machinery, without enlarging any allowance.
