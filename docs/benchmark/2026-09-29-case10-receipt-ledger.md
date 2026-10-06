@@ -1858,3 +1858,17 @@ Contents remain unread; sizes establish neither correctness nor assertions.
 Frozen-input audit passes. Four-attempt totals314,811 recorded work tokens,
 4,801,268 ms,133 completed tools,six known failures,zero Unknown calls.
 Two attempts remain; Pi remains unrun and Case10 remains unresolved.
+
+### Retry18 attempt5: acceptance still failing after continued repairs
+Attempt5 reached the1,200,181 ms runner watchdog. Configured acceptance and
+project tests failed (exit1); all four help checks passed (exit0), with no
+verification timeout. Recorded work85,948 tokens (72,478 uncached input,
+13,470 output),29 model starts/completion events,28 usage records,35 tool
+requests,34 completed tools,one known failure,and zero Unknown calls.
+Completion events may include prior abandoned-request closure.
+Filtered metadata lists README702bytes,app init554bytes/main49,066bytes,
+undo224bytes/util224bytes,tests init0bytes,and test_receiptledger.py19,024bytes.
+Contents remain unread; sizes do not establish correctness or assertions.
+Frozen-input audit passes. Five-attempt totals400,759 recorded work tokens,
+6,001,449 ms,167 completed tools,seven known failures,zero Unknown calls.
+The final attempt is confirmed running; Pi remains unrun and Case10 unresolved.
