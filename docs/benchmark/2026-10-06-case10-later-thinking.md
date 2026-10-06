@@ -75,3 +75,36 @@ mutation32, checks8/on-review/initialWindow8/repairWindow3/checkReviewReserve2/
 finalReservationtrue/timeReserve300s/requestReserve8. Only global ThinkingLevel becomesLow.
 Root policy SHA3CEE11E5D4D8C8CA7CCF34F87A64B18BB183D4AF9AF79AB964AE19D4EF39B496 intact.
 Actual benefit/enforcement/acceptance/win unproven; PR145 draft, no Pi launch or merge yet.
+
+## Retry40 terminal evidence and repair boundary
+
+Frozen03fccacf1fcc0579d976c09143fbf21622ea05dc/source34e9207 run above ends Completed
+after2,176,654ms, without outer timeout. All38 started requests closed with usage:
+150,309 known work =122,898 uncached input +27,411 output. Finish reasons are37tool_calls
+and1stop, none unknown. Tool requests38/completions37/observed failures1/Unknown0.
+Caller observations fail after8/11/14/17/20/23/26 requests at124/103/124/124/779/678/1103ms;
+the fresh final observation passes after38 at1188ms. Review occurs once at23,
+with7 progress boundaries/38 time controls/0 finalizations/0 unknown control kinds.
+The reserved final observation is reached; occurrence does not establish causal benefit.
+
+Required files are present: README5418B, receiptledger/__init__.py79B,
+receiptledger/__main__.py37397B, tests/__init__.py63B, tests/test_receiptledger.py3995B.
+Post-tests0/help0x4, independent acceptance1, verification timeouts0/resolvedfalse.
+Public-check success and runtime Completed cover the observed public scope; independent
+acceptance still fails. No configured win or matched Pi inference is claimed.
+
+All frozen binary/runtime/harness/caller/helper/model/profile/control/prompt/SPEC/three
+reference audits pass before any source/build change. SourceCI37535719010 and exact
+frozenCI37541119528 each pass all3 jobs before launch. Slots0..3 idle after terminal;
+root policy hash remains intact. Actual generated code, outputs, feedback and private
+oracle diagnostics remain uninspected. Empty typed failure facts do not certify acceptance.
+
+Failure analysis is limited to the permitted evidence: unavailable-check nontermination
+is absent here; public tests and independent acceptance disagree. No newly evidenced
+runtime defect or exact semantic cause follows from those scalars. The existing harness
+keeps oracle diagnostics hidden and supplies only acceptance status during recovery.
+Any next bounded repair must preserve that boundary, use public contract/local checks,
+and establish a verified enhancement or explicit justified protocol change before retry.
+The single-turn screen has not exercised ordinary benchmark recovery turns. Review that
+existing recovery protocol before selecting the next slice; do not expose private oracle
+diagnostics or infer Low caused public-check success. PR145 remains draft and unmerged.
