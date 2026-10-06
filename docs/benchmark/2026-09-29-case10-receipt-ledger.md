@@ -2152,3 +2152,20 @@ platforms in run37413256929. New completion-review source CI remains pending.
 The final debugSHA is
 `A615D45AA0D89F9C7A92268D59F3A9A71D998121107E1CE43A6B0ADFD3220B1A`.
 A new frozen one-turn screen is pending; no Case10 acceptance benefit or win is claimed.
+
+### Retry21 frozen one-turn completion-review screen
+
+Run `bench-20261006-case10-completion-review-turn1170-window3-budget4096-low-output32768-retry21-rupi40-screen1-1200s` will use verified source/runtime/harness4626e31.
+DebugSHA256 `A615D45AA0D89F9C7A92268D59F3A9A71D998121107E1CE43A6B0ADFD3220B1A`;
+harnessSHA256 `573124D0541B5D53370A1CEAFADC5A3C3E9A9F9E7CC74DF06B666702F9E4ED35`.
+Explicit native Rupi completion review is enabled after Retry20's verified closure gap.
+Other controls remain low/budget4096/relay8003+1194s/output32,768/cap40/window3,
+native turn1170s/provider1194s/outer1200s/grace6. Pi duration/review/cap/progress
+parity remains unavailable/null. Shared public prompt230589C5, acceptance3hashes,
+helperA0BCAE68, and model27356 remain fixed.
+
+One fresh Rupi turn only; no automatic retries, builds, or source changes during
+inference. A failure requires analysis and a verified enhancement before another
+attempt. Fresh matched Pi0.86.1 follows only Rupi acceptance. Native controls are
+not external correctness certification. No Case10 win or acceptance benefit is
+claimed. New exact-head CI and paired/final delivery checks remain pending.
