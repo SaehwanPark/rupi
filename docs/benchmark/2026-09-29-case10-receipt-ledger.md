@@ -2195,3 +2195,13 @@ a continuing tool loop, while preserving normal budgets/admission/Unknown barrie
 Canonical runtime-control counts will be exposed as safe metadata, without control
 text, model outputs, generated code, or oracle diagnostics. Implementation, fixtures,
 checks and invariant review precede any new screen; no unchanged/control-only retry.
+
+### Proactive-review plan before another attempt
+
+[Proactive completion-review plan](../development/proactive-completion-review.md)
+adds an optional validated remaining-time reserve, using the existing one-shot
+review/provenance and normal budgets. Safe canonical control-count metadata will
+measure activation on future screens; Retry21 activation remains unmeasured and
+actual trace contents are not inspected. Selected future reserve300,000ms sits
+inside native1,170,000ms; no code/control retry before implementation/checks/review.
+Usage37% five-hour/71% weekly remains below the root95/99% soft-stop thresholds.
