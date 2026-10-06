@@ -2046,3 +2046,22 @@ inference occurred during implementation. Only main and the active Case10 branch
 remain locally/remotely; the root user's usage-policy modification is preserved.
 A fresh pinned one-turn screen is pending. Case10 acceptance benefit, paired win,
 and final delivery checks remain unproven; broader roadmap gates remain active.
+
+### Retry20 frozen one-turn development screen
+
+Run `bench-20261006-case10-turn-time1170-window3-budget4096-low-output32768-retry20-rupi40-screen1-1200s` will screen one fresh Rupi turn only. Source/runtime/harness
+commitc7b7ed6 contains the verified cooperative time-budget enhancement.
+DebugSHA256 `75985E95D0FE8873D8CC44D2B6F219954F955ECC66EA67E42D881D6409C01470`;
+harnessSHA256 `C916C9555D374447E9844BD2BEEE5A4A41A3BF31917E9F038BA8602EDE00A374`;
+unchanged relay helperA0BCAE68, process23732/port8003, budget4096/deadline1194s.
+Model27356/8000 remains the same qwen3.8-flash-next instance; all four slots idle.
+
+Selected controls: low, output32,768, Rupi cap40, recurring progress window3,
+provider1194s/outer1200s/grace6, native Rupi turn budget1,170,000ms.
+Pi native duration/cap/progress unavailable/null. Shared full-public-SPEC prompt
+remainsSHA230589C5; no acceptance assertions, model solution, actual traces,
+or oracle diagnostics are read. Three acceptance references and18 other-case
+prompt hashes remain unchanged. No builds/source changes during inference.
+Fresh matched Pi0.86.1 follows only passing Rupi acceptance. Failed screening
+requires root-cause analysis and a verified enhancement before another attempt.
+A one-turn failed screen is not a six-turn or paired result. Case10 remains active.
