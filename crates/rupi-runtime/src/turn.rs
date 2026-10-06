@@ -13937,7 +13937,7 @@ mod tests {
         return Ok(usage);
       }
       let guard = Instant::now();
-      while !cancel.is_cancelled() && guard.elapsed() < Duration::from_secs(2) {
+      while !cancel.is_cancelled() && guard.elapsed() < Duration::from_secs(5) {
         std::thread::sleep(Duration::from_millis(2));
       }
       assert!(
@@ -14060,6 +14060,39 @@ mod tests {
     assert!(provider.requests().is_empty());
   }
 
+  struct SlowAdmission;
+
+  impl TurnProgress for SlowAdmission {
+    fn on_user_message(&mut self, _text: &str) {
+      std::thread::sleep(Duration::from_millis(200));
+    }
+  }
+
+  #[test]
+  fn turn_time_budget_can_expire_during_admission_without_a_provider_request() {
+    let provider = Scripted::new("slow-admission", vec![text("must not run")]);
+    let tools = registry_with(vec![]);
+    let policy = rupi_core::ProfilePolicy::new(
+      rupi_core::ContextProfile::Balanced,
+      provider.capabilities().context_window,
+    );
+    let mut trace = Recorder::default();
+    let report = TurnLoop::new(
+      &provider,
+      &tools,
+      &policy,
+      &mut trace,
+      SessionId::new(),
+      TraceId::new(),
+    )
+    .with_max_turn_duration(Some(Duration::from_millis(150)))
+    .run_turn("slow admission", &CancelToken::new(), &mut SlowAdmission)
+    .unwrap();
+    assert_eq!(report.status, TurnStatus::TimeBudgetExhausted);
+    assert!(provider.requests().is_empty());
+    assert!(trace.all("tool_failed").is_empty());
+  }
+
   struct DeadlineMutation(Arc<Mutex<Vec<serde_json::Value>>>);
 
   impl Tool for DeadlineMutation {
@@ -14179,10 +14212,17 @@ mod tests {
       session_id.clone(),
       TraceId::new(),
     )
-    .with_max_turn_duration(Some(Duration::from_millis(150)))
+    // Durable admission can exceed150ms on loaded Windows CI. Leave time to reach
+    // the active request, whose cancellation is the behavior this fixture verifies.
+    .with_max_turn_duration(Some(Duration::from_secs(2)))
     .run_turn("first task", &CancelToken::new(), &mut SilentProgress)
     .unwrap();
     assert_eq!(report.status, TurnStatus::TimeBudgetExhausted);
+    assert_eq!(
+      provider.scripted.requests().len(),
+      1,
+      "fixture reached the provider"
+    );
     trace.into_session().finish().unwrap();
     drop(store);
 
@@ -14251,7 +14291,7 @@ mod tests {
       session_id.clone(),
       TraceId::new(),
     )
-    .with_max_turn_duration(Some(Duration::from_millis(150)))
+    .with_max_turn_duration(Some(Duration::from_secs(2)))
     .with_resume_state(state)
     .unwrap()
     .run_turn("continue safely", &CancelToken::new(), &mut SilentProgress)

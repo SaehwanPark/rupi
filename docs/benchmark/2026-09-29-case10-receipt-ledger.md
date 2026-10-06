@@ -2074,7 +2074,7 @@ terminal audit. The runner exits0 and all four model slots are idle; Pi was not 
 
 One turn:905,693ms, no watchdog,36,161 recorded work (21,940 uncached input/
 14,221 output),17 started/completed requests and17 usage records. Twenty tools
-complete with zero known failures/Unknown:15 inspections (11grep/fourread) and
+complete with zero known failures/Unknown:15 inspections (12grep/threeread) and
 five mutations (twowrite/threeedit). Runtime status is `completed`; acceptance
 and project tests exit1, all four help checks exit0, no verification timeout.
 Filtered inventory lists only app init444bytes/main48,441bytes; no tests/README
@@ -2094,3 +2094,22 @@ can expire before the intended streaming point during slow admission; reproduce
 that valid no-request path with owned delayed progress, then make the fixture
 establish its provider-start precondition. No unchanged CI rerun is launched.
 Usage18% five-hour/68% weekly is below the root policy's95/99% thresholds.
+
+### Windows deadline-fixture precondition correction and next plan
+
+An owned delayed-admission fixture now verifies valid `TimeBudgetExhausted`
+before any provider request or refusal, reproducing the failure shape seen in CI.
+The durable active-stream fixture no longer assumes admission fits150ms: it allows2s
+and explicitly asserts one provider request. Its bounded provider guard is5s; resumed
+admission also has2s. Four deadline fixtures, fmt, and workspace Clippy pass locally.
+This changes test preconditions, not production behavior; Windows CI verification is
+pending. No unchanged benchmark/CI retry is launched.
+
+The next runtime enhancement is specified in
+[completion-review plan](../development/completion-review.md): opt-in bounded
+same-model review at the first otherwise accepted ordinary text-only completion,
+with canonical runtime provenance, normal budgets/admission, one-shot/fresh-turn
+state, and unchanged Unknown barriers. It does not enforce case artifact names or
+certify external task correctness. Implementation and verification precede any new
+benchmark screen. Retry20 inspection-name breakdown is corrected to12grep/three
+read, still15 inspections/20 completed tools.
