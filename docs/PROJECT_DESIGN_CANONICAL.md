@@ -1336,6 +1336,9 @@ exhaustion. Keep an earlier ordinary request and the existing no-tools finalizat
 never extend the cap. Time, request and accepted-answer triggers share one review per turn.
 Request-only selection needs no clock. Caller observations at a reserved review retain
 their shared allowance, external provenance and fresh final-check requirement.
+An opt-in request window may refresh Failed caller feedback during tool-bearing repair.
+Rearm only on failure, disarm on pass, reset each turn and share the original check cap.
+Fresh final checking and all uncertain-effect, budget and cancellation barriers remain.
 
 This is a distributed-systems-style reliability invariant.
 

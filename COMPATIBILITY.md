@@ -541,6 +541,8 @@ Expected divergences include:
 - optional time/request completion review reserves and caller observation at reserved
   review, sharing the one-shot review and check allowance;
   default omission, fresh final checks and existing terminal safety semantics remain;
+- optional request-window refresh of Failed caller feedback during ongoing repair, sharing
+  the existing check allowance and preserving final checking; native Pi selection is null;
 - caller public-check snapshots use a short isolated root for Windows process startup;
   owned long-path/missing-deliverable/repair fixtures preserve observation classification;
 - potentially different internal session storage.

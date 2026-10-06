@@ -1778,7 +1778,12 @@ TUI rendering passed all budgets (3.31–3.90 µs/unit); checkpointed restore me
   checks pass (220 runtime/137 core/100 provider/25 CLI), owned comparison and mailbox
   request-reserve mode pass; prompts/references unchanged. Startup143.185ms cold/
   8.578ms warm median/9.034ms max and five restores/five context budgets pass. Parent
-  author review passes; remote CI/frozen Retry33/paired evidence remain pending.
+  author review passes; source/exact-freeze Retry33 CI pass all3 platforms. Retry33 exhausts
+  cap40 at2150.075s,158,564 known work with all40 usage records, all required files present,
+  tests/acceptance fail/help pass. Reserved review and Failed check run after31 starts;
+  no follow-up check before cap exhaustion. Frozen audits pass/slots idle. An optional
+  failed-check repair request window is active work to refresh that feedback within
+  existing budgets. Full gates and newly frozen screen remain pending.
   No semantic cause, acceptance benefit, or paired Case10 win is established.
   Rupi-first screening and paired
   evidence/delivery checks remain pending. Broader project gates remain active.

@@ -114,14 +114,16 @@ fn run(config: &Path, cwd: &Path, prompt: &str) -> Output {
 
 #[test]
 fn completion_mailbox_drives_a_real_cli_repair_without_new_execution_authority() {
-  for review_mode in ["ordinary", "timed", "requests"] {
-    let early_review = review_mode != "ordinary";
+  for review_mode in ["ordinary", "timed", "requests", "repair_window"] {
+    let early_review = matches!(review_mode, "timed" | "requests");
+    let repair_window = review_mode == "repair_window";
+    let expected_checks = if repair_window { 3 } else { 2 };
     let temp = TempDir::new().unwrap();
     let workspace = temp.path().join("workspace");
     let mailbox = temp.path().join("mailbox");
     fs::create_dir(&workspace).unwrap();
     fs::create_dir(&mailbox).unwrap();
-    let responses = vec![
+    let mut responses = vec![
       if early_review {
         tool_response(
           "initial",
@@ -140,6 +142,19 @@ fn completion_mailbox_drives_a_real_cli_repair_without_new_execution_authority()
       ),
       text_response("checked candidate"),
     ];
+    if repair_window {
+      for (index, content) in [(1, "owned first repair"), (2, "owned intermediate")] {
+        responses.insert(
+          index,
+          tool_response(
+            &format!("repair-{index}"),
+            "write",
+            &serde_json::json!({"path":"app.txt", "contents":content}).to_string(),
+            None,
+          ),
+        );
+      }
+    }
     let server = if review_mode == "timed" {
       FakeServer::answer_delayed(responses, std::time::Duration::from_secs(3))
     } else {
@@ -147,7 +162,11 @@ fn completion_mailbox_drives_a_real_cli_repair_without_new_execution_authority()
     };
     let path = write_config(temp.path(), &server.base_url(), true);
     let mut config = RuntimeConfig::parse(&fs::read_to_string(&path).unwrap()).unwrap();
-    config.limits.max_completion_checks_per_turn = Some(2);
+    config.limits.max_completion_checks_per_turn = Some(expected_checks);
+    if repair_window {
+      config.limits.max_model_requests_per_turn = 8;
+      config.limits.completion_check_repair_request_window = Some(2);
+    }
     // This fixture tests mailbox repair, not scheduling against a short deadline.
     config.limits.max_turn_duration_ms = Some(60_000);
     if early_review {
@@ -184,7 +203,7 @@ fn completion_mailbox_drives_a_real_cli_repair_without_new_execution_authority()
     let host = std::thread::spawn(move || {
       let deadline = std::time::Instant::now() + std::time::Duration::from_secs(75);
       let mut seen = std::collections::BTreeSet::new();
-      while seen.len() < 2 {
+      while seen.len() < expected_checks as usize {
         for entry in fs::read_dir(&mailbox).unwrap() {
           let request_path = entry.unwrap().path();
           if !request_path
@@ -212,10 +231,18 @@ fn completion_mailbox_drives_a_real_cli_repair_without_new_execution_authority()
               "owned initial"
             );
           }
+          if repair_window && ordinal == 2 {
+            assert_eq!(
+              fs::read_to_string(canonical_workspace.join("app.txt")).unwrap(),
+              "owned intermediate"
+            );
+          }
           let id = request["request_id"].as_str().unwrap();
           let reply = serde_json::json!({"version":1,"request_id":id,
-          "status":if ordinal == 1 { "failed" } else { "passed" },
-          "feedback":if ordinal == 1 { "owned public failure" } else { "owned pass" }});
+          "status":if ordinal < expected_checks as u64 { "failed" } else { "passed" },
+          "feedback":if ordinal == 1 { "owned public failure" }
+            else if ordinal < expected_checks as u64 { "owned remaining failure" }
+            else { "owned pass" }});
           let temporary = mailbox.join(format!("reply-{id}.tmp"));
           fs::write(&temporary, serde_json::to_vec(&reply).unwrap()).unwrap();
           fs::rename(temporary, mailbox.join(format!("reply-{id}.json"))).unwrap();
@@ -241,7 +268,7 @@ fn completion_mailbox_drives_a_real_cli_repair_without_new_execution_authority()
     assert!(output.status.success(), "{diagnostics}");
     assert_eq!(
       observations.expect("owned mailbox host failed"),
-      2,
+      expected_checks as usize,
       "owned CLI exited without both mailbox observations: {diagnostics}"
     );
     assert_eq!(
@@ -249,7 +276,10 @@ fn completion_mailbox_drives_a_real_cli_repair_without_new_execution_authority()
       "owned repaired"
     );
     let requests = server.requests();
-    assert_eq!(requests.len(), 3);
+    assert_eq!(requests.len(), if repair_window { 5 } else { 3 });
+    if repair_window {
+      assert!(requests[3].body.contains("owned remaining failure"));
+    }
     assert!(requests[1].body.contains("owned public failure"));
     assert_eq!(requests[1].body.contains("bounded review"), early_review);
     assert!(!requests[1].body.contains("\"name\":\"exec\""));

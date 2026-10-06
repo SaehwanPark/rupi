@@ -605,6 +605,16 @@ do not count as Changed progress. Cancellation or deadline during the callback d
 its result. Disabled review, absent reserve/checks and no-tools paths skip this selection;
 fresh turns renew the one-shot boundary and shared allowance. No new events or commands.
 
+Optional `completion_check_repair_request_window` requires at least two checks and a
+positive window below the ordinary request allowance. A Failed observation arms a
+turn-local request count; at a safe ordinary boundary after that window, obtain another
+caller observation through the same helper/allowance. Failed rearms it, Passed disarms it.
+Neither a checkpoint pass nor review replaces a fresh final check. Coincident reserved
+review/repair triggers make one callback; earlier final text can check before the window.
+Direct builders skip invalid windows; no-tools/finalization skips this selection. New
+turns reset it. Existing progress/tool-budget/Unknown/cancel/deadline and terminal check
+semantics remain. This needs no clock, new event or additional execution authority.
+
 Static `CompletionCheck` guidance is a runtime control; bounded UTF-8 feedback (16KiB)
 is separate external context
 from `delegated_completion_check`, with citation and ordinal/status/elapsed metadata.
