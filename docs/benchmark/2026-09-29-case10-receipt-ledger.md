@@ -1760,3 +1760,24 @@ work is unknown. The filtered three-file inventory and sizes are unchanged.
 Frozen-input audit passes. Five-attempt recorded totals are110,961 work tokens,
 7,599,083 ms, twenty completed tools, and zero failed/Unknown calls.
 One Rupi attempt remains; Pi remains unrun and Case10 remains unresolved.
+
+### Retry17 terminal: six failed attempts, no cap40 benefit demonstrated
+Attempt6 ended at670,310 ms with runtime timeout, no runner watchdog. Configured
+acceptance failed (exit1), project tests returned exit5, all help checks passed
+(exit0), and no verification timeout was recorded. Work was8,202 tokens
+(6,913 uncached input,1,289 output), with four starts, five completion events,
+three usage records, and five completed grep calls; zero failed/Unknown calls.
+Previous abandoned request closures can add completion events. The filtered
+three-file inventory and sizes were unchanged. File contents remain unread.
+All six acceptance checks failed. Totals:119,163 recorded work tokens,
+8,269,393 ms,25 completed tools,zero failed/Unknown calls; three runner
+watchdogs and three runtime timeouts. Actual unfinished inference remains
+unknown, notably turns2 and5 with no usage records. The cap40 limit was not
+reached; no acceptance benefit from additional request headroom is established.
+Frozen prompts, full public SPEC, acceptance-reference hashes, source, B60ABB58
+binary, D4CA3482 harness, native configuration, and model identity audits pass.
+Pi was not run for this failed screen; this is not a paired win.
+Source review also verified the distinction between the configured1,794,000 ms
+total provider deadline and inherited300,000 ms idle timeout. The metadata
+does not identify which timeout mechanism fired; no benchmark-output
+diagnostics were read. Case10 and broad roadmap stage gates remain active.
