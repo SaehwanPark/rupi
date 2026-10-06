@@ -2259,3 +2259,32 @@ Control-count metadata measures injection, not proof of model use. Failure requi
 analysis and a verified enhancement before another attempt. Fresh matched Pi0.86.1
 follows only Rupi acceptance; no Case10 acceptance benefit/win is claimed. New exact-head
 CI and paired/final delivery checks remain required.
+
+### Retry22: proactive review injected; one-turn screen still fails
+
+- Run: `bench-20261006-case10-proactive-review300-turn1170-window3-budget4096-low-output32768-retry22-rupi40-screen1-1200s`.
+  Frozen runtime/source `412cf58abb269f8c74ce1f53303530ed2d26f734`, checkout
+  `5f869592ad32d2c8ac0abad2525f2ca1d666f953`; binary SHA256
+  `C8511B7C9E1509CBEEDAE1FD91CCD787875D3469EB51939C840F0C81518A2751`;
+  harness `B4FC326E5EBC3CDBEC8A5F9718FC8DB5E04324AA48B1AD75B96F0DB00EE4269D`.
+- Same local model PID27356, low thinking/budget4096, output32768, relay8003/1194s,
+  request cap40/window3, native turn1,170,000ms, review enabled/reserve300,000ms,
+  outer1200s/grace6s. One fresh Rupi turn; no Pi run and no paired win.
+- Terminal `time_budget_exhausted` after1,170,377ms; no outer watchdog.
+  Acceptance exit1, project tests exit5, all four help checks exit1, no verification timeout.
+  Recorded work43,628 (uncached input21,431/output22,197), eight request starts/closed
+  requests/seven usage records. Unfinished inference work remains unknown.
+- Eight completed tools, zero known failures/Unknown: five inspections (four read/one
+  grep), three writes. Filtered inventory lists `receiptledger/__init__.py`40,595bytes
+  and empty `tests/__init__.py`; no main.py, public test module, or README listed.
+  Generated contents, model outputs/traces, and oracle diagnostics remain unread.
+- Whitelist control telemetry records eight turn-time guides, one completion review,
+  one progress boundary, zero progress corrections/finalization/unknown kinds.
+  This proves injection, not model use or semantic correctness. The deadline and
+  missing delivery metadata are observed; no application semantic root cause is inferred.
+- Frozen binary/source/harness/helper, prompt/control, full SPEC, and three acceptance
+  hashes passed before any source edits/builds. Runner exited0; all four model slots
+  idle. Exact frozen head passed Linux/macOS/Windows CI:
+  https://github.com/SaehwanPark/rupi/actions/runs/37417024915 .
+- Failure analysis and a verified code/runtime enhancement are required before the next
+  single-turn screen. No unchanged retry is authorized by this result.
