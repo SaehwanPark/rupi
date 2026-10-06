@@ -2432,3 +2432,42 @@ CI and paired/final delivery checks remain required.
   enhancement before another attempt. Fresh matched Pi0.86.1 follows only Rupi acceptance.
   No result/acceptance benefit/paired win exists yet; exact new head CI and eventual
   paired delivery remain pending. Root user policy edit hash3CEE11E5 is preserved.
+
+### Retry24: initial writes and tests delivered; completed turn still fails
+
+- Run: `bench-20261006-case10-initial-progress-review300-turn2370-window3-budget4096-low-output32768-retry24-rupi40-screen1-2400s`; frozen source/checkout
+  `057e827643361f39fedbd954554bbae8a909fc86`, debug5C330350/harness65FE78FC,
+  unchanged helperA0/model27356/relay23732. Initial=true/native2370s/review=true/
+  reserve300s, cap40/window3/low4096/output32768, outer2400s/provider2394s,
+  existing relay response1194s. One fresh Rupi turn; no Pi run or paired win.
+- Terminal `completed` after2,134,228ms; no native expiry/outer watchdog.
+  Acceptance exit1, project tests exit1, all four help checks exit0, no verification timeout.
+  Recorded work134,740 (uncached input106,797/output27,943);37 starts/closed requests/
+  usage records. Forty-request allowance and2,370s native duration remain authoritative.
+- Forty-eight tools complete with zero known failures/Unknown: four write/ten edit/
+  eighteen read/sixteen grep. The first three tools are writes. This observes alignment
+  with the requested initial action; it does not isolate a causal performance benefit.
+- Filtered inventory lists requested `receiptledger/__main__.py`42,215bytes,
+  empty `receiptledger/__init__.py`, `tests/test_receiptledger.py`8,966bytes and
+  empty `tests/__init__.py`; no README. Presence is not contract correctness.
+  Generated contents, actual traces/model output/control text and oracle diagnostics
+  remain unread. The public-test semantic failure cause remains unmeasured.
+- Safe telemetry:37 time guides, one review after six started requests, eight progress
+  boundaries, zero correction/finalization/unknown kinds. Injection does not prove model
+  use or correctness. Generic review does not supply independent public-check feedback.
+- Frozen source/binary/harness/helper, prompt/controls/SPEC/three acceptance hashes pass
+  before edits/builds. Runner exits0; all four model slots idle. Exact frozen head
+  passes Linux/macOS/Windows CI:
+  https://github.com/SaehwanPark/rupi/actions/runs/37422823363 .
+- New investigation: the harness supplies permitted project-test/help feedback only
+  after the turn closes; file-tool success and generic self-review cannot establish
+  application correctness. Investigate a bounded delegated completion-check interface,
+  with domain verification outside core, explicit caller authority, canonical provenance,
+  isolated/owned verification effects, cancellation/budget/Unknown safety, unchanged
+  model file-tool restrictions and hidden/immutable acceptance oracle. This is a source
+  integration gap, not a diagnosed application defect. No implementation is selected yet.
+- Parent usage check:92% of five-hour window/80% weekly. The repository soft stops are
+  95%/99%; substantial new interface work cannot fit the remaining headroom. Preserve
+  this failure/design handoff remotely, wait for04:48ET reset plus two-minute grace,
+  then resume investigation with fresh headroom. Goal remains active; no new screen
+  before analysis and a verified enhancement.
