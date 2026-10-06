@@ -2545,3 +2545,33 @@ This is a configured resource barrier, not evidence of an incorrect safety guard
 Next enhancement: explicit bounded Case10 mutation headroom, with defaults and total/
 request/time/check safety caps preserved, proved using owned delivery/check fixtures.
 Do not retry until that code/config enhancement is implemented and verified.
+
+### Verified explicit mutation headroom before Retry26
+
+Source369c65b0b5b7fc26f49be763b6dde1e6b99c88f1 adds bounded Case10 mutation
+selection using the existing runtime limit. Zero/default omits selection; positive1..64
+must fit the effective total cap. Native Pi selection is null; general16-mutation/
+64-total defaults and other case profiles remain unchanged. No safety guard is bypassed,
+no allowance silently renewed, no new tool/event/command/relay/model introduced.
+
+Owned runtime fixture proves the barrier:16 mutations plus3 reads spend19 requests
+and stop before later delivery/checking under16; under32,17 mutations/3 reads use21
+requests then reach a passing caller check on the same model. Baseline never executes
+an excess mutation. Harness fixtures pass default omission, selected32/upper64,
+lower-total rejection, case isolation and Pi null. Required Rust checks/debug pass
+(204 runtime/132 core tests). Startup141.739ms cold/8.160ms median/8.733ms max passes;
+production rendering/session/context behavior is unchanged and prior passing budgets
+are retained. Shared Case10 prompt,18 other prompt hashes, full public SPEC/three
+reference hashes, selected profile and dryrun pass. Parent invariant review passes;
+no independent review agent was used. Exact-head CI remains required.
+
+Next screen `bench-20261006-case10-mutations32-feedback8-review300-turn2370-window3-budget4096-low-output32768-retry26-rupi40-screen1-2400s` selects32 mutations plus checks8.
+All remaining Retry25 controls/model/prompt stay unchanged, one development turn,
+outer2400/native2370s, cap40/window3/initial progress, review/reserve300s,
+low4096/output32768, original model27356 and relay23732:8003 at1194s.
+Debug SHA `B246CD1510FB3638319947169599B2C19C260B878F941F4DC2C597885D5E3516`,
+harness `8E0D729DA86FC934FB67F8F3D0B8C1B2EEF4595534917B4B4B593F0EDFF40715`; public-host699C871B/helperA0BCAE68 unchanged.
+Latest usage46% five-hour/88% weekly is below95%/99% soft stops.
+No new attempt or semantic application fix is claimed yet; no generated contents/
+private diagnostics were inspected. Acceptance benefit/Case10 paired win remain
+unestablished. Fresh matched Pi follows only Rupi acceptance.

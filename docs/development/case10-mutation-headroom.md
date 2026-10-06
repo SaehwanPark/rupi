@@ -32,3 +32,20 @@ resource correction, not a semantic application fix or permission to bypass a sa
    preserve checks8 and all other Retry25 controls, same model/prompt, one development turn.
    A failure requires another root-cause analysis and verified enhancement; fresh matched
    Pi only after Rupi acceptance. No acceptance, token, causal or paired win claim yet.
+
+## Verified implementation before Retry26
+
+369c65b implements the bounded selection and owned runtime fixture. Under16,
+19 requests execute16 mutations/3 reads and stop before the next delivery/check;
+under32,21 requests execute17 mutations/3 reads then a passing check, all on the
+same model. No baseline excess mutation executes. Harness fixtures cover omission,
+selected32/upper64, lower-total rejection, case isolation and native Pi null.
+Required Rust checks pass (204 runtime/132 core tests) and debug build passes.
+Startup141.739ms cold/8.160ms median/8.733ms max is within budgets. Render/session/
+context production behavior is unchanged, with prior passing budgets retained.
+Prompt/profile/dryrun/full public SPEC/three reference/18 other prompt guards pass.
+Parent invariant review passes: selection cannot raise total cap, silently renew
+mutation allowance, dispatch denied tools, bypass Unknown or completion checking,
+or change other cases/general defaults. No independent review agent was used.
+No generated contents or private diagnostics were inspected. Retry26 and exact-head
+CI remain pending; no configured acceptance benefit or Case10 paired win is established.

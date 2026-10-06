@@ -1701,7 +1701,10 @@ TUI rendering passed all budgets (3.31–3.90 µs/unit); checkpointed restore me
   Explicit bounded Case10 mutation selection is implemented, with an owned fixture
   proving16 stops before delivery/checking and32 reaches them. General defaults and
   other caps stay authoritative; source/harness fixtures prove omission, case isolation,
-  total rejection and native Pi null. Required checks/startup/fresh screen remain pending.
+  total rejection and native Pi null. Required Rust checks pass (204 runtime/132 core),
+  startup141.739ms cold/8.160ms median/8.733ms max, and shared prompt/reference/profile
+  guards pass. Parent invariant review passes; prior render/session/context behavior
+  and budgets are unchanged. Fresh screen with32 mutations remains pending.
   No semantic cause, acceptance benefit, or paired Case10 win is established.
   Rupi-first screening and paired
   evidence/delivery checks remain pending. Broader project gates remain active.
