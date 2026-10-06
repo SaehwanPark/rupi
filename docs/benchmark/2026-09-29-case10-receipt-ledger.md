@@ -1736,3 +1736,17 @@ and successful help checks do not establish contract correctness.
 The frozen-input audit passes. Three-attempt recorded totals are92,437 work
 tokens, 4,709,303 ms, sixteen completed tools, and zero failed/Unknown calls.
 Remaining attempts continue; Pi remains unrun and Case10 remains unresolved.
+
+### Retry17 attempt4: help passes, test module still absent from filtered inventory
+Attempt4 ended after 1,089,478 ms with runtime timeout and no runner watchdog.
+Configured acceptance failed (exit1), project tests returned exit5, and all
+four help commands passed (exit0); no verification timeout was recorded.
+Recorded work was18,524 tokens (12,443 uncached input,6,081 output), with three
+model starts, four completion events, two usage records, and four completed
+calls (grep,read,write,grep). Zero failed or Unknown tool calls were recorded.
+Completion events may include closure of a previous abandoned request.
+The filtered files inventory contains the unchanged app init/main sizes and
+tests/__init__.py (65bytes); no public test module is listed. Contents remain
+unread. Frozen-input audit passes. Four-attempt recorded totals are110,961 work
+tokens,5,798,781 ms,and twenty completed tools; zero failed/Unknown calls.
+The remaining attempts continue. Pi remains unrun; Case10 is unresolved.
