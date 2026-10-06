@@ -3320,3 +3320,31 @@ Parent author review passes. See
 Retry37 intended screen adds initial check window8 to Retry36's otherwise unchanged
 profile. SourceCI37521853946 and exact frozen-head all3 CI required before inference.
 No configured acceptance or paired win; no blind retry; same physical model/helpers.
+
+### Retry37 terminal — early observation reached, checks exhausted before review
+
+Run: bench-20261006-case10-initial-check8-idle2394-repair3-reserve8-template-off-args2048-first8192-check8-mut32-review300-turn2370-retry37-rupi40-screen1-2400s.
+Frozena920dc21bf52a373067ffed172ff9dfea581110a, source/runtime0e651e2edeae33749bd1f7e500aa0cd6480e4df3.
+Ends completion_check_exhausted at1,730,907ms, no outer/provider/verification timeout.
+All29 starts close with usage:98,936 known work=79,119 uncached input+19,817 output.
+Thirty-seven tool requests/32 completions/5 observed failures/0 Unknown.
+All8 checks Failed after8/11/14/17/20/23/26/29, elapsed146/43/32309/32237/32284/
+32277/32375/32355ms. No review or finalization;4 progress boundaries/29 time controls/
+no unknown kinds. All required files listed: README2972B, receiptledger/init812B,
+app32432B, tests/init38B, tests/test_receiptledger32619B; extra _probe_tmp.py71B.
+Post-run tests/acceptance exits1, help0 four times; no verification timeout.
+
+Every frozen binary/runtime/harness/caller/helper/model/profile/control/prompt/SPEC/reference
+audit passes before source/build changes. SourceCI37521853946/frozenCI37522184692
+all3 jobs pass. Runner38560/Rupi23440 and session90419 exit0 ended; all4 model slots idle.
+Root user-policy SHA3CEE11E5D4D8C8CA7CCF34F87A64B18BB183D4AF9AF79AB964AE19D4EF39B496 intact.
+Actual trace/model/application/tests/caller feedback/oracle diagnostics remain uninspected.
+No precise semantic cause, acceptance benefit or configured win established.
+
+Initial checking reaches its configured request8 and refreshes feedback as configured.
+This does not prove model use or correctness. Check cap binds at29, before request-reserved
+review at31. Native time retains639,093ms and request cap retains11 slots. The two reserves
+are not coordinated: review never runs before failed observations are exhausted.
+Next bounded enhancement: optional review reserve based on remaining caller checks,
+activated only after fresh repairable Failed evidence, retaining existing review/allowance/
+final-check/effect/terminal contracts. No blind repeat, fresh Pi or merge; PR145 draft.
