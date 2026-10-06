@@ -1919,3 +1919,29 @@ honest location hints, and unchanged Unknown/ambiguity semantics. Required Rust
 checks/startup verification and a new frozen binary are prerequisites.
 A subsequent fixed-code screen should retain retry18 profile/prompt/references
 to assess the enhancement; no control-only candidate is planned.
+
+### Verified enhancement: missed-edit hints for complete long first lines
+An owned synthetic fixture against the old edit implementation failed (exit101):
+the file had the requested long function-signature line at line2, but the
+missed-edit diagnostic supplied no location. Root cause is the full-current-line
+versus truncated20-character requested-head comparison in edit_failure_text.
+The fix compares complete trimmed first lines, skips empty heads, and supplies a
+bounded re-read location. Prefix-only matches do not claim that line exists.
+No approximate replacement is applied. Exact matching, unique-match refusal,
+replace_all, effect/state classification, and interrupted-call reconciliation
+are unchanged; their stable reconciliation identity remains valid.
+The module contract now describes execution refusal and separate reconciliation
+truthfully, replacing an inaccurate claim that normal execution says already
+applied. ARCHITECTURE/CHANGELOG/ROADMAP reflect verified behavior and active gates.
+Owned tests cover stale body text and whitespace mismatch with a long first line:
+failure remains Failed/None, original bytes unchanged, no file-content dump,
+and a corrected exact edit succeeds. A distinct same-prefix line gets no location
+claim. All82 unit and31 integration tool tests pass, including existing ambiguity,
+double-application, cancellation, and uncertain-edit reconciliation coverage.
+Required fmt/core check/workspace Clippy/workspace tests/docs/debug build pass;
+final formatted test-source Clippy/tools also pass. Startup verification is
+running. Debug binary C58EF706433D326FD47317A33612726EA6AC6DD0DBE0D46E3B56C8BECADF6BBE.
+Separate parent invariant review passes; no independent child review is claimed.
+This repairs a verified generic failed-edit diagnostic defect. Its contribution
+to the Case10 failures and its acceptance benefit remain unproven. A new screen
+requires startup completion and frozen source/binary/profile preflight.

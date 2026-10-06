@@ -12,9 +12,9 @@
 //!   the file no longer says what the model believes it says.
 //! - **Nothing is written when the match is wrong.** The replacement is applied
 //!   in memory, verified, and only then written — atomically.
-//! - **Repeated edits are detectable.** A retry of a completed edit fails with
-//!   "already applied" rather than failing silently or corrupting the file, so a
-//!   redelivered tool call cannot double-apply.
+//! - **Redelivered edits do not silently succeed.** When the original text is
+//!   gone, execution refuses the edit. Reconciliation separately examines the
+//!   original and replacement text before classifying an interrupted call.
 
 use std::{fs, io::Write};
 
@@ -268,22 +268,15 @@ fn edit_failure_text<'a>(
   find: &str,
   path: &std::path::Path,
 ) -> std::borrow::Cow<'a, str> {
-  let head = find
-    .lines()
-    .next()
-    .unwrap_or("")
-    .trim()
-    .chars()
-    .take(40)
-    .collect::<String>();
+  let head = find.lines().next().unwrap_or("").trim();
   let hint = if original.is_empty() {
     "the file is empty".to_string()
   } else if let Some(line) = original
     .lines()
-    .position(|l| l.trim() == head.trim().chars().take(20).collect::<String>())
+    .position(|line| !head.is_empty() && line.trim() == head)
   {
     format!(
-      "a similar line exists at line {} — check indentation and whitespace",
+      "the first requested line exists at line {} — re-read nearby lines and check whitespace",
       line + 1
     )
   } else {
@@ -409,6 +402,71 @@ mod tests {
     assert!(
       !outcome.text.contains("    indented deeply"),
       "no file dump"
+    );
+  }
+
+  #[test]
+  fn a_missed_long_line_edit_reports_where_to_reread_without_writing() {
+    let signature =
+      "fn recover_delivery_receipt_for_claim(claim: &Claim) -> Result<Receipt, Error> {";
+    let original = format!("// fixture\n  {signature}\n    current_action();\n}}\n");
+    for find in [
+      format!("  {signature}\n    stale_action();"),
+      format!("    {signature}\n    current_action();"),
+    ] {
+      let dir = fixture(&original);
+      let outcome = edit(
+        &dir,
+        json!({"path": "a.rs", "find": find, "replace": "replacement"}),
+      );
+      assert!(outcome.is_error);
+      assert_eq!(outcome.state, ToolExecutionState::Failed);
+      assert_eq!(outcome.effect, rupi_core::ToolEffectDisposition::None);
+      assert!(outcome.text.contains("line 2"), "{}", outcome.text);
+      assert!(!outcome.text.contains(signature), "no file dump");
+      assert_eq!(
+        fs::read_to_string(dir.path().join("a.rs")).unwrap(),
+        original
+      );
+
+      let corrected = edit(
+        &dir,
+        json!({"path": "a.rs", "find": "current_action();", "replace": "revised_action();"}),
+      );
+      assert!(!corrected.is_error, "{}", corrected.text);
+      assert_eq!(
+        fs::read_to_string(dir.path().join("a.rs")).unwrap(),
+        format!("// fixture\n  {signature}\n    revised_action();\n}}\n")
+      );
+    }
+  }
+
+  #[test]
+  fn a_shared_prefix_does_not_claim_the_requested_first_line_exists() {
+    let original = concat!(
+      "fn recover_delivery_receipt_with_other_arguments() {\n",
+      "  current_action();\n}\n"
+    );
+    let dir = fixture(original);
+    let outcome = edit(
+      &dir,
+      json!({
+        "path": "a.rs",
+        "find": "fn recover_delivery_receipt_with_expected_arguments() {",
+        "replace": "replacement"
+      }),
+    );
+    assert!(outcome.is_error);
+    assert_eq!(outcome.effect, rupi_core::ToolEffectDisposition::None);
+    assert!(!outcome.text.contains("line 1"), "{}", outcome.text);
+    assert!(
+      outcome.text.contains("re-read the file"),
+      "{}",
+      outcome.text
+    );
+    assert_eq!(
+      fs::read_to_string(dir.path().join("a.rs")).unwrap(),
+      original
     );
   }
 

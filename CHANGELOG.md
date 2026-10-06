@@ -18,6 +18,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 - Resume sessions after an output-limit response containing partial text and unexecuted
   tool calls, preserving canonical evidence without projecting or replaying the failed response.
+- Preserve useful missed-edit location hints for long first lines without applying approximate
+  replacements or changing interrupted-mutation reconciliation.
 
 ---
 

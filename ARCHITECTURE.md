@@ -438,6 +438,13 @@ fails or becomes `Unknown`.
 
 Read-only tools may use more permissive retry semantics.
 
+Native `edit` requires an exact unique match unless `replace_all` is explicit. A missed
+match leaves the file unchanged and reports `Failed` with `None` effect evidence. When
+the complete first requested line exists after trimming surrounding whitespace, its
+diagnostic supplies a line number for a bounded re-read; a shared prefix alone does not
+justify that hint. The diagnostic never applies an approximate replacement or resolves
+an interrupted mutation. Reconciliation remains a separate operation.
+
 Tool implementations should declare relevant metadata when possible:
 
 ```rust

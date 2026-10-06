@@ -1602,8 +1602,17 @@ TUI rendering passed all budgets (3.31–3.90 µs/unit); checkpointed restore me
   configured acceptance benefit and the full paired Case10 result remain unproven.
   Same-profile fixed-binary retry16 fails6 (435,242 recorded work); help passes4
   throughout, local tests fail. Two repair attempts exhaust the24-request budget
-  with time remaining. Retry17 tests existing cap40, keeping prompt/model/binary/
-  native-off/output32,768/window3/six1800s controls fixed; benefit remains unproven.
+  with time remaining. Retry17 cap40 fails6 (119,163 recorded work), never reaches
+  the request cap, and establishes no benefit. Retry18 bounded-reasoning/output32,768
+  fails6 (468,406 recorded work), with184 completed tools/seven known failures;
+  all help passes, project tests fail, and unfinished inference remains unmeasured.
+  Control-only retries now require evidence justification; new candidates must follow
+  failure analysis and a runtime enhancement. An owned fixture reproduces missing
+  location hints for rejected long-line edits: a truncated requested head was compared
+  against a full current line. The fix compares complete trimmed first lines and passes
+  tool tests covering no mutation on failure, a corrected exact edit, and no prefix-only
+  hint. Required checks and fresh fixed-profile comparison remain pending; the defect
+  is verified but its contribution to Case10 acceptance failures is unproven.
   Rupi-first screening and paired
   evidence/delivery checks remain pending. Broader project gates remain active.
   Preserve stable public delivery keys, distinct private fencing, lost-ack retry and
