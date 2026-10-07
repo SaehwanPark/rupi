@@ -109,3 +109,43 @@ model, globalLow/initialOff intent, prompt, acceptance and caller protocol stay 
 No helper/model restart or oracle visibility change. SourceCI37564263389 and exact
 freeze-head all3 CI must both pass before inference. Final timeout/usage facts will be
 reported as observed; no backfill of prior traces or causal inference from absent facts.
+
+## Retry42 terminal evidence
+
+SourceCI37564263389 and exact freezeCI37564482172 passed all3 before launch at287a0ff.
+All four independent acceptance checks fail. Calls6,526,131ms;584,435 known work
+(529,004 uncached input+55,431 output),94 started requests/93 usage records. Turn4's
+unfinished request has unknown work. No outer or verification timeout. Frozen binary,
+runtime/harness/caller/helper hashes, selected controls, public prompt/SPEC/three
+acceptance hashes and same physical PID27356 audits pass before any source change.
+All four slots are idle; root user policy unchanged. No matched Pi or configured win.
+
+| Turn | Call ms | Native outcome / process exit | Known work / usage | Public tests / help / acceptance |
+| --- | ---: | --- | --- | --- |
+| 1 | 2326913 | completion_check_exhausted /0 | 187329 /29of29 | 1 /0x4 /1 |
+| 2 | 480720 | absent /101 | 61160 /9of9 | 1 /0x4 /1 |
+| 3 | 1345032 | Failed(Semantic) /1 | 143497 /23of23 | 1 /1x4 /1 |
+| 4 | 2373466 | time_budget_exhausted /0 | 192449 /32of33 | 1 /0x4 /1 |
+
+Turn1 uses all8 Failed observations after8/11/14/17/20/23/26/29 (145/83/63/125/
+3091/3007/2986/2947ms), review23;39 tools requested/36 completed/3 failures.
+Turn2 has one Failed observation after8 (2979ms), no review;14 requested/12 completed/
+1 failure. Exit101 supports a Rust-panic hypothesis; absent terminal metadata does not
+certify successful or safe completion. Turn3 has5 Failed after8/11/14/17/20
+(3135/3108/2982/2924/2888ms), then Unavailable after23 (181263ms);28 requested/
+27 completed/2 failures includes recovery accounting. Unavailable stays semantic.
+Turn4 has7 Failed after8/11/14/17/20/23/26 (3231/98494/102294/5448/4077/3913/5274ms),
+review23;37 requested/33 completed/4 failures. Request33 reports cancelled/streaming/
+committed_output/partial=true. No recorded ToolUnknown in per-turn metrics; that is not
+proof of certainty across the turn2 process failure.
+
+Known finish reasons: turn1 28tool_calls/1stop, turn2 9tool_calls, turn3 23tool_calls,
+turn4 32tool_calls; no unknown finish value printed. All five required files exist at
+every final snapshot. Final bytes:README1933/init340/main33467/testinit165/tests19622.
+Generated code, model output, actual stderr, trace/control texts, caller diagnostics
+and private oracle diagnostics remain uninspected.
+
+The absence of outer timeouts does not establish causal benefit from the Store change.
+Owned timing improvements remain verified; actual startup attribution remains unknown.
+RCA additionally reproduced a pre-existing invalid edit debug assertion using owned
+inputs and cached libraries. See2026-10-07-case10-edit-replace-all.md for the next fix.
