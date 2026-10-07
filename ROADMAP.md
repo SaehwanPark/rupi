@@ -1826,7 +1826,9 @@ TUI rendering passed all budgets (3.31–3.90 µs/unit); checkpointed restore me
   Owned actual-tool fixture proves active progress hides reads after started Failed/None
   edit, even with inspection+repair capacity. One bounded read-only attempt is implemented
   under opt-in progress with binding/policy/approval/effect/cancel/cap safeguards; ten
-  focused recovery tests pass. Full gates and fresh Retry44 screening remain pending.
+  focused recovery tests pass. Full local checks (serialized tests with unchanged
+  assertions), normal three-platform source CI, startup, resume/restore/context budgets
+  and owned unchanged-driver red-to-green pass. Exact freeze CI and Retry44 remain pending.
   Actual failed-tool attribution, acceptance benefit and a paired win remain unproved.
   Rupi-first screening and paired
   evidence/delivery checks remain pending. Broader project gates remain active.

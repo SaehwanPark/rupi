@@ -196,3 +196,43 @@ to every later mutation; refused calls do not renew inspection. Cancellation aft
 failed tool prevents granting. No model/harness/caller/control-cap change is made.
 Full delivery checks, standalone unchanged-driver green evidence and source/freeze CI
 remain pending; no acceptance benefit or actual failed-tool attribution is claimed.
+
+## Verified inspection source and Retry44 freeze
+
+Runtime source8540d45d369d87d4a8d876e7a0dd2d7ffe8a914b passes workspace fmt,
+core all-features check, all-target Clippy, full tests, docs and debug build. There are
+244 runtime/141 core/85 tools unit tests and25 CLI run tests. The initial normal local
+suite hits the unchanged child-deadline transport fixture's two-second elapsed assertion;
+the exact already-built workspace binary passes that same test isolated in0.43s with all
+semantic/quarantine/single-POST assertions unchanged. Serialized local full tests pass
+(424,853ms). This is a justified verification rerun isolating test resource contention;
+the exact scheduling mechanism is unobserved. Normal sourceCI37624924497 also passes
+Windows/macOS/Linux; no timing assertion or provider deadline was weakened.
+
+The unchanged owned repair driver above now completes in four requests with one inspection
+and verified repair against8540d45 libraries. New repair-after.exe succeeds; the retained
+repair-before.exe remains unchanged. Driver hash remainsF84C2BA0, current runtime library
+hashA483C538F3C59D6C9E02F55122784E3773CD619D219816023F8CFCC09B245FEF.
+Parent author invariant review passes with no blocking findings; no independent-review claim.
+
+Startup140.727ms cold/8.227ms warm median/8.903ms max meets budgets. All five restore
+cases pass at70.60/463.70/2091.95/2563.70/4942.35us; owned full canonical resume+restore
+is132.911ms against500ms. Five context cases pass at0.35/0.10/0.00/0.00/0.30us.
+An initial benchmark invocation measured passing restores but failed writing its relative
+artifact path: Cargo runs the benchmark from its crate directory. Corrected absolute,
+distinct artifact paths pass without a production change; this is an operator artifact
+correction, not an inference retry or claimed runtime budget failure.
+All13 harness guards, selected profile/full SPEC/three reference hashes, owned four-turn
+protocol and18 unchanged other-case prompt hashes pass again. No rendering change.
+
+Freeze fresh run bench-20261007-case10-inspection-retry44-rupi40-turns4-2400s
+with runtime8540d45 and debug binary
+0307EAFFE6C687843994C4A5F448BF91F41E047A74711DDF5F626D4CD0738ADE.
+Keep Retry43 caller/harness/helper/shared prompt, full SPEC/acceptance, same physical model,
+direct8000/globalLow/initialOff/template boolean dialect, no numeric reasoning budget,
+four-turn protocol and every comparison limit unchanged. No model/helper restart or
+allowance increase. SourceCI above passes all three platforms; the exact new freeze-head
+CI must also pass all three before inference. Launch fresh rupi first, conditional fresh
+matched Pi0.86.1 only after independent rupi acceptance. No configured Case10 win exists;
+the roadmap gate remains active. Local/remote branches are main plus the synchronized
+active PR branch after fetch/prune; none are obsolete or merged for deletion.
