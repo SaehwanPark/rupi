@@ -14,6 +14,9 @@ use serde_json::{Value, json};
 
 use crate::config::{MaxTokensField, ProviderConfig, ThinkingDisableMode, ThinkingInput};
 
+/// Leave useful answer room when an endpoint-specific reasoning budget is requested.
+const REASONING_ANSWER_RESERVE_TOKENS: u64 = 1_024;
+
 /// Build a chat-completions body.
 pub fn request_body(config: &ProviderConfig, request: &ModelRequest) -> Value {
   let model = if request.model.model.trim().is_empty() {
@@ -73,6 +76,19 @@ pub fn request_body(config: &ProviderConfig, request: &ModelRequest) -> Value {
     body["stop"] = json!(request.stop);
   }
   apply_thinking(config, request.thinking, &mut body);
+  if let Some(configured) = config
+    .reasoning_budget_tokens
+    .filter(|_| request.thinking != ThinkingLevel::Off)
+  {
+    let budget = request
+      .max_output_tokens
+      .map_or(u64::from(configured), |ceiling| {
+        u64::from(configured).min(ceiling.saturating_sub(REASONING_ANSWER_RESERVE_TOKENS))
+      });
+    if budget > 0 {
+      body["reasoning_budget_tokens"] = json!(budget);
+    }
+  }
   if config.stream {
     body["stream_options"] = json!({ "include_usage": config.stream_usage });
   }
@@ -401,6 +417,76 @@ mod tests {
       sampling_constraint: None,
     }];
     request
+  }
+
+  #[test]
+  fn native_reasoning_budget_preserves_dialects_and_off() {
+    for dialect in [
+      ThinkingInput::None,
+      ThinkingInput::ReasoningEffort,
+      ThinkingInput::ChatTemplateThinking,
+      ThinkingInput::ChatTemplateEnableThinking,
+    ] {
+      let original = ProviderConfig {
+        thinking_input: dialect,
+        thinking_disable: ThinkingDisableMode::ReasoningEffortNone,
+        ..config()
+      };
+      let configured = ProviderConfig {
+        reasoning_budget_tokens: Some(2_048),
+        ..original.clone()
+      };
+      let enabled = request(Vec::new()).with_thinking(ThinkingLevel::Low);
+      let mut capped_body = request_body(&configured, &enabled);
+      assert_eq!(capped_body["reasoning_budget_tokens"], 2_048);
+      assert!(capped_body.get("thinking_budget_tokens").is_none());
+      capped_body
+        .as_object_mut()
+        .unwrap()
+        .remove("reasoning_budget_tokens");
+      assert_eq!(capped_body, request_body(&original, &enabled));
+      let off = enabled.with_thinking(ThinkingLevel::Off);
+      assert_eq!(
+        request_body(&configured, &off),
+        request_body(&original, &off)
+      );
+    }
+  }
+
+  #[test]
+  fn native_reasoning_budget_uses_effective_output_and_reserves_answer_room() {
+    for field in [
+      MaxTokensField::MaxTokens,
+      MaxTokensField::MaxCompletionTokens,
+    ] {
+      let configured = ProviderConfig {
+        reasoning_budget_tokens: Some(2_048),
+        max_tokens_field: field,
+        ..config()
+      };
+      for (ceiling, expected) in [
+        (None, Some(2_048)),
+        (Some(32_768), Some(2_048)),
+        (Some(1_500), Some(476)),
+        (Some(1_025), Some(1)),
+        (Some(1_024), None),
+        (Some(512), None),
+      ] {
+        let requested = request(Vec::new())
+          .with_thinking(ThinkingLevel::Low)
+          .with_output_budget(Some(32_768), ceiling);
+        let body = request_body(&configured, &requested);
+        assert_eq!(
+          body.get("reasoning_budget_tokens").and_then(Value::as_u64),
+          expected
+        );
+        let output_key = match field {
+          MaxTokensField::MaxTokens => "max_tokens",
+          MaxTokensField::MaxCompletionTokens => "max_completion_tokens",
+        };
+        assert_eq!(body.get(output_key).and_then(Value::as_u64), ceiling);
+      }
+    }
   }
 
   #[test]

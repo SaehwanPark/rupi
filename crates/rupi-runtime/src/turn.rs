@@ -16367,6 +16367,22 @@ mod tests {
         ]
       );
       assert!(requests.iter().all(|r| r.model == requests[0].model));
+      let wire_config = rupi_provider::ProviderConfig {
+        thinking_input: rupi_provider::ThinkingInput::ChatTemplateEnableThinking,
+        reasoning_budget_tokens: Some(2_048),
+        ..rupi_provider::ProviderConfig::local("owned", "fixture", "http://127.0.0.1:1", 32_768)
+      };
+      for request in &requests {
+        let body = rupi_provider::request_body(&wire_config, request);
+        let enabled = request.thinking != ThinkingLevel::Off;
+        assert_eq!(body["chat_template_kwargs"]["enable_thinking"], enabled);
+        assert_eq!(
+          body
+            .get("reasoning_budget_tokens")
+            .and_then(serde_json::Value::as_u64),
+          enabled.then_some(2_048)
+        );
+      }
       if selected.is_some() {
         assert!(
           requests[0]

@@ -574,6 +574,17 @@ it neither specifies effort intensity nor proves effective backend enforcement o
 reasoning composition. First-request thinking selection uses the same endpoint dialect.
 Owned config/provider/CLI wire fixtures cover both keys, Off and later inheritance.
 
+Endpoint `openai_compat.reasoning_budget_tokens` optionally requests the exact native
+`reasoning_budget_tokens` field. Configuration accepts1 through i32::MAX; None preserves
+existing requests. Off omits the numerical field and keeps the declared disable encoding.
+For enabled thinking, an effective output ceiling caps this request to ceiling minus1,024
+answer tokens; omit it when no positive budget fits. Without a ceiling, use the configured
+budget. Desired output never substitutes for the effective wire ceiling. This declaration
+does not discover endpoint support, grant native exposure or claim backend compliance.
+Owned fresh-turn Off/Low and pinned Pi0.86.1 fake-wire fixtures verify field selection and
+answer-room clamping. A tiny owned probe on the installed original local model is consistent
+with enforcement; actual-case reasoning composition and acceptance benefit remain unproved.
+
 ### Opt-in completion review
 
 `RuntimeLimits::review_completion` defaults to false. When enabled, the first otherwise

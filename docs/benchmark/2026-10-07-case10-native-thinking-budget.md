@@ -123,3 +123,20 @@ harness configs. Preserve uncertain-effect/approval/cancellation barriers. Run a
 review, full required local/CI gates and relevant performance budgets before freezing a fresh
 attempt. Keep the PR draft and roadmap gate active. No fresh attempt is authorized by a passing
 owned probe alone; the verified production enhancement and delivery gates must come first.
+
+## Implemented contract and focused checks
+
+The selected optional configuration/provider mapping and distinct matched Case10 selector are
+implemented. Four new focused tests pass, covering core/provider configuration and wire mapping;
+the existing two-fresh-turn initial-thinking fixture now also verifies numerical Off omission
+and ordinary Low application. All103 provider unit tests pass. The unchanged owned driver now
+passes against the new adapter, with original driver hash retained and after-executable SHA256
+`CEAFF162C59DE5DF6275D1EFAEFB1864B7D14CDA157A00C0473BEF9FC85316AB`.
+
+All14 owned harness guards pass. Pinned Pi0.86.1 uses only its existing native compatibility
+configuration, with owned fake HTTP verifying Off omission, Low2,048, effective ceiling1,500
+to budget476, ceiling1,025 to budget1, and ceiling1,024 omission. Default template fixtures
+also pass. No live model endpoint receives these fixture requests. A syntax error in the
+new owned PowerShell fixture is corrected before verification; no case retry is involved.
+The Windows CI job now runs the native-budget configuration guard. Full delivery checks,
+author invariant review, source/freeze CI and a fresh actual attempt remain pending.

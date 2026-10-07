@@ -26,6 +26,10 @@ jobs:
           node-version: 22.x
       - name: Verify Node extension host runtime
         run: node --version
+      - name: native thinking budget harness contracts
+        if: runner.os == 'Windows'
+        shell: pwsh
+        run: ./bench/test-native-thinking-budget.ps1
       - name: core contracts compile independently
         run: cargo check -p rupi-core --all-features
       - name: clippy

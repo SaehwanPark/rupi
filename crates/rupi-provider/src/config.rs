@@ -62,6 +62,10 @@ pub struct ProviderConfig {
   pub thinking_input: ThinkingInput,
   /// How this endpoint explicitly disables reasoning in the effort dialect.
   pub thinking_disable: ThinkingDisableMode,
+  /// Opt-in native reasoning budget; the adapter reserves answer room and omits it for Off.
+  /// Declaring this option does not discover endpoint support or reasoning exposure.
+  #[serde(skip_serializing_if = "Option::is_none")]
+  pub reasoning_budget_tokens: Option<u32>,
   /// Whether this endpoint accepts strict function-tool schemas.
   pub strict_tool_schema: StrictToolSchemaSupport,
   /// Whether native reasoning may be replayed with assistant history.
@@ -98,6 +102,7 @@ impl fmt::Debug for ProviderConfig {
       .field("max_tokens_field", &self.max_tokens_field)
       .field("thinking_input", &self.thinking_input)
       .field("thinking_disable", &self.thinking_disable)
+      .field("reasoning_budget_tokens", &self.reasoning_budget_tokens)
       .field("strict_tool_schema", &self.strict_tool_schema)
       .field("preserve_reasoning", &self.preserve_reasoning)
       .field("stream", &self.stream)
@@ -131,6 +136,7 @@ impl Default for ProviderConfig {
       max_tokens_field: MaxTokensField::default(),
       thinking_input: ThinkingInput::default(),
       thinking_disable: ThinkingDisableMode::default(),
+      reasoning_budget_tokens: None,
       strict_tool_schema: StrictToolSchemaSupport::default(),
       preserve_reasoning: false,
       stream: true,
@@ -235,6 +241,7 @@ impl ProviderConfig {
       max_tokens_field: endpoint.openai_compat.max_tokens_field.unwrap_or_default(),
       thinking_input: endpoint.openai_compat.thinking_input.unwrap_or_default(),
       thinking_disable: endpoint.openai_compat.thinking_disable.unwrap_or_default(),
+      reasoning_budget_tokens: endpoint.openai_compat.reasoning_budget_tokens,
       strict_tool_schema: endpoint
         .openai_compat
         .strict_tool_schema
@@ -309,6 +316,14 @@ impl ProviderConfig {
     if self.preserve_reasoning && self.capabilities.exposed_reasoning != ReasoningExposure::Native {
       return Err(BuildError::Invalid(
         "preserve_reasoning requires exposed_reasoning=native",
+      ));
+    }
+    if self
+      .reasoning_budget_tokens
+      .is_some_and(|budget| budget == 0 || budget > i32::MAX as u32)
+    {
+      return Err(BuildError::Invalid(
+        "reasoning_budget_tokens must be between 1 and 2147483647",
       ));
     }
     if self.request_timeout_ms == Some(0) {
@@ -569,6 +584,7 @@ mod tests {
         max_tokens_field: Some(MaxTokensField::MaxCompletionTokens),
         thinking_input: Some(thinking_input),
         thinking_disable: Some(ThinkingDisableMode::ReasoningEffortNone),
+        reasoning_budget_tokens: Some(2_048),
         strict_tool_schema: Some(StrictToolSchemaSupport::Supported),
         preserve_reasoning: true,
         headers: BTreeMap::from([("x-route".into(), "local-fast".into())]),
@@ -582,6 +598,7 @@ mod tests {
         MaxTokensField::MaxCompletionTokens
       );
       assert_eq!(derived.thinking_input, thinking_input);
+      assert_eq!(derived.reasoning_budget_tokens, Some(2_048));
       assert_eq!(
         derived.thinking_disable,
         ThinkingDisableMode::ReasoningEffortNone
@@ -592,6 +609,42 @@ mod tests {
       );
       assert!(derived.preserve_reasoning);
       assert_eq!(derived.headers["x-route"], "local-fast");
+    }
+  }
+
+  #[test]
+  fn native_reasoning_budget_does_not_infer_exposure() {
+    let mut endpoint = ModelEndpoint::local("local", "owned", "http://127.0.0.1:1/v1", 32_768);
+    endpoint.openai_compat.reasoning_budget_tokens = Some(2_048);
+    let derived = ProviderConfig::from_endpoint(&endpoint).unwrap();
+    assert_eq!(
+      derived.capabilities.exposed_reasoning,
+      ReasoningExposure::None
+    );
+    assert!(!derived.preserve_reasoning);
+    let encoded = serde_json::to_value(&derived).unwrap();
+    assert_eq!(encoded["reasoning_budget_tokens"], 2_048);
+    assert_eq!(
+      serde_json::from_value::<ProviderConfig>(encoded).unwrap(),
+      derived
+    );
+    assert!(
+      serde_json::to_value(config())
+        .unwrap()
+        .get("reasoning_budget_tokens")
+        .is_none()
+    );
+    for budget in [0, i32::MAX as u32 + 1, u32::MAX] {
+      let invalid = ProviderConfig {
+        reasoning_budget_tokens: Some(budget),
+        ..config()
+      };
+      assert_eq!(
+        invalid.validate(),
+        Err(BuildError::Invalid(
+          "reasoning_budget_tokens must be between 1 and 2147483647",
+        ))
+      );
     }
   }
 

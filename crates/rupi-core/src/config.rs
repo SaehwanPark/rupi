@@ -74,6 +74,10 @@ pub struct OpenAiCompatOptions {
   /// How to explicitly disable reasoning for dialects that support it.
   #[serde(skip_serializing_if = "Option::is_none")]
   pub thinking_disable: Option<OpenAiThinkingDisable>,
+  /// Optional native reasoning-budget request for endpoints accepting this exact wire field.
+  /// Off omits it; enabled requests reserve answer space within their effective output ceiling.
+  #[serde(skip_serializing_if = "Option::is_none")]
+  pub reasoning_budget_tokens: Option<u32>,
   /// Whether this endpoint accepts the OpenAI-style per-function strict flag.
   #[serde(skip_serializing_if = "Option::is_none")]
   pub strict_tool_schema: Option<OpenAiStrictToolSchemaSupport>,
@@ -100,6 +104,7 @@ impl fmt::Debug for OpenAiCompatOptions {
       .field("max_tokens_field", &self.max_tokens_field)
       .field("thinking_input", &self.thinking_input)
       .field("thinking_disable", &self.thinking_disable)
+      .field("reasoning_budget_tokens", &self.reasoning_budget_tokens)
       .field("strict_tool_schema", &self.strict_tool_schema)
       .field("preserve_reasoning", &self.preserve_reasoning)
       .field("header_names", &header_names)
@@ -987,6 +992,18 @@ impl RuntimeConfig {
         return Err(ConfigError(format!(
           "endpoint {}/{} may preserve reasoning only when exposed_reasoning is native",
           endpoint.provider, endpoint.model
+        )));
+      }
+      if endpoint
+        .openai_compat
+        .reasoning_budget_tokens
+        .is_some_and(|budget| budget == 0 || budget > i32::MAX as u32)
+      {
+        return Err(ConfigError(format!(
+          "endpoint {}/{} reasoning_budget_tokens must be between 1 and {}",
+          endpoint.provider,
+          endpoint.model,
+          i32::MAX
         )));
       }
       for (name, value) in &endpoint.openai_compat.headers {
@@ -1887,6 +1904,31 @@ mod tests {
   }
 
   #[test]
+  fn native_reasoning_budget_is_optional_and_bounded() {
+    let defaults = serde_json::to_value(OpenAiCompatOptions::default()).unwrap();
+    assert!(defaults.get("reasoning_budget_tokens").is_none());
+    let mut config = sample_config();
+    for budget in [1, 2_048, i32::MAX as u32] {
+      config.endpoints[0].openai_compat.reasoning_budget_tokens = Some(budget);
+      let parsed = RuntimeConfig::parse(&config.to_json_string().unwrap()).unwrap();
+      assert_eq!(
+        parsed.endpoints[0].openai_compat.reasoning_budget_tokens,
+        Some(budget)
+      );
+    }
+    for budget in [0, i32::MAX as u32 + 1, u32::MAX] {
+      config.endpoints[0].openai_compat.reasoning_budget_tokens = Some(budget);
+      assert!(
+        config
+          .validate()
+          .unwrap_err()
+          .0
+          .contains("reasoning_budget_tokens")
+      );
+    }
+  }
+
+  #[test]
   fn openai_compat_endpoint_options_round_trip() {
     for thinking_input in [
       OpenAiThinkingInput::ChatTemplateThinking,
@@ -1900,6 +1942,7 @@ mod tests {
         max_tokens_field: Some(OpenAiMaxTokensField::MaxCompletionTokens),
         thinking_input: Some(thinking_input),
         thinking_disable: Some(OpenAiThinkingDisable::ReasoningEffortNone),
+        reasoning_budget_tokens: Some(2_048),
         strict_tool_schema: Some(OpenAiStrictToolSchemaSupport::Supported),
         preserve_reasoning: true,
         headers: BTreeMap::new(),

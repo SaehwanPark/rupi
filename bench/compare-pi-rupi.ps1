@@ -32,6 +32,8 @@ param(
   [int]$Case09ProgressRequestWindow = 1,
   [ValidateRange(0, 16384)]
   [int]$Case10ReasoningBudgetTokens = 0,
+  [ValidateSet(0, 2048)]
+  [int]$Case10NativeReasoningBudgetTokens = 0,
   [ValidateRange(1024, 65535)]
   [ValidateScript({ $_ -ne 8000 })]
   [int]$Case10ReasoningRelayPort = 8001,
@@ -77,6 +79,11 @@ param(
 )
 
 $ErrorActionPreference = "Stop"
+if ($Case10NativeReasoningBudgetTokens -gt 0 -and
+    ($Case10ThinkingInput -ne 'chat_template_enable_thinking' -or
+     $Case10ReasoningBudgetTokens -gt 0 -or $ThinkingLevel -ne 'low')) {
+  throw 'Case10 native budget requires direct template thinking, global Low and helper budget0.'
+}
 if ($Case10CompletionCheckReserveFinal -and $Case10CompletionChecks -lt 2) {
   throw 'Case10 final check reserve requires at least two completion checks.'
 }
@@ -2172,6 +2179,18 @@ function Get-BenchmarkMaxOutputTokens([hashtable]$case) {
   return 16384
 }
 
+function Get-BenchmarkNativeReasoningBudget([hashtable]$case) {
+  if ($case.Id -ne '10-receipt-ledger' -or $Case10NativeReasoningBudgetTokens -le 0) {
+    return $null
+  }
+  if ($Case10NativeReasoningBudgetTokens -ne 2048 -or
+      $Case10ThinkingInput -ne 'chat_template_enable_thinking' -or
+      $Case10ReasoningBudgetTokens -gt 0 -or $ThinkingLevel -ne 'low') {
+    throw 'Case10 native budget requires matched2048, direct template thinking and global Low.'
+  }
+  return $Case10NativeReasoningBudgetTokens
+}
+
 function Get-BenchmarkProgressControl([hashtable]$case) {
   if ($case.Id -eq "10-receipt-ledger") {
     return [pscustomobject]@{
@@ -2454,6 +2473,10 @@ function Set-BenchmarkReasoningCompatibility([hashtable]$case, [object]$endpoint
     -Value "reasoning_effort_none"
   $endpoint.openai_compat | Add-Member -MemberType NoteProperty -Name preserve_reasoning -Force `
     -Value $true
+  if ($case.Id -eq '10-receipt-ledger' -and $Case10NativeReasoningBudgetTokens -gt 0) {
+    $endpoint.openai_compat | Add-Member -MemberType NoteProperty -Name reasoning_budget_tokens `
+      -Force -Value (Get-BenchmarkNativeReasoningBudget $case)
+  }
 }
 
 function New-BenchmarkWorkspace([hashtable]$case, [string]$agentRoot, [string]$thinkingLevel) {
@@ -2593,6 +2616,11 @@ function New-PiConfig([string]$agentRoot, [hashtable]$case) {
     $models.providers.unsloth.models[0].compat['chatTemplateKwargs'] = [ordered]@{
       enable_thinking = [ordered]@{ '$var' = 'thinking.enabled' }
     }
+  }
+  if ($case.Id -eq '10-receipt-ledger' -and $Case10NativeReasoningBudgetTokens -gt 0) {
+    $null = Get-BenchmarkNativeReasoningBudget $case
+    $models.providers.unsloth.models[0].compat['supportsThinkingTokenBudget'] = $true
+    $models.providers.unsloth.models[0].compat['thinkingTokenBudgetField'] = 'reasoning_budget_tokens'
   }
   Write-Json (Join-Path $piConfig "models.json") $models
   $piConfig
@@ -2913,6 +2941,7 @@ function Invoke-AgentCase([hashtable]$case, [string]$agent, [string]$root, [stri
         } else { $null }
       }
       $turnRecord["configured_thinking_control"] = Get-BenchmarkThinkingControl $case $thinkingLevel
+      $turnRecord["configured_native_reasoning_budget_tokens"] = Get-BenchmarkNativeReasoningBudget $case
       $turnRecord["configured_model_endpoint"] = Get-BenchmarkEndpoint $case
       $budget = Get-BenchmarkReasoningBudget $case
       $turnRecord["configured_reasoning_budget_tokens"] = if ($budget -gt 0) {
@@ -3755,6 +3784,7 @@ $summary = [ordered]@{
   case10_rupi_completion_checks = if ($Case10CompletionChecks -gt 0) {
     $Case10CompletionChecks
   } else { $null }
+  case10_native_reasoning_budget_tokens = Get-BenchmarkNativeReasoningBudget @{Id='10-receipt-ledger'}
   case10_rupi_completion_check_on_review = Get-BenchmarkReviewCheck @{Id='10-receipt-ledger'} 'rupi'
   case10_rupi_completion_check_repair_request_window =
     Get-BenchmarkRepairCheckWindow @{Id='10-receipt-ledger'} 'rupi'

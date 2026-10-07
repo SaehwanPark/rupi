@@ -1321,6 +1321,15 @@ Endpoint thinking dialects must preserve their declared wire keys. An explicitly
 it with the legacy `thinking` key or generic reasoning effort. A requested toggle is not
 proof of effective backend enforcement, effort intensity or hidden reasoning composition.
 
+An explicit endpoint-native `reasoning_budget_tokens` option may request a positive signed
+32-bit budget. None leaves existing requests unchanged; Off omits the numerical field.
+Enabled requests reserve1,024 answer tokens within an effective output ceiling, lowering
+the budget or omitting it when no positive budget fits. With no ceiling, send the configured
+budget. Preserve the declared thinking dialect and use effective rather than desired
+output. The provider adapter owns this wire mapping without startup discovery, exposure
+inference, new durable event kinds or changes to tool, approval, cancellation or uncertainty
+barriers. Requested controls do not certify backend enforcement or recovered reasoning.
+
 A caller may opt into one bounded review after the first otherwise accepted ordinary
 completion. Preserve native assistant evidence and record review instructions with
 runtime provenance. Continue only through normal request/tool/time budgets, approval,

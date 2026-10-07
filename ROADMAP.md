@@ -1828,8 +1828,16 @@ TUI rendering passed all budgets (3.31–3.90 µs/unit); checkpointed restore me
   under opt-in progress with binding/policy/approval/effect/cancel/cap safeguards; ten
   focused recovery tests pass. Full local checks (serialized tests with unchanged
   assertions), normal three-platform source CI, startup, resume/restore/context budgets
-  and owned unchanged-driver red-to-green pass. Exact freeze CI and Retry44 remain pending.
-  Actual failed-tool attribution, acceptance benefit and a paired win remain unproved.
+  and owned unchanged-driver red-to-green pass. Exact freeze CI passes; frozen Retry44
+  fails acceptance in all four turns with554,533 known work and two requests' usage unknown.
+  Turn3 has an outer timeout; Turn4 reaches inspection guidance without an acceptance win.
+  Corrected terminal idle audit passes; prior wrapped-array assertions alone do not prove
+  historical idleness. An opt-in native reasoning budget is implemented with bounded
+  config, effective answer-room/Off mapping, fresh-turn checks, unchanged-driver red-to-green
+  and14 owned harness guards including matched pinned Pi wire fixtures. Full delivery
+  gates and a fresh screen remain pending. Local CPU cost is not reproduced by a dense
+  owned resume fixture; its responsible path remains unknown. Actual failed-tool attribution,
+  acceptance benefit and a paired win remain unproved.
   Rupi-first screening and paired
   evidence/delivery checks remain pending. Broader project gates remain active.
   Preserve stable public delivery keys, distinct private fencing, lost-ack retry and
