@@ -78,8 +78,25 @@ guards pass. Caller SHA256EB7829961FC2AB93AC36E8FE4971F5EA18F07C8DE6136019110373
 and helper SHA256A0BCAE689139BFD281CB91C209D5D8F6CF9EA42FD7EFF256BE02D97A871387C7
 remain unchanged. Independent post-turn acceptance and verification timeouts stay intact.
 
-Author invariant review, full required local/CI gates and performance precede a fresh
-attempt. The roadmap remains active and this work does not establish a paired win.
+## Final delivery verification
+
+Runtime source37d0e23d616352f9baf8e64f4a1795a5f943e424 includes one author-review
+correction: recheck cancellation/deadline after parsing, before accepting any reply.
+Focused guards pass, then full local fmt, all-feature core check, workspace all-target
+Clippy, normal workspace tests, docs and debug build pass on that final source.
+All15 owned harness guards and20 prompt hashes/case-tree guards pass. Parent author
+invariant review passes; no independent reviewer/subagent.
+
+Final-source warm median8.384ms passes100ms; fresh-inode cold median167.752ms passes250ms.
+Canonical resume/restore133.6922ms passes500ms; all restore/context checks pass on
+unchanged store/runtime context code. Rendering is unchanged. Debug binary SHA256:
+`A60A9A915D0445EB0172F55FD7042416536C6762A51CE17343E83F0A03F1B71E`.
+New harness SHA256:
+`36B493DA27142A54A95A4376AE5DB4584AFA2C5F0859470C08825794432E74F3`.
+
+Exact merge-HEAD CI on Windows, macOS and Ubuntu is a premerge gate; its outcome is
+recorded in PR145 checks and the final handoff comment. This delivery is independent
+of benchmark acceptance: the roadmap remains active and no paired win is established.
 
 ## Wrap-up requested by the owner
 

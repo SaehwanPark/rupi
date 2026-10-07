@@ -1849,7 +1849,10 @@ TUI rendering passed all budgets (3.31–3.90 µs/unit); checkpointed restore me
   CPU and successful later resumes. Frozen terminal audits pass:133 starts/130 usage,
   834,122 known work, three request-usage gaps. Caller observations consume about22.5min.
   Optional CLI caller deadline is implemented with owned slow-host/late-reply no-replay
-  guards; full delivery and the next fresh screen remain pending. Actual failed-tool attribution,
+  guards; final local gates/author review pass, warm8.384ms/cold167.752ms and canonical
+  resume133.6922ms meet budgets. The owner requests wrap-up and merge before a paired
+  win; no Retry47 launches. Exact merge-HEAD CI precedes merge. Case10 remains unresolved;
+  retain the resumption protocol in the caller-deadline ledger. Actual failed-tool attribution,
   acceptance benefit and a paired win remain unproved.
   Rupi-first screening and paired
   evidence/delivery checks remain pending. Broader project gates remain active.
