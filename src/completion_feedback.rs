@@ -522,6 +522,13 @@ impl CompletionMailbox {
           if reply.feedback.len() > MAX_COMPLETION_FEEDBACK_BYTES {
             return Err("completion feedback exceeded its byte limit".into());
           }
+          // Reading and validating the caller's reply can cross the same wait boundary.
+          if cancel.is_cancelled() {
+            return Err("completion observation cancelled".into());
+          }
+          if Instant::now() >= deadline {
+            return Err("completion observation timed out".into());
+          }
           return Ok(CompletionCheckResult {
             status: match reply.status {
               ReplyStatus::Passed => CompletionCheckStatus::Passed,
