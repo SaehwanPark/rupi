@@ -81,3 +81,31 @@ Store open/startup remains lazy. Residual risk: retained externalized request ar
 add transient memory proportional to request payloads; no hydrated reasoning is cached.
 Actual Retry41 timing attribution and Case10 semantic defects remain unknown.
 Workspace gates and existing performance budgets are still running at this commit.
+
+## Verified gates and Retry42 freeze
+
+Final source c50a2d2213688000f981d2281a383e16d8a5813c passes full workspace fmt,
+core all-features check, all-target Clippy, tests, docs and debug build. Rechecked final
+bench formatting/Clippy and full canonical release benchmark:89.879ms resume,
+47.761ms restore,139.456ms paired total within500ms. Startup145.967ms cold/9.299ms
+warm median/10.208ms max; five SessionLog cases95.30/619.90/2740.65/2585.00/5227.50us
+and five context cases0.5/0.1/0/0/0.3us pass their existing budgets.
+
+All13 harness guards and owned four-turn recovery fixtures pass. Full selected native
+profile, copied public SPEC/three acceptance hashes and all18 non-Case10 prompt hashes
+remain unchanged. Root user policy3CEE11E5D4D8C8CA7CCF34F87A64B18BB183D4AF9AF79AB964AE19D4EF39B496
+is preserved. Fetch/prune finds no merged/outdated branch besides protected main;
+the active Case10 branch remains necessary. No new dependency or schema was introduced.
+
+Freeze fresh run bench-20261006-case10-resume-retry42-rupi40-turns4-2400s with sourcec50a2d2,
+callerfa6821860f6a2e94d4e5d1ecd86170e3eb00e072 and binary
+A22BE9F023D686F36D0A5CA30E29FA3D10F71604DAC26D9CBF41A6FF2430823F.
+Harness91CED3EF27C50DDD31BA08CFBD3338E42D8B6CA319BD4CC051543835DC5F1D16,
+callerEB7829961FC2AB93AC36E8FE4971F5EA18F07C8DE6136019110373775DF1E6AC and
+helperA0BCAE689139BFD281CB91C209D5D8F6CF9EA42FD7EFF256BE02D97A871387C7 remain frozen.
+Shared initial prompt230589C5F20B5486CD84216CE5B6A0DB9734CE724C2903D891E4D50D9CFB3270.
+Only canonical resume implementation changes from Retry41; all four-turn/per-turn limits,
+model, globalLow/initialOff intent, prompt, acceptance and caller protocol stay identical.
+No helper/model restart or oracle visibility change. SourceCI37564263389 and exact
+freeze-head all3 CI must both pass before inference. Final timeout/usage facts will be
+reported as observed; no backfill of prior traces or causal inference from absent facts.
