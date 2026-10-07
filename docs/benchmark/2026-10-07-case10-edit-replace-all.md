@@ -25,7 +25,7 @@ and explain why residual/new matches are legitimate. Add actual EditTool fixture
 replacement containing find and a match formed across an unmatched suffix; assert exact
 output, successful Changed state, and single-pass behavior. Retain identical-argument
 refusal, ambiguity rules, cancellation checks, atomic write and Unknown reconciliation.
-No schema, public interface, definition identity, budget, model or caller change.
+No edit argument schema, budget, model or caller change.
 
 Verify focused edit/registry tests, full workspace delivery gates and startup budget.
 Existing unchanged Store/context and harness/profile gates remain applicable; verify
@@ -76,3 +76,27 @@ shared prompt, public SPEC, acceptance, native-only Pi-null controls and public 
 protocol remain unchanged. No helper/model restart or allowance increase.
 SourceCI37602883681 and exact freeze-head all3 CI must pass before launch. A fresh matched
 pinned Pi run remains conditional on independent rupi acceptance; no configured win yet.
+
+## Prelaunch contract correction
+
+Source297ec09/frozend36f150 CI each passes all3; no inference was launched. Author review
+then identified a related false risk claim: edit metadata promises idempotence, while
+valid retained/new matches can make an identical invocation change external state again.
+The core contract defines idempotent as guaranteed convergence to the same external state.
+Correct edit metadata to mutating/non-idempotent, demonstrate two distinct explicit calls
+produce different states, and retain Never for a committed result/ReconcileFirst for
+Unknown. Update the header/comment rather than claiming all redeliveries are refused.
+
+| Boundary | Required behavior |
+| --- | --- |
+| Fresh valid edit | Single-pass success with Changed effect |
+| Explicit distinct call retaining find | May change again; metadata must not promise convergence |
+| Reuse of committed result | Never execute again |
+| Uncertain edit | Reconcile first; no automatic replay |
+| Prior fingerprint with idempotent=true | Definition mismatch requires manual inspection |
+
+The durable fingerprint already includes idempotent, so this correction changes its risk
+identity without a schema or stable implementation-version change. Existing old uncertain
+calls must not be silently treated as the new definition. Add actual registry coverage.
+This supersedes the prelaunch source/binary freeze above; keep the same Retry43 run id and
+all comparison controls, but require new source/frozen-head CI and fresh delivery evidence.
