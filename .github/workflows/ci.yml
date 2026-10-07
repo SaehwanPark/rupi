@@ -36,6 +36,11 @@ jobs:
         run: cargo clippy --workspace --all-targets -- -D warnings
       - name: test
         run: cargo test --workspace
+      - name: Windows provider relay idle CPU budget
+        if: runner.os == 'Windows'
+        run: >-
+          cargo bench --profile dev -p rupi-provider --bench relay_idle --
+          --json "${{ github.workspace }}/bench/results/provider-relay-idle-ci.json"
       - name: docs
         run: cargo doc --workspace --no-deps
       - name: Setup mdBook

@@ -18,8 +18,10 @@ All four recovery turns fail independent acceptance. No Pi comparison is launche
 The snapshots total 7,455,146ms and 554,533 known work tokens: 464,600 uncached input
 plus 89,933 output. Two started requests lack usage; their work remains unknown. The extra
 closure in Turn4 does not supply missing usage. Snapshot tool counts total 91 requested,
-89 terminal, two Failed and zero recorded Unknown. Count gaps across recovery snapshots
-do not establish distinct unfinished operations or prove None effects.
+89 ToolCompleted plus two ToolFailed terminal events, and zero recorded Unknown.
+The completion metric counts successful results, not all terminal categories. Aggregate
+equality does not establish distinct pairing or prove None effects; subtracting only
+successful completions from requests does not establish unfinished operations.
 
 Turn1 lacks required README/tests by safe filename/size metadata. Later project tests and
 all four help checks pass, but independent oracle exit1 remains. Turn3 has one outer

@@ -1836,8 +1836,14 @@ TUI rendering passed all budgets (3.31–3.90 µs/unit); checkpointed restore me
   config, effective answer-room/Off mapping, fresh-turn checks, unchanged-driver red-to-green
   and14 owned harness guards including matched pinned Pi wire fixtures. Full normal local
   gates, three-platform source CI, author review and startup/resume/restore/context budgets
-  pass. Exact freeze CI and a fresh native2,048 screen remain pending. Local CPU cost is not reproduced by a dense
-  owned resume fixture; its responsible path remains unknown. Actual failed-tool attribution,
+  pass. Exact freeze CI passes; frozen native2,048 Retry45 fails all four turns with66
+  starts/65 usage records and312,823 known work. Turn1 reaches native time exhaustion;
+  Turn2 exhausts all8 failing public checks. Turns3/4 exit before any recorded request;
+  their actual startup cause remains unknown. Frozen terminal audits pass before new
+  source changes. Owned relay source reproduces3,000ms CPU during a three-second idle wait;
+  accepted socket normalization and bounded wake connect are implemented. Windows regression
+  budgets, all30 transport tests and a CLI exhaustion/resume no-replay fixture pass.
+  Full delivery gates and a fresh screen remain pending. Actual failed-tool attribution,
   acceptance benefit and a paired win remain unproved.
   Rupi-first screening and paired
   evidence/delivery checks remain pending. Broader project gates remain active.

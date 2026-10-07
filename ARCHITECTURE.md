@@ -157,6 +157,14 @@ The outer request loop still enforces the total deadline and cancellation; ambig
 retain adapter quarantine and replay-safety classification. Transport activity creates no
 synthetic model output, usage, reasoning, or journal events.
 
+The provider cancellation relay keeps its listener nonblocking, then normalizes accepted
+client sockets to timed blocking I/O. Windows otherwise inherits the listener mode and can
+busy-spin on idle reads despite timeouts. Wake-up connects use the bounded poll interval:
+a completed exchange may have closed its listener, and default Windows connection refusal
+can delay teardown. Nonce authentication, single-use forwarding, EOF, cancellation, worker
+joining and quarantine remain authoritative. The Windows owned relay benchmark verifies
+one exact POST/response/EOF, CPU250ms per three-second wait and stop500ms in Windows CI.
+
 Each failed model request closes with optional typed `ModelRequestFailure` metadata on
 `ModelRequestCompleted`: category, lifecycle phase, replay safety and partial-output status.
 It copies the already classified runtime failure and excludes provider messages and payloads.

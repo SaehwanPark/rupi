@@ -734,6 +734,109 @@ fn session_resumes_across_checkpoint_barrier_with_capsule() {
 }
 
 #[test]
+fn completion_check_exhaustion_with_failed_tools_remains_resumable() {
+  let temp = TempDir::new().unwrap();
+  let workspace = temp.path().join("workspace");
+  let mailbox = temp.path().join("completion-mailbox");
+  fs::create_dir(&workspace).unwrap();
+  fs::create_dir(&mailbox).unwrap();
+  fs::write(workspace.join("owned.txt"), "original").unwrap();
+  let server = FakeServer::answer(vec![
+    tool_call(
+      "edit",
+      serde_json::json!({"path":"owned.txt","find":"absent","replace":"replacement"}),
+    ),
+    answer("owned first candidate"),
+    tool_call("read", serde_json::json!({"path":"owned.txt"})),
+    answer("owned next candidate"),
+  ]);
+  let config = write_config_with(temp.path(), &server.base_url(), |config| {
+    config.limits.max_model_requests_per_turn = 3;
+    config.limits.max_completion_checks_per_turn = Some(1);
+    config.tools.allow = vec!["read".into(), "edit".into()];
+    config.tools.auto_approve_mutating = true;
+  });
+  let host_directory = mailbox.clone();
+  let host = thread::spawn(move || {
+    let deadline = Instant::now() + Duration::from_secs(10);
+    let mut replied = std::collections::BTreeSet::new();
+    while replied.len() < 2 {
+      assert!(
+        Instant::now() < deadline,
+        "owned completion requests did not arrive"
+      );
+      for entry in fs::read_dir(&host_directory).unwrap() {
+        let path = entry.unwrap().path();
+        if !path
+          .file_name()
+          .unwrap()
+          .to_string_lossy()
+          .starts_with("request-")
+          || path.extension().is_none_or(|extension| extension != "json")
+        {
+          continue;
+        }
+        let request: serde_json::Value = serde_json::from_slice(&fs::read(&path).unwrap()).unwrap();
+        let id = request["request_id"].as_str().unwrap().to_owned();
+        if !replied.insert(id.clone()) {
+          continue;
+        }
+        assert_eq!(request["ordinal"], 1);
+        let reply = serde_json::json!({"version":1,"request_id":id,
+          "status":"failed","feedback":"owned public check failure"});
+        let temporary = host_directory.join(format!("reply-{id}.tmp"));
+        fs::write(&temporary, serde_json::to_vec(&reply).unwrap()).unwrap();
+        fs::rename(temporary, host_directory.join(format!("reply-{id}.json"))).unwrap();
+      }
+      thread::sleep(Duration::from_millis(5));
+    }
+  });
+  for ordinal in 0..2 {
+    let resume = if ordinal == 0 {
+      None
+    } else {
+      Some(
+        StateLayout::new(temp.path().join("state"))
+          .list_session_ids()
+          .unwrap()[0]
+          .to_string(),
+      )
+    };
+    execute(RunArgs {
+      config: config.clone(),
+      cwd: workspace.clone(),
+      prompt: format!("owned turn {ordinal}"),
+      resume,
+      finalize: false,
+      completion_feedback_dir: Some(mailbox.clone()),
+      surface: SurfaceArgs::default(),
+    })
+    .expect("the CLI exhaustion boundary must permit the next owned turn");
+  }
+  host.join().unwrap();
+  assert_eq!(server.requests().len(), 4);
+  assert_eq!(
+    fs::read_to_string(workspace.join("owned.txt")).unwrap(),
+    "original"
+  );
+  assert_eq!(
+    turn_statuses(temp.path()),
+    vec![TurnStatus::CompletionCheckExhausted; 2]
+  );
+  let events = recorded_events(temp.path());
+  assert_eq!(
+    events
+      .iter()
+      .filter(|event| matches!(event, AgentEvent::ToolStarted(_)))
+      .count(),
+    2,
+    "resume must not replay the failed mutation"
+  );
+  assert!(events.iter().any(|event| matches!(event,
+    AgentEvent::ToolFailed(failed) if failed.effect == rupi_core::ToolEffectDisposition::None)));
+}
+
+#[test]
 fn session_manual_failover_and_switch_back_across_turns() {
   let temp = TempDir::new().unwrap();
   let workspace = temp.path().join("workspace");

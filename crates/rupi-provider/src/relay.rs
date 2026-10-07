@@ -110,7 +110,9 @@ impl CancellableHttpRelay {
     if self.handle.is_some() {
       // Wake a listener blocked in accept. An active connection is woken by
       // short read/write polls and observes the same flag.
-      let _ = TcpStream::connect(self.address);
+      // A completed exchange may already have closed the listener. Windows can
+      // spend seconds refusing an unbounded connect to that now-closed port.
+      let _ = TcpStream::connect_timeout(&self.address, POLL);
     }
     if let Some(handle) = self.handle.take() {
       let _ = handle.join();
@@ -160,6 +162,11 @@ fn serve(
   nonce: &str,
   stop: &Arc<AtomicBool>,
 ) -> bool {
+  // Windows inherits the listener's nonblocking mode. Timed blocking I/O keeps
+  // idle pumps from spinning while preserving the short cancellation polls.
+  if client.set_nonblocking(false).is_err() {
+    return false;
+  }
   let _ = client.set_read_timeout(Some(POLL));
   let _ = client.set_write_timeout(Some(POLL));
   let mut request = Vec::new();
