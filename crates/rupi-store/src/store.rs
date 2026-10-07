@@ -16,6 +16,7 @@
 //! ```
 
 use std::{
+  borrow::Cow,
   collections::{BTreeMap, BTreeSet},
   path::{Path, PathBuf},
 };
@@ -1499,6 +1500,14 @@ impl Session {
       )));
     }
     let semantic = SessionLog::read(self.path())?;
+    let tool_requests = if semantic.items.iter().any(|record| {
+      matches!(record, SessionRecord::Message(message)
+        if message.role == Role::Assistant && message.message.tool_calls().next().is_some())
+    }) {
+      restore_tool_requests(&trace_report.items, self.blobs(), self.id())?
+    } else {
+      Vec::new()
+    };
     let mut missing = Vec::new();
     for record in semantic.items.iter().filter_map(|record| match record {
       SessionRecord::Message(message) if message.role == Role::Assistant => Some(message),
@@ -1528,10 +1537,8 @@ impl Session {
           )));
         }
         let mut requests = Vec::new();
-        for entry in &trace_report.items {
-          let event = restore_externalized_event(entry, self)?;
-          if let AgentEvent::ToolRequested(requested) = event
-            && requested.call_id == call.id
+        for (entry, requested) in &tool_requests {
+          if requested.call_id == call.id
             && (entry.envelope.meta.parent_event_id.as_ref()
               == Some(&assistant.envelope.meta.event_id)
               || (entry.envelope.meta.parent_event_id.is_none()
@@ -3254,6 +3261,14 @@ fn validate_projection_alignment(
     }
   }
 
+  let tool_requests = if records.iter().any(|record| {
+    matches!(record, SessionRecord::Message(message)
+      if message.message.tool_calls().next().is_some())
+  }) {
+    restore_tool_requests(entries, blobs, session)?
+  } else {
+    Vec::new()
+  };
   for record in records.iter() {
     let SessionRecord::Message(message) = record else {
       continue;
@@ -3268,10 +3283,8 @@ fn validate_projection_alignment(
       })
     {
       let mut requested = false;
-      for entry in entries {
-        let event = restore_externalized_event_from_blobs(entry, blobs, session)?;
-        if let AgentEvent::ToolRequested(candidate) = event
-          && candidate.call_id == call.id
+      for (entry, candidate) in &tool_requests {
+        if candidate.call_id == call.id
           && candidate.name == call.name
           && candidate.arguments == call.arguments
           && entry.envelope.meta.turn_id == Some(message.turn_id.clone())
@@ -4391,6 +4404,30 @@ fn restore_externalized_event(
   session: &Session,
 ) -> Result<AgentEvent, StoreError> {
   restore_externalized_event_from_blobs(trace_entry, session.blobs(), session.id())
+}
+
+fn restore_tool_requests<'a>(
+  entries: &'a [rupi_core::TraceEntry],
+  blobs: &BlobStore,
+  session: &SessionId,
+) -> Result<Vec<(&'a rupi_core::TraceEntry, Cow<'a, rupi_core::ToolRequested>)>, StoreError> {
+  let mut requests = Vec::new();
+  for entry in entries {
+    if entry.externalized.is_empty() {
+      if let AgentEvent::ToolRequested(request) = &entry.envelope.event {
+        requests.push((entry, Cow::Borrowed(request)));
+      }
+    } else {
+      // Filtering before restoration would skip corruption in unrelated fields
+      // and assume request identities were never externalized by an older writer.
+      // Validate each payload once; retain no hydrated reasoning or assistant text.
+      let event = restore_externalized_event_from_blobs(entry, blobs, session)?;
+      if let AgentEvent::ToolRequested(request) = event {
+        requests.push((entry, Cow::Owned(request)));
+      }
+    }
+  }
+  Ok(requests)
 }
 
 fn restore_externalized_event_from_blobs(

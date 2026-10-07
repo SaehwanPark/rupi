@@ -42,3 +42,42 @@ Push source evidence and require source/frozen-head CI before another model atte
 Keep the next comparison profile unchanged so this enhancement is the only new runtime
 variable. A faster fixture is not a configured Case10 win; PR145 remains draft until
 independent acceptance and a fresh matched Pi comparison establish that win.
+
+## Implementation and owned verification
+
+Both matching paths now use one pass that borrows inline ToolRequested events and
+restores externalized events once, retaining only request candidates. Existing scoped
+matching predicates are unchanged. Request argument payloads remain transiently owned
+when externalized; reasoning/text payloads are validated and dropped immediately.
+Projection validation also rejects malformed fields beyond the first matching request
+rather than accepting a corrupt suffix. No provider/effect admission precedes validation.
+
+Store181 unit tests,28 event round trips,9 Pi import tests and3 new history integration
+tests pass. New coverage exercises missing/unstarted closures with externalized history,
+argument restoration, and unrelated duplicate/missing/schema-invalid fields with no
+trace append on rejection. Existing reused-id, duplicate/mismatch, projection failpoint,
+Unknown and unresolved-effect fixtures pass. Focused Clippy passes.
+
+The identical ignored offline probe now reports resume1200.048/885.760/958.574ms and
+restore470.402/529.403/545.071ms. Medians958.574+529.403=1487.977ms versus the original
+38960.441ms sum, about96% lower. The committed release benchmark reports resume93.563ms,
+restore50.255ms and paired total145.100ms across five samples, within its500ms budget.
+Release and debug results are separate measurements, not a direct before/after pair.
+
+Owned fixture corrections: use ContentBlock::ToolResult (Message has no tool_results
+accessor), borrow the TraceJournal path, and test supported externalized arguments.
+An identity-externalization fixture was rejected by existing canonical lifecycle checks;
+do not weaken those checks to satisfy an invalid fixture. Clippy caught use of a Rust1.87
+integer method against MSRV1.85 and a single-element loop; use existing modulo convention
+and direct binding. The first release benchmark passed latency but failed output writing
+because Cargo runs benches from the package directory; use an absolute JSON path.
+These owned test/operator corrections did not justify or launch a model retry.
+
+Parent author invariant review: pass, no blocking findings. Canonical blobs and schema
+still verify before admission; response identity/ordering and legacy missing metadata
+rules remain unchanged. Recovery synthesizes only proven-unexecuted Failed calls;
+Unknown barriers, provenance, redaction and single-model execution remain intact.
+Store open/startup remains lazy. Residual risk: retained externalized request arguments
+add transient memory proportional to request payloads; no hydrated reasoning is cached.
+Actual Retry41 timing attribution and Case10 semantic defects remain unknown.
+Workspace gates and existing performance budgets are still running at this commit.

@@ -74,6 +74,11 @@ budgets live in the bench source that enforces them, and they are a pre-merge ga
 CI gate: a five-times-some-machine baseline is generous locally and meaningless on a shared
 runner.
 
+For session resume changes, also run
+`cargo bench -p rupi-store --bench resume -- --iterations 5`. This measures the full
+canonical Store resume and subsequent CLI restore with externalized streaming history
+and assistant tool calls. The SessionLog-only restore benchmark omits these costs.
+
 ## Style
 
 Edition 2024, `rust-version = 1.85`, two-space indent, 100-column lines, idiomatic stable
