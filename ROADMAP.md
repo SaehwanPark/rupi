@@ -1843,7 +1843,9 @@ TUI rendering passed all budgets (3.31–3.90 µs/unit); checkpointed restore me
   source changes. Owned relay source reproduces3,000ms CPU during a three-second idle wait;
   accepted socket normalization and bounded wake connect are implemented. Windows regression
   budgets, all30 transport tests and a CLI exhaustion/resume no-replay fixture pass.
-  Full delivery gates and a fresh screen remain pending. Actual failed-tool attribution,
+  Full local gates, exact source CI on all3 platforms and author invariant review pass;
+  warm8.096ms/cold145.026ms and resume132.4132ms meet budgets. The documentation freeze
+  CI and fresh Retry46 screen remain pending. Actual failed-tool attribution,
   acceptance benefit and a paired win remain unproved.
   Rupi-first screening and paired
   evidence/delivery checks remain pending. Broader project gates remain active.

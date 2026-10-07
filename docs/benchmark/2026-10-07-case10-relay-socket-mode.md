@@ -82,6 +82,27 @@ without replay. It passes; actual Turns3/4 startup failure is not reproduced and
 unknown. The first fixture excluded mutations by default; explicit owned read/edit policy
 then exercises started failure. No identity/effect guard is weakened for an unproved cause.
 
-Author review, full local/CI gates and performance checks precede a fresh attempt. Preserve
+## Delivery and next freeze
+
+Runtime source `6624c11c1a5a89c03aaeb8c4050db55424e83576` passes parent author
+invariant review, with no independent reviewer/subagent. Full local fmt, all-feature
+core check, workspace all-target Clippy, normally scheduled workspace tests, docs and
+debug build pass. Exact source CI37667761207 passes Windows, macOS and Ubuntu,
+including the Windows relay budget. All18 other-case and two Case10 prompt hashes
+match; case sources remain unchanged with three references.
+
+Warm startup median8.096ms passes100ms; fresh-inode cold median145.026ms passes250ms.
+Canonical400-fragment/48-call resume and restore total132.4132ms passes500ms.
+All five restore sizes and all context-prefill checks pass. Rendering is unchanged.
+Debug binary SHA256:
+`ED744E700DD46C15FCD808C283534384D8607D5CDE03B683EBE1F55C45C8307C`.
+
+Prospective Retry46 uses run ID
+`bench-20261007-case10-relay-retry46-rupi40-turns4-2400s`, the above runtime and
+binary, and unchanged harness SHA256442411E29A7A78B576E068C14FCD03DE4D0B25117E3A269326ACEA8593AB7F23.
+The documentation-only freeze commit and its exact three-platform CI must pass before
+launch. No Retry46 result is implied by this prospective record.
+
+Preserve
 all Retry45 controls/native budget and original physical resources. Fresh independent
 acceptance and a paired win remain required; owned fixtures alone do not achieve the goal.
