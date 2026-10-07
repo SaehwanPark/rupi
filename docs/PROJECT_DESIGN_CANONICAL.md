@@ -383,6 +383,23 @@ The conceptual boundaries should remain stable:
 
 Important runtime actions should produce typed events.
 
+An explicitly configured caller completion observation may gate ordinary closure within
+bounded turn/check budgets. Core owns the typed decision and preserves unavailable/failed
+distinctions; the caller owns domain checks and isolates their effects outside the canonical
+workspace. Diagnostic feedback is external evidence, separate from static runtime controls
+and native assistant output. Cancellation and Unknown-effect barriers retain precedence.
+Unavailable observations end semantic failure without retry, failover or check replay.
+Neither an observation nor model self-review certifies overall task correctness.
+An explicitly configured timed review may request a fresh caller observation before the
+next model request without waiting for a final assistant answer. Share the ordinary check
+allowance and external provenance; observations do not release progress barriers. A pass
+does not replace review or a fresh final check. Unavailable observations and exhausted
+allowance retain their terminal semantics. This must not add execution authority or replay.
+Caller snapshot and artifact paths must support child process startup as well as file
+creation. A short isolated scratch root may coexist with a run-local mailbox; preserve
+artifacts and keep both outside the canonical workspace. Path-layout failures remain
+unavailable observations and cannot justify replaying an uncertain check.
+
 A conceptual schema:
 
 ```rust
@@ -1262,6 +1279,91 @@ later request, the runtime resolves the effective executable set under current m
 tool policy, and approval availability; an empty set is a durable semantic failure before another
 request, not a retry loop (including when failover changes capabilities). The default remains
 disabled so read-only tasks are not forced to mutate.
+
+An optional turn-time budget may use a monotonic deadline and linked cancellation
+token to cooperatively stop provider and tool work. Its remaining-time guidance must
+be runtime-owned, canonical, and projected with explicit provenance. Deadline expiry
+must not cancel the caller or siblings, dispatch incomplete calls, replay uncertain
+mutations, or initiate recovery inference. Unknown/Possible effects keep the
+reconciliation barrier. The default remains disabled, and foreign operations that do
+not cooperate may exceed the deadline.
+
+A caller with already authorized implementation work and sufficient context may select
+an initial progress boundary when a progress window is configured. Activate it only
+after admission, cancellation, reconciliation and current approval-availability checks;
+reuse normal tool eligibility and confirmed Changed evidence. Renew selection each turn,
+skip explicit no-tools assessment, and keep the default disabled. This does not infer
+task intent, enforce case artifacts or expand mutation authorization.
+
+An optional positive initial progress output ceiling may bound only the first ordinary
+request of that active boundary, renewed each turn. Respect smaller endpoint ceilings
+and context admission, keep desired/effective budgets explicit, and retain normal output
+limits on later requests even if progress is still unsatisfied. Guidance may ask for a
+small coherent completed first change; it cannot claim correctness, enforce artifacts,
+dispatch incomplete tool calls or replay a failed response. Default omission is unchanged.
+
+A separately selected initial string-argument limit may constrain mutating tools in
+that first request. Capture the restriction with the request, advertise Unicode scalar
+bounds in request-local schemas without changing registry identities, and reject
+completed oversized calls before dispatch with known no effect. Count total calls,
+retain progress requirements, and renew only on a new turn. Later requests keep normal
+tool contracts. Guidance may ask for incremental complete changes, but cannot authorize
+new effects, impose domain artifacts or turn incomplete responses into executable calls.
+
+An optional initial thinking selection may override only that first active-boundary
+request, using the endpoint's declared encoding. Later requests inherit normal thinking,
+even before progress is satisfied; fresh turns renew selection. Describe requested intent
+without claiming observed hidden reasoning or backend compliance. Do not relax output,
+tool, approval, cancellation or unresolved-effect safeguards to apply this selection.
+
+Endpoint thinking dialects must preserve their declared wire keys. An explicitly selected
+`chat_template_enable_thinking` dialect sends the boolean template toggle; do not conflate
+it with the legacy `thinking` key or generic reasoning effort. A requested toggle is not
+proof of effective backend enforcement, effort intensity or hidden reasoning composition.
+
+An explicit endpoint-native `reasoning_budget_tokens` option may request a positive signed
+32-bit budget. None leaves existing requests unchanged; Off omits the numerical field.
+Enabled requests reserve1,024 answer tokens within an effective output ceiling, lowering
+the budget or omitting it when no positive budget fits. With no ceiling, send the configured
+budget. Preserve the declared thinking dialect and use effective rather than desired
+output. The provider adapter owns this wire mapping without startup discovery, exposure
+inference, new durable event kinds or changes to tool, approval, cancellation or uncertainty
+barriers. Requested controls do not certify backend enforcement or recovered reasoning.
+
+A caller may opt into one bounded review after the first otherwise accepted ordinary
+completion. Preserve native assistant evidence and record review instructions with
+runtime provenance. Continue only through normal request/tool/time budgets, approval,
+and reconciliation barriers on the active model. Do not enforce case-specific artifact
+names or interpret review as external correctness certification. Defaults remain unchanged.
+An optional positive remaining-time reserve below the turn duration may trigger the same
+one-shot review before an ordinary provider attempt, including during ongoing tool work.
+The observed preceding provider/tool cycle may anticipate spending that reserve; this
+estimate resets each turn and cannot guarantee future latency or extend the deadline.
+It must not bypass cancellation, budget, approval, or unresolved-effect barriers.
+An optional positive ordinary-request reserve may trigger the same review before request
+exhaustion. Keep an earlier ordinary request and the existing no-tools finalization slot;
+never extend the cap. Time, request and accepted-answer triggers share one review per turn.
+Request-only selection needs no clock. Caller observations at a reserved review retain
+their shared allowance, external provenance and fresh final-check requirement.
+An opt-in request window may refresh Failed caller feedback during tool-bearing repair.
+Rearm only on failure, disarm on pass, reset each turn and share the original check cap.
+Fresh final checking and all uncertain-effect, budget and cancellation barriers remain.
+An optional initial request window may obtain the first caller observation during tool
+work before a final answer or reserved review. Skip it once an observation has occurred;
+share the original check cap, coalesce triggers and retain fresh final checking. This
+does not consume one-shot review, impose domain checks or extend any execution allowance.
+Renew only on a new turn and preserve the same no-tools and safety barriers.
+An optional positive caller-check reserve below the check cap may activate one-shot
+review after fresh repairable Failed evidence, while ordinary work remains. Reuse that
+observation rather than checking twice on the boundary; share review with time, request
+and accepted-answer triggers. Passed, Unavailable and last Failed evidence cannot activate
+this trigger. Fresh final checking and existing check/request/time/effect barriers remain.
+Optional final-check reservation, requiring at least two checks, prevents periodic
+checkpoints from consuming the last observation. Continue bounded authorized work with
+the latest evidence; an ordinary final candidate still needs a fresh check. If review
+is unused, perform it before consuming the last check and require a new final candidate.
+No-tools request-budget assessment remains incomplete and does not gain checks/effects.
+No execution allowance increases; all terminal/effect/cancel/deadline safeguards remain.
 
 This is a distributed-systems-style reliability invariant.
 

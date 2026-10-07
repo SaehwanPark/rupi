@@ -1551,8 +1551,311 @@ TUI rendering passed all budgets (3.31–3.90 µs/unit); checkpointed restore me
   runner exits0. Required final Rust checks and author review pass; startup156.009 ms
   cold/8.134 ms warm median meets250/100 ms budgets. Capitalized mode guards and all18
   non-Case09 prompt hashes pass; final initial prompt matches the winning run. PR144
-  awaits exact-final-head CI and merge. Cases01–09 configured wins are skipped; Case10
-  remains the sole comparison target. Broader project stage gates remain active.
+  merged as8ba8010 after exact-head three-platform CI; its local/remote branches are removed.
+  Cases01–09 configured wins are skipped; Case10 remains the sole comparison target.
+  Case10 audit/receipt guidance and isolated controls are active onfix/case10-audit-ledger;
+  retry01 Rupi remains unresolved after6; Pi was stopped as an incomplete comparison.
+  Retry02 Rupi also remains unresolved after6; Pi not run. Single-module/discoverable-test
+  guidance also fails retry03 after6; Pi not run. Existing window12 retry04 fails6
+  (113,076 recorded work); window1 retry05 fails6 (38,465 recorded work), Pi not run.
+  Existing window12/1,200s retry06 fails6 (173,574 recorded work), Pi not run.
+  cap24/window12/1,200s retry07 fails6 (359,256 recorded work), Pi not run.
+  window3/cap24/1,200s retry08 fails6 (314,780 recorded work); local tests/help pass
+  on turns5–6, but acceptance fails throughout. Pi not run. Generic CLI prompt
+  clarification for supplied context/new files/delegated verification passes required
+  Rust/startup checks; same-profile retry09 fails6 (313,229 recorded work), Pi not run.
+  Local tests pass2–3 but fail on the final three attempts. Public-SPEC separator-byte
+  clarification also fails retry10 after6 (245,549 recorded work); all local tests fail,
+  help passes throughout, Pi not run. Next screen tests existing native reasoning
+  budget4,096 instead of2,048 with unchanged CLI binary/guidance/window3/cap24/1,200s.
+  An isolated Case10 relay-port control selects a separate loopback relay on8002;
+  the existing2,048 relay remains on8001. Configuration/prompt-isolation guards pass.
+  Retry11 configured4,096/port8002 fails6 (307,818 recorded work), Pi not run.
+  The owned relay's650s response deadline is shorter than provider1194s; its causal
+  contribution is unproven. Configurable/health-visible relay deadlines and explicit
+  Case10 deadline validation are active; seven transport behavior tests pass.
+  Retry12 aligned relay1194s/provider1194s inside outer1200s/grace6 on separate8003,
+  but fails6 (255,393 recorded work); all local tests fail, help passes, Pi not run.
+  Retry13 applies existing static file-tool reconciliation guidance to both agents'
+  initial and recovery Case10 prompts. Failed-tool causes remain unproven; inspect
+  Unknown state before retry and preserve already-applied changes. Other controls stay fixed.
+  Retry13 also fails acceptance6 (300,171 recorded work); local tests fail1–5 and
+  time out6. Next retry14 uses existing thinking-off/native8000 without a relay budget,
+  retaining guidance/binary/window3/cap24/six1200s. This profile has configured wins
+  in Cases04/06; Case10 benefit is unproven. Fresh Pi remains conditional on Rupi acceptance.
+  Retry14 stopped early after3 verified failed attempts (67,610 recorded work), with
+  attempt4 abandoned/unverified. Attempts2–3 each record one16,384-token response,
+  semantic failure and no tools. No six-attempt or causal claim. Retry15 will test
+  a matched Case10 output allowance32,768 and outer1800s/provider1794s/grace6;
+  default16,384 and incomplete-response/no-dispatch runtime semantics stay intact.
+  Retry15 fails6 (38,976 recorded work); attempt1 records output32,768/semantic
+  failure/one failed write request. Attempts2–6 fail quickly with no recorded model
+  starts or usage; cause remains unproven. Next bounded work investigates durable
+  resume after incomplete tool responses using owned synthetic fixtures, preserving
+  no dispatch/replay of incomplete mutations and strict canonical/projection integrity.
+  An owned fixture reproduces a durable-resume bug: output-limit text has no projection,
+  but alignment validation incorrectly demands one. The minimal store fix now passes
+  close/reopen/resume for length/max_tokens with small/large unexecuted mutations;
+  normal completed responses still reject missing projections. Required Rust checks pass;
+  startup135.258ms cold/8.137ms warm median/8.917ms max and all five session-log
+  restore budgets pass. A fresh same-profile screen against the rebuilt binary is next;
+  configured acceptance benefit and the full paired Case10 result remain unproven.
+  Same-profile fixed-binary retry16 fails6 (435,242 recorded work); help passes4
+  throughout, local tests fail. Two repair attempts exhaust the24-request budget
+  with time remaining. Retry17 cap40 fails6 (119,163 recorded work), never reaches
+  the request cap, and establishes no benefit. Retry18 bounded-reasoning/output32,768
+  fails6 (468,406 recorded work), with 184 completed tools/seven known failures;
+  all help passes, project tests fail, and unfinished inference remains unmeasured.
+  Control-only retries now require evidence justification; new candidates must follow
+  failure analysis and a runtime enhancement. An owned fixture reproduces missing
+  location hints for rejected long-line edits: a truncated requested head was compared
+  against a full current line. The fix compares complete trimmed first lines and passes
+  tool tests covering no mutation on failure, a corrected exact edit, and no prefix-only
+  hint. Required checks pass; startup is 139.493ms cold/8.018ms warm median/9.2ms max,
+  within the 250/100ms budgets. Fresh fixed-profile comparison remains pending; the
+  defect is verified but its contribution to Case10 acceptance failures is unproven.
+  Retry19 stopped after one verified failed turn (70,702 recorded work): 16 requests
+  still reached the 1,200s watchdog; 15 of 18 completed tools inspected files. No
+  semantic cause or edit-hint benefit is established. An opt-in cooperative turn-time
+  budget is implemented with runtime-owned remaining-time guidance, caller isolation,
+  and a typed exhausted status. Owned core/runtime/native-HTTP fixtures and required
+  Rust checks pass, including safe durable restore and the Unknown mutation barrier.
+  Startup140.781ms cold/8.047ms warm median/8.771ms max and all four rendering budgets
+  pass. All five session-log restore budgets (94.65–4,909.45us) and all five context
+  experiment budgets pass; this does not measure complete canonical restore latency.
+  A fresh one-turn development screen remains pending; a failed screen requires
+  analysis and a verified enhancement.
+  Retry20 fails its single development turn: runtimeCompleted after905.693s,
+  36,161 recorded work,17 completed requests/20 tools, zero known failures/Unknown;
+  all help passes, acceptance/tests fail. App files are listed but no tests/README.
+  No semantic cause or deadline benefit is established. An opt-in bounded completion
+  review now lets the active model check requested deliverables and continue permitted
+  work with native/runtime provenance kept distinct. Owned fixtures verify repair,
+  one-shot/fresh review, caps/no-tools finalization, durable restore, deadline interruption,
+  Unknown barriers, and progress rejection before review. Required Rust checks pass;
+  startup157.257ms cold/9.995ms warm median/10.650ms max and all five session-log
+  restore (99.70–4,680.45us) and five context-experiment budgets pass. Render behavior
+  is unchanged from the four passing time-budget measurements. Windows deadline-fixture
+  preconditions were corrected; exact7717655 CI passes all three platforms. New review
+  source CI, fresh one-turn screening, paired evidence, and delivery remain pending.
+  Retry21 also fails its single development turn: TimeBudgetExhausted closes
+  cooperatively at1,170.385s without an outer watchdog,49,474 recorded work,
+  14 closed requests/13 usage records,16 tools and zero known failures/Unknown.
+  Help passes, tests/acceptance fail; main is listed but no tests/README. Unfinished
+  inference work and review activation remain unmeasured. The optional review reserve
+  is now implemented: a continuing tool loop can receive the existing one-shot review
+  before an ordinary request while time remains, with normal safety/budget gates.
+  Owned reserve/config fixtures and safe control-count/scope/content-exclusion metrics
+  fixture pass; required Rust checks pass. Startup144.344ms cold/9.194ms warm median/
+  9.727ms max and five session-log restore (98.95–4,821.50us) plus five context budgets
+  pass. Parent invariant review passes; exact5f86959 CI passes all three platforms.
+  Retry22 fails its single development turn at1,170.377s without an outer watchdog:
+  43,628 recorded work, eight closed requests/seven usage records, eight completed
+  tools and zero known failures/Unknown. Acceptance/tests/help fail; delivery metadata
+  lacks main/public tests/README. Safe telemetry proves one review injection and eight
+  time guides, but not model use; unfinished inference remains unknown. Source review
+  identifies a scheduling gap independent of the unobserved semantic cause: a slow
+  provider/tool cycle may spend the reserve before the next boundary check. The runtime
+  now anticipates that cost from the preceding cycle. An owned slow/fast/fresh-turn
+  fixture fails before and passes after; required Rust checks pass. Safe review request
+  positions and their scope/content-exclusion fixture pass. Startup134.972ms cold/
+  7.863ms warm median/9.147ms max and all five session-log restore (92.10–4,652.60us)
+  plus five context-experiment budgets pass. Rendering is unchanged. Parent invariant
+  review passes; exact896d565 source CI passes all three platforms. Retry23 also fails
+  at1,170.426s: review is injected after three started requests,13 closed requests/
+  12 usage records,53,909 recorded work,12 completed tools/three known failures/no
+  Unknown. Help passes and requested __main__/README are listed, but public tests are
+  absent. No semantic cause or model-use claim is established. The first three tools
+  are inspection despite a supplied-context first-write request. Source starts its
+  progress boundary inactive; optional initial activation is now implemented using
+  the existing eligibility/control/Changed-effect contract. Owned initial/fresh-turn,
+  safety/cap/approval/default/no-tools and durable-control fixtures plus configuration
+  omission/round-trip/inactive-policy rejection pass. Required Rust checks pass
+  (194 runtime/131 core tests). Startup140.454ms cold/8.051ms warm median/8.608ms max
+  and all five session-log restore (74.80–4,706.25us) plus five context-experiment
+  budgets pass. Parent invariant review passes; rendering is unchanged. Source CI
+  and fresh screening remain pending. The next configured screen grants a
+  matched outer2400s/native2370s to address repeated wall-time expiry with unused
+  request allowance; it cannot establish a causal attribution to one change.
+  Retry24 ends Completed at2,134.228s with37 closed requests/37 usage records,
+  134,740 recorded work and48 completed tools/zero known failures or Unknown.
+  First tools are writes and public tests are listed; help passes, README is absent,
+  acceptance/tests fail. Review follows six started requests. Frozen audits and
+  exact057e827 three-platform CI pass. Application semantic cause remains unmeasured.
+  Bounded delegated completion feedback is selected and implemented at the core/CLI
+  boundary (59994fe/6bceb14): caller observations can permit same-model repair, with
+  explicit exhaustion/semantic-unavailable and durable external/control provenance.
+  Required Rust checks pass (203 runtime/132 core tests), including the owned failing
+  before/passing after fixture. Host public-snapshot and live-callback fixtures pass;
+  a PowerShell closure scope failure was corrected before model use. Outside search
+  access is also rejected to protect the mailbox from grep. Startup135.96ms cold/7.92ms
+  warm median/8.82ms max, rendering, five restore and five context budgets pass. Frozen
+  prompt/profile/reference guards and parent invariant review pass. Fresh screening
+  remains pending. The next screen adds checks8 to Retry24's
+  controls; native Pi parity is not claimed, and oracle checks stay after the turn.
+  Retry25 ends ToolBudgetExhausted at2,017.297s:16 mutating requests spend the
+  inherited allowance before any completion observation/review. Only the application
+  file is listed; init/tests/README are absent.29 requests/all29 usage record109,397
+  work;36 tools complete,2 known failures/0 Unknown; acceptance/tests fail and help
+  passes. Frozen audits and fea3ca8 CI pass. No feedback benefit was measured.
+  Explicit bounded Case10 mutation selection is implemented, with an owned fixture
+  proving16 stops before delivery/checking and32 reaches them. General defaults and
+  other caps stay authoritative; source/harness fixtures prove omission, case isolation,
+  total rejection and native Pi null. Required Rust checks pass (204 runtime/132 core),
+  startup141.739ms cold/8.160ms median/8.733ms max, and shared prompt/reference/profile
+  guards pass. Parent invariant review passes; prior render/session/context behavior
+  and budgets are unchanged. Retry26 ends Transport on its first request at1,196.199s,
+  with no usage, tools or completion observations; actual unfinished work remains unknown.
+  Frozen source/config/prompt/reference audits pass before the next changes. The timing
+  is consistent with the preserved relay1194s deadline, but the exact transport defect
+  and output size are unmeasured. Initial-output bounding is implemented as an optional
+  first-request-only ceiling with smaller-change guidance and endpoint/context clamping.
+  Owned fixtures prove first8192/later32768, fresh-turn renewal, skipped paths and no
+  incomplete-call dispatch/replay. The real CLI wire and harness configuration tests pass.
+  Required Rust checks pass (209 runtime/133 core); startup145.705ms cold/8.825ms median/
+  9.735ms max. All five session restores (109.95–5233.80us) and five context cases pass.
+  Parent invariant review passes; the next frozen screen selects first8192/later32768
+  with checks8/mutations32 and the other Retry26 controls preserved. Retry27 ends
+  Failed(Semantic) after404.128s, length at exactly8192 output tokens. One write is
+  requested, none complete; files are absent and14,297 known work is recorded. All
+  acceptance/tests/help gates fail. Frozen audits and three-platform8f51674 CI pass.
+  The output ceiling alone safely prevents truncated dispatch but is insufficient.
+  Optional initial mutating-tool string bounds are implemented with request-local
+  schema constraints and pre-dispatch known-no-effect rejection. Owned fixtures prove
+  omission versus enforcement, first-only/fresh renewal, Unicode/nesting, existing
+  smaller schema bounds and real CLI wire; disabled/incomplete-response guards pass.
+  Required Rust checks pass (211 runtime/134 core); startup140.496ms cold/8.711ms median/
+  9.624ms max. All five restores (103.10–4937.90us) and context cases pass. Parent
+  invariant review passes. Retry28 ends Failed(Semantic) after1,928.185s:37 requests/
+  all usage record163,378 work,39 tools complete/one known failure/zero Unknown. App/init
+  are listed, public tests/README absent; acceptance/tests fail and all help passes.
+  First delegated observation is unavailable after186ms at request37. Frozen audits pass;
+  Windows CI fails the existing mailbox fixture's15s guard while Ubuntu/macOS pass.
+  Owned host investigation proves a long snapshot working directory fails Windows
+  Process.Start, while missing deliverables at a short path produce Failed feedback.
+  Short isolated snapshot roots are implemented, preserving run-local mailboxes and
+  artifacts; owned long-path failure/fresh repair/effect-isolation fixtures pass.
+  CLI mailbox fixture retains child diagnostics with60s/75s test-only budgets. Required
+  checks pass (211 runtime/134 core/25 CLI); startup139.137ms cold/8.211ms median/
+  8.884ms max meets budget. Unchanged runtime binary retains prior restore/context/render
+  evidence. A newly frozen screen remains pending; no actual caller exception was read.
+  Retry29 ends Failed(Semantic) after409.515s: length at8192 output, zero decoded
+  tools/files/checks,14,435 known work. All acceptance/tests/help fail. Frozen audits and
+  three-platform4167463 CI pass. The caller root is not reached. Optional first-request
+  thinking selection is implemented: owned fixtures/wire prove Off first/Low later,
+  renewal, skipped/no-effect paths and requested disable encoding. Required Rust checks
+  pass (212 runtime/135 core/25 CLI); startup143.715ms cold/8.908ms median/9.921ms max,
+  five restores89.40–4858.55us and five context cases pass. Author invariant review passes.
+  The existing relay deterministically rejects non-low effort, discovered before launch.
+  The next matched profile selects globalOff/firstOff on existing direct8000, no reasoning
+  budget/relay deadline, preserving native2370s/provider2394s/outer2400s and other controls.
+  Model/processes/prompts/references stay unchanged; native/Pi first-control parity and
+  backend enforcement/latency/acceptance remain unproved. Frozen Retry30 on direct-Off
+  reaches native2370s exhaustion,27 requests/26 usage records and143,756 known work
+  (unfinished work unknown). Only application29,883 bytes; acceptance/tests fail/help pass.
+  All frozen audits and three-platform5fba487 CI pass. One review after21 starts but zero
+  caller checks exposes feedback waiting for final assistant text. Optional observation
+  at timed review now shares the existing allowance and external provenance; owned
+  comparative/CLI fixtures verify feedback before the final answer, repair and fresh
+  final checking. Unavailable/cancel/Unknown/cap semantics remain. Full gates pending;
+  no actual configured acceptance or paired improvement is established.
+  Frozen Retry31 fails its first response after404.127s with length8192 and14,482 known
+  work, no decoded tools/files/checks. All frozen audits and both source06da417/freezea3887e1
+  three-platform CI pass. Timed-review checking is not reached, so its actual benefit is
+  unmeasured. An explicit enable_thinking template dialect addresses a verified adapter
+  coverage gap; actual failed reasoning composition/backend compliance remain unknown.
+  Owned mapping/config/CLI and pinned Pi fake-wire fixtures verify exact boolean fields
+  and unchanged legacy/default encoding. Required local Rust/debug checks pass
+  (216 runtime/136 core/100 provider/25 CLI); startup158.146ms cold/9.688ms median/
+  11.706ms max and all five restores/five context budgets pass. Two timing fixtures now
+  verify command startup and cancel after observed streaming, preserving assertions.
+  Parent author invariant review passes; source and frozen Retry32 three-platform CI pass.
+  Retry32 reaches the40-request cap at1583.277s with118,092 known work, all40 usage records,
+  application/README but missing tests; acceptance/tests fail and four help checks pass.
+  All frozen audits pass, slots are idle. No review/check ran with about787s remaining.
+  Optional request-count review reserve is active work to expose feedback before that cap,
+  sharing the existing one-shot boundary without extending budgets. Local full Rust/debug
+  checks pass (220 runtime/137 core/100 provider/25 CLI), owned comparison and mailbox
+  request-reserve mode pass; prompts/references unchanged. Startup143.185ms cold/
+  8.578ms warm median/9.034ms max and five restores/five context budgets pass. Parent
+  author review passes; source/exact-freeze Retry33 CI pass all3 platforms. Retry33 exhausts
+  cap40 at2150.075s,158,564 known work with all40 usage records, all required files present,
+  tests/acceptance fail/help pass. Reserved review and Failed check run after31 starts;
+  no follow-up check before cap exhaustion. Frozen audits pass/slots idle. An optional
+  failed-check repair request window is active work to refresh that feedback within
+  existing budgets. Local full Rust/debug checks pass (225 runtime/138 core/100 provider/
+  25 CLI), owned comparative and four-mode mailbox fixtures plus nine harness guards pass.
+  Startup139.675ms cold/9.039ms warm median/11.095ms max and five restore/five context
+  budgets pass. Parent author review/source and exact-freeze Retry34 all3 CI pass.
+  Retry34 fails semantically at1961.638s with121,262 known work/all34 usage records;
+  Failed check after31, Unavailable after34 at180.196s, post-run tests timeout and required
+  tests/__init__.py absent; help passes/acceptance fails. Frozen audits pass/slots idle.
+  Caller source records missing files before commands but a later timeout masks that
+  known failure. Immediate public missing-file feedback is active caller work; runtime
+  Unavailable/timeout semantics remain. Required local Rust/debug checks, owned preflight
+  comparison/fresh repair/default post-commit fixture, nine harness/prompt/reference guards
+  and startup/five restore/five context budgets pass. Parent author review passes; caller
+  sourcefa68218/runtime4cc8425 and frozen Retry35 all3 CI pass. Retry35 ends in Timeout
+  at1295.184s before review/checking; only the application file is listed, and one of16
+  requests has unknown usage. Frozen audits pass/slots idle. Owned config inspection
+  verifies omitted idle limit resolves to300s despite total2394s/native2370s. Exact
+  failure phase is unavailable in old summaries. Optional typed request-failure evidence
+  and explicit Case10 idle-budget selection are active; causal benefit is unproven.
+  Source8d046aa/frozen9ff5e4b all3 CI pass. Retry36 exhausts request40 at1819.016s
+  with all usage known, all required files listed, failed tests/acceptance and help pass.
+  Caller checks first Failed after31, then Failed after34/37; no provider or verification
+  timeout. Frozen audits pass/slots idle. Native time retains551s while the request cap
+  binds. Optional earlier initial caller checking is active to expose failure sooner;
+  owned bounded comparison, renewal/coalescing and safety fixtures pass. Actual benefit
+  and next screening remain pending; semantic diagnostics remain uninspected.
+  Initial-window source0e651e2/frozena920dc2 all3 CI pass. Retry37 reaches checks8/11/
+  14/17/20/23/26/29, all Failed; completion-check exhaustion stops29 before reserved
+  review31. All29 usage known, required files present, tests/acceptance fail/help passes;
+  frozen audits pass/slots idle/no timeouts. Caller-check reserve for one-shot review is
+  active work to coordinate the two caps; no semantic cause or configured win established.
+  Check-review sourcec8367a5/frozen91621e1 all3 CI pass. Retry38 reaches review23;
+  eight Failed periodic observations still exhaust the check cap29 before a final
+  candidate, leaving11 request slots/552s native time. All29 usage known/required files
+  listed, tests/acceptance fail/help passes, frozen audits pass/slots idle/no timeouts.
+  Optional final-check reservation is active to retain one fresh observation for the
+  final candidate while preserving all allowances; no acceptance or configured win yet.
+  No semantic cause, acceptance benefit, or paired Case10 win is established.
+  Retry43 at frozen2c6153c/runtime953328e fails independent acceptance in all4 turns.
+  Calls8,699,028ms/1,118,758 known work with156 starts/155 usage records; last request work
+  remains unknown. No outer/verification timeout, full frozen audit passes/slots idle.
+  Owned actual-tool fixture proves active progress hides reads after started Failed/None
+  edit, even with inspection+repair capacity. One bounded read-only attempt is implemented
+  under opt-in progress with binding/policy/approval/effect/cancel/cap safeguards; ten
+  focused recovery tests pass. Full local checks (serialized tests with unchanged
+  assertions), normal three-platform source CI, startup, resume/restore/context budgets
+  and owned unchanged-driver red-to-green pass. Exact freeze CI passes; frozen Retry44
+  fails acceptance in all four turns with554,533 known work and two requests' usage unknown.
+  Turn3 has an outer timeout; Turn4 reaches inspection guidance without an acceptance win.
+  Corrected terminal idle audit passes; prior wrapped-array assertions alone do not prove
+  historical idleness. An opt-in native reasoning budget is implemented with bounded
+  config, effective answer-room/Off mapping, fresh-turn checks, unchanged-driver red-to-green
+  and14 owned harness guards including matched pinned Pi wire fixtures. Full normal local
+  gates, three-platform source CI, author review and startup/resume/restore/context budgets
+  pass. Exact freeze CI passes; frozen native2,048 Retry45 fails all four turns with66
+  starts/65 usage records and312,823 known work. Turn1 reaches native time exhaustion;
+  Turn2 exhausts all8 failing public checks. Turns3/4 exit before any recorded request;
+  their actual startup cause remains unknown. Frozen terminal audits pass before new
+  source changes. Owned relay source reproduces3,000ms CPU during a three-second idle wait;
+  accepted socket normalization and bounded wake connect are implemented. Windows regression
+  budgets, all30 transport tests and a CLI exhaustion/resume no-replay fixture pass.
+  Full local gates, exact source CI on all3 platforms and author invariant review pass;
+  warm8.096ms/cold145.026ms and resume132.4132ms meet budgets. The documentation freeze
+  CI passes; Retry46b fails all4 independent acceptance checks despite reduced live idle
+  CPU and successful later resumes. Frozen terminal audits pass:133 starts/130 usage,
+  834,122 known work, three request-usage gaps. Caller observations consume about22.5min.
+  Optional CLI caller deadline is implemented with owned slow-host/late-reply no-replay
+  guards; final local gates/author review pass, warm8.384ms/cold167.752ms and canonical
+  resume133.6922ms meet budgets. The owner requests wrap-up and merge before a paired
+  win; no Retry47 launches. Exact merge-HEAD CI precedes merge. Case10 remains unresolved;
+  retain the resumption protocol in the caller-deadline ledger. Actual failed-tool attribution,
+  acceptance benefit and a paired win remain unproved.
+  Rupi-first screening and paired
+  evidence/delivery checks remain pending. Broader project gates remain active.
   Preserve stable public delivery keys, distinct private fencing, lost-ack retry and
   accepted receipt persistence. No acceptance fixtures or manually generated solution
   are changed. See the Case08/Case09 ledgers for evidence; broader project gates remain active.

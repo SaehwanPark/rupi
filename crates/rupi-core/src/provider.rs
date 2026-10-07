@@ -14,6 +14,7 @@ use std::sync::{
   Arc,
   atomic::{AtomicBool, Ordering},
 };
+use std::time::Instant;
 
 use serde::{Deserialize, Serialize};
 
@@ -58,6 +59,7 @@ pub struct CancelToken(Arc<CancelState>);
 struct CancelState {
   cancelled: AtomicBool,
   parent: Option<Arc<CancelState>>,
+  deadline: Option<Instant>,
 }
 
 impl CancelToken {
@@ -71,6 +73,17 @@ impl CancelToken {
     Self(Arc::new(CancelState {
       cancelled: AtomicBool::new(false),
       parent: Some(Arc::clone(&self.0)),
+      deadline: None,
+    }))
+  }
+
+  /// Create a child whose monotonic deadline also requests cancellation.
+  /// Expiry does not set the caller's cancellation flag or cancel its siblings.
+  pub fn child_with_deadline(&self, deadline: Instant) -> Self {
+    Self(Arc::new(CancelState {
+      cancelled: AtomicBool::new(false),
+      parent: Some(Arc::clone(&self.0)),
+      deadline: Some(deadline),
     }))
   }
 
@@ -80,18 +93,26 @@ impl CancelToken {
 
   pub fn is_cancelled(&self) -> bool {
     self.0.cancelled.load(Ordering::SeqCst)
+      || self
+        .0
+        .deadline
+        .is_some_and(|deadline| Instant::now() >= deadline)
       || self.0.parent.as_deref().is_some_and(parent_is_cancelled)
   }
 
   /// Borrow this token's local [`AtomicBool`] for signal-safe cancellation.
-  /// Use [`Self::is_cancelled`] to also observe a linked parent's cancellation.
+  /// Use [`Self::is_cancelled`] to also observe parent cancellation and deadlines.
   pub fn raw_flag(&self) -> &AtomicBool {
     &self.0.cancelled
   }
 }
 
 fn parent_is_cancelled(state: &CancelState) -> bool {
-  state.cancelled.load(Ordering::SeqCst) || state.parent.as_deref().is_some_and(parent_is_cancelled)
+  state.cancelled.load(Ordering::SeqCst)
+    || state
+      .deadline
+      .is_some_and(|deadline| Instant::now() >= deadline)
+    || state.parent.as_deref().is_some_and(parent_is_cancelled)
 }
 
 /// Requested reasoning depth.
@@ -669,6 +690,23 @@ mod tests {
     let next_request = user.child();
     user.cancel();
     assert!(next_request.is_cancelled());
+  }
+
+  #[test]
+  fn a_child_deadline_is_inherited_without_cancelling_the_caller_or_siblings() {
+    let user = CancelToken::new();
+    let sibling = user.child();
+    let expired = user.child_with_deadline(Instant::now());
+    assert!(expired.is_cancelled());
+    assert!(expired.child().is_cancelled());
+    assert!(!expired.raw_flag().load(Ordering::SeqCst));
+    assert!(!user.is_cancelled());
+    assert!(!sibling.is_cancelled());
+
+    let future = user.child_with_deadline(Instant::now() + std::time::Duration::from_secs(30));
+    assert!(!future.is_cancelled());
+    user.cancel();
+    assert!(future.is_cancelled());
   }
 
   #[test]

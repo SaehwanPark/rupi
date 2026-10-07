@@ -16,6 +16,7 @@
 //! ```
 
 use std::{
+  borrow::Cow,
   collections::{BTreeMap, BTreeSet},
   path::{Path, PathBuf},
 };
@@ -1458,6 +1459,7 @@ impl Session {
           tool_calls: 0,
           reasoning_provenance: None,
           first_delta_ms: None,
+          failure: None,
         }),
       );
       self.emit(&mut completion)?;
@@ -1498,6 +1500,14 @@ impl Session {
       )));
     }
     let semantic = SessionLog::read(self.path())?;
+    let tool_requests = if semantic.items.iter().any(|record| {
+      matches!(record, SessionRecord::Message(message)
+        if message.role == Role::Assistant && message.message.tool_calls().next().is_some())
+    }) {
+      restore_tool_requests(&trace_report.items, self.blobs(), self.id())?
+    } else {
+      Vec::new()
+    };
     let mut missing = Vec::new();
     for record in semantic.items.iter().filter_map(|record| match record {
       SessionRecord::Message(message) if message.role == Role::Assistant => Some(message),
@@ -1527,10 +1537,8 @@ impl Session {
           )));
         }
         let mut requests = Vec::new();
-        for entry in &trace_report.items {
-          let event = restore_externalized_event(entry, self)?;
-          if let AgentEvent::ToolRequested(requested) = event
-            && requested.call_id == call.id
+        for (entry, requested) in &tool_requests {
+          if requested.call_id == call.id
             && (entry.envelope.meta.parent_event_id.as_ref()
               == Some(&assistant.envelope.meta.event_id)
               || (entry.envelope.meta.parent_event_id.is_none()
@@ -3193,7 +3201,10 @@ fn validate_projection_alignment(
       }
       AgentEvent::ModelRequestCompleted(completed)
         if completed.finish_reason.is_some()
-          && completed.finish_reason.as_deref() != Some("abandoned") =>
+          && !matches!(
+            completed.finish_reason.as_deref(),
+            Some("abandoned" | "length" | "max_tokens")
+          ) =>
       {
         let completion_seq = entry.envelope.meta.seq;
         let request_start = entries
@@ -3250,6 +3261,14 @@ fn validate_projection_alignment(
     }
   }
 
+  let tool_requests = if records.iter().any(|record| {
+    matches!(record, SessionRecord::Message(message)
+      if message.message.tool_calls().next().is_some())
+  }) {
+    restore_tool_requests(entries, blobs, session)?
+  } else {
+    Vec::new()
+  };
   for record in records.iter() {
     let SessionRecord::Message(message) = record else {
       continue;
@@ -3264,10 +3283,8 @@ fn validate_projection_alignment(
       })
     {
       let mut requested = false;
-      for entry in entries {
-        let event = restore_externalized_event_from_blobs(entry, blobs, session)?;
-        if let AgentEvent::ToolRequested(candidate) = event
-          && candidate.call_id == call.id
+      for (entry, candidate) in &tool_requests {
+        if candidate.call_id == call.id
           && candidate.name == call.name
           && candidate.arguments == call.arguments
           && entry.envelope.meta.turn_id == Some(message.turn_id.clone())
@@ -4387,6 +4404,30 @@ fn restore_externalized_event(
   session: &Session,
 ) -> Result<AgentEvent, StoreError> {
   restore_externalized_event_from_blobs(trace_entry, session.blobs(), session.id())
+}
+
+fn restore_tool_requests<'a>(
+  entries: &'a [rupi_core::TraceEntry],
+  blobs: &BlobStore,
+  session: &SessionId,
+) -> Result<Vec<(&'a rupi_core::TraceEntry, Cow<'a, rupi_core::ToolRequested>)>, StoreError> {
+  let mut requests = Vec::new();
+  for entry in entries {
+    if entry.externalized.is_empty() {
+      if let AgentEvent::ToolRequested(request) = &entry.envelope.event {
+        requests.push((entry, Cow::Borrowed(request)));
+      }
+    } else {
+      // Filtering before restoration would skip corruption in unrelated fields
+      // and assume request identities were never externalized by an older writer.
+      // Validate each payload once; retain no hydrated reasoning or assistant text.
+      let event = restore_externalized_event_from_blobs(entry, blobs, session)?;
+      if let AgentEvent::ToolRequested(request) = event {
+        requests.push((entry, Cow::Owned(request)));
+      }
+    }
+  }
+  Ok(requests)
 }
 
 fn restore_externalized_event_from_blobs(
@@ -5619,6 +5660,7 @@ mod tests {
                   tool_calls: 0,
                   reasoning_provenance: None,
                   first_delta_ms: Some(0),
+                  failure: None,
                 }),
               ),
               Message::assistant("assistant text"),
@@ -5656,6 +5698,7 @@ mod tests {
                   tool_calls: calls.len() as u32,
                   reasoning_provenance: None,
                   first_delta_ms: Some(0),
+                  failure: None,
                 }),
               ),
               Message::new(
@@ -6500,6 +6543,7 @@ mod tests {
           tool_calls: 1,
           reasoning_provenance: None,
           first_delta_ms: Some(0),
+          failure: None,
         }),
       );
       session.emit_message(&mut completion, &assistant).unwrap();
@@ -6594,6 +6638,7 @@ mod tests {
           tool_calls: 1,
           reasoning_provenance: None,
           first_delta_ms: Some(0),
+          failure: None,
         }),
       );
       session.emit_message(&mut completion, &assistant).unwrap();
@@ -6689,6 +6734,7 @@ mod tests {
           tool_calls: 3,
           reasoning_provenance: None,
           first_delta_ms: Some(0),
+          failure: None,
         }),
       );
       session.emit_message(&mut completion, &assistant).unwrap();
@@ -6831,6 +6877,7 @@ mod tests {
           tool_calls: 1,
           reasoning_provenance: None,
           first_delta_ms: Some(0),
+          failure: None,
         }),
       );
       session.emit_message(&mut completion, &assistant).unwrap();
@@ -7398,6 +7445,7 @@ mod tests {
           tool_calls: 0,
           reasoning_provenance: None,
           first_delta_ms: Some(1),
+          failure: None,
         }),
       ))
       .unwrap();
@@ -7439,6 +7487,7 @@ mod tests {
         tool_calls: 0,
         reasoning_provenance: None,
         first_delta_ms: Some(1),
+        failure: None,
       }),
     );
     session
@@ -7528,6 +7577,61 @@ mod tests {
     let restored = opened.restore(&session_id).unwrap();
     assert_eq!(restored.messages.len(), 1);
     assert_eq!(restored.messages[0].message.text(), "summary");
+  }
+
+  #[test]
+  fn completed_responses_still_require_their_semantic_projection() {
+    for finish_reason in ["stop", "tool_calls"] {
+      let tmp = TempDir::new("store-completed-projection-required");
+      let opened = store(&tmp);
+      let session_id = SessionId::new();
+      let turn_id = TurnId::new();
+      let mut session = opened.begin(header(&session_id)).unwrap();
+      for event in [
+        AgentEvent::ModelRequestStarted(ModelRequestStarted {
+          epoch: 0,
+          model: ModelRef::new("local", "qwen"),
+          message_count: 1,
+          context_tokens_est: 1,
+          tools_exposed: 0,
+        }),
+        AgentEvent::AssistantDelta(rupi_core::AssistantDelta {
+          text: "complete answer".into(),
+          chunk_index: 0,
+        }),
+        AgentEvent::ModelRequestCompleted(ModelRequestCompleted {
+          epoch: 0,
+          model: ModelRef::new("local", "qwen"),
+          finish_reason: Some(finish_reason.into()),
+          input_tokens: None,
+          uncached_input_tokens: None,
+          logical_prompt_tokens: None,
+          cache_read_tokens: None,
+          cache_write_tokens: None,
+          output_tokens: Some(4),
+          provider_total_tokens: None,
+          duration_ms: 1,
+          tool_calls: 0,
+          reasoning_provenance: None,
+          first_delta_ms: Some(1),
+          failure: None,
+        }),
+      ] {
+        session
+          .emit(&mut EventEnvelope::new(meta(&session_id, &turn_id), event))
+          .unwrap();
+      }
+      session.finish().unwrap();
+      assert!(
+        matches!(
+          opened.restore(&session_id),
+          Err(StoreError::Invalid(message))
+            if message.contains("canonical model_request_completed") &&
+              message.contains("no semantic projection")
+        ),
+        "a completed response must not silently lose its model-visible history"
+      );
+    }
   }
 
   #[test]

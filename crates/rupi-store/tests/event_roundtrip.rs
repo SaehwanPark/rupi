@@ -415,6 +415,7 @@ fn model_request_completed_round_trips() {
     tool_calls: 2,
     reasoning_provenance: Some(ReasoningProvenance::Native),
     first_delta_ms: Some(1_234),
+    failure: None,
   });
   let entry = round_trip(original.clone());
   let restored = &entry.envelope.event;
@@ -439,6 +440,8 @@ fn model_request_completed_round_trips() {
     "provenance must survive even when the reasoning deltas themselves were reduced"
   );
   assert_eq!(body.first_delta_ms, Some(1_234));
+  assert_eq!(body.failure, None);
+  assert!(serde_json::to_value(body).unwrap().get("failure").is_none());
 }
 
 #[test]
@@ -452,6 +455,30 @@ fn model_request_completed_deserializes_without_first_delta_ms() {
   let completed: ModelRequestCompleted =
     serde_json::from_value(legacy_json).expect("deserialization of legacy JSON succeeds");
   assert_eq!(completed.first_delta_ms, None);
+  assert_eq!(completed.failure, None);
+}
+
+#[test]
+fn failed_request_metadata_round_trips_without_provider_text_or_invented_usage() {
+  let mut completed: ModelRequestCompleted = serde_json::from_value(serde_json::json!({
+    "epoch": 0, "model": "local/qwen", "duration_ms": 1234, "tool_calls": 0
+  }))
+  .unwrap();
+  completed.failure = Some(rupi_core::ModelRequestFailure {
+    kind: rupi_core::ModelFailureKind::Timeout,
+    phase: rupi_core::FailurePhase::WaitingForResponse,
+    replay_safety: rupi_core::RequestReplaySafety::AmbiguousPostBoundary,
+    partial_output_emitted: false,
+  });
+  let original = AgentEvent::ModelRequestCompleted(completed.clone());
+  let restored = round_trip(original.clone());
+  assert_same_variant(&restored.envelope.event, &original);
+  assert_eq!(restored.envelope.event, original);
+  let wire = serde_json::to_value(&completed).unwrap();
+  assert_eq!(wire["failure"]["kind"], "timeout");
+  assert_eq!(wire["failure"].as_object().unwrap().len(), 4);
+  assert!(wire.get("input_tokens").is_none());
+  assert!(wire.get("output_tokens").is_none());
 }
 
 #[test]
@@ -1065,6 +1092,7 @@ fn all_variants() -> Vec<AgentEvent> {
       tool_calls: 0,
       reasoning_provenance: Some(ReasoningProvenance::Native),
       first_delta_ms: None,
+      failure: None,
     }),
     AgentEvent::ModelRetry(ModelRetry {
       attempt: 1,

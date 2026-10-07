@@ -113,6 +113,393 @@ fn run(config: &Path, cwd: &Path, prompt: &str) -> Output {
 }
 
 #[test]
+fn completion_mailbox_drives_a_real_cli_repair_without_new_execution_authority() {
+  for review_mode in [
+    "ordinary",
+    "timed",
+    "requests",
+    "repair_window",
+    "initial_window",
+    "check_reserve",
+    "final_reserve",
+  ] {
+    let early_review = matches!(review_mode, "timed" | "requests");
+    let initial_window = review_mode == "initial_window";
+    let repair_window = review_mode == "repair_window";
+    let check_reserve = review_mode == "check_reserve";
+    let final_reserve = review_mode == "final_reserve";
+    let expected_checks = if check_reserve {
+      4
+    } else if repair_window || final_reserve {
+      3
+    } else {
+      2
+    };
+    let temp = TempDir::new().unwrap();
+    let workspace = temp.path().join("workspace");
+    let mailbox = temp.path().join("mailbox");
+    fs::create_dir(&workspace).unwrap();
+    fs::create_dir(&mailbox).unwrap();
+    let mut responses = vec![
+      if early_review || initial_window || check_reserve || final_reserve {
+        tool_response(
+          "initial",
+          "write",
+          r#"{"path":"app.txt","contents":"owned initial"}"#,
+          None,
+        )
+      } else {
+        text_response("initial candidate")
+      },
+      tool_response(
+        "repair",
+        "write",
+        r#"{"path":"app.txt","contents":"owned repaired"}"#,
+        None,
+      ),
+      text_response("checked candidate"),
+    ];
+    if check_reserve || final_reserve {
+      responses.insert(
+        1,
+        tool_response(
+          "intermediate",
+          "write",
+          r#"{"path":"app.txt","contents":"owned intermediate"}"#,
+          None,
+        ),
+      );
+    }
+    if final_reserve {
+      responses.insert(
+        2,
+        tool_response(
+          "remaining-repair",
+          "write",
+          r#"{"path":"app.txt","contents":"owned remaining repair"}"#,
+          None,
+        ),
+      );
+    }
+    if repair_window {
+      for (index, content) in [(1, "owned first repair"), (2, "owned intermediate")] {
+        responses.insert(
+          index,
+          tool_response(
+            &format!("repair-{index}"),
+            "write",
+            &serde_json::json!({"path":"app.txt", "contents":content}).to_string(),
+            None,
+          ),
+        );
+      }
+    }
+    let server = if review_mode == "timed" {
+      FakeServer::answer_delayed(responses, std::time::Duration::from_secs(3))
+    } else {
+      FakeServer::answer(responses)
+    };
+    let path = write_config(temp.path(), &server.base_url(), true);
+    let mut config = RuntimeConfig::parse(&fs::read_to_string(&path).unwrap()).unwrap();
+    config.limits.max_completion_checks_per_turn = Some(expected_checks);
+    if final_reserve {
+      config.limits.max_model_requests_per_turn = 6;
+      config.limits.completion_check_initial_request_window = Some(1);
+      config.limits.completion_check_repair_request_window = Some(1);
+      config.limits.review_completion = true;
+      config.limits.completion_review_check_reserve = Some(1);
+      config.limits.completion_check_on_review = true;
+      config.limits.completion_check_reserve_final = true;
+    }
+    if check_reserve {
+      config.limits.max_model_requests_per_turn = 8;
+      config.limits.completion_check_initial_request_window = Some(1);
+      config.limits.completion_check_repair_request_window = Some(1);
+      config.limits.review_completion = true;
+      config.limits.completion_review_check_reserve = Some(2);
+      config.limits.completion_check_on_review = true;
+    }
+    if initial_window {
+      config.limits.max_model_requests_per_turn = 4;
+      config.limits.completion_check_initial_request_window = Some(1);
+    }
+    if repair_window {
+      config.limits.max_model_requests_per_turn = 8;
+      config.limits.completion_check_repair_request_window = Some(2);
+    }
+    // This fixture tests mailbox repair, not scheduling against a short deadline.
+    config.limits.max_turn_duration_ms = Some(60_000);
+    if early_review {
+      config.limits.review_completion = true;
+      config.limits.completion_check_on_review = true;
+      if review_mode == "timed" {
+        config.limits.completion_review_reserve_ms = Some(55_000);
+      } else {
+        config.limits.max_model_requests_per_turn = 4;
+        config.limits.completion_review_request_reserve = Some(2);
+      }
+    }
+    config.tools.allow = vec!["read".into(), "write".into(), "edit".into(), "grep".into()];
+    fs::write(&path, config.to_json_string().unwrap()).unwrap();
+    let child = Command::new(env!("CARGO_BIN_EXE_rupi"))
+      .args(["run", "--config"])
+      .arg(&path)
+      .arg("--cwd")
+      .arg(&workspace)
+      .args([
+        "--prompt",
+        "deliver owned file",
+        "--completion-feedback-dir",
+      ])
+      .arg(&mailbox)
+      .stdout(std::process::Stdio::piped())
+      .stderr(std::process::Stdio::piped())
+      .spawn()
+      .unwrap();
+    let child_id = child.id();
+    let child_finished = std::sync::Arc::new(std::sync::atomic::AtomicBool::new(false));
+    let host_finished = std::sync::Arc::clone(&child_finished);
+    let canonical_workspace = fs::canonicalize(&workspace).unwrap();
+    let host = std::thread::spawn(move || {
+      let deadline = std::time::Instant::now() + std::time::Duration::from_secs(75);
+      let mut seen = std::collections::BTreeSet::new();
+      while seen.len() < expected_checks as usize {
+        for entry in fs::read_dir(&mailbox).unwrap() {
+          let request_path = entry.unwrap().path();
+          if !request_path
+            .file_name()
+            .unwrap()
+            .to_string_lossy()
+            .starts_with("request-")
+            || request_path.extension().is_none_or(|ext| ext != "json")
+            || !seen.insert(request_path.clone())
+          {
+            continue;
+          }
+          let request: serde_json::Value =
+            serde_json::from_slice(&fs::read(&request_path).unwrap()).unwrap();
+          assert_eq!(request["process_id"], child_id);
+          assert_eq!(
+            Path::new(request["workspace"].as_str().unwrap()),
+            canonical_workspace
+          );
+          let ordinal = request["ordinal"].as_u64().unwrap();
+          assert_eq!(ordinal as usize, seen.len());
+          if (early_review || initial_window || check_reserve || final_reserve) && ordinal == 1 {
+            assert_eq!(
+              fs::read_to_string(canonical_workspace.join("app.txt")).unwrap(),
+              "owned initial"
+            );
+          }
+          if (repair_window || check_reserve || final_reserve) && ordinal == 2 {
+            assert_eq!(
+              fs::read_to_string(canonical_workspace.join("app.txt")).unwrap(),
+              "owned intermediate"
+            );
+          }
+          if final_reserve && ordinal == expected_checks as u64 {
+            assert_eq!(
+              fs::read_to_string(canonical_workspace.join("app.txt")).unwrap(),
+              "owned repaired"
+            );
+          }
+          let id = request["request_id"].as_str().unwrap();
+          let passed = ordinal >= expected_checks as u64 || (check_reserve && ordinal == 3);
+          let reply = serde_json::json!({"version":1,"request_id":id,
+          "status":if passed { "passed" } else { "failed" },
+          "feedback":if passed { "owned pass" } else if ordinal == 1 { "owned public failure" }
+            else { "owned remaining failure" }});
+          let temporary = mailbox.join(format!("reply-{id}.tmp"));
+          fs::write(&temporary, serde_json::to_vec(&reply).unwrap()).unwrap();
+          fs::rename(temporary, mailbox.join(format!("reply-{id}.json"))).unwrap();
+        }
+        if host_finished.load(std::sync::atomic::Ordering::SeqCst)
+          || std::time::Instant::now() >= deadline
+        {
+          break;
+        }
+        std::thread::sleep(std::time::Duration::from_millis(5));
+      }
+      seen.len()
+    });
+    let output = child.wait_with_output().unwrap();
+    child_finished.store(true, std::sync::atomic::Ordering::SeqCst);
+    let observations = host.join();
+    let diagnostics = format!(
+      "status {}; stdout: {}; stderr: {}",
+      output.status,
+      String::from_utf8_lossy(&output.stdout),
+      String::from_utf8_lossy(&output.stderr)
+    );
+    assert!(output.status.success(), "{diagnostics}");
+    assert_eq!(
+      observations.expect("owned mailbox host failed"),
+      expected_checks as usize,
+      "owned CLI exited without both mailbox observations: {diagnostics}"
+    );
+    assert_eq!(
+      fs::read_to_string(workspace.join("app.txt")).unwrap(),
+      "owned repaired"
+    );
+    let requests = server.requests();
+    assert_eq!(
+      requests.len(),
+      if check_reserve {
+        4
+      } else if repair_window || final_reserve {
+        5
+      } else {
+        3
+      }
+    );
+    if check_reserve || final_reserve {
+      assert!(requests[2].body.contains("bounded review"));
+      assert!(requests[2].body.contains("owned remaining failure"));
+    }
+    if repair_window {
+      assert!(requests[3].body.contains("owned remaining failure"));
+    }
+    assert!(requests[1].body.contains("owned public failure"));
+    assert_eq!(requests[1].body.contains("bounded review"), early_review);
+    assert!(!requests[1].body.contains("\"name\":\"exec\""));
+  }
+}
+
+#[test]
+fn completion_mailbox_preflight_rejects_missing_and_exposed_handlers_before_requests() {
+  for (configured, supplied, exposed) in [
+    (true, false, false),
+    (false, true, false),
+    (true, true, true),
+  ] {
+    let temp = TempDir::new().unwrap();
+    let workspace = temp.path().join("workspace");
+    let mailbox = temp.path().join("mailbox");
+    fs::create_dir(&workspace).unwrap();
+    fs::create_dir(&mailbox).unwrap();
+    let listener = TcpListener::bind("127.0.0.1:0").unwrap();
+    listener.set_nonblocking(true).unwrap();
+    let path = write_config(
+      temp.path(),
+      &format!("http://{}/v1", listener.local_addr().unwrap()),
+      true,
+    );
+    let mut config = RuntimeConfig::parse(&fs::read_to_string(&path).unwrap()).unwrap();
+    config.limits.max_completion_checks_per_turn = configured.then_some(2);
+    config.tools.allow_search_outside = exposed;
+    fs::write(&path, config.to_json_string().unwrap()).unwrap();
+    let mut command = Command::new(env!("CARGO_BIN_EXE_rupi"));
+    command
+      .args(["run", "--config"])
+      .arg(&path)
+      .arg("--cwd")
+      .arg(&workspace)
+      .args(["--prompt", "unused"]);
+    if supplied {
+      command.arg("--completion-feedback-dir").arg(&mailbox);
+    }
+    let output = command.output().unwrap();
+    assert!(!output.status.success());
+    assert!(String::from_utf8_lossy(&output.stderr).contains("completion"));
+    assert_eq!(
+      listener.accept().unwrap_err().kind(),
+      std::io::ErrorKind::WouldBlock
+    );
+    assert_eq!(fs::read_dir(&mailbox).unwrap().count(), 0);
+  }
+}
+
+#[test]
+fn configured_initial_output_ceiling_reaches_the_provider_wire_first_only() {
+  for thinking_input in [
+    rupi_core::OpenAiThinkingInput::ReasoningEffort,
+    rupi_core::OpenAiThinkingInput::ChatTemplateEnableThinking,
+  ] {
+    let temp = TempDir::new().unwrap();
+    let workspace = temp.path().join("workspace");
+    fs::create_dir(&workspace).unwrap();
+    let server = FakeServer::answer(vec![
+      tool_response(
+        "first",
+        "write",
+        r#"{"path":"owned.txt","contents":"small coherent owned change"}"#,
+        None,
+      ),
+      text_response("owned done"),
+    ]);
+    let path = write_config(temp.path(), &server.base_url(), true);
+    let mut config = RuntimeConfig::parse(&fs::read_to_string(&path).unwrap()).unwrap();
+    config.endpoints[0].capabilities.context_window = 262_144;
+    config.endpoints[0].capabilities.max_output_tokens = Some(32_768);
+    config.endpoints[0].max_output_tokens = Some(32_768);
+    config.limits.max_model_requests_without_progress = Some(3);
+    config.limits.initial_progress_boundary = true;
+    config.limits.initial_progress_max_output_tokens = Some(8_192);
+    config.limits.initial_progress_max_argument_chars = Some(2_048);
+    config.limits.initial_progress_thinking = Some(rupi_core::ThinkingLevel::Off);
+    config.thinking = rupi_core::ThinkingLevel::Low;
+    config.endpoints[0].openai_compat.thinking_input = Some(thinking_input);
+    config.endpoints[0].openai_compat.thinking_disable =
+      Some(rupi_core::OpenAiThinkingDisable::ReasoningEffortNone);
+    config.endpoints[0].openai_compat.preserve_reasoning = true;
+    fs::write(&path, config.to_json_string().unwrap()).unwrap();
+    let output = run(&path, &workspace, "create owned.txt");
+    assert!(
+      output.status.success(),
+      "{}",
+      String::from_utf8_lossy(&output.stderr)
+    );
+    let requests = server.requests();
+    assert_eq!(requests.len(), 2);
+    let first: serde_json::Value = serde_json::from_str(&requests[0].body).unwrap();
+    let later: serde_json::Value = serde_json::from_str(&requests[1].body).unwrap();
+    assert_eq!(first["max_tokens"], 8_192);
+    if thinking_input == rupi_core::OpenAiThinkingInput::ChatTemplateEnableThinking {
+      assert_eq!(
+        first["chat_template_kwargs"],
+        serde_json::json!({"enable_thinking":false})
+      );
+      assert_eq!(
+        later["chat_template_kwargs"],
+        serde_json::json!({"enable_thinking":true})
+      );
+      assert!(first.get("reasoning_effort").is_none());
+      assert!(later.get("reasoning_effort").is_none());
+    } else {
+      assert_eq!(first["reasoning_effort"], "none");
+      assert_eq!(later["reasoning_effort"], "low");
+    }
+    let first_write = first["tools"]
+      .as_array()
+      .unwrap()
+      .iter()
+      .find(|tool| tool["function"]["name"] == "write")
+      .unwrap();
+    assert_eq!(
+      first_write["function"]["parameters"]["properties"]["contents"]["maxLength"],
+      2_048
+    );
+    assert_eq!(later["max_tokens"], 32_768);
+    let later_write = later["tools"]
+      .as_array()
+      .unwrap()
+      .iter()
+      .find(|tool| tool["function"]["name"] == "write")
+      .unwrap();
+    assert!(
+      later_write["function"]["parameters"]["properties"]["contents"]
+        .get("maxLength")
+        .is_none()
+    );
+    assert_eq!(first["model"], later["model"]);
+    assert_eq!(
+      fs::read_to_string(workspace.join("owned.txt")).unwrap(),
+      "small coherent owned change"
+    );
+  }
+}
+
+#[test]
 fn configured_recurring_progress_rejects_completion_until_a_file_change_is_observed() {
   let temp = TempDir::new().unwrap();
   let workspace = temp.path().join("workspace");

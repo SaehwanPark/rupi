@@ -34,7 +34,7 @@ use serde::{Deserialize, Serialize};
 use crate::{
   capability::{CapabilityGap, EpochReason, ModelCapabilities, ModelRef},
   context::{ContextLevel, ReductionReason},
-  failure::ModelFailureKind,
+  failure::{FailurePhase, ModelFailureKind, RequestReplaySafety},
   ids::{CheckpointId, EventId, EventSeq, SessionId, ToolCallId, TraceId, TurnId, now_millis},
   message::Message,
   message::RuntimeControlKind,
@@ -163,6 +163,10 @@ pub enum SessionEndReason {
 pub enum TurnStatus {
   Completed,
   Cancelled,
+  /// The optional turn duration expired; cancellation preserves uncertain effects.
+  TimeBudgetExhausted,
+  /// The caller's last permitted completion observation failed.
+  CompletionCheckExhausted,
   /// The turn consumed its model-request budget without a final answer.
   BudgetExhausted,
   /// The turn consumed its total or mutating tool-call budget; excess calls were not executed.
@@ -405,6 +409,16 @@ pub struct AssistantDelta {
   pub chunk_index: u32,
 }
 
+/// Failure facts retained on the request's terminal event, independently of usage.
+/// Provider descriptions are excluded so inspection can classify a failure without content.
+#[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize)]
+pub struct ModelRequestFailure {
+  pub kind: ModelFailureKind,
+  pub phase: FailurePhase,
+  pub replay_safety: RequestReplaySafety,
+  pub partial_output_emitted: bool,
+}
+
 #[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize)]
 pub struct ModelRequestCompleted {
   pub epoch: u32,
@@ -442,6 +456,10 @@ pub struct ModelRequestCompleted {
   /// (first text delta, reasoning chunk, or tool call), if observed.
   #[serde(default, skip_serializing_if = "Option::is_none")]
   pub first_delta_ms: Option<u64>,
+  /// Classified failure evidence without provider text. Absent on successful requests and
+  /// legacy/imported records; absence alone does not prove successful completion.
+  #[serde(default, skip_serializing_if = "Option::is_none")]
+  pub failure: Option<ModelRequestFailure>,
 }
 
 #[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize)]

@@ -157,6 +157,21 @@ The outer request loop still enforces the total deadline and cancellation; ambig
 retain adapter quarantine and replay-safety classification. Transport activity creates no
 synthetic model output, usage, reasoning, or journal events.
 
+The provider cancellation relay keeps its listener nonblocking, then normalizes accepted
+client sockets to timed blocking I/O. Windows otherwise inherits the listener mode and can
+busy-spin on idle reads despite timeouts. Wake-up connects use the bounded poll interval:
+a completed exchange may have closed its listener, and default Windows connection refusal
+can delay teardown. Nonce authentication, single-use forwarding, EOF, cancellation, worker
+joining and quarantine remain authoritative. The Windows owned relay benchmark verifies
+one exact POST/response/EOF, CPU250ms per three-second wait and stop500ms in Windows CI.
+
+Each failed model request closes with optional typed `ModelRequestFailure` metadata on
+`ModelRequestCompleted`: category, lifecycle phase, replay safety and partial-output status.
+It copies the already classified runtime failure and excludes provider messages and payloads.
+Usage remains independent and may be unknown. Older records and Pi imports omit the field;
+absence alone proves no success. The metadata does not change retry, failover, quarantine,
+projection or replay behavior, and is not added to model context or normal rendering.
+
 OpenAI-compatible endpoint quirks travel through `ModelEndpoint.openai_compat`, not provider
 adapter defaults that the CLI cannot reach. Streaming, usage inclusion, token-limit field,
 thinking-control dialect and safe extra headers are endpoint-scoped. An explicit thinking-off
@@ -288,6 +303,10 @@ Durable layout (the session files are kept flat so listing only reads headers):
 
 Exact paths remain configurable. A committed WAL is compacted; an incomplete
 intent blocks read-only continuation until resume repairs it or fails closed.
+Output-limited responses (`length` or `max_tokens`) keep their deltas and unexecuted calls
+in the canonical trace, without requiring an assistant projection on close/reopen/resume.
+Completed responses still require their semantic projection; incomplete calls never dispatch
+or replay when a session continues.
 Message-bearing runtime events use one WAL transaction with an exact redacted
 message payload: small messages stay inline, while larger messages keep a verified
 session-blob reference. `begin` and `resume` hold the per-session lease for the
@@ -434,6 +453,17 @@ fails or becomes `Unknown`.
 
 Read-only tools may use more permissive retry semantics.
 
+Native `edit` requires an exact unique match unless `replace_all` is explicit. A missed
+match leaves the file unchanged and reports `Failed` with `None` effect evidence. When
+the complete first requested line exists after trimming surrounding whitespace, its
+diagnostic supplies a line number for a bounded re-read; a shared prefix alone does not
+justify that hint. The diagnostic never applies an approximate replacement or resolves
+an interrupted mutation. Reconciliation remains a separate operation.
+Replacement applies once to original non-overlapping matches; inserted text or an
+unmatched suffix may leave new matches. `edit` therefore declares mutating,
+non-idempotent metadata. Its durable definition fingerprint records that risk, so an
+older uncertain call with the previous idempotence claim requires manual inspection.
+
 Tool implementations should declare relevant metadata when possible:
 
 ```rust
@@ -449,7 +479,7 @@ pub struct ToolMetadata {
 Coding workflows may configure `RuntimeLimits::max_model_requests_without_progress` and
 an optional `progress_tool_names` allowlist. After the configured number of tool-bearing
 requests without one of those tools, `TurnLoop` records a runtime-owned model-visible
-instruction, exposes only the allowlisted tools on the next request, and requests
+instruction, exposes only the allowlisted mutating tools on the next request, and requests
 `ToolChoice::Required` where supported. That provider hint is not trusted as enforcement:
 a text-only completion while the boundary remains active is retained in the canonical trace,
 excluded from model-visible history and final report text, and followed by a corrective
@@ -468,6 +498,235 @@ the effective executable mutating-tool set using the active model's tool support
 and current approval availability. An empty set emits a durable error diagnostic and fails before
 another provider request, including after a failover changes capabilities. The default is disabled
 so read-only questions and inspection workflows remain unchanged.
+
+A durably started selected mutation that ends `Failed` with proven `None` effect can
+grant one read-only inspection attempt after the committed batch. The active boundary,
+executable mutation policy, and at least two ordinary request/tool slots for inspection
+plus repair are required; the allowance expires when that capacity is spent. Registry
+and archived-payload reads retain their existing bindings, path policy and output limits.
+Consume the allowance before argument/binding validation, even if inspection fails;
+additional reads in the same batch are recorded as unstarted failures. A later eligible
+failed mutation can renew it only after its batch, never authorize an unadvertised
+same-batch read. Static guidance uses existing `ProgressCorrection` canonical/projected
+runtime provenance. Read results never satisfy Changed progress or release text completion.
+Unstarted/refused/stale calls and Unknown/Possible/Unverified effects cannot grant it;
+uncertain mutations still stop the entire remaining batch and require reconciliation.
+Changed progress and turn boundaries clear the transient allowance. No cap, approval,
+replay, durable schema or default-turn authority changes.
+
+### Opt-in turn-time budget
+
+`RuntimeLimits::max_turn_duration_ms` optionally bounds a turn cooperatively; omission
+preserves existing behavior. Each turn creates a fresh monotonic deadline in a child
+`CancelToken`, including after resume. Expiry reaches provider and tool cancellation
+checks without cancelling the caller or sibling tokens. There is no timer thread.
+Before each provider attempt, `TurnLoop` records elapsed/remaining time and remaining
+request allowance as a `TurnTimeBudget` runtime control with canonical event and
+projection provenance. Deadline cancellation ends as `TimeBudgetExhausted`; explicit
+caller cancellation retains its existing classification. Unknown/Possible mutating
+effects retain `NeedsReconciliation` and block later inference. Cancellation never
+dispatches incomplete calls or starts recovery inference after expiry. Operations that
+do not cooperate can overrun the deadline; this is not a hard interruption guarantee.
+
+Owned fixtures verify active native HTTP cancellation, no repeated POST or fabricated
+completion, caller isolation, fresh-turn renewal, durable control restore, exclusion of
+partial assistant text, no mutation replay, and the uncertain-effect safety barrier.
+
+Optional `initial_progress_boundary` requires a configured progress request window.
+For an already authorized implementation turn with sufficient context, it activates
+the same boundary before the first ordinary provider attempt. Admission, cancellation,
+unresolved-effect checks and current approval availability precede activation. Confirmed
+Changed progress releases it; no-effect success does not. New turns renew the initial
+selection; explicit no-tools assessment skips it. The default remains false. It does
+not select artifact names or authorize a mutation that tool policy would otherwise deny.
+Owned fixtures cover initial exposure/choice, release/renewal, unavailable/denied tools,
+mutation capacity, caller cancellation, no-effect/Unknown barriers, interactive approval,
+default/no-limit/no-tools behavior and durable runtime-control provenance.
+
+Optional `initial_progress_max_output_tokens` requires initial progress selection and a
+value in 1..=65536. Only the first ordinary request of its active boundary uses this
+ceiling, capped by the endpoint limit and normal context admission. Later requests use
+the endpoint ceiling even when progress remains unsatisfied; new turns renew selection.
+Desired/effective budgeting stays explicit. The initial runtime control guides a small
+coherent completed change without claiming delivery or correctness. Omission preserves
+existing behavior. Owned runtime and CLI wire fixtures cover renewal, endpoint/context
+clamping, skipped paths and incomplete-response no-dispatch/no-replay.
+
+Optional `initial_progress_max_argument_chars` (1..=65536) requires the initial output
+ceiling. The first request captures a per-string Unicode scalar limit for mutating
+tools: request-local schemas add `maxLength` without enlarging existing constraints or
+changing registry identities, and descriptions state the generic restriction. Completed
+oversized calls use the existing rejected-call lifecycle before dispatch, with known no
+effect and total-call accounting; they cannot release progress. Nested string values
+and arrays are checked. Later requests are unrestricted by this selection, and fresh
+turns renew it. Initial guidance asks for one small coherent complete mutation followed
+by incremental complete calls. It enforces no artifact names or task correctness, and
+neither partial responses nor failed mutations are replayed. Omission preserves behavior.
+
+Optional `initial_progress_thinking` requires initial progress selection and overrides
+requested thinking only in its first ordinary active-boundary request. Later requests
+inherit the normal level even without Changed evidence; new turns renew selection.
+Output/argument budgeting and safety gates remain unchanged. The endpoint's explicit
+encoding owns the wire request; runtime control describes intent rather than observed
+hidden reasoning or guaranteed backend enforcement. Owned fresh/skipped/no-effect and
+CLI wire fixtures verify Off first/Low later, including `reasoning_effort: none` when
+the endpoint declares that disable encoding. The default inherits normal thinking.
+
+### Endpoint thinking dialects
+
+Endpoint `openai_compat.thinking_input` can explicitly select
+`chat_template_enable_thinking`: it sends `chat_template_kwargs.enable_thinking` as a
+boolean, false for Off and true for other levels. The legacy `chat_template_thinking`
+key and default `reasoning_effort` remain unchanged. This requests a template toggle;
+it neither specifies effort intensity nor proves effective backend enforcement or hidden
+reasoning composition. First-request thinking selection uses the same endpoint dialect.
+Owned config/provider/CLI wire fixtures cover both keys, Off and later inheritance.
+
+Endpoint `openai_compat.reasoning_budget_tokens` optionally requests the exact native
+`reasoning_budget_tokens` field. Configuration accepts1 through i32::MAX; None preserves
+existing requests. Off omits the numerical field and keeps the declared disable encoding.
+For enabled thinking, an effective output ceiling caps this request to ceiling minus1,024
+answer tokens; omit it when no positive budget fits. Without a ceiling, use the configured
+budget. Desired output never substitutes for the effective wire ceiling. This declaration
+does not discover endpoint support, grant native exposure or claim backend compliance.
+Owned fresh-turn Off/Low and pinned Pi0.86.1 fake-wire fixtures verify field selection and
+answer-room clamping. A tiny owned probe on the installed original local model is consistent
+with enforcement; actual-case reasoning composition and acceptance benefit remain unproved.
+
+### Opt-in completion review
+
+`RuntimeLimits::review_completion` defaults to false. When enabled, the first otherwise
+accepted text-only completion in an ordinary tools-enabled turn is retained as native
+assistant evidence and followed by a canonical/projected `CompletionReview` control.
+The active model compares requested deliverables with observed actions and may continue
+authorized work. The review is one-shot per turn, renewed after resume/new turns, and
+uses existing request/tool/time budgets. Progress rejection precedes review; unresolved
+mutations still stop inference. Reserved no-tools finalization cannot execute repairs or
+convert budget exhaustion into completion. Explicit recovery assessment skips ordinary
+review. This is generic guidance, not artifact-name enforcement or correctness certification.
+Owned fixtures cover permitted repair, bounded/fresh review, durable native/control
+provenance, cap/no-tools behavior, deadline cancellation without dispatch, and Unknown barriers.
+Optional `completion_review_reserve_ms` requires enabled review and a positive reserve
+below the configured turn duration. Before another ordinary provider attempt, subtract
+the observed duration of the preceding provider/tool cycle from remaining time; if that
+projected remainder is within the reserve, trigger the same one-shot review. The first
+cycle uses zero observed cost. This estimate cannot guarantee future latency. An earlier
+first-answer review consumes that allowance, and new turns reset the cycle observation.
+Cancellation is checked first; no unresolved mutation or budget barrier is bypassed.
+Optional `completion_review_request_reserve` requires enabled review and a positive count
+strictly below the ordinary request allowance (the cap minus its finalization slot).
+At a safe ordinary boundary, remaining ordinary requests at or below that count trigger
+the same one-shot review. Either reserve can trigger first; accepted-answer review also
+shares the allowance. Request-only selection requires no native timer or cycle estimate.
+Direct builders ignore invalid counts; configuration rejects them. No budget is extended.
+Benchmark summaries expose whitelist counts of canonical control kinds, an unknown-kind
+count, and review positions as counts of started requests at injection, without control
+text or model content; native Pi control metrics remain unavailable/null.
+These counts measure injected controls, not proof that the model used their guidance.
+
+### Caller completion observations
+
+Optional `limits.max_completion_checks_per_turn` (1–16, omitted by default) requires
+fresh caller observations before accepting an ordinary text-only completion. Progress
+rejection precedes checking; checking precedes the optional review. Every later candidate,
+including after review, needs another check. A failed observation allows same-model repair
+within request/tool/time/check budgets; exhausted allowance ends `CompletionCheckExhausted`.
+Unavailable observations end a semantic failure without retry or failover. Cancellation
+and native deadlines take precedence, no-tools finalization skips checking, and Unknown
+mutations stop before either checking or inference. New turns renew the local allowance.
+
+The Case10 caller's bounded public snapshot preflight returns Failed immediately for
+missing requested files, explicitly reporting that commands were not run. A known
+missing-file failure must not be masked by launching an incomplete suite that times out.
+Complete workspaces still require all original public command gates. Snapshot/deadline/
+protocol/process uncertainty remains Unavailable; the runtime stop is unchanged.
+
+`TurnProgress::check_completion` supplies typed status/data and receives the current
+cancel token plus ordinal/remaining native time. Core does not execute checks. The caller
+must isolate effects outside the canonical task workspace.
+
+Optional `limits.completion_check_on_review` defaults to false and requires configured
+checks, enabled review and a valid time, request or check reserve. The one-shot reserved review
+can request a fresh caller observation before its next model request, even without a final
+assistant answer. This shares the ordinary allowance; a pass still proceeds through model review
+and a later fresh completion check. A repairable failure permits bounded same-model work;
+last failure/exhaustion and unavailable/oversized results retain their existing stops.
+Progress/tool-budget and uncertain-effect barriers precede the observation. Observations
+do not count as Changed progress. Cancellation or deadline during the callback discards
+its result. Disabled review, absent reserve/checks and no-tools paths skip this selection;
+fresh turns renew the one-shot boundary and shared allowance. No new events or commands.
+
+Optional `completion_check_repair_request_window` requires at least two checks and a
+positive window below the ordinary request allowance. A Failed observation arms a
+turn-local request count; at a safe ordinary boundary after that window, obtain another
+caller observation through the same helper/allowance. Failed rearms it, Passed disarms it.
+Neither a checkpoint pass nor review replaces a fresh final check. Coincident reserved
+review/repair triggers make one callback; earlier final text can check before the window.
+Direct builders skip invalid windows; no-tools/finalization skips this selection. New
+turns reset it. Existing progress/tool-budget/Unknown/cancel/deadline and terminal check
+semantics remain. This needs no clock, new event or additional execution authority.
+
+Optional `completion_check_initial_request_window` requires the same positive ordinary
+request window and at least two checks. If no caller observation has occurred, the first
+safe boundary after that many requests obtains one through the existing helper and cap.
+A prior observation disables this trigger. It coalesces with reserved review, never
+consumes the one-shot review, and resets each turn. Failed can arm the repair window;
+Passed still requires fresh final checking. All progress/tool/Unknown/cancel/deadline,
+no-tools/finalization and terminal observation safeguards remain. Domain checks stay
+caller-owned; this threshold creates no clock, command, event or additional allowance.
+
+Optional `completion_review_check_reserve` requires enabled review, at least two checks
+and a positive reserve below their cap. After fresh, repairable Failed evidence, if
+remaining checks are within the reserve and ordinary work remains, activate the same
+one-shot review. Reuse the observation just obtained; `completion_check_on_review` does
+not create a duplicate callback on this boundary. Time/request/accepted-answer/check
+triggers share the review flag. Passed, Unavailable, last Failed, cancellation, exhausted
+requests and no-tools paths cannot activate this trigger. Fresh final checks and all
+existing budgets/effect barriers remain; counters/review state reset each turn.
+
+Optional `completion_check_reserve_final` defaults to false and requires at least two
+checks. Initial/repair/review checkpoints pause when only the last observation remains.
+The next ordinary final candidate still needs a fresh check. If one-shot review is unused,
+perform that review before consuming this last check, then check a new final candidate.
+No allowance grows and latest Failed evidence remains external data. Last Failed and
+Unavailable still terminate; no-tools request-budget assessment stays incomplete and
+does not consume the reserved check. Invalid direct builders retain legacy behavior.
+All effect/progress/tool/approval/cancel/deadline barriers and per-turn renewal remain.
+
+Static `CompletionCheck` guidance is a runtime control; bounded UTF-8 feedback (16KiB)
+is separate external context
+from `delegated_completion_check`, with citation and ordinal/status/elapsed metadata.
+Both persist using existing message/event transactions; native assistant evidence stays
+distinct. Resume never replays a prior caller check. A pass describes reported observations,
+not general correctness or acceptance certification.
+
+Run-only `--completion-feedback-dir` selects a caller-owned, existing absolute directory
+outside the workspace. Configured allowance and disabled outside read/write/search access
+are validated before provider requests. Interactive/default paths reject configured checks
+without a handler. CLI publishes version1 UUID requests atomically and waits at most300s
+(or shorter native time) for a matching strict reply: 128KiB JSON, 16KiB feedback.
+Optional run-only `--completion-feedback-timeout-ms` selects a smaller1..300,000ms
+adapter wait ceiling and advertises it through the existing wait_timeout_ms field.
+It requires the mailbox; omission preserves300s. Remaining native time still wins.
+Invalid, missing, IO-failed or timed-out replies become Unavailable, with no replay.
+Artifacts remain.
+The channel protects against model file tools; it is not an OS sandbox or arbitrary-exec
+isolation. CLI/core never choose or run verification commands.
+
+Case10's opt-in benchmark host copies public package/tests/README into an owned snapshot,
+checks requested public artifacts, runs bounded public unittest/help commands there, and
+requires nonzero discovered tests. Private acceptance remains after the turn; no oracle
+is copied or supplied. Host scratch effects/cleanup belong to the caller. Safe summaries
+retain control counts and check ordinal/status/elapsed/request-position scalars only;
+native Pi controls remain null. Counts do not prove that the model acted on feedback.
+The run-local mailbox stays associated with its turn. Public snapshots and command
+artifacts use an independent UUID below `.benchmark/completion-scratch`, avoiding Windows
+Process.Start failure on long run-derived working directories. Both roots are checked
+outside the canonical workspace; artifacts remain retained. Caller unavailability stays
+distinct from known missing-deliverable failure, and uncertain checks are never replayed.
+The harness can explicitly select a bounded Case10 mutation allowance within the total
+tool cap. Runtime defaults remain16 mutations/64 total; selecting headroom cannot bypass
+Unknown reconciliation, progress authorization, request/time limits or completion checks.
 
 ## 10. Context engine
 

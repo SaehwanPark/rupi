@@ -2,6 +2,7 @@ use std::{
   fs,
   io::{self, IsTerminal, Stderr, Stdout, Write},
   path::Path,
+  time::Duration,
 };
 
 use rupi_core::{
@@ -16,6 +17,7 @@ use rupi_tools::{Approval, Executed, ToolRegistry, Workspace};
 use rupi_tui::{Palette, Surface, TranscriptOptions, is_streamed, render_event, term};
 
 use crate::cli::SurfaceArgs;
+use crate::completion_feedback::CompletionMailbox;
 
 use crate::cli::RunArgs;
 
@@ -23,11 +25,18 @@ pub fn execute(args: RunArgs) -> Result<(), String> {
   // A one-shot run is a session that holds exactly one turn. It is built on the
   // same handle an interactive loop reuses for many turns, so the composition is
   // written once, in `open_session`.
-  open_session(
+  open_session_with_feedback(
     &args.config,
     &args.cwd,
     &args.surface,
     args.resume.as_deref(),
+    false,
+    (
+      args.completion_feedback_dir.as_deref(),
+      args
+        .completion_feedback_timeout_ms
+        .map(Duration::from_millis),
+    ),
     |session| {
       if args.finalize {
         match session.finalize(&args.prompt) {
@@ -45,6 +54,12 @@ pub fn execute(args: RunArgs) -> Result<(), String> {
               .map_err(session_error),
             TurnStatus::ToolBudgetExhausted => session
               .close_interrupted("tool-call budget exhausted")
+              .map_err(session_error),
+            TurnStatus::TimeBudgetExhausted => session
+              .close_interrupted("turn time budget exhausted")
+              .map_err(session_error),
+            TurnStatus::CompletionCheckExhausted => session
+              .close_interrupted("completion checks exhausted")
               .map_err(session_error),
             TurnStatus::NeedsReconciliation => session
               .close_interrupted("mutating tool side effect needs reconciliation")
@@ -74,6 +89,7 @@ pub fn execute(args: RunArgs) -> Result<(), String> {
 /// `&mut dyn Trace`: a handle that owned both would be self-referential. Scoping
 /// the borrow to this call is what keeps it sound, and it is why a caller closes
 /// from inside `turns` rather than after this function returns.
+#[cfg(test)]
 pub(crate) fn open_session(
   config: &Path,
   cwd: &Path,
@@ -94,10 +110,33 @@ pub(crate) fn open_session_with_approval(
   interactive_approval: bool,
   turns: impl FnOnce(&mut SessionHandle<'_>) -> Result<(), String>,
 ) -> Result<(), String> {
+  open_session_with_feedback(
+    config,
+    cwd,
+    surface,
+    resume,
+    interactive_approval,
+    (None, None),
+    turns,
+  )
+}
+
+fn open_session_with_feedback(
+  config: &Path,
+  cwd: &Path,
+  surface: &SurfaceArgs,
+  resume: Option<&str>,
+  interactive_approval: bool,
+  completion_feedback: (Option<&Path>, Option<Duration>),
+  turns: impl FnOnce(&mut SessionHandle<'_>) -> Result<(), String>,
+) -> Result<(), String> {
   let config_text = fs::read_to_string(config)
     .map_err(|error| format!("cannot read config '{}': {error}", config.display()))?;
   let config =
     RuntimeConfig::parse(&config_text).map_err(|error| format!("invalid config: {error}"))?;
+  let (feedback_directory, feedback_timeout) = completion_feedback;
+  let completion_mailbox =
+    CompletionMailbox::configure(feedback_directory, cwd, &config, feedback_timeout)?;
   // RKB normalization only enriches the cloned manager configuration with the
   // provider's read-only retrieval tool names. No MCP process is started here.
   let mcp_servers = rupi_rkb::RkbSetup::normalize_configs(&config.mcp_servers);
@@ -232,15 +271,21 @@ pub(crate) fn open_session_with_approval(
 
   let options = surface_options(surface);
   let mut trace = ReportingTrace::new(StoreTrace::new(session), options);
-  let progress = CliProgress::new(&tools, options, interactive_approval);
+  let mut progress = CliProgress::new(&tools, options, interactive_approval);
+  progress.completion_mailbox = completion_mailbox;
   let mut system_prompt = format!(
     "You are Rupi, a coding assistant working in the supplied workspace.\n\
      Working directory: {canonical_cwd}.\n\
-     Inspect relevant files and project instructions before editing. Make the requested\
-     changes instead of stopping at a plan when implementation is requested.\n\
-     After changes, run the most relevant available checks. Investigate failures and\
-     continue fixing them while the request budget remains. Report what changed and which\
-     checks actually ran; never claim an unrun check passed."
+     Follow the requested workflow and use supplied project context.\n\
+     Inspect relevant existing files and project instructions before modifying them;\n\
+     reuse supplied contents when they provide sufficient context.\n\
+     Create requested new files directly when their requirements are supplied.\n\
+     Make requested changes instead of stopping at a plan when implementation is requested.\n\
+     Run relevant available checks when execution is permitted by the requested workflow.\n\
+     When verification is delegated, use supplied results and feedback to guide repairs.\n\
+     Investigate failures and continue fixing them while the request budget remains.\n\
+     Report what changed and distinguish checks you ran from supplied verification results;\n\
+     never claim an unrun check passed."
   );
   if !skills_prompt.trim().is_empty() {
     system_prompt.push_str("\n\n");
@@ -258,6 +303,41 @@ pub(crate) fn open_session_with_approval(
   .with_interactive_tool_approval(interactive_approval)
   .with_thinking(config.thinking)
   .with_max_requests(config.limits.max_model_requests_per_turn as usize)
+  .with_completion_review(config.limits.review_completion)
+  .with_max_completion_checks(config.limits.max_completion_checks_per_turn.unwrap_or(0))
+  .with_completion_check_initial_request_window(
+    config
+      .limits
+      .completion_check_initial_request_window
+      .map(|window| window as usize),
+  )
+  .with_completion_check_repair_request_window(
+    config
+      .limits
+      .completion_check_repair_request_window
+      .map(|window| window as usize),
+  )
+  .with_completion_check_on_review(config.limits.completion_check_on_review)
+  .with_completion_check_reserve_final(config.limits.completion_check_reserve_final)
+  .with_completion_review_check_reserve(config.limits.completion_review_check_reserve)
+  .with_completion_review_request_reserve(
+    config
+      .limits
+      .completion_review_request_reserve
+      .map(|reserve| reserve as usize),
+  )
+  .with_completion_review_reserve(
+    config
+      .limits
+      .completion_review_reserve_ms
+      .map(Duration::from_millis),
+  )
+  .with_max_turn_duration(
+    config
+      .limits
+      .max_turn_duration_ms
+      .map(Duration::from_millis),
+  )
   .with_tool_call_budgets(
     config.limits.max_tool_calls_per_turn as usize,
     config.limits.max_mutating_tool_calls_per_turn as usize,
@@ -270,6 +350,10 @@ pub(crate) fn open_session_with_approval(
     config.limits.progress_tool_names.clone(),
   )
   .with_progress_boundary_mode(config.limits.progress_boundary_mode)
+  .with_initial_progress_boundary(config.limits.initial_progress_boundary)
+  .with_initial_progress_max_output_tokens(config.limits.initial_progress_max_output_tokens)
+  .with_initial_progress_max_argument_chars(config.limits.initial_progress_max_argument_chars)
+  .with_initial_progress_thinking(config.limits.initial_progress_thinking)
   .with_compaction_strategy(rupi_runtime::CompactionStrategy::Summarize);
   runtime = runtime.with_system(system_prompt);
   if let Some(backup) = &backup {
@@ -301,7 +385,7 @@ pub(crate) fn open_session_with_approval(
 /// The runtime is long-lived on purpose, and the handle is what keeps it that way:
 /// the memory between turns is the history `TurnLoop` already owns, so a caller
 /// that rebuilt a loop per turn would silently discard that history and re-emit
-/// `SessionStarted`. Built by [`open_session`], which owns the providers, tools,
+/// `SessionStarted`. Built by [`open_session_with_feedback`], which owns the providers, tools,
 /// context policy, and sink the handle borrows.
 pub struct SessionHandle<'a> {
   runtime: TurnLoop<'a>,
@@ -754,6 +838,7 @@ fn turn_error(error: &TurnError) -> String {
 /// tool name: `[needs check]` is a claim that the user may have work to do, and it
 /// has to come from the tool's own metadata.
 struct CliProgress<'a> {
+  completion_mailbox: Option<CompletionMailbox>,
   surface: Surface<Stdout, Stderr>,
   tools: &'a ToolRegistry,
   interactive_approval: bool,
@@ -764,6 +849,7 @@ impl<'a> CliProgress<'a> {
   fn new(tools: &'a ToolRegistry, options: TranscriptOptions, interactive_approval: bool) -> Self {
     Self {
       surface: Surface::new(io::stdout(), io::stderr(), options),
+      completion_mailbox: None,
       tools,
       interactive_approval,
       io_error: None,
@@ -788,6 +874,19 @@ impl<'a> CliProgress<'a> {
 }
 
 impl TurnProgress for CliProgress<'_> {
+  fn check_completion(
+    &mut self,
+    request: rupi_runtime::CompletionCheckRequest,
+    cancel: &CancelToken,
+  ) -> rupi_runtime::CompletionCheckResult {
+    match &self.completion_mailbox {
+      Some(mailbox) => mailbox.check(request, cancel),
+      None => rupi_runtime::CompletionCheckResult {
+        status: rupi_runtime::CompletionCheckStatus::Unavailable,
+        feedback: "no completion mailbox attached".into(),
+      },
+    }
+  }
   fn on_user_message(&mut self, text: &str) {
     save(&mut self.io_error, self.surface.user_message(text));
   }

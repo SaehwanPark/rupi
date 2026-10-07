@@ -74,6 +74,10 @@ pub struct OpenAiCompatOptions {
   /// How to explicitly disable reasoning for dialects that support it.
   #[serde(skip_serializing_if = "Option::is_none")]
   pub thinking_disable: Option<OpenAiThinkingDisable>,
+  /// Optional native reasoning-budget request for endpoints accepting this exact wire field.
+  /// Off omits it; enabled requests reserve answer space within their effective output ceiling.
+  #[serde(skip_serializing_if = "Option::is_none")]
+  pub reasoning_budget_tokens: Option<u32>,
   /// Whether this endpoint accepts the OpenAI-style per-function strict flag.
   #[serde(skip_serializing_if = "Option::is_none")]
   pub strict_tool_schema: Option<OpenAiStrictToolSchemaSupport>,
@@ -100,6 +104,7 @@ impl fmt::Debug for OpenAiCompatOptions {
       .field("max_tokens_field", &self.max_tokens_field)
       .field("thinking_input", &self.thinking_input)
       .field("thinking_disable", &self.thinking_disable)
+      .field("reasoning_budget_tokens", &self.reasoning_budget_tokens)
       .field("strict_tool_schema", &self.strict_tool_schema)
       .field("preserve_reasoning", &self.preserve_reasoning)
       .field("header_names", &header_names)
@@ -127,8 +132,10 @@ pub enum OpenAiThinkingInput {
   /// OpenAI `reasoning_effort`.
   #[default]
   ReasoningEffort,
-  /// `chat_template_kwargs: { "thinking": bool }`, as llama.cpp builds expect.
+  /// `chat_template_kwargs: { "thinking": bool }` for templates using that key.
   ChatTemplateThinking,
+  /// `chat_template_kwargs: { "enable_thinking": bool }` for compatible local templates.
+  ChatTemplateEnableThinking,
 }
 
 /// Whether the endpoint supports strict JSON-Schema tool sampling.
@@ -404,6 +411,36 @@ impl ProgressBoundaryMode {
 #[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize)]
 #[serde(deny_unknown_fields)]
 pub struct RuntimeLimits {
+  /// Caller observations required before ordinary completion; omitted disables checks.
+  #[serde(default, skip_serializing_if = "Option::is_none")]
+  pub max_completion_checks_per_turn: Option<u32>,
+  /// Obtain the first caller observation after this many ordinary requests, if none occurred.
+  #[serde(default, skip_serializing_if = "Option::is_none")]
+  pub completion_check_initial_request_window: Option<u32>,
+  /// Refresh Failed caller feedback after this many repair requests; omitted disables it.
+  #[serde(default, skip_serializing_if = "Option::is_none")]
+  pub completion_check_repair_request_window: Option<u32>,
+  /// Request a caller observation when a reserved one-shot completion review begins.
+  #[serde(default, skip_serializing_if = "is_false")]
+  pub completion_check_on_review: bool,
+  /// Preserve the last observation for an ordinary final candidate after any review.
+  #[serde(default, skip_serializing_if = "is_false")]
+  pub completion_check_reserve_final: bool,
+  /// Ask the active model to review requested deliverables once per turn.
+  #[serde(default, skip_serializing_if = "is_false")]
+  pub review_completion: bool,
+  /// Desired time reserve for review; the preceding cycle's observed cost can trigger it early.
+  #[serde(default, skip_serializing_if = "Option::is_none")]
+  pub completion_review_reserve_ms: Option<u64>,
+  /// Ordinary requests to retain for review/repair, excluding no-tools finalization.
+  #[serde(default, skip_serializing_if = "Option::is_none")]
+  pub completion_review_request_reserve: Option<u32>,
+  /// Remaining checks that trigger one-shot review after a repairable Failed observation.
+  #[serde(default, skip_serializing_if = "Option::is_none")]
+  pub completion_review_check_reserve: Option<u32>,
+  /// Optional cooperative wall-time budget for one turn. Omitted means no turn deadline.
+  #[serde(default, skip_serializing_if = "Option::is_none")]
+  pub max_turn_duration_ms: Option<u64>,
   /// Maximum model round-trips for one user input, including retries and failover.
   #[serde(default = "default_max_model_requests_per_turn")]
   pub max_model_requests_per_turn: u32,
@@ -420,6 +457,18 @@ pub struct RuntimeLimits {
   /// Recurring enforcement is explicit; omitted mode preserves the one-shot contract.
   #[serde(default, skip_serializing_if = "ProgressBoundaryMode::is_one_shot")]
   pub progress_boundary_mode: ProgressBoundaryMode,
+  /// Start an authorized implementation turn with its configured progress boundary active.
+  #[serde(default, skip_serializing_if = "is_false")]
+  pub initial_progress_boundary: bool,
+  /// Optional output ceiling for the first request of an active initial progress boundary.
+  #[serde(default, skip_serializing_if = "Option::is_none")]
+  pub initial_progress_max_output_tokens: Option<u64>,
+  /// Optional Unicode character limit per string argument in the first mutating request.
+  #[serde(default, skip_serializing_if = "Option::is_none")]
+  pub initial_progress_max_argument_chars: Option<u64>,
+  /// Optional thinking selection for the first request of an active initial boundary.
+  #[serde(default, skip_serializing_if = "Option::is_none")]
+  pub initial_progress_thinking: Option<ThinkingLevel>,
   /// Tool names that count as progress when the progress boundary is active.
   /// An empty list uses every permitted mutating tool instead.
   #[serde(default, skip_serializing_if = "Vec::is_empty")]
@@ -429,11 +478,25 @@ pub struct RuntimeLimits {
 impl Default for RuntimeLimits {
   fn default() -> Self {
     Self {
+      review_completion: false,
+      max_completion_checks_per_turn: None,
+      completion_check_repair_request_window: None,
+      completion_check_initial_request_window: None,
+      completion_check_on_review: false,
+      completion_check_reserve_final: false,
+      completion_review_reserve_ms: None,
+      completion_review_request_reserve: None,
+      completion_review_check_reserve: None,
+      max_turn_duration_ms: None,
       max_model_requests_per_turn: DEFAULT_MAX_MODEL_REQUESTS_PER_TURN,
       max_tool_calls_per_turn: DEFAULT_MAX_TOOL_CALLS_PER_TURN,
       max_mutating_tool_calls_per_turn: DEFAULT_MAX_MUTATING_TOOL_CALLS_PER_TURN,
       max_model_requests_without_progress: None,
       progress_boundary_mode: ProgressBoundaryMode::OneShot,
+      initial_progress_boundary: false,
+      initial_progress_max_output_tokens: None,
+      initial_progress_max_argument_chars: None,
+      initial_progress_thinking: None,
       progress_tool_names: Vec::new(),
     }
   }
@@ -636,6 +699,151 @@ impl RuntimeConfig {
     if self.state_dir.trim().is_empty() {
       return Err(ConfigError("state_dir is required".into()));
     }
+    if self.limits.initial_progress_thinking.is_some() && !self.limits.initial_progress_boundary {
+      return Err(ConfigError(
+        "limits.initial_progress_thinking requires initial_progress_boundary=true".into(),
+      ));
+    }
+    if let Some(limit) = self.limits.initial_progress_max_argument_chars
+      && (!(1..=65_536).contains(&limit)
+        || self.limits.initial_progress_max_output_tokens.is_none())
+    {
+      return Err(ConfigError(
+        concat!(
+          "limits.initial_progress_max_argument_chars requires an initial progress output ",
+          "ceiling and a value between 1 and 65536"
+        )
+        .into(),
+      ));
+    }
+    if let Some(limit) = self.limits.initial_progress_max_output_tokens
+      && (!(1..=65_536).contains(&limit) || !self.limits.initial_progress_boundary)
+    {
+      return Err(ConfigError(
+        concat!(
+          "limits.initial_progress_max_output_tokens requires initial_progress_boundary=true ",
+          "and a value between 1 and 65536"
+        )
+        .into(),
+      ));
+    }
+    if let Some(checks) = self.limits.max_completion_checks_per_turn
+      && !(1..=16).contains(&checks)
+    {
+      return Err(ConfigError(
+        "limits.max_completion_checks_per_turn must be between 1 and 16".into(),
+      ));
+    }
+    if let Some(window) = self.limits.completion_check_initial_request_window
+      && (window == 0
+        || window >= self.limits.max_model_requests_per_turn.saturating_sub(1)
+        || self
+          .limits
+          .max_completion_checks_per_turn
+          .is_none_or(|checks| checks < 2))
+    {
+      return Err(ConfigError(
+        concat!(
+          "limits.completion_check_initial_request_window requires at least two completion ",
+          "checks and a positive window below the ordinary request allowance"
+        )
+        .into(),
+      ));
+    }
+    if let Some(window) = self.limits.completion_check_repair_request_window
+      && (window == 0
+        || window >= self.limits.max_model_requests_per_turn.saturating_sub(1)
+        || self
+          .limits
+          .max_completion_checks_per_turn
+          .is_none_or(|checks| checks < 2))
+    {
+      return Err(ConfigError(
+        concat!(
+          "limits.completion_check_repair_request_window requires at least two completion ",
+          "checks and a positive window below the ordinary request allowance"
+        )
+        .into(),
+      ));
+    }
+    if self.limits.completion_check_reserve_final
+      && self
+        .limits
+        .max_completion_checks_per_turn
+        .is_none_or(|checks| checks < 2)
+    {
+      return Err(ConfigError(
+        "limits.completion_check_reserve_final requires at least two completion checks".into(),
+      ));
+    }
+    if let Some(duration) = self.limits.max_turn_duration_ms
+      && !(1..=86_400_000).contains(&duration)
+    {
+      return Err(ConfigError(
+        "limits.max_turn_duration_ms must be between 1 and 86400000".into(),
+      ));
+    }
+    if let Some(reserve) = self.limits.completion_review_reserve_ms {
+      let valid = self.limits.review_completion
+        && reserve > 0
+        && self
+          .limits
+          .max_turn_duration_ms
+          .is_some_and(|limit| reserve < limit);
+      if !valid {
+        return Err(ConfigError(
+          concat!(
+            "limits.completion_review_reserve_ms requires review_completion=true and ",
+            "a positive reserve below max_turn_duration_ms"
+          )
+          .into(),
+        ));
+      }
+    }
+    if let Some(reserve) = self.limits.completion_review_request_reserve
+      && (!self.limits.review_completion
+        || reserve == 0
+        || reserve >= self.limits.max_model_requests_per_turn.saturating_sub(1))
+    {
+      return Err(ConfigError(
+        concat!(
+          "limits.completion_review_request_reserve requires review_completion=true and ",
+          "a positive reserve below the ordinary request allowance"
+        )
+        .into(),
+      ));
+    }
+    if let Some(reserve) = self.limits.completion_review_check_reserve
+      && (!self.limits.review_completion
+        || reserve == 0
+        || self
+          .limits
+          .max_completion_checks_per_turn
+          .is_none_or(|checks| checks < 2 || reserve >= checks))
+    {
+      return Err(ConfigError(
+        concat!(
+          "limits.completion_review_check_reserve requires review_completion=true, at least ",
+          "two completion checks and a positive reserve below the check allowance"
+        )
+        .into(),
+      ));
+    }
+    if self.limits.completion_check_on_review
+      && (!self.limits.review_completion
+        || (self.limits.completion_review_reserve_ms.is_none()
+          && self.limits.completion_review_request_reserve.is_none()
+          && self.limits.completion_review_check_reserve.is_none())
+        || self.limits.max_completion_checks_per_turn.is_none())
+    {
+      return Err(ConfigError(
+        concat!(
+          "limits.completion_check_on_review requires review_completion=true, ",
+          "a time, request or check review reserve and max_completion_checks_per_turn"
+        )
+        .into(),
+      ));
+    }
     if self.limits.max_model_requests_per_turn == 0 {
       return Err(ConfigError(
         "limits.max_model_requests_per_turn must be greater than zero".into(),
@@ -673,6 +881,10 @@ impl RuntimeConfig {
           "limits.max_model_requests_without_progress must not exceed {MAX_CONFIGURED_MODEL_REQUESTS_PER_TURN}"
         )));
       }
+    } else if self.limits.initial_progress_boundary {
+      return Err(ConfigError(
+        "limits.initial_progress_boundary requires max_model_requests_without_progress".into(),
+      ));
     } else if !self.limits.progress_tool_names.is_empty() {
       return Err(ConfigError(
         "limits.progress_tool_names requires max_model_requests_without_progress".into(),
@@ -780,6 +992,18 @@ impl RuntimeConfig {
         return Err(ConfigError(format!(
           "endpoint {}/{} may preserve reasoning only when exposed_reasoning is native",
           endpoint.provider, endpoint.model
+        )));
+      }
+      if endpoint
+        .openai_compat
+        .reasoning_budget_tokens
+        .is_some_and(|budget| budget == 0 || budget > i32::MAX as u32)
+      {
+        return Err(ConfigError(format!(
+          "endpoint {}/{} reasoning_budget_tokens must be between 1 and {}",
+          endpoint.provider,
+          endpoint.model,
+          i32::MAX
         )));
       }
       for (name, value) in &endpoint.openai_compat.headers {
@@ -1024,7 +1248,306 @@ mod tests {
       DEFAULT_MAX_MUTATING_TOOL_CALLS_PER_TURN
     );
     assert_eq!(parsed.limits.max_model_requests_without_progress, None);
+    assert_eq!(parsed.limits.max_turn_duration_ms, None);
     assert!(parsed.limits.progress_tool_names.is_empty());
+  }
+
+  #[test]
+  fn turn_duration_is_opt_in_and_rejects_invalid_budgets() {
+    let mut config = sample_config();
+    let default_json = serde_json::to_value(&config).unwrap();
+    assert!(default_json["limits"].get("max_turn_duration_ms").is_none());
+    config.limits.max_turn_duration_ms = Some(1_194_000);
+    let parsed = RuntimeConfig::parse(&config.to_json_string().unwrap()).unwrap();
+    assert_eq!(parsed.limits.max_turn_duration_ms, Some(1_194_000));
+    for duration in [0, 86_400_001] {
+      config.limits.max_turn_duration_ms = Some(duration);
+      assert!(
+        config
+          .validate()
+          .unwrap_err()
+          .to_string()
+          .contains("max_turn_duration_ms")
+      );
+    }
+  }
+
+  #[test]
+  fn completion_review_is_opt_in_and_round_trips() {
+    let mut config = sample_config();
+    assert!(!config.limits.review_completion);
+    assert!(
+      serde_json::to_value(&config).unwrap()["limits"]
+        .get("review_completion")
+        .is_none()
+    );
+    config.limits.review_completion = true;
+    let parsed = RuntimeConfig::parse(&config.to_json_string().unwrap()).unwrap();
+    assert!(parsed.limits.review_completion);
+    assert_eq!(parsed.limits.completion_review_reserve_ms, None);
+  }
+
+  #[test]
+  fn completion_check_on_review_is_opt_in_and_requires_a_reserved_review_with_checks() {
+    let mut config = sample_config();
+    assert!(!config.limits.completion_check_on_review);
+    assert!(
+      serde_json::to_value(&config).unwrap()["limits"]
+        .get("completion_check_on_review")
+        .is_none()
+    );
+    config.limits.completion_check_on_review = true;
+    for (review, reserve, checks) in [
+      (false, Some(100), Some(2)),
+      (true, None, Some(2)),
+      (true, Some(100), None),
+    ] {
+      config.limits.review_completion = review;
+      config.limits.completion_review_reserve_ms = reserve;
+      config.limits.max_completion_checks_per_turn = checks;
+      config.limits.max_turn_duration_ms = Some(1000);
+      assert!(config.validate().is_err());
+    }
+    config.limits.review_completion = true;
+    config.limits.completion_review_reserve_ms = Some(100);
+    config.limits.max_completion_checks_per_turn = Some(2);
+    let parsed = RuntimeConfig::parse(&config.to_json_string().unwrap()).unwrap();
+    assert!(parsed.limits.completion_check_on_review);
+    config.limits.completion_review_reserve_ms = None;
+    config.limits.max_turn_duration_ms = None;
+    config.limits.completion_review_request_reserve = Some(2);
+    let parsed = RuntimeConfig::parse(&config.to_json_string().unwrap()).unwrap();
+    assert!(parsed.limits.completion_check_on_review);
+    assert_eq!(parsed.limits.max_turn_duration_ms, None);
+  }
+
+  #[test]
+  fn completion_review_request_reserve_is_opt_in_and_preserves_an_earlier_request() {
+    let mut config = sample_config();
+    assert!(
+      serde_json::to_value(&config).unwrap()["limits"]
+        .get("completion_review_request_reserve")
+        .is_none()
+    );
+    for (enabled, max, reserve, valid) in [
+      (true, 40, 8, true),
+      (true, 3, 1, true),
+      (false, 40, 8, false),
+      (true, 40, 0, false),
+      (true, 40, 39, false),
+      (true, 40, 40, false),
+      (true, 2, 1, false),
+      (true, 1, 1, false),
+      (true, 0, 1, false),
+      (true, 40, u32::MAX, false),
+    ] {
+      config.limits.review_completion = enabled;
+      config.limits.max_model_requests_per_turn = max;
+      config.limits.completion_review_request_reserve = Some(reserve);
+      let parsed = RuntimeConfig::parse(&serde_json::to_string(&config).unwrap());
+      assert_eq!(parsed.is_ok(), valid, "{enabled}/{max}/{reserve}");
+      if let Ok(parsed) = parsed {
+        assert_eq!(
+          parsed.limits.completion_review_request_reserve,
+          Some(reserve)
+        );
+        assert_eq!(parsed.limits.max_turn_duration_ms, None);
+      }
+    }
+  }
+
+  #[test]
+  fn completion_checks_are_opt_in_bounded_and_round_trip() {
+    let mut config = sample_config();
+    assert_eq!(config.limits.max_completion_checks_per_turn, None);
+    let json = serde_json::to_value(&config).unwrap();
+    assert!(
+      json["limits"]
+        .get("max_completion_checks_per_turn")
+        .is_none()
+    );
+    for count in [1, 8, 16] {
+      config.limits.max_completion_checks_per_turn = Some(count);
+      let parsed = RuntimeConfig::parse(&serde_json::to_string(&config).unwrap()).unwrap();
+      assert_eq!(parsed.limits.max_completion_checks_per_turn, Some(count));
+    }
+    for count in [0, 17, u32::MAX] {
+      config.limits.max_completion_checks_per_turn = Some(count);
+      assert!(
+        config
+          .validate()
+          .unwrap_err()
+          .to_string()
+          .contains("max_completion_checks")
+      );
+    }
+  }
+
+  #[test]
+  fn completion_review_check_reserve_requires_repairable_failed_observations() {
+    let mut config = sample_config();
+    assert!(
+      serde_json::to_value(&config).unwrap()["limits"]
+        .get("completion_review_check_reserve")
+        .is_none()
+    );
+    for (enabled, checks, reserve, valid) in [
+      (true, Some(8), 2, true),
+      (true, Some(2), 1, true),
+      (false, Some(8), 2, false),
+      (true, None, 2, false),
+      (true, Some(1), 1, false),
+      (true, Some(8), 0, false),
+      (true, Some(8), 8, false),
+      (true, Some(8), u32::MAX, false),
+    ] {
+      config.limits.review_completion = enabled;
+      config.limits.max_completion_checks_per_turn = checks;
+      config.limits.completion_review_check_reserve = Some(reserve);
+      let parsed = RuntimeConfig::parse(&serde_json::to_string(&config).unwrap());
+      assert_eq!(parsed.is_ok(), valid, "{enabled}/{checks:?}/{reserve}");
+      if let Ok(parsed) = parsed {
+        assert_eq!(parsed.limits.completion_review_check_reserve, Some(reserve));
+        assert_eq!(parsed.limits.completion_review_request_reserve, None);
+        assert_eq!(parsed.limits.max_turn_duration_ms, None);
+      }
+    }
+    let mut config = sample_config();
+    config.limits.review_completion = true;
+    config.limits.max_completion_checks_per_turn = Some(4);
+    config.limits.completion_review_check_reserve = Some(2);
+    config.limits.completion_check_on_review = true;
+    let parsed = RuntimeConfig::parse(&config.to_json_string().unwrap()).unwrap();
+    assert!(parsed.limits.completion_check_on_review);
+    assert_eq!(parsed.limits.completion_review_request_reserve, None);
+    assert_eq!(parsed.limits.completion_review_reserve_ms, None);
+  }
+
+  #[test]
+  fn completion_check_reserve_final_is_opt_in_and_requires_two_checks() {
+    let mut config = sample_config();
+    assert!(
+      serde_json::to_value(&config).unwrap()["limits"]
+        .get("completion_check_reserve_final")
+        .is_none()
+    );
+    for checks in [None, Some(1), Some(2), Some(8)] {
+      config.limits.max_completion_checks_per_turn = checks;
+      config.limits.completion_check_reserve_final = true;
+      let parsed = RuntimeConfig::parse(&config.to_json_string().unwrap());
+      assert_eq!(parsed.is_ok(), checks.is_some_and(|c| c >= 2));
+      if let Ok(parsed) = parsed {
+        assert!(parsed.limits.completion_check_reserve_final);
+        assert!(!parsed.limits.review_completion);
+        assert_eq!(parsed.limits.max_turn_duration_ms, None);
+      }
+    }
+    config.limits.max_completion_checks_per_turn = None;
+    config.limits.completion_check_reserve_final = false;
+    assert!(RuntimeConfig::parse(&config.to_json_string().unwrap()).is_ok());
+  }
+
+  #[test]
+  fn completion_check_repair_window_is_opt_in_and_requires_room_for_rechecking() {
+    let mut config = sample_config();
+    assert!(
+      serde_json::to_value(&config).unwrap()["limits"]
+        .get("completion_check_repair_request_window")
+        .is_none()
+    );
+    for (checks, max, window, valid) in [
+      (Some(8), 40, 3, true),
+      (Some(2), 3, 1, true),
+      (None, 40, 3, false),
+      (Some(1), 40, 3, false),
+      (Some(8), 40, 0, false),
+      (Some(8), 40, 39, false),
+      (Some(8), 2, 1, false),
+      (Some(8), 1, 1, false),
+      (Some(8), 40, u32::MAX, false),
+    ] {
+      config.limits.max_completion_checks_per_turn = checks;
+      config.limits.max_model_requests_per_turn = max;
+      config.limits.completion_check_repair_request_window = Some(window);
+      let parsed = RuntimeConfig::parse(&serde_json::to_string(&config).unwrap());
+      assert_eq!(parsed.is_ok(), valid, "{checks:?}/{max}/{window}");
+      if let Ok(parsed) = parsed {
+        assert_eq!(
+          parsed.limits.completion_check_repair_request_window,
+          Some(window)
+        );
+        assert!(!parsed.limits.review_completion);
+        assert_eq!(parsed.limits.max_turn_duration_ms, None);
+      }
+    }
+  }
+
+  #[test]
+  fn initial_completion_check_window_requires_an_initial_and_fresh_final_observation() {
+    let mut config = sample_config();
+    assert!(
+      serde_json::to_value(&config).unwrap()["limits"]
+        .get("completion_check_initial_request_window")
+        .is_none()
+    );
+    for (checks, max, window, valid) in [
+      (Some(8), 40, 8, true),
+      (Some(2), 3, 1, true),
+      (None, 40, 8, false),
+      (Some(1), 40, 8, false),
+      (Some(8), 40, 0, false),
+      (Some(8), 40, 39, false),
+      (Some(8), 2, 1, false),
+      (Some(8), 1, 1, false),
+      (Some(8), 40, u32::MAX, false),
+    ] {
+      config.limits.max_completion_checks_per_turn = checks;
+      config.limits.max_model_requests_per_turn = max;
+      config.limits.completion_check_initial_request_window = Some(window);
+      let parsed = RuntimeConfig::parse(&serde_json::to_string(&config).unwrap());
+      assert_eq!(parsed.is_ok(), valid, "{checks:?}/{max}/{window}");
+      if let Ok(parsed) = parsed {
+        assert_eq!(
+          parsed.limits.completion_check_initial_request_window,
+          Some(window)
+        );
+        assert!(!parsed.limits.review_completion);
+        assert_eq!(parsed.limits.max_turn_duration_ms, None);
+      }
+    }
+  }
+
+  #[test]
+  fn completion_review_reserve_requires_an_active_time_budget_and_valid_reserve() {
+    let mut config = sample_config();
+    assert!(
+      serde_json::to_value(&config).unwrap()["limits"]
+        .get("completion_review_reserve_ms")
+        .is_none()
+    );
+    config.limits.review_completion = true;
+    config.limits.max_turn_duration_ms = Some(1_000);
+    config.limits.completion_review_reserve_ms = Some(300);
+    let parsed = RuntimeConfig::parse(&config.to_json_string().unwrap()).unwrap();
+    assert_eq!(parsed.limits.completion_review_reserve_ms, Some(300));
+    for (enabled, duration, reserve) in [
+      (false, Some(1_000), 300),
+      (true, None, 300),
+      (true, Some(1_000), 0),
+      (true, Some(1_000), 1_000),
+      (true, Some(1_000), 1_001),
+    ] {
+      config.limits.review_completion = enabled;
+      config.limits.max_turn_duration_ms = duration;
+      config.limits.completion_review_reserve_ms = Some(reserve);
+      assert!(
+        config
+          .validate()
+          .unwrap_err()
+          .to_string()
+          .contains("completion_review_reserve_ms")
+      );
+    }
   }
 
   #[test]
@@ -1099,6 +1622,138 @@ mod tests {
         .0
         .contains("max_mutating_tool_calls_per_turn")
     );
+  }
+
+  #[test]
+  fn initial_thinking_selection_is_omitted_and_requires_initial_progress() {
+    let mut config = sample_config();
+    assert!(
+      serde_json::to_value(&config).unwrap()["limits"]
+        .get("initial_progress_thinking")
+        .is_none()
+    );
+    config.limits.initial_progress_thinking = Some(ThinkingLevel::Off);
+    assert!(
+      config
+        .validate()
+        .unwrap_err()
+        .0
+        .contains("initial_progress_thinking")
+    );
+    config.limits.initial_progress_boundary = true;
+    config.limits.max_model_requests_without_progress = Some(3);
+    for level in [ThinkingLevel::Off, ThinkingLevel::Low, ThinkingLevel::High] {
+      config.limits.initial_progress_thinking = Some(level);
+      assert_eq!(
+        RuntimeConfig::parse(&config.to_json_string().unwrap())
+          .unwrap()
+          .limits
+          .initial_progress_thinking,
+        Some(level)
+      );
+    }
+  }
+
+  #[test]
+  fn initial_argument_limit_requires_output_selection_and_is_bounded() {
+    let mut config = sample_config();
+    assert!(
+      serde_json::to_value(&config).unwrap()["limits"]
+        .get("initial_progress_max_argument_chars")
+        .is_none()
+    );
+    config.limits.initial_progress_max_argument_chars = Some(2_048);
+    assert!(
+      config
+        .validate()
+        .unwrap_err()
+        .0
+        .contains("max_argument_chars")
+    );
+    config.limits.initial_progress_max_output_tokens = Some(8_192);
+    config.limits.initial_progress_boundary = true;
+    config.limits.max_model_requests_without_progress = Some(3);
+    for limit in [1, 2_048, 65_536] {
+      config.limits.initial_progress_max_argument_chars = Some(limit);
+      assert_eq!(
+        RuntimeConfig::parse(&config.to_json_string().unwrap())
+          .unwrap()
+          .limits
+          .initial_progress_max_argument_chars,
+        Some(limit)
+      );
+    }
+    for limit in [0, 65_537, u64::MAX] {
+      config.limits.initial_progress_max_argument_chars = Some(limit);
+      assert!(
+        config
+          .validate()
+          .unwrap_err()
+          .0
+          .contains("max_argument_chars")
+      );
+    }
+  }
+
+  #[test]
+  fn initial_progress_output_limit_is_omitted_bounded_and_requires_initial_progress() {
+    let mut config = sample_config();
+    assert!(
+      serde_json::to_value(&config).unwrap()["limits"]
+        .get("initial_progress_max_output_tokens")
+        .is_none()
+    );
+    config.limits.initial_progress_max_output_tokens = Some(8_192);
+    assert!(
+      config
+        .validate()
+        .unwrap_err()
+        .0
+        .contains("initial_progress_max_output_tokens")
+    );
+    config.limits.initial_progress_boundary = true;
+    config.limits.max_model_requests_without_progress = Some(3);
+    for limit in [1, 8_192, 65_536] {
+      config.limits.initial_progress_max_output_tokens = Some(limit);
+      let parsed = RuntimeConfig::parse(&config.to_json_string().unwrap()).unwrap();
+      assert_eq!(
+        parsed.limits.initial_progress_max_output_tokens,
+        Some(limit)
+      );
+    }
+    for limit in [0, 65_537, u64::MAX] {
+      config.limits.initial_progress_max_output_tokens = Some(limit);
+      assert!(
+        config
+          .validate()
+          .unwrap_err()
+          .0
+          .contains("initial_progress_max_output_tokens")
+      );
+    }
+  }
+
+  #[test]
+  fn initial_progress_boundary_is_omitted_by_default_and_requires_a_progress_policy() {
+    let mut config = sample_config();
+    assert!(!config.limits.initial_progress_boundary);
+    assert!(
+      serde_json::to_value(&config).unwrap()["limits"]
+        .get("initial_progress_boundary")
+        .is_none()
+    );
+    config.limits.initial_progress_boundary = true;
+    assert!(
+      config
+        .validate()
+        .unwrap_err()
+        .0
+        .contains("initial_progress_boundary requires")
+    );
+    config.limits.max_model_requests_without_progress = Some(3);
+    let parsed = RuntimeConfig::parse(&config.to_json_string().unwrap()).unwrap();
+    assert!(parsed.limits.initial_progress_boundary);
+    assert_eq!(parsed.limits.max_model_requests_without_progress, Some(3));
   }
 
   #[test]
@@ -1249,24 +1904,55 @@ mod tests {
   }
 
   #[test]
-  fn openai_compat_endpoint_options_round_trip() {
+  fn native_reasoning_budget_is_optional_and_bounded() {
+    let defaults = serde_json::to_value(OpenAiCompatOptions::default()).unwrap();
+    assert!(defaults.get("reasoning_budget_tokens").is_none());
     let mut config = sample_config();
-    config.endpoints[0].capabilities.exposed_reasoning = ReasoningExposure::Native;
-    config.endpoints[0].openai_compat = OpenAiCompatOptions {
-      stream: Some(false),
-      stream_usage: Some(false),
-      max_tokens_field: Some(OpenAiMaxTokensField::MaxCompletionTokens),
-      thinking_input: Some(OpenAiThinkingInput::ChatTemplateThinking),
-      thinking_disable: Some(OpenAiThinkingDisable::ReasoningEffortNone),
-      strict_tool_schema: Some(OpenAiStrictToolSchemaSupport::Supported),
-      preserve_reasoning: true,
-      headers: BTreeMap::new(),
-    };
-    let parsed = RuntimeConfig::parse(&config.to_json_string().unwrap()).unwrap();
-    assert_eq!(
-      parsed.endpoints[0].openai_compat,
-      config.endpoints[0].openai_compat
-    );
+    for budget in [1, 2_048, i32::MAX as u32] {
+      config.endpoints[0].openai_compat.reasoning_budget_tokens = Some(budget);
+      let parsed = RuntimeConfig::parse(&config.to_json_string().unwrap()).unwrap();
+      assert_eq!(
+        parsed.endpoints[0].openai_compat.reasoning_budget_tokens,
+        Some(budget)
+      );
+    }
+    for budget in [0, i32::MAX as u32 + 1, u32::MAX] {
+      config.endpoints[0].openai_compat.reasoning_budget_tokens = Some(budget);
+      assert!(
+        config
+          .validate()
+          .unwrap_err()
+          .0
+          .contains("reasoning_budget_tokens")
+      );
+    }
+  }
+
+  #[test]
+  fn openai_compat_endpoint_options_round_trip() {
+    for thinking_input in [
+      OpenAiThinkingInput::ChatTemplateThinking,
+      OpenAiThinkingInput::ChatTemplateEnableThinking,
+    ] {
+      let mut config = sample_config();
+      config.endpoints[0].capabilities.exposed_reasoning = ReasoningExposure::Native;
+      config.endpoints[0].openai_compat = OpenAiCompatOptions {
+        stream: Some(false),
+        stream_usage: Some(false),
+        max_tokens_field: Some(OpenAiMaxTokensField::MaxCompletionTokens),
+        thinking_input: Some(thinking_input),
+        thinking_disable: Some(OpenAiThinkingDisable::ReasoningEffortNone),
+        reasoning_budget_tokens: Some(2_048),
+        strict_tool_schema: Some(OpenAiStrictToolSchemaSupport::Supported),
+        preserve_reasoning: true,
+        headers: BTreeMap::new(),
+      };
+      let parsed = RuntimeConfig::parse(&config.to_json_string().unwrap()).unwrap();
+      assert_eq!(
+        parsed.endpoints[0].openai_compat,
+        config.endpoints[0].openai_compat
+      );
+    }
   }
 
   #[test]

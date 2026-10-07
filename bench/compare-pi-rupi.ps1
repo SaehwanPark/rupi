@@ -30,11 +30,111 @@ param(
   [string]$Case09ProgressBoundaryMode = "one_shot",
   [ValidateRange(1, 100)]
   [int]$Case09ProgressRequestWindow = 1,
+  [ValidateRange(0, 16384)]
+  [int]$Case10ReasoningBudgetTokens = 0,
+  [ValidateSet(0, 2048)]
+  [int]$Case10NativeReasoningBudgetTokens = 0,
+  [ValidateRange(1024, 65535)]
+  [ValidateScript({ $_ -ne 8000 })]
+  [int]$Case10ReasoningRelayPort = 8001,
+  [ValidateRange(0, 3600)]
+  [int]$Case10RelayResponseTimeoutSeconds = 0,
+  [ValidateRange(0, 3600000)]
+  [long]$Case10ProviderReadTimeoutMs = 0,
+  [ValidateRange(1, 65536)]
+  [int]$Case10MaxOutputTokens = 16384,
+  [ValidateRange(0, 86400000)]
+  [long]$Case10MaxTurnDurationMs = 0,
+  [switch]$Case10ReviewCompletion,
+  [ValidateRange(0, 86400000)]
+  [long]$Case10CompletionReviewReserveMs = 0,
+  [ValidateRange(0, 100)]
+  [int]$Case10CompletionReviewRequestReserve = 0,
+  [ValidateRange(0, 16)]
+  [int]$Case10CompletionReviewCheckReserve = 0,
+  [switch]$Case10InitialProgressBoundary,
+  [ValidateRange(0, 65536)]
+  [int]$Case10InitialProgressMaxOutputTokens = 0,
+  [ValidateRange(0, 65536)]
+  [int]$Case10InitialProgressMaxArgumentChars = 0,
+  [ValidateSet('inherit', 'off', 'minimal', 'low', 'medium', 'high', 'xhigh')]
+  [string]$Case10InitialProgressThinking = 'inherit',
+  [ValidateSet('reasoning_effort', 'chat_template_enable_thinking')]
+  [string]$Case10ThinkingInput = 'reasoning_effort',
+  [ValidateRange(0, 16)]
+  [int]$Case10CompletionChecks = 0,
+  [ValidateSet(0, 60000)]
+  [int]$Case10CompletionFeedbackTimeoutMs = 0,
+  [ValidateRange(0, 100)]
+  [int]$Case10CompletionCheckInitialRequestWindow = 0,
+  [ValidateRange(0, 100)]
+  [int]$Case10CompletionCheckRepairRequestWindow = 0,
+  [switch]$Case10CompletionCheckOnReview,
+  [switch]$Case10CompletionCheckReserveFinal,
+  [ValidateRange(0, 64)]
+  [int]$Case10MaxMutatingToolCalls = 0,
+  [ValidateSet("one_shot", "recurring")]
+  [string]$Case10ProgressBoundaryMode = "one_shot",
+  [ValidateRange(1, 100)]
+  [int]$Case10ProgressRequestWindow = 1,
   [switch]$DryRun
 )
 
 $ErrorActionPreference = "Stop"
+if ($Case10NativeReasoningBudgetTokens -gt 0 -and
+    ($Case10ThinkingInput -ne 'chat_template_enable_thinking' -or
+     $Case10ReasoningBudgetTokens -gt 0 -or $ThinkingLevel -ne 'low')) {
+  throw 'Case10 native budget requires direct template thinking, global Low and helper budget0.'
+}
+if ($Case10CompletionCheckReserveFinal -and $Case10CompletionChecks -lt 2) {
+  throw 'Case10 final check reserve requires at least two completion checks.'
+}
+if ($Case10CompletionFeedbackTimeoutMs -gt 0 -and $Case10CompletionChecks -le 0) {
+  throw 'Case10 caller deadline requires configured completion checks.'
+}
+if ($Case10CompletionReviewCheckReserve -gt 0 -and
+    (-not $Case10ReviewCompletion -or $Case10CompletionChecks -lt 2 -or
+     $Case10CompletionReviewCheckReserve -ge $Case10CompletionChecks)) {
+  throw 'Case10 check review reserve requires review and a larger completion check allowance.'
+}
+if ($Case10CompletionCheckInitialRequestWindow -gt 0 -and
+    ($Case10CompletionChecks -lt 2 -or
+     $Case10CompletionCheckInitialRequestWindow -ge ($MaxModelRequestsPerTurn - 1))) {
+  throw 'Case10 initial check window requires two checks and a larger ordinary request allowance.'
+}
+if ($Case10CompletionCheckRepairRequestWindow -gt 0 -and
+    ($Case10CompletionChecks -lt 2 -or
+     $Case10CompletionCheckRepairRequestWindow -ge ($MaxModelRequestsPerTurn - 1))) {
+  throw 'Case10 repair check window requires two checks and a larger ordinary request allowance.'
+}
+if ($Case10ThinkingInput -eq 'chat_template_enable_thinking' -and
+    $Case10ReasoningBudgetTokens -gt 0) {
+  throw 'Case10 enable_thinking requires direct endpoint with reasoning budget selection0.'
+}
+if ($Case10CompletionReviewRequestReserve -gt 0 -and
+    (-not $Case10ReviewCompletion -or
+     $Case10CompletionReviewRequestReserve -ge ($MaxModelRequestsPerTurn - 1))) {
+  throw 'Case10 request review reserve requires review and a larger ordinary request allowance.'
+}
+if ($Case10CompletionCheckOnReview -and
+    (-not $Case10ReviewCompletion -or
+     ($Case10CompletionReviewReserveMs -le 0 -and $Case10CompletionReviewRequestReserve -le 0 -and
+      $Case10CompletionReviewCheckReserve -le 0) -or
+     $Case10CompletionChecks -le 0)) {
+  throw 'Case10CompletionCheckOnReview requires reserved review and completion checks.'
+}
+if ($Case10InitialProgressThinking -ne 'inherit' -and -not $Case10InitialProgressBoundary) {
+  throw "Case10InitialProgressThinking requires Case10InitialProgressBoundary."
+}
+if ($Case10InitialProgressMaxArgumentChars -gt 0 -and $Case10InitialProgressMaxOutputTokens -le 0) {
+  throw "Case10InitialProgressMaxArgumentChars requires Case10InitialProgressMaxOutputTokens."
+}
+if ($Case10InitialProgressMaxOutputTokens -gt 0 -and -not $Case10InitialProgressBoundary) {
+  throw "Case10InitialProgressMaxOutputTokens requires Case10InitialProgressBoundary."
+}
+. (Join-Path $PSScriptRoot "completion-feedback.ps1")
 $Case09ProgressBoundaryMode = $Case09ProgressBoundaryMode.ToLowerInvariant()
+$Case10ProgressBoundaryMode = $Case10ProgressBoundaryMode.ToLowerInvariant()
 $script:providerTimeoutGraceSeconds = [int][math]::Min(
   $ProviderTimeoutGraceSeconds,
   [math]::Max(1, [math]::Floor($TurnTimeoutSeconds / 10))
@@ -42,6 +142,17 @@ $script:providerTimeoutGraceSeconds = [int][math]::Min(
 $script:providerRequestTimeoutMs = [int](
   ($TurnTimeoutSeconds - $script:providerTimeoutGraceSeconds) * 1000
 )
+if ($Case10ProviderReadTimeoutMs -gt $script:providerRequestTimeoutMs) {
+  throw 'Case10 provider read timeout must not exceed the total provider deadline.'
+}
+if ($Case10MaxTurnDurationMs -ge ($TurnTimeoutSeconds * 1000)) {
+  throw "Case10MaxTurnDurationMs must be below the outer turn watchdog."
+}
+if ($Case10CompletionReviewReserveMs -gt 0 -and
+    (-not $Case10ReviewCompletion -or
+     $Case10CompletionReviewReserveMs -ge $Case10MaxTurnDurationMs)) {
+  throw "Case10CompletionReviewReserveMs requires review and a larger native turn duration."
+}
 $repoRoot = (Resolve-Path (Join-Path $PSScriptRoot "..")).Path
 $artifactRoot = Join-Path $repoRoot ".benchmark\runs"
 if ([string]::IsNullOrWhiteSpace($RunId)) {
@@ -719,7 +830,133 @@ $spec
 "@
 }
 
+function Get-Case10Prompt([hashtable]$case, [object]$verification = $null) {
+  $spec = [IO.File]::ReadAllText((Join-Path (Join-Path $repoRoot $case.Source) "SPEC.md"))
+  $feedback = ""
+  if ($null -ne $verification) {
+    $oracleStatus = if ($verification.oracle.timed_out) { "timed out" } elseif (
+      $verification.oracle.exit_code -eq 0
+    ) { "passed" } else { "failed" }
+    $feedback = "Independent acceptance oracle: $oracleStatus (diagnostic details hidden)." +
+      [Environment]::NewLine + (Get-RecoveryFeedback $verification)
+  }
+  $guidance = if ($null -eq $verification) {
+    @'
+First tool call: write receiptledger/__main__.py with the complete public workflow.
+Implement the CLI, authenticated admission, durable graph, worker, fencing, receipts and audit now.
+Keep CLI, HTTP, SQLite, worker and audit behavior together in receiptledger/__main__.py.
+Use a compact complete module; do not create separate app/store/storage/worker modules.
+Do not import local application modules or start a partial health-only foundation stage.
+Use the embedded SPEC instead of rereading it; read with offset/limit, at most 120 lines.
+Then write an empty receiptledger/__init__.py, public-command/HTTP unittest tests,
+tests/__init__.py and an honest README. Test helpers may live beside the public tests.
+Complete service, worker, audit, tests and documentation in the same attempt.
+'@
+  } else {
+    @'
+Repair the earliest failing local test or help gate using the harness diagnostics.
+Implement missing public behavior before revising test fixtures; remove absent local imports.
+Preserve passing service/worker behavior, public assertions and all four help paths.
+Keep the complete application in receiptledger/__main__.py; do not split or add local imports.
+Change a test fixture only when it misuses the documented public contract; preserve assertions.
+Use public commands/HTTP in tests, without assuming private function or class names.
+When help passes but public test cases are absent, first write tests/test_receiptledger.py.
+Write real public-command/HTTP workflow assertions, never placeholders or an empty test suite.
+Then repair the earliest failing assertion; preserve passing checks and complete audit/receipts.
+Use one focused application edit per response, at most 100 new lines; preserve other behavior.
+Before the next application mutation, use at most one targeted read or grep.
+Read with offset/limit, at most 120 lines; do not reread entire modules or repeatedly inspect them.
+Do not replace a complete module with a partial rewrite; edit only the failing behavior.
+After a completed change, continue to the next repair instead of inspecting the same region.
+Continue the next source edit in the same attempt, then complete missing tests and honest README.
+File presence and passing help alone do not establish workflow completeness.
+'@
+  }
+  @"
+Implement the complete dependency-free Python 3 receiptledger project in this workspace.
+The root already contains SPEC.md; use receiptledger/ and tests/ paths directly.
+Use only Python standard-library modules. Create README.md and focused unittest tests.
+Work only here; do not edit SPEC.md, any rupi config or files outside the workspace.
+Do not inspect or run the external acceptance oracle. Oracle diagnostics stay hidden.
+Do not run commands, tests, help, service, worker, audit or oracle; no exec or shell calls.
+Use native read/write/edit tools; execution and verification belong to the harness.
+The harness runs project tests, four help commands and independent acceptance each attempt.
+Report verification only when supplied; preserve every public requirement and assertion.
+
+$feedback
+
+$guidance
+
+Use the actual edit diagnostic; an attempted edit is not a completed change.
+If a failed edit explicitly made no change, read its target file before correcting it.
+Read a small target region with offset/limit; narrow it if the response is truncated.
+Use file text in edit anchors, excluding displayed line numbers and truncation markers.
+Then edit the observed current text with a unique anchor and the native tool schema.
+Do not guess another stale anchor or rewrite the whole application after a failed edit.
+If the diagnostic says already applied, inspect the file and preserve the completed change.
+For an Unknown mutation, inspect current state and defer retry until reconciliation.
+After a known failure is corrected, continue public contract repairs within this attempt.
+Do not end an attempt merely because an edit failed while time and requests remain.
+
+Validate the full graph before atomic insertion; persist original pipeline/job order.
+Resolve only declared input_refs from successful dependencies. For barriers, collect only
+the selected top-level field in depends_on order. Missing selections fail locally without
+a sink call and block dependents. worker --once attempts each job at most once and never polls.
+The public delivery_key is exactly pipeline_id + ":" + job_id, stable across retry/reclaim/restart.
+Keep this key distinct from the fresh private unguessable claim token; never expose the token.
+Atomically claim, increment attempts and persist token/lease; commit BEFORE spawning the sink.
+Every finalization conditions its UPDATE on pipeline/job, status leased and the exact claim token;
+accept only one updated row. Reclaim clears the old token. Stale completion exits non-zero and
+changes none of the newer claim's status/output/attempts/lease/error/receipt.
+Send the stable delivery_key in the sink request. Accept success only with matching job_id/key,
+exact ok:true, object output and non-empty receipt_id; persist exact output and matching receipt.
+EOF/lost acknowledgement is retryable failure, never success and never an invented receipt.
+Clear the lease, leave pending and exit non-zero; a later worker sends the same delivery key.
+An idempotent sink replays its original output/receipt without repeating that key's logical effect.
+This is not exactly-once delivery. Use direct argv, no shell/network and bounded resource cleanup.
+
+Tests use fresh public commands/HTTP and tiny temporary sinks, never private APIs or the oracle.
+Cover HMAC rejection without mutation, atomic/duplicate/conflicting admission, original order,
+restart persistence, declared inputs, reversed selected-field fan-in, missing selections,
+blocking, later retries and rejected response keys/receipts. Exercise lost-ack recovery with
+a durable idempotent sink: one logical effect, two attempts, same key and original receipt/output.
+Add a bounded stale-worker race: block A, expire its one-second lease, let B finish, release A,
+require stale non-zero exit and no changes to B's public state/receipt. Assert private tokens
+never appear in HTTP or sink requests. Use deadlines, subprocess timeouts and resource cleanup.
+Preserve workflow assertions, all help paths and honest README commands/contract/exact checks.
+
+Write each authoritative mutation and its corresponding audit_events append in the SAME SQLite
+transaction. Admission commits pipeline/jobs/first event atomically; duplicate, invalid and
+conflicting admission append nothing. Audit rows are evidence, never worker input or job state.
+Include claims, reclaims, success, retryable/terminal failure and each blocked transition.
+Rejected stale finalization appends only a safe operational event; never modify the newer job.
+Allocate seq from1 with no gaps under the transaction; canonical event_json has sorted keys
+and compact separators. Use the exact public SPEC hash expression and preserve its separator.
+In that published Python literal, use the two UTF-8 bytes 0x5c,0x6e (backslash then n).
+Use the same separator bytes when appending, verifying and independently recomputing in tests.
+Link prev_hash to the prior event_hash, or64 zeroes for row1. Keep every bounded public kind.
+Store safe public identifiers/status/attempts and concise outcomes; never secret, private token,
+raw argv or arbitrary sink response bytes. Persist lost-ack observed outcome:unknown when possible.
+audit --verify opens SQLite read-only and checks the FULL sequence and recomputed hash chain;
+reject missing/reordered/edited rows with an actionable non-zero error, never repair/truncate.
+audit --tail COUNT reads only, emits at most COUNT safe canonical objects and does not imply
+verification. Neither audit path may mutate jobs/events or invoke a worker/sink.
+
+Tests independently recompute the complete chain from the public SPEC expression and prove
+admission/state/event atomicity, duplicate/invalid/conflict preservation, restart verification,
+safe fields/no private tokens or raw argv, stable delivery keys across reclaims/retries,
+lost-ack outcome:unknown and stale rejection with unchanged newer public state. Tamper one row
+in a disposable database and require read-only verify failure without repairing/truncating it.
+Test bounded tail output and all four help paths. Preserve all workflow assertions.
+Use unittest.TestCase subclasses with test_ methods; helper functions alone are not tests.
+
+The complete Case 10 specification follows:
+$spec
+"@
+}
+
 function Get-InitialPrompt([hashtable]$case) {
+  if ($case.Id -eq "10-receipt-ledger") { return Get-Case10Prompt $case }
   if ($case.Id -eq "09-lease-receipt") { return Get-Case09Prompt $case }
   if ($case.Id -eq "08-lease-fence") { return Get-Case08Prompt $case }
   $guidance = Get-CaseGuidance $case
@@ -1227,6 +1464,9 @@ function Get-RecoveryPrompt(
   [object]$verification,
   [string]$ProjectPath = ""
 ) {
+  if ($case.Id -eq "10-receipt-ledger") {
+    return Get-Case10Prompt $case $verification
+  }
   if ($case.Id -eq "09-lease-receipt") {
     return Get-Case09Prompt $case $verification
   }
@@ -1867,7 +2107,8 @@ function Invoke-External {
     [Parameter(Mandatory)] [string]$StdoutPath,
     [Parameter(Mandatory)] [string]$StderrPath,
     [int]$TimeoutSeconds = 300,
-    [hashtable]$Environment = @{}
+    [hashtable]$Environment = @{},
+    [scriptblock]$WhileRunning = $null
   )
 
   $psi = [Diagnostics.ProcessStartInfo]::new()
@@ -1896,8 +2137,20 @@ function Invoke-External {
   $process.StandardInput.Close()
   $stdoutTask = $process.StandardOutput.ReadToEndAsync()
   $stderrTask = $process.StandardError.ReadToEndAsync()
-  $timedOut = -not $process.WaitForExit($TimeoutSeconds * 1000)
-  if ($timedOut) {
+  $callbackFailed = $false
+  if ($null -eq $WhileRunning) {
+    $timedOut = -not $process.WaitForExit($TimeoutSeconds * 1000)
+  } else {
+    while (-not $process.HasExited -and $started.ElapsedMilliseconds -lt ($TimeoutSeconds * 1000)) {
+      try {
+        & $WhileRunning $process.Id (($TimeoutSeconds * 1000) - $started.ElapsedMilliseconds) |
+          Out-Null
+      } catch { $callbackFailed = $true; break }
+      if (-not $process.HasExited) { [void]$process.WaitForExit(100) }
+    }
+    $timedOut = -not $process.HasExited
+  }
+  if ($timedOut -or $callbackFailed) {
     & taskkill.exe /PID $process.Id /T /F 2>$null | Out-Null
     [void]$process.WaitForExit(10000)
   }
@@ -1911,6 +2164,7 @@ function Invoke-External {
   [pscustomobject]@{
     exit_code = $exitCode
     timed_out = $timedOut
+    callback_failed = $callbackFailed
     elapsed_ms = $started.ElapsedMilliseconds
     stdout_path = $StdoutPath
     stderr_path = $StderrPath
@@ -1921,10 +2175,52 @@ function Get-BenchmarkReasoningBudget([hashtable]$case) {
   if ($case.Id -eq "07-lease-cascade") { return $Case07ReasoningBudgetTokens }
   if ($case.Id -eq "08-lease-fence") { return $Case08ReasoningBudgetTokens }
   if ($case.Id -eq "09-lease-receipt") { return $Case09ReasoningBudgetTokens }
+  if ($case.Id -eq "10-receipt-ledger") { return $Case10ReasoningBudgetTokens }
   return 0
 }
 
+function Get-BenchmarkMaxOutputTokens([hashtable]$case) {
+  if ($case.Id -eq "10-receipt-ledger") { return $Case10MaxOutputTokens }
+  return 16384
+}
+
+function Get-BenchmarkCompletionFeedbackTimeout([hashtable]$case, [string]$agent) {
+  if ($case.Id -ne '10-receipt-ledger' -or $agent -ne 'rupi' -or
+      $Case10CompletionFeedbackTimeoutMs -eq 0) { return $null }
+  if ($Case10CompletionFeedbackTimeoutMs -ne 60000 -or $Case10CompletionChecks -le 0) {
+    throw 'Case10 caller deadline requires the verified60000ms cap and configured checks.'
+  }
+  return $Case10CompletionFeedbackTimeoutMs
+}
+
+function Add-BenchmarkCompletionFeedbackArguments(
+  [hashtable]$case, [string]$agent, [Collections.Generic.List[string]]$arguments
+) {
+  $timeout = Get-BenchmarkCompletionFeedbackTimeout $case $agent
+  if ($null -eq $timeout) { return }
+  $arguments.Add('--completion-feedback-timeout-ms')
+  $arguments.Add([string]$timeout)
+}
+
+function Get-BenchmarkNativeReasoningBudget([hashtable]$case) {
+  if ($case.Id -ne '10-receipt-ledger' -or $Case10NativeReasoningBudgetTokens -le 0) {
+    return $null
+  }
+  if ($Case10NativeReasoningBudgetTokens -ne 2048 -or
+      $Case10ThinkingInput -ne 'chat_template_enable_thinking' -or
+      $Case10ReasoningBudgetTokens -gt 0 -or $ThinkingLevel -ne 'low') {
+    throw 'Case10 native budget requires matched2048, direct template thinking and global Low.'
+  }
+  return $Case10NativeReasoningBudgetTokens
+}
+
 function Get-BenchmarkProgressControl([hashtable]$case) {
+  if ($case.Id -eq "10-receipt-ledger") {
+    return [pscustomobject]@{
+      mode = $Case10ProgressBoundaryMode
+      window = $Case10ProgressRequestWindow
+    }
+  }
   if ($case.Id -eq "08-lease-fence") {
     return [pscustomobject]@{
       mode = $Case08ProgressBoundaryMode
@@ -1949,15 +2245,212 @@ function Set-BenchmarkProgressBoundary([hashtable]$case, [object]$limits) {
     -Value $control.window
 }
 
+function Get-BenchmarkMutatingBudget([hashtable]$case, [string]$agent) {
+  if ($case.Id -eq "10-receipt-ledger" -and $agent -eq "rupi" -and
+      $Case10MaxMutatingToolCalls -gt 0) { return $Case10MaxMutatingToolCalls }
+  return $null
+}
+
+function Get-BenchmarkInitialOutputLimit([hashtable]$case, [string]$agent) {
+  if ($case.Id -eq "10-receipt-ledger" -and $agent -eq "rupi" -and
+      $Case10InitialProgressMaxOutputTokens -gt 0) { return $Case10InitialProgressMaxOutputTokens }
+  return $null
+}
+
+function Get-BenchmarkInitialArgumentLimit([hashtable]$case, [string]$agent) {
+  if ($case.Id -eq "10-receipt-ledger" -and $agent -eq "rupi" -and
+      $Case10InitialProgressMaxArgumentChars -gt 0) { return $Case10InitialProgressMaxArgumentChars }
+  return $null
+}
+
+function Get-BenchmarkThinkingInput([hashtable]$case) {
+  if ($case.Id -eq '10-receipt-ledger' -and $Case10ThinkingInput) { return $Case10ThinkingInput }
+  return 'reasoning_effort'
+}
+
+function Get-BenchmarkThinkingControl([hashtable]$case, [string]$level) {
+  $dialect = Get-BenchmarkThinkingInput $case
+  return [ordered]@{
+    level = $level
+    dialect = $dialect
+    off_value = if ($dialect -eq 'chat_template_enable_thinking') { $false } else { 'none' }
+  }
+}
+
+function Get-BenchmarkReviewCheck([hashtable]$case, [string]$agent) {
+  if ($case.Id -ne '10-receipt-ledger' -or $agent -ne 'rupi') { return $null }
+  return [bool]$Case10CompletionCheckOnReview
+}
+
+function Get-BenchmarkReadTimeout([hashtable]$case, [string]$agent) {
+  if ($case.Id -eq '10-receipt-ledger' -and $agent -eq 'rupi' -and
+      $Case10ProviderReadTimeoutMs -gt 0) { return $Case10ProviderReadTimeoutMs }
+  return $null
+}
+
+function Set-BenchmarkReadTimeout([hashtable]$case, [object]$endpoint) {
+  $selected = Get-BenchmarkReadTimeout $case 'rupi'
+  if ($null -eq $selected) { return }
+  if ($selected -gt $script:providerRequestTimeoutMs) {
+    throw 'Case10 provider read timeout must not exceed the total provider deadline.'
+  }
+  $endpoint | Add-Member -MemberType NoteProperty -Force -Name read_timeout_ms -Value $selected
+}
+
+function Get-BenchmarkRepairCheckWindow([hashtable]$case, [string]$agent) {
+  if ($case.Id -eq '10-receipt-ledger' -and $agent -eq 'rupi' -and
+      $Case10CompletionCheckRepairRequestWindow -gt 0) {
+    return $Case10CompletionCheckRepairRequestWindow
+  }
+  return $null
+}
+
+function Get-BenchmarkInitialCheckWindow([hashtable]$case, [string]$agent) {
+  if ($case.Id -eq '10-receipt-ledger' -and $agent -eq 'rupi' -and
+      $Case10CompletionCheckInitialRequestWindow -gt 0) {
+    return $Case10CompletionCheckInitialRequestWindow
+  }
+  return $null
+}
+
+function Set-BenchmarkInitialCheckWindow([hashtable]$case, [object]$limits) {
+  $selected = Get-BenchmarkInitialCheckWindow $case 'rupi'
+  if ($null -eq $selected) { return }
+  if ($Case10CompletionChecks -lt 2 -or $selected -ge ($MaxModelRequestsPerTurn - 1)) {
+    throw 'Case10 initial check window requires two checks and a larger ordinary request allowance.'
+  }
+  $limits | Add-Member -MemberType NoteProperty -Force `
+    -Name completion_check_initial_request_window -Value $selected
+}
+
+function Set-BenchmarkRepairCheckWindow([hashtable]$case, [object]$limits) {
+  $selected = Get-BenchmarkRepairCheckWindow $case 'rupi'
+  if ($null -eq $selected) { return }
+  if ($Case10CompletionChecks -lt 2 -or $selected -ge ($MaxModelRequestsPerTurn - 1)) {
+    throw 'Case10 repair check window requires two checks and a larger ordinary request allowance.'
+  }
+  $limits | Add-Member -MemberType NoteProperty -Force `
+    -Name completion_check_repair_request_window -Value $selected
+}
+
+function Set-BenchmarkReviewCheck([hashtable]$case, [object]$limits) {
+  if ($case.Id -ne '10-receipt-ledger' -or -not $Case10CompletionCheckOnReview) { return }
+  if (-not $Case10ReviewCompletion -or
+      ($Case10CompletionReviewReserveMs -le 0 -and $Case10CompletionReviewRequestReserve -le 0 -and
+       $Case10CompletionReviewCheckReserve -le 0) -or
+      $Case10CompletionChecks -le 0) {
+    throw 'Case10CompletionCheckOnReview requires reserved review and completion checks.'
+  }
+  $limits | Add-Member -MemberType NoteProperty -Force -Name completion_check_on_review -Value $true
+}
+
+function Get-BenchmarkReviewRequestReserve([hashtable]$case, [string]$agent) {
+  if ($case.Id -eq '10-receipt-ledger' -and $agent -eq 'rupi' -and
+      $Case10CompletionReviewRequestReserve -gt 0) { return $Case10CompletionReviewRequestReserve }
+  return $null
+}
+
+function Get-BenchmarkFinalCheckReserve([hashtable]$case, [string]$agent) {
+  if ($case.Id -eq '10-receipt-ledger' -and $agent -eq 'rupi' -and
+      $Case10CompletionCheckReserveFinal) { return $true }
+  return $null
+}
+
+function Set-BenchmarkFinalCheckReserve([hashtable]$case, [object]$limits) {
+  $selected = Get-BenchmarkFinalCheckReserve $case 'rupi'
+  if ($null -eq $selected) { return }
+  if ($Case10CompletionChecks -lt 2) {
+    throw 'Case10 final check reserve requires at least two completion checks.'
+  }
+  $limits | Add-Member -MemberType NoteProperty -Force `
+    -Name completion_check_reserve_final -Value $true
+}
+
+function Get-BenchmarkReviewCheckReserve([hashtable]$case, [string]$agent) {
+  if ($case.Id -eq '10-receipt-ledger' -and $agent -eq 'rupi' -and
+      $Case10CompletionReviewCheckReserve -gt 0) { return $Case10CompletionReviewCheckReserve }
+  return $null
+}
+
+function Set-BenchmarkReviewCheckReserve([hashtable]$case, [object]$limits) {
+  $selected = Get-BenchmarkReviewCheckReserve $case 'rupi'
+  if ($null -eq $selected) { return }
+  if (-not $Case10ReviewCompletion -or $Case10CompletionChecks -lt 2 -or
+      $selected -ge $Case10CompletionChecks) {
+    throw 'Case10 check review reserve requires review and a larger completion check allowance.'
+  }
+  $limits | Add-Member -MemberType NoteProperty -Force `
+    -Name completion_review_check_reserve -Value $selected
+}
+
+function Set-BenchmarkReviewRequestReserve([hashtable]$case, [object]$limits) {
+  $selected = Get-BenchmarkReviewRequestReserve $case 'rupi'
+  if ($null -eq $selected) { return }
+  if (-not $Case10ReviewCompletion -or $selected -ge ($MaxModelRequestsPerTurn - 1)) {
+    throw 'Case10 request review reserve requires review and a larger ordinary request allowance.'
+  }
+  $limits | Add-Member -MemberType NoteProperty -Force `
+    -Name completion_review_request_reserve -Value $selected
+}
+
+function Get-BenchmarkInitialThinking([hashtable]$case, [string]$agent) {
+  if ($case.Id -eq "10-receipt-ledger" -and $agent -eq "rupi" -and
+      $Case10InitialProgressThinking -ne 'inherit') {
+    return $Case10InitialProgressThinking.ToLowerInvariant()
+  }
+  return $null
+}
+
+function Set-BenchmarkInitialThinking([hashtable]$case, [object]$limits) {
+  $selected = Get-BenchmarkInitialThinking $case "rupi"
+  if ($null -eq $selected) { return }
+  if (-not $Case10InitialProgressBoundary) { throw "Initial thinking requires initial progress." }
+  $limits | Add-Member -MemberType NoteProperty -Force -Name initial_progress_thinking -Value $selected
+}
+
+function Set-BenchmarkInitialArgumentLimit([hashtable]$case, [object]$limits) {
+  $selected = Get-BenchmarkInitialArgumentLimit $case "rupi"
+  if ($null -eq $selected) { return }
+  if (-not $Case10InitialProgressBoundary -or $Case10InitialProgressMaxOutputTokens -le 0) {
+    throw "Initial argument limit requires initial progress and output selection."
+  }
+  $limits | Add-Member -MemberType NoteProperty -Force `
+    -Name initial_progress_max_argument_chars -Value $selected
+}
+
+function Set-BenchmarkInitialOutputLimit([hashtable]$case, [object]$limits) {
+  $selected = Get-BenchmarkInitialOutputLimit $case "rupi"
+  if ($null -eq $selected) { return }
+  if (-not $Case10InitialProgressBoundary) { throw "Initial output limit requires initial progress." }
+  $limits | Add-Member -MemberType NoteProperty -Force `
+    -Name initial_progress_max_output_tokens -Value $selected
+}
+
+function Set-BenchmarkMutatingBudget([hashtable]$case, [object]$limits) {
+  $selected = Get-BenchmarkMutatingBudget $case "rupi"
+  if ($null -eq $selected) { return }
+  # Omission inherits64 total calls; selecting mutations never raises that total cap.
+  $total = if ($null -eq $limits.PSObject.Properties["max_tool_calls_per_turn"]) {
+    64
+  } else { [int]$limits.max_tool_calls_per_turn }
+  if ($selected -gt $total) { throw "Case10 mutation allowance exceeds the total tool cap." }
+  $limits | Add-Member -MemberType NoteProperty -Force `
+    -Name max_mutating_tool_calls_per_turn -Value $selected
+}
+
 function Get-BenchmarkEndpoint([hashtable]$case) {
   if ((Get-BenchmarkReasoningBudget $case) -gt 0) {
+    if ($case.Id -eq "10-receipt-ledger") {
+      return "http://127.0.0.1:$Case10ReasoningRelayPort/v1"
+    }
     return "http://127.0.0.1:8001/v1"
   }
   return "http://127.0.0.1:8000/v1"
 }
 
 function Get-BenchmarkTools([hashtable]$case, [string]$agent) {
-  if ($case.Id -in @("07-lease-cascade", "08-lease-fence", "09-lease-receipt")) {
+  if ($case.Id -in @("07-lease-cascade", "08-lease-fence",
+      "09-lease-receipt", "10-receipt-ledger")) {
     if ($agent -eq "rupi") { return @("read", "write", "edit", "grep") }
     return @("read", "write", "edit", "grep", "find", "ls")
   }
@@ -1968,7 +2461,8 @@ function Get-BenchmarkTools([hashtable]$case, [string]$agent) {
 }
 
 function Get-BenchmarkEnvironment([hashtable]$case, [string]$agent, [string]$agentRoot) {
-  if ($case.Id -notin @("07-lease-cascade", "08-lease-fence", "09-lease-receipt") -or
+  if ($case.Id -notin @("07-lease-cascade", "08-lease-fence",
+      "09-lease-receipt", "10-receipt-ledger") -or
       $agent -ne "rupi") {
     return @{}
   }
@@ -1979,7 +2473,12 @@ function Get-BenchmarkEnvironment([hashtable]$case, [string]$agent, [string]$age
 }
 
 function Set-BenchmarkReasoningCompatibility([hashtable]$case, [object]$endpoint) {
-  if ($case.Id -notin @("07-lease-cascade", "08-lease-fence", "09-lease-receipt")) { return }
+  if ($case.Id -notin @("07-lease-cascade", "08-lease-fence",
+      "09-lease-receipt", "10-receipt-ledger")) { return }
+  if ((Get-BenchmarkThinkingInput $case) -eq 'chat_template_enable_thinking' -and
+      $Case10ReasoningBudgetTokens -gt 0) {
+    throw 'Template thinking requires direct endpoint.'
+  }
   if ($null -eq $endpoint.capabilities -or
       $endpoint.capabilities.exposed_reasoning -cne "native") {
     $caseName = "Case " + $case.Id.Substring(0, 2)
@@ -1992,11 +2491,15 @@ function Set-BenchmarkReasoningCompatibility([hashtable]$case, [object]$endpoint
     )
   }
   $endpoint.openai_compat | Add-Member -MemberType NoteProperty -Name thinking_input -Force `
-    -Value "reasoning_effort"
+    -Value (Get-BenchmarkThinkingInput $case)
   $endpoint.openai_compat | Add-Member -MemberType NoteProperty -Name thinking_disable -Force `
     -Value "reasoning_effort_none"
   $endpoint.openai_compat | Add-Member -MemberType NoteProperty -Name preserve_reasoning -Force `
     -Value $true
+  if ($case.Id -eq '10-receipt-ledger' -and $Case10NativeReasoningBudgetTokens -gt 0) {
+    $endpoint.openai_compat | Add-Member -MemberType NoteProperty -Name reasoning_budget_tokens `
+      -Force -Value (Get-BenchmarkNativeReasoningBudget $case)
+  }
 }
 
 function New-BenchmarkWorkspace([hashtable]$case, [string]$agentRoot, [string]$thinkingLevel) {
@@ -2019,7 +2522,8 @@ function New-BenchmarkWorkspace([hashtable]$case, [string]$agentRoot, [string]$t
     $config = Get-Content -Raw $configSourcePath | ConvertFrom-Json
     $config.thinking = $thinkingLevel
     $config.state_dir = ".rupi-state"
-    if ($case.Id -in @("07-lease-cascade", "08-lease-fence", "09-lease-receipt")) {
+    if ($case.Id -in @("07-lease-cascade", "08-lease-fence",
+      "09-lease-receipt", "10-receipt-ledger")) {
       if ($null -eq $config.tools) {
         $config | Add-Member -MemberType NoteProperty -Name tools -Value ([pscustomobject]@{})
       }
@@ -2031,6 +2535,36 @@ function New-BenchmarkWorkspace([hashtable]$case, [string]$agentRoot, [string]$t
       $config | Add-Member -MemberType NoteProperty -Name limits -Value ([pscustomobject]@{})
     }
     Set-BenchmarkProgressBoundary $case $config.limits
+    Set-BenchmarkMutatingBudget $case $config.limits
+    Set-BenchmarkInitialOutputLimit $case $config.limits
+    Set-BenchmarkInitialArgumentLimit $case $config.limits
+    Set-BenchmarkInitialThinking $case $config.limits
+    Set-BenchmarkReviewCheck $case $config.limits
+    Set-BenchmarkRepairCheckWindow $case $config.limits
+    Set-BenchmarkInitialCheckWindow $case $config.limits
+    Set-BenchmarkReviewRequestReserve $case $config.limits
+    Set-BenchmarkReviewCheckReserve $case $config.limits
+    Set-BenchmarkFinalCheckReserve $case $config.limits
+    if ($case.Id -eq "10-receipt-ledger" -and $Case10CompletionChecks -gt 0) {
+      $config.limits | Add-Member -MemberType NoteProperty -Force `
+        -Name max_completion_checks_per_turn -Value $Case10CompletionChecks
+    }
+    if ($case.Id -eq "10-receipt-ledger" -and $Case10InitialProgressBoundary) {
+      $config.limits | Add-Member -MemberType NoteProperty -Force `
+        -Name initial_progress_boundary -Value $true
+    }
+    if ($case.Id -eq "10-receipt-ledger" -and $Case10MaxTurnDurationMs -gt 0) {
+      $config.limits | Add-Member -MemberType NoteProperty -Force `
+        -Name max_turn_duration_ms -Value $Case10MaxTurnDurationMs
+    }
+    if ($case.Id -eq "10-receipt-ledger" -and $Case10ReviewCompletion) {
+      $config.limits | Add-Member -MemberType NoteProperty -Force `
+        -Name review_completion -Value $true
+    }
+    if ($case.Id -eq "10-receipt-ledger" -and $Case10CompletionReviewReserveMs -gt 0) {
+      $config.limits | Add-Member -MemberType NoteProperty -Force `
+        -Name completion_review_reserve_ms -Value $Case10CompletionReviewReserveMs
+    }
     if ($null -eq $config.limits.PSObject.Properties["max_model_requests_per_turn"]) {
       $config.limits | Add-Member -MemberType NoteProperty -Name max_model_requests_per_turn -Value $MaxModelRequestsPerTurn
     } else {
@@ -2042,7 +2576,7 @@ function New-BenchmarkWorkspace([hashtable]$case, [string]$agentRoot, [string]$t
         $config.endpoints[0].base_url = Get-BenchmarkEndpoint $case
       }
       if ($config.endpoints[0].capabilities) {
-        $config.endpoints[0].capabilities.max_output_tokens = 16384
+        $config.endpoints[0].capabilities.max_output_tokens = Get-BenchmarkMaxOutputTokens $case
       }
       # Let the runtime handle its provider timeout before the outer turn watchdog stops it.
       $reqTimeout = $script:providerRequestTimeoutMs
@@ -2051,6 +2585,7 @@ function New-BenchmarkWorkspace([hashtable]$case, [string]$agentRoot, [string]$t
       } else {
         $config.endpoints[0].request_timeout_ms = $reqTimeout
       }
+      Set-BenchmarkReadTimeout $case $config.endpoints[0]
     }
     Write-Json $configPath $config
   }
@@ -2070,7 +2605,7 @@ function New-PiConfig([string]$agentRoot, [hashtable]$case) {
           id = "qwen3.8-flash-next"
           name = "Qwen3.8 Flash Next"
           contextWindow = 262144
-          maxTokens = 16384
+          maxTokens = Get-BenchmarkMaxOutputTokens $case
           defaultParameters = [ordered]@{
             temperature = 1.0
             top_p = 0.95
@@ -2081,8 +2616,10 @@ function New-PiConfig([string]$agentRoot, [hashtable]$case) {
           }
           reasoning = $true
           compat = [ordered]@{
-            supportsReasoningEffort = $true
-            thinkingFormat = "openai"
+            supportsReasoningEffort = ((Get-BenchmarkThinkingInput $case) -eq 'reasoning_effort')
+            thinkingFormat = if ((Get-BenchmarkThinkingInput $case) -eq 'chat_template_enable_thinking') {
+              'chat-template'
+            } else { 'openai' }
             maxTokensField = "max_tokens"
           }
           thinkingLevelMap = [ordered]@{
@@ -2096,6 +2633,18 @@ function New-PiConfig([string]$agentRoot, [hashtable]$case) {
         })
       }
     }
+  }
+  if ((Get-BenchmarkThinkingInput $case) -eq 'chat_template_enable_thinking') {
+    if ($Case10ReasoningBudgetTokens -gt 0) { throw 'Template thinking requires direct endpoint.' }
+    $models.providers.unsloth.models[0].compat['chatTemplateKwargs'] = [ordered]@{
+      enable_thinking = [ordered]@{ '$var' = 'thinking.enabled' }
+    }
+  }
+  if ($case.Id -eq '10-receipt-ledger' -and $Case10NativeReasoningBudgetTokens -gt 0) {
+    $null = Get-BenchmarkNativeReasoningBudget $case
+    $models.providers.unsloth.models[0].compat['supportsThinkingTokenBudget'] = $true
+    $models.providers.unsloth.models[0].compat['thinkingTokenBudgetField'] =
+      'reasoning_budget_tokens'
   }
   Write-Json (Join-Path $piConfig "models.json") $models
   $piConfig
@@ -2116,6 +2665,13 @@ function Read-RupiMetrics([string]$project, [int]$SkipLines = 0) {
   $logical = [int64]0; $uncached = [int64]0; $cacheRead = [int64]0; $cacheWrite = [int64]0
   $output = [int64]0; $providerTotal = [int64]0; $known = 0
   $toolRequested = 0; $toolCompleted = 0; $toolFailed = 0; $toolUnknown = 0
+  $controlCounts = [ordered]@{
+    turn_time_budget = 0; completion_review = 0; completion_check = 0; progress_boundary = 0
+    progress_correction = 0; request_finalization = 0; unknown = 0
+  }
+  $reviewPositions = [Collections.Generic.List[int]]::new()
+  $completionChecks = [Collections.Generic.List[object]]::new()
+  $requestFailures = [Collections.Generic.List[object]]::new()
   $toolNames = [Collections.Generic.List[string]]::new(); $status = $null; $finish = [Collections.Generic.List[string]]::new()
   $seenLines = 0
   foreach ($file in $traceFiles) {
@@ -2124,9 +2680,43 @@ function Read-RupiMetrics([string]$project, [int]$SkipLines = 0) {
       $seenLines++
       try { $record = $line | ConvertFrom-Json } catch { continue }
       switch ($record.type) {
+        "runtime_control_injected" {
+          $kind = [string]$record.kind
+          if ($controlCounts.Contains($kind)) { $controlCounts[$kind]++ }
+          else { $controlCounts["unknown"]++ }
+          if ($kind -eq "completion_review") { [void]$reviewPositions.Add($started) }
+        }
+        "external_context_retrieved" {
+          if ($record.source.provider -eq "delegated_completion_check") {
+            $ordinal = 0; $elapsed = [long]0
+            if ([int]::TryParse([string]$record.metadata.ordinal, [ref]$ordinal) -and
+                $ordinal -ge 1 -and $ordinal -le 16 -and
+                [long]::TryParse([string]$record.metadata.elapsed_ms, [ref]$elapsed) -and
+                $elapsed -ge 0 -and $record.metadata.status -in @("passed", "failed", "unavailable")) {
+              [void]$completionChecks.Add([pscustomobject]@{
+                ordinal = $ordinal; status = [string]$record.metadata.status
+                elapsed_ms = $elapsed; after_started_requests = $started
+              })
+            }
+          }
+        }
         "model_request_started" { $started++ }
         "model_request_completed" {
           $completed++
+          $failure = $record.failure
+          if ($null -ne $failure -and
+              $failure.kind -in @('transport','timeout','rate_limited','provider_unavailable',
+                'authentication','protocol','context_overflow','semantic','cancelled') -and
+              $failure.phase -in @('pre_request','waiting_for_response','streaming','normalizing') -and
+              $failure.replay_safety -in @('safe','ambiguous_post_boundary','committed_output') -and
+              $failure.partial_output_emitted -is [bool]) {
+            [void]$requestFailures.Add([pscustomobject]@{
+              kind = [string]$failure.kind; phase = [string]$failure.phase
+              replay_safety = [string]$failure.replay_safety
+              partial_output_emitted = $failure.partial_output_emitted
+              after_started_requests = $started
+            })
+          }
           $hasInput = $null -ne $record.input_tokens
           $hasOutput = $null -ne $record.output_tokens
           $requestLogical = if ($null -ne $record.logical_prompt_tokens) { [int64]$record.logical_prompt_tokens } elseif ($hasInput) { [int64]$record.input_tokens } else { [int64]0 }
@@ -2165,6 +2755,10 @@ function Read-RupiMetrics([string]$project, [int]$SkipLines = 0) {
     usage_records = $known; tool_requests = $toolRequested; tool_completions = $toolCompleted
     tool_failures = $toolFailed; tool_unknown = $toolUnknown; tool_names = @($toolNames)
     turn_status = $status; finish_reasons = @($finish)
+    runtime_control_counts = $controlCounts
+    completion_review_after_started_requests = @($reviewPositions)
+    completion_checks = @($completionChecks)
+    model_request_failures = @($requestFailures)
     measurement_scope = "turn"
   }
 }
@@ -2216,6 +2810,9 @@ function Read-PiMetrics([string]$stdoutPath) {
     input_tokens = $input; total_tokens = $providerTotal
     usage_records = $known; tool_requests = $toolCalls; tool_completions = $toolResults
     tool_failures = $null; tool_unknown = $null; tool_names = @($toolNames)
+    runtime_control_counts = $null
+    completion_review_after_started_requests = $null
+    completion_checks = $null
     turn_status = $stop; finish_reasons = @($stop); session_id = $session; measurement_scope = "turn"
   }
 }
@@ -2266,10 +2863,21 @@ function Invoke-AgentCase([hashtable]$case, [string]$agent, [string]$root, [stri
       $args.Add("run"); $args.Add("--config"); $args.Add($workspace.config); $args.Add("--cwd"); $args.Add(".")
       if ($sessionId) { $args.Add("--resume"); $args.Add($sessionId) }
       $args.Add("--prompt"); $args.Add($prompt); $args.Add("--no-color"); $args.Add("--no-reasoning"); $args.Add("--verbose")
+      $completionCallback = $null
+      if ($case.Id -eq "10-receipt-ledger" -and $Case10CompletionChecks -gt 0) {
+        $completionHost = New-CompletionFeedbackHost $workspace.project $turnRoot $python $case.Help `
+          -ScratchRoot (Join-Path $repoRoot '.benchmark/completion-scratch')
+        $args.Add("--completion-feedback-dir"); $args.Add($completionHost.mailbox)
+        Add-BenchmarkCompletionFeedbackArguments $case $agent $args
+        $completionCallback = {
+          param($processId, $remainingMs)
+          Invoke-CompletionFeedbackHost $completionHost $processId $remainingMs
+        }
+      }
       $call = Invoke-External -FileName $rupiBinary -Arguments @($args) `
         -WorkingDirectory $workspace.project -StdoutPath (Join-Path $turnRoot "stdout.txt") `
         -StderrPath (Join-Path $turnRoot "stderr.txt") -TimeoutSeconds $TurnTimeoutSeconds `
-        -Environment $benchmarkEnvironment
+        -Environment $benchmarkEnvironment -WhileRunning $completionCallback
       $metrics = Read-RupiMetrics $workspace.project $traceLinesBefore
       $sessionId = Get-RupiSessionId $workspace.project
     } else {
@@ -2305,11 +2913,51 @@ function Invoke-AgentCase([hashtable]$case, [string]$agent, [string]$root, [stri
     $verification = Invoke-Verification $case $agentRoot $workspace.project $turn
     $lastVerification = $verification
     $turnRecord = [ordered]@{ turn = $turn; call = $call; metrics = $metrics; verification = $verification; session_id = $sessionId }
-    if ($case.Id -in @("07-lease-cascade", "08-lease-fence", "09-lease-receipt")) {
+    if ($case.Id -in @("07-lease-cascade", "08-lease-fence",
+      "09-lease-receipt", "10-receipt-ledger")) {
       $turnRecord["configured_tool_allowlist"] = @(Get-BenchmarkTools $case $agent)
       $turnRecord["harness_model_request_cap"] = if ($agent -eq "rupi") {
         $MaxModelRequestsPerTurn
       } else { $null }
+      $turnRecord["configured_turn_duration_ms"] = if (
+        $case.Id -eq "10-receipt-ledger" -and $agent -eq "rupi" -and
+        $Case10MaxTurnDurationMs -gt 0
+      ) { $Case10MaxTurnDurationMs } else { $null }
+      if ($case.Id -eq "10-receipt-ledger") {
+        $turnRecord['configured_completion_feedback_timeout_ms'] =
+          Get-BenchmarkCompletionFeedbackTimeout $case $agent
+        $turnRecord['configured_provider_read_timeout_ms'] = Get-BenchmarkReadTimeout $case $agent
+        $turnRecord["configured_completion_checks"] = if (
+          $agent -eq "rupi" -and $Case10CompletionChecks -gt 0
+        ) { $Case10CompletionChecks } else { $null }
+        $turnRecord["configured_completion_check_on_review"] = Get-BenchmarkReviewCheck $case $agent
+        $turnRecord["configured_completion_check_repair_request_window"] =
+          Get-BenchmarkRepairCheckWindow $case $agent
+        $turnRecord['configured_completion_check_initial_request_window'] =
+          Get-BenchmarkInitialCheckWindow $case $agent
+        $turnRecord["configured_completion_review_request_reserve"] =
+          Get-BenchmarkReviewRequestReserve $case $agent
+        $turnRecord['configured_completion_review_check_reserve'] =
+          Get-BenchmarkReviewCheckReserve $case $agent
+        $turnRecord['configured_completion_check_reserve_final'] =
+          Get-BenchmarkFinalCheckReserve $case $agent
+        $turnRecord["configured_max_mutating_tool_calls_per_turn"] =
+          Get-BenchmarkMutatingBudget $case $agent
+        $turnRecord["configured_initial_progress_max_output_tokens"] =
+          Get-BenchmarkInitialOutputLimit $case $agent
+        $turnRecord["configured_initial_progress_max_argument_chars"] =
+          Get-BenchmarkInitialArgumentLimit $case $agent
+        $turnRecord["configured_initial_progress_thinking"] = Get-BenchmarkInitialThinking $case $agent
+        $turnRecord["configured_initial_progress_boundary"] = if ($agent -eq "rupi") {
+          $Case10InitialProgressBoundary.IsPresent
+        } else { $null }
+        $turnRecord["configured_completion_review"] = if ($agent -eq "rupi") {
+          $Case10ReviewCompletion.IsPresent
+        } else { $null }
+        $turnRecord["configured_completion_review_reserve_ms"] = if (
+          $agent -eq "rupi" -and $Case10CompletionReviewReserveMs -gt 0
+        ) { $Case10CompletionReviewReserveMs } else { $null }
+      }
       $progressControl = Get-BenchmarkProgressControl $case
       if ($null -ne $progressControl) {
         $turnRecord["configured_progress_boundary_mode"] = if ($agent -eq "rupi") {
@@ -2319,17 +2967,23 @@ function Invoke-AgentCase([hashtable]$case, [string]$agent, [string]$root, [stri
           $progressControl.window
         } else { $null }
       }
-      $turnRecord["configured_thinking_control"] = [ordered]@{
-        level = $thinkingLevel
-        dialect = "reasoning_effort"
-        off_value = "none"
-      }
+      $turnRecord["configured_thinking_control"] = Get-BenchmarkThinkingControl $case $thinkingLevel
+      $turnRecord["configured_native_reasoning_budget_tokens"] =
+        Get-BenchmarkNativeReasoningBudget $case
       $turnRecord["configured_model_endpoint"] = Get-BenchmarkEndpoint $case
       $budget = Get-BenchmarkReasoningBudget $case
       $turnRecord["configured_reasoning_budget_tokens"] = if ($budget -gt 0) {
         $budget
       } else { $null }
+      $turnRecord["configured_relay_response_timeout_seconds"] = if (
+          $case.Id -eq "10-receipt-ledger" -and $budget -gt 0 -and
+          $Case10RelayResponseTimeoutSeconds -gt 0) {
+        $Case10RelayResponseTimeoutSeconds
+      } else { $null }
       $turnRecord["configured_native_reasoning_replay"] = $true
+      if ($case.Id -eq "10-receipt-ledger") {
+        $turnRecord["configured_max_output_tokens"] = Get-BenchmarkMaxOutputTokens $case
+      }
       $turnRecord["configured_skill_discovery"] = if ($agent -eq "rupi") {
         "empty_child_profile"
       } else { "disabled_flags" }
@@ -2364,19 +3018,31 @@ if (@($cases | Where-Object { $_.Id -eq "08-lease-fence" }).Count -gt 0) {
 if (@($cases | Where-Object { $_.Id -eq "09-lease-receipt" }).Count -gt 0) {
   $recoveryFeedbackScope += ";case09_oracle_status_only"
 }
+if (@($cases | Where-Object { $_.Id -eq "10-receipt-ledger" }).Count -gt 0) {
+  $recoveryFeedbackScope += ";case10_oracle_status_only"
+}
+if (@($cases | Where-Object { $_.Id -eq "10-receipt-ledger" }).Count -gt 0 -and
+    $Case10ReasoningBudgetTokens -gt 0 -and
+    ($Case10RelayResponseTimeoutSeconds * 1000) -gt $script:providerRequestTimeoutMs) {
+  throw "Case 10 relay response deadline must fit within the provider deadline."
+}
 if ($DryRun) {
   Write-Host "Thinking level: $ThinkingLevel"
   Write-Host "Recovery feedback scope: $recoveryFeedbackScope"
   $cases | ForEach-Object {
     [void](Get-InitialPrompt $_)
+    $expectedOutput = if ($_.Id -eq "10-receipt-ledger") { $Case10MaxOutputTokens }
+      else { 16384 }
+    if ((Get-BenchmarkMaxOutputTokens $_) -ne $expectedOutput) {
+      throw "Case 10 output control must preserve other cases' output limits."
+    }
     $progressLimits = [pscustomobject]@{ max_model_requests_without_progress = 1 }
     Set-BenchmarkProgressBoundary $_ $progressLimits
-    $hasProgressControl = $_.Id -in @("08-lease-fence", "09-lease-receipt")
+    $hasProgressControl = $_.Id -in @("08-lease-fence", "09-lease-receipt", "10-receipt-ledger")
     if ($hasProgressControl) {
-      $expectedMode = if ($_.Id -eq "08-lease-fence") { $Case08ProgressBoundaryMode }
-        else { $Case09ProgressBoundaryMode }
-      $expectedWindow = if ($_.Id -eq "08-lease-fence") { $Case08ProgressRequestWindow }
-        else { $Case09ProgressRequestWindow }
+      $expectedControl = Get-BenchmarkProgressControl $_
+      $expectedMode = $expectedControl.mode
+      $expectedWindow = $expectedControl.window
       if ($progressLimits.progress_boundary_mode -cne $expectedMode) {
         throw "$($_.Id) Rupi must use the selected progress boundary mode."
       }
@@ -2391,7 +3057,9 @@ if ($DryRun) {
       throw "Selected progress request window must not change other cases."
     }
     $expectedEndpoint = if ((Get-BenchmarkReasoningBudget $_) -gt 0) {
-      "http://127.0.0.1:8001/v1"
+      if ($_.Id -eq "10-receipt-ledger") {
+        "http://127.0.0.1:$Case10ReasoningRelayPort/v1"
+      } else { "http://127.0.0.1:8001/v1" }
     } else { "http://127.0.0.1:8000/v1" }
     if ((Get-BenchmarkEndpoint $_) -cne $expectedEndpoint) {
       throw "The reasoning relay must match the selected case's explicit budget."
@@ -2400,9 +3068,10 @@ if ($DryRun) {
     $rupiEnvironment = Get-BenchmarkEnvironment $_ "rupi" $environmentRoot
     $piEnvironment = Get-BenchmarkEnvironment $_ "pi" $environmentRoot
     if ($piEnvironment.Count -ne 0 -or
-        ($_.Id -notin @("07-lease-cascade", "08-lease-fence", "09-lease-receipt") -and
+        ($_.Id -notin @("07-lease-cascade", "08-lease-fence",
+      "09-lease-receipt", "10-receipt-ledger") -and
           $rupiEnvironment.Count -ne 0)) {
-      throw "Only Case 07/08/09 Rupi may receive an isolated discovery profile."
+      throw "Only Case 07/08/09/10 Rupi may receive an isolated discovery profile."
     }
     if ($_.Id -eq "07-lease-cascade") {
       if ($rupiEnvironment.Count -ne 2 -or -not $rupiEnvironment.ContainsKey("HOME") -or
@@ -2646,6 +3315,41 @@ if ($DryRun) {
           ($invalidEndpoint | ConvertTo-Json -Depth 4 -Compress) -cne $before) {
         throw "Case 09 must reject non-native exposure before changing endpoint settings."
       }
+    } elseif ($_.Id -eq "10-receipt-ledger") {
+      if ($progressLimits.progress_boundary_mode -cnotin @("one_shot", "recurring")) {
+        throw "Case 10 progress mode must use canonical lowercase runtime JSON names."
+      }
+      if ($rupiEnvironment.Count -ne 2 -or $null -ne $rupiEnvironment.HOME -or
+          $rupiEnvironment.USERPROFILE -ne (Join-Path $environmentRoot "discovery-profile") -or
+          (@(Get-BenchmarkTools $_ "rupi") -join ",") -ne "read,write,edit,grep" -or
+          (@(Get-BenchmarkTools $_ "pi") -join ",") -ne "read,write,edit,grep,find,ls") {
+        throw "Case 10 requires file tools and isolated Rupi skill discovery."
+      }
+      $endpoint = [pscustomobject]@{
+        capabilities = [pscustomobject]@{ exposed_reasoning = "native" }
+        openai_compat = [pscustomobject]@{ stream = $false }
+      }
+      Set-BenchmarkReasoningCompatibility $_ $endpoint
+      if ($endpoint.openai_compat.thinking_input -ne "reasoning_effort" -or
+          $endpoint.openai_compat.thinking_disable -ne "reasoning_effort_none" -or
+          $endpoint.openai_compat.preserve_reasoning -ne $true -or
+          $endpoint.openai_compat.stream -ne $false) {
+        throw "Case 10 must set native reasoning controls and preserve unrelated settings."
+      }
+      $invalidEndpoint = [pscustomobject]@{
+        capabilities = [pscustomobject]@{ exposed_reasoning = "provider_summary" }
+      }
+      $before = $invalidEndpoint | ConvertTo-Json -Depth 4 -Compress
+      $rejected = $false
+      try { Set-BenchmarkReasoningCompatibility $_ $invalidEndpoint } catch {
+        if ($_.Exception.Message -cne
+            "Case 10 reasoning replay requires an explicit native exposure claim.") { throw }
+        $rejected = $true
+      }
+      if (-not $rejected -or
+          ($invalidEndpoint | ConvertTo-Json -Depth 4 -Compress) -cne $before) {
+        throw "Case 10 must reject non-native exposure before changing endpoint settings."
+      }
     } else {
       $unchangedEndpoint = [pscustomobject]@{
         openai_compat = [pscustomobject]@{ thinking_input = "none" }
@@ -2812,6 +3516,120 @@ if ($DryRun) {
         Remove-Item -LiteralPath $dryRunProject -Force
       }
     }
+    if ($_.Id -eq "10-receipt-ledger") {
+      $spec = [IO.File]::ReadAllText((Join-Path (Join-Path $repoRoot $_.Source) "SPEC.md"))
+      $outputGuardRoot = Join-Path $artifactRoot (
+        "case10-output-guard-" + [Guid]::NewGuid().ToString("N")
+      )
+      $outputWorkspace = New-BenchmarkWorkspace $_ $outputGuardRoot $ThinkingLevel
+      $outputConfig = Get-Content -Raw -LiteralPath $outputWorkspace.config | ConvertFrom-Json
+      $piConfigRoot = New-PiConfig $outputGuardRoot $_
+      $piOutputConfig = Get-Content -Raw -LiteralPath (Join-Path $piConfigRoot "models.json") |
+        ConvertFrom-Json
+      $outputEndpoint = $outputConfig.endpoints[0]
+      $rupiOutputLimit = if ($null -ne $outputEndpoint.max_output_tokens) {
+        $outputEndpoint.max_output_tokens
+      } else { $outputEndpoint.capabilities.max_output_tokens }
+      if ($rupiOutputLimit -ne $Case10MaxOutputTokens -or
+          $piOutputConfig.providers.unsloth.models[0].maxTokens -ne $Case10MaxOutputTokens) {
+        throw "Case 10 must configure the same effective output limit for both agents."
+      }
+      $dryRunProject = Join-Path ([IO.Path]::GetTempPath()) (
+        "rupi-case10-dryrun-" + [Guid]::NewGuid().ToString("N")
+      )
+      $oracleDiagnostic = Join-Path $dryRunProject "oracle-diagnostic.txt"
+      New-Item -ItemType Directory -Path $dryRunProject | Out-Null
+      try {
+        Write-Text $oracleDiagnostic "CASE10_PRIVATE_ORACLE_DIAGNOSTIC"
+        $dryRunVerification.oracle.exit_code = 1
+        $dryRunVerification.oracle.stderr_path = $oracleDiagnostic
+        $dryRunVerification.oracle.stdout_path = $oracleDiagnostic
+        $initialPrompt = Get-InitialPrompt $_
+        $oracleFailurePrompt = Get-RecoveryPrompt $_ $dryRunVerification
+        $dryRunVerification.project_tests.exit_code = 1
+        $repairPrompt = Get-RecoveryPrompt $_ $dryRunVerification $dryRunProject
+        $dryRunVerification.project_tests.exit_code = 0
+        $dryRunVerification.help[0].exit_code = 1
+        $helpRepairPrompt = Get-RecoveryPrompt $_ $dryRunVerification $dryRunProject
+        $requirements = @(
+          $spec
+          'Do not inspect or run the external acceptance oracle.'
+          'public delivery_key is exactly pipeline_id + ":" + job_id'
+          'fresh private unguessable claim token'
+          'exact claim token;'
+          'accept only one updated row'
+          'status/output/attempts/lease/error/receipt'
+          'EOF/lost acknowledgement is retryable failure'
+          'never an invented receipt'
+          'one logical effect, two attempts, same key and original receipt/output'
+          'public commands/HTTP'
+          'resource cleanup'
+          'SAME SQLite'
+          'exact public SPEC hash expression'
+          'two UTF-8 bytes 0x5c,0x6e (backslash then n)'
+          'same separator bytes when appending, verifying and independently recomputing in tests'
+          'Audit rows are evidence, never worker input or job state.'
+          'Rejected stale finalization appends only a safe operational event'
+          'audit --verify opens SQLite read-only'
+          'FULL sequence and recomputed hash chain'
+          'never repair/truncate'
+          'audit --tail COUNT reads only'
+          'outcome:unknown'
+          'all four help paths'
+          'Use unittest.TestCase subclasses with test_ methods'
+          'Use the actual edit diagnostic; an attempted edit is not a completed change.'
+          'If a failed edit explicitly made no change, read its target file before correcting it.'
+          'Read a small target region with offset/limit; narrow it if the response is truncated.'
+          'Use file text in edit anchors, excluding displayed line numbers and truncation markers.'
+          'Then edit the observed current text with a unique anchor and the native tool schema.'
+          'Do not guess another stale anchor or rewrite the whole application after a failed edit.'
+          'If the diagnostic says already applied, inspect the file and preserve the completed change.'
+          'For an Unknown mutation, inspect current state and defer retry until reconciliation.'
+          'After a known failure is corrected, continue public contract repairs within this attempt.'
+          'Do not end an attempt merely because an edit failed while time and requests remain.'
+        )
+        foreach ($prompt in @($initialPrompt, $dryRunRecovery, $oracleFailurePrompt,
+            $repairPrompt, $helpRepairPrompt)) {
+          foreach ($requirement in $requirements) {
+            if (-not $prompt.Contains($requirement)) {
+              throw "Case 10 prompt lost a public specification or receipt/fencing requirement."
+            }
+          }
+          if ($prompt.Contains('CASE10_PRIVATE_ORACLE_DIAGNOSTIC')) {
+            throw "Case 10 oracle diagnostics must remain hidden."
+          }
+        }
+        if (-not $initialPrompt.Contains('First tool call: write receiptledger/__main__.py')) {
+          throw "Case 10 initial prompt must request complete application behavior first."
+        }
+        if (-not $initialPrompt.Contains(
+            'do not create separate app/store/storage/worker modules') -or
+            -not $initialPrompt.Contains('Do not import local application modules')) {
+          throw "Case 10 initial prompt must request one complete application module."
+        }
+        foreach ($prompt in @($repairPrompt, $helpRepairPrompt)) {
+          if (-not $prompt.Contains('Repair the earliest failing local test or help gate') -or
+              -not $prompt.Contains('preserve assertions') -or
+              -not $prompt.Contains('at most 100 new lines')) {
+            throw "Case 10 repair must preserve assertions and bounded application edits."
+          }
+          if (-not $prompt.Contains('first write tests/test_receiptledger.py') -or
+              -not $prompt.Contains('never placeholders or an empty test suite') -or
+              -not $prompt.Contains('at most one targeted read or grep') -or
+              -not $prompt.Contains('Do not replace a complete module with a partial rewrite') -or
+              -not $prompt.Contains('Read with offset/limit, at most 120 lines')) {
+            throw "Case 10 repair must prioritize real tests and bounded reads/edits."
+          }
+        }
+        $dryRunVerification.help[0].exit_code = 0
+      } finally {
+        Remove-Item -LiteralPath $oracleDiagnostic -Force
+        if (@(Get-ChildItem -LiteralPath $dryRunProject -Force).Count -ne 0) {
+          throw "Dry-run directory contains unexpected files: $dryRunProject"
+        }
+        Remove-Item -LiteralPath $dryRunProject -Force
+      }
+    }
     if ($_.Id -eq "07-lease-cascade") {
       $case07SpecPath = Join-Path (Join-Path $repoRoot $_.Source) "SPEC.md"
       $case07Spec = [IO.File]::ReadAllText($case07SpecPath)
@@ -2910,12 +3728,18 @@ if ($DryRun) {
   exit 0
 }
 foreach ($budgetCase in @($cases | Where-Object { (Get-BenchmarkReasoningBudget $_) -gt 0 })) {
-  $relay = Invoke-RestMethod "http://127.0.0.1:8001/healthz" -TimeoutSec 5
+  $relayHealth = (Get-BenchmarkEndpoint $budgetCase) -replace '/v1$', '/healthz'
+  $relay = Invoke-RestMethod $relayHealth -TimeoutSec 5
   if ($ThinkingLevel -ne "low" -or
       $relay.reasoning_budget_tokens -ne (Get-BenchmarkReasoningBudget $budgetCase) -or
       $relay.upstream -cne "http://127.0.0.1:8000/v1" -or
       $relay.content_logging -ne $false) {
     throw "$($budgetCase.Id) relay differs from the requested low-budget experiment."
+  }
+  if ($budgetCase.Id -eq "10-receipt-ledger" -and
+      $Case10RelayResponseTimeoutSeconds -gt 0 -and
+      $relay.response_timeout_seconds -ne $Case10RelayResponseTimeoutSeconds) {
+    throw "Case 10 relay response deadline differs from the requested experiment."
   }
 }
 if ($Agent -ne "rupi") {
@@ -2980,10 +3804,54 @@ $summary = [ordered]@{
   } else { $null }
   case09_rupi_progress_boundary_mode = $Case09ProgressBoundaryMode
   case09_rupi_progress_request_window = $Case09ProgressRequestWindow
+  case10_reasoning_budget_tokens = if ($Case10ReasoningBudgetTokens -gt 0) {
+    $Case10ReasoningBudgetTokens
+  } else { $null }
+  case10_rupi_progress_boundary_mode = $Case10ProgressBoundaryMode
+  case10_rupi_initial_progress_boundary = $Case10InitialProgressBoundary.IsPresent
+  case10_rupi_completion_checks = if ($Case10CompletionChecks -gt 0) {
+    $Case10CompletionChecks
+  } else { $null }
+  case10_native_reasoning_budget_tokens =
+    Get-BenchmarkNativeReasoningBudget @{Id='10-receipt-ledger'}
+  case10_rupi_completion_feedback_timeout_ms =
+    Get-BenchmarkCompletionFeedbackTimeout @{Id='10-receipt-ledger'} 'rupi'
+  case10_rupi_completion_check_on_review = Get-BenchmarkReviewCheck @{Id='10-receipt-ledger'} 'rupi'
+  case10_rupi_completion_check_repair_request_window =
+    Get-BenchmarkRepairCheckWindow @{Id='10-receipt-ledger'} 'rupi'
+  case10_rupi_completion_check_initial_request_window =
+    Get-BenchmarkInitialCheckWindow @{Id='10-receipt-ledger'} 'rupi'
+  case10_rupi_completion_review_request_reserve =
+    Get-BenchmarkReviewRequestReserve @{Id='10-receipt-ledger'} 'rupi'
+  case10_rupi_completion_review_check_reserve =
+    Get-BenchmarkReviewCheckReserve @{Id='10-receipt-ledger'} 'rupi'
+  case10_rupi_completion_check_reserve_final =
+    Get-BenchmarkFinalCheckReserve @{Id='10-receipt-ledger'} 'rupi'
+  case10_rupi_max_mutating_tool_calls_per_turn =
+    Get-BenchmarkMutatingBudget @{Id="10-receipt-ledger"} "rupi"
+  case10_rupi_initial_progress_max_output_tokens =
+    Get-BenchmarkInitialOutputLimit @{Id="10-receipt-ledger"} "rupi"
+  case10_rupi_initial_progress_max_argument_chars =
+    Get-BenchmarkInitialArgumentLimit @{Id="10-receipt-ledger"} "rupi"
+  case10_rupi_initial_progress_thinking = Get-BenchmarkInitialThinking @{Id="10-receipt-ledger"} "rupi"
+  case10_thinking_input = Get-BenchmarkThinkingInput @{Id='10-receipt-ledger'}
+  case10_max_output_tokens = $Case10MaxOutputTokens
+  case10_rupi_max_turn_duration_ms = if ($Case10MaxTurnDurationMs -gt 0) {
+    $Case10MaxTurnDurationMs
+  } else { $null }
+  case10_rupi_review_completion = $Case10ReviewCompletion.IsPresent
+  case10_rupi_completion_review_reserve_ms = if ($Case10CompletionReviewReserveMs -gt 0) {
+    $Case10CompletionReviewReserveMs
+  } else { $null }
+  case10_relay_response_timeout_seconds = if ($Case10RelayResponseTimeoutSeconds -gt 0) {
+    $Case10RelayResponseTimeoutSeconds
+  } else { $null }
+  case10_rupi_progress_request_window = $Case10ProgressRequestWindow
   max_turns = $MaxTurns
   turn_timeout_seconds = $TurnTimeoutSeconds
   provider_timeout_grace_seconds = $script:providerTimeoutGraceSeconds
   provider_request_timeout_ms = $script:providerRequestTimeoutMs
+  case10_rupi_provider_read_timeout_ms = Get-BenchmarkReadTimeout @{Id='10-receipt-ledger'} 'rupi'
   results = @($results)
 }
 Write-Json (Join-Path $runRoot "results.json") $summary

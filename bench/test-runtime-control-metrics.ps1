@@ -1,0 +1,92 @@
+$ErrorActionPreference = "Stop"
+$repoRoot = Split-Path $PSScriptRoot -Parent
+$tokens = $null; $parseErrors = $null
+$ast = [Management.Automation.Language.Parser]::ParseFile(
+  (Join-Path $PSScriptRoot "compare-pi-rupi.ps1"), [ref]$tokens, [ref]$parseErrors
+)
+if ($parseErrors.Count) { throw "Harness parse failed." }
+$definition = @($ast.EndBlock.Statements | Where-Object {
+  $_ -is [Management.Automation.Language.FunctionDefinitionAst] -and
+  $_.Name -eq "Read-RupiMetrics"
+})
+if ($definition.Count -ne 1) { throw "Metrics function not found." }
+Invoke-Expression $definition[0].Extent.Text
+
+# Keep the fixture under ignored artifacts; no actual session or model output is read.
+$fixture = Join-Path $repoRoot (".benchmark/control-metrics-" + [Guid]::NewGuid().ToString("N"))
+$sessions = Join-Path $fixture ".rupi-state/sessions"
+New-Item -ItemType Directory -Force -Path $sessions | Out-Null
+$marker = "owned-content-must-not-enter-metrics"
+$records = @(
+  @{ type = "model_request_started" },
+  @{ type = 'model_request_completed'; failure = @{kind='timeout';phase='waiting_for_response';
+    replay_safety='ambiguous_post_boundary';partial_output_emitted=$false;message=$marker} },
+  @{ type = "runtime_control_injected"; kind = "completion_review"; text = $marker },
+  @{ type = "runtime_control_injected"; kind = "turn_time_budget"; text = $marker },
+  @{ type = "model_request_started" },
+  @{ type = 'model_request_completed'; failure = @{kind='transport';phase='streaming';
+    replay_safety='committed_output';partial_output_emitted=$true;message=$marker} },
+  @{ type = 'model_request_completed'; failure = @{kind=$marker;phase='streaming';
+    replay_safety='safe';partial_output_emitted=$true} },
+  @{ type = 'model_request_completed'; failure = @{kind='timeout';phase=$marker;
+    replay_safety='safe';partial_output_emitted=$true} },
+  @{ type = 'model_request_completed'; failure = @{kind='timeout';phase='streaming';
+    replay_safety=$marker;partial_output_emitted=$true} },
+  @{ type = 'model_request_completed'; failure = @{kind='timeout';phase='streaming';
+    replay_safety='safe';partial_output_emitted='false'} },
+  @{ type = "runtime_control_injected"; kind = "completion_review"; text = $marker },
+  @{ type = "runtime_control_injected"; kind = "future_control"; text = $marker },
+  @{ type = "assistant_delta"; text = $marker },
+  @{ type = "user_input"; text = $marker },
+  @{ type = "runtime_control_injected"; kind = "completion_check"; text = $marker },
+  @{ type = "external_context_retrieved"; source = @{provider="delegated_completion_check"};
+    metadata = @{ordinal="1";status="failed";elapsed_ms="123";unsafe=$marker}; text=$marker },
+  @{ type = "external_context_retrieved"; source = @{provider="other"};
+    metadata = @{ordinal="2";status="passed";elapsed_ms="456";unsafe=$marker} },
+  @{ type = "external_context_retrieved"; source = @{provider="delegated_completion_check"};
+    metadata = @{ordinal="3";status=$marker;elapsed_ms="123"} }
+)
+$lines = @($records | ForEach-Object { $_ | ConvertTo-Json -Compress })
+[IO.File]::WriteAllLines(
+  (Join-Path $sessions "owned.trace.jsonl"), $lines, [Text.UTF8Encoding]::new($false)
+)
+$all = Read-RupiMetrics $fixture
+$scoped = Read-RupiMetrics $fixture 4
+if ($all.model_request_failures.Count -ne 2 -or $scoped.model_request_failures.Count -ne 1 -or
+    $all.model_request_failures[0].kind -cne 'timeout' -or
+    $all.model_request_failures[0].phase -cne 'waiting_for_response' -or
+    $all.model_request_failures[0].partial_output_emitted -ne $false -or
+    $scoped.model_request_failures[0].replay_safety -cne 'committed_output' -or
+    $scoped.model_request_failures[0].partial_output_emitted -ne $true -or
+    $scoped.model_request_failures[0].after_started_requests -ne 1) {
+  throw 'Failure metadata whitelist, typed flags or turn scope mismatch.'
+}
+if ($all.runtime_control_counts.completion_review -ne 2 -or
+    $all.runtime_control_counts.turn_time_budget -ne 1 -or
+    $all.runtime_control_counts.unknown -ne 1 -or
+    $scoped.runtime_control_counts.completion_review -ne 1 -or
+    $scoped.runtime_control_counts.turn_time_budget -ne 0 -or
+    $scoped.runtime_control_counts.unknown -ne 1) {
+  throw "Control count or turn scope mismatch."
+}
+if (($all.completion_review_after_started_requests -join ',') -cne '1,2' -or
+    ($scoped.completion_review_after_started_requests -join ',') -cne '1' -or
+    $all.model_requests_started -ne 2 -or $scoped.model_requests_started -ne 1) {
+  throw "Review request position or turn scope mismatch."
+}
+foreach ($metrics in @($all, $scoped)) {
+  if ($metrics.runtime_control_counts.completion_check -ne 1 -or
+      $metrics.completion_checks.Count -ne 1 -or $metrics.completion_checks[0].ordinal -ne 1 -or
+      $metrics.completion_checks[0].status -cne 'failed' -or
+      $metrics.completion_checks[0].elapsed_ms -ne 123 -or
+      $metrics.completion_checks[0].after_started_requests -ne $metrics.model_requests_started) {
+    throw 'Completion check metrics did not preserve safe scope and scalar metadata.'
+  }
+  if (($metrics | ConvertTo-Json -Depth 20 -Compress).Contains($marker)) {
+    throw "Metrics exposed control or model content."
+  }
+  if ($metrics.usage_records -ne 0 -or $metrics.inference_work_tokens -ne 0) {
+    throw "Control and request-start events must not invent usage."
+  }
+}
+Write-Output "Runtime control metrics fixture passed: counts, positions, scope, content exclusion."

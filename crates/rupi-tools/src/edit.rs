@@ -12,9 +12,9 @@
 //!   the file no longer says what the model believes it says.
 //! - **Nothing is written when the match is wrong.** The replacement is applied
 //!   in memory, verified, and only then written — atomically.
-//! - **Repeated edits are detectable.** A retry of a completed edit fails with
-//!   "already applied" rather than failing silently or corrupting the file, so a
-//!   redelivered tool call cannot double-apply.
+//! - **Repeated calls can change state again.** Replacement text may retain or
+//!   create a match. Reconciliation examines both original and replacement text
+//!   before classifying an interrupted call; uncertain edits are never replayed blindly.
 
 use std::{fs, io::Write};
 
@@ -39,13 +39,12 @@ impl EditTool {
 
 impl Tool for EditTool {
   fn metadata(&self) -> ToolMetadata {
-    // Idempotent in the sense the contract asks about: re-applying the same edit
-    // cannot move the file to a different state, because the second application
-    // finds nothing to replace and is refused.
+    // Replacements may retain or create the needle. An identical invocation can
+    // change state again, so the tool cannot promise idempotence.
     ToolMetadata::mutating(
       "edit",
       "Replace an exact string in a file. The string must appear exactly once unless replace_all is set.",
-      true,
+      false,
     )
   }
 
@@ -168,9 +167,10 @@ impl EditTool {
     // `str::replace` is deliberately replace-all. When `replace_all` is false we
     // have already refused unless there was exactly one hit, so the same call
     // produces the intended single edit — no second code path to keep correct.
+    // Only original matches participate. Replacement text or its boundary with
+    // unmatched text may create new matches that must not be edited again.
     let updated = original.replace(find, replace);
     debug_assert!(hits == 1 || replace_all);
-    debug_assert!(!replace_all || updated.matches(find).count() == 0);
 
     if context.is_cancelled_or_expired() {
       return Ok(
@@ -268,22 +268,15 @@ fn edit_failure_text<'a>(
   find: &str,
   path: &std::path::Path,
 ) -> std::borrow::Cow<'a, str> {
-  let head = find
-    .lines()
-    .next()
-    .unwrap_or("")
-    .trim()
-    .chars()
-    .take(40)
-    .collect::<String>();
+  let head = find.lines().next().unwrap_or("").trim();
   let hint = if original.is_empty() {
     "the file is empty".to_string()
   } else if let Some(line) = original
     .lines()
-    .position(|l| l.trim() == head.trim().chars().take(20).collect::<String>())
+    .position(|line| !head.is_empty() && line.trim() == head)
   {
     format!(
-      "a similar line exists at line {} — check indentation and whitespace",
+      "the first requested line exists at line {} — re-read nearby lines and check whitespace",
       line + 1
     )
   } else {
@@ -363,6 +356,103 @@ mod tests {
   }
 
   #[test]
+  fn replace_all_keeps_new_matches_without_reprocessing_them() {
+    for (original, find, replace, expected) in [
+      (
+        "token + token\n",
+        "token",
+        "token_safe",
+        "token_safe + token_safe\n",
+      ),
+      ("aaa", "aa", "a", "aa"),
+    ] {
+      let dir = fixture(original);
+      let outcome = edit(
+        &dir,
+        json!({"path": "a.rs", "find": find, "replace": replace, "replace_all": true}),
+      );
+      assert_eq!(outcome.state, ToolExecutionState::Succeeded);
+      assert!(!outcome.is_error, "{}", outcome.text);
+      assert_eq!(outcome.effect, rupi_core::ToolEffectDisposition::Changed);
+      assert_eq!(
+        fs::read_to_string(dir.path().join("a.rs")).unwrap(),
+        expected
+      );
+    }
+  }
+
+  #[test]
+  fn retained_matches_make_edit_non_idempotent_and_require_reconciliation() {
+    let dir = fixture("token + token\n");
+    let args = json!({
+      "path": "a.rs", "find": "token", "replace": "token_safe", "replace_all": true,
+    });
+    assert_eq!(
+      edit(&dir, args.clone()).state,
+      ToolExecutionState::Succeeded
+    );
+    let first = fs::read_to_string(dir.path().join("a.rs")).unwrap();
+    assert_eq!(edit(&dir, args).state, ToolExecutionState::Succeeded);
+    let second = fs::read_to_string(dir.path().join("a.rs")).unwrap();
+    assert_eq!(first, "token_safe + token_safe\n");
+    assert_eq!(second, "token_safe_safe + token_safe_safe\n");
+
+    let metadata = EditTool::new(runtime(&dir)).metadata();
+    assert!(!metadata.read_only && !metadata.idempotent);
+    assert_eq!(
+      ToolExecutionState::Succeeded
+        .replay_decision_with_effect(&metadata, rupi_core::ToolEffectDisposition::Changed),
+      rupi_core::ReplayDecision::Never,
+    );
+    assert_eq!(
+      ToolExecutionState::Unknown
+        .replay_decision_with_effect(&metadata, rupi_core::ToolEffectDisposition::Unverified),
+      rupi_core::ReplayDecision::ReconcileFirst,
+    );
+  }
+
+  #[test]
+  fn an_old_idempotent_edit_fingerprint_cannot_reconcile_as_the_new_definition() {
+    let dir = fixture("token\n");
+    let tool = EditTool::new(runtime(&dir));
+    let identity = tool.stable_definition_identity().unwrap();
+    let current_metadata = tool.metadata();
+    let current = rupi_core::ToolDefinitionFingerprint::from_definition(
+      &identity,
+      &current_metadata,
+      &tool.arguments_schema(),
+    )
+    .unwrap();
+    let mut old_metadata = current_metadata.clone();
+    old_metadata.idempotent = true;
+    let old = rupi_core::ToolDefinitionFingerprint::from_definition(
+      &identity,
+      &old_metadata,
+      &tool.arguments_schema(),
+    )
+    .unwrap();
+    let registry =
+      crate::ToolRegistry::new(crate::Workspace::new(dir.path()).unwrap()).with_builtins();
+    let request = request(json!({"path": "a.rs", "find": "token", "replace": "token_safe"}));
+    assert!(matches!(
+      registry
+        .reconcile_with_definition(&request, Some(false), Some(&old))
+        .unwrap(),
+      ReconciliationStatus::RequiresManualInspection { .. }
+    ));
+    assert!(matches!(
+      registry
+        .reconcile_with_definition(&request, Some(false), Some(&current))
+        .unwrap(),
+      ReconciliationStatus::Unmodified { .. }
+    ));
+    assert_eq!(
+      fs::read_to_string(dir.path().join("a.rs")).unwrap(),
+      "token\n"
+    );
+  }
+
+  #[test]
   fn refuses_an_ambiguous_match_and_says_the_count() {
     let dir = fixture("dup\ndup\n");
     let outcome = edit(&dir, json!({"path": "a.rs", "find": "dup", "replace": "x"}));
@@ -413,9 +503,73 @@ mod tests {
   }
 
   #[test]
-  fn a_retry_of_a_completed_edit_cannot_double_apply() {
-    // The important safety property for redelivered calls: the second attempt is
-    // refused because the text it asked for is gone.
+  fn a_missed_long_line_edit_reports_where_to_reread_without_writing() {
+    let signature =
+      "fn recover_delivery_receipt_for_claim(claim: &Claim) -> Result<Receipt, Error> {";
+    let original = format!("// fixture\n  {signature}\n    current_action();\n}}\n");
+    for find in [
+      format!("  {signature}\n    stale_action();"),
+      format!("    {signature}\n    current_action();"),
+    ] {
+      let dir = fixture(&original);
+      let outcome = edit(
+        &dir,
+        json!({"path": "a.rs", "find": find, "replace": "replacement"}),
+      );
+      assert!(outcome.is_error);
+      assert_eq!(outcome.state, ToolExecutionState::Failed);
+      assert_eq!(outcome.effect, rupi_core::ToolEffectDisposition::None);
+      assert!(outcome.text.contains("line 2"), "{}", outcome.text);
+      assert!(!outcome.text.contains(signature), "no file dump");
+      assert_eq!(
+        fs::read_to_string(dir.path().join("a.rs")).unwrap(),
+        original
+      );
+
+      let corrected = edit(
+        &dir,
+        json!({"path": "a.rs", "find": "current_action();", "replace": "revised_action();"}),
+      );
+      assert!(!corrected.is_error, "{}", corrected.text);
+      assert_eq!(
+        fs::read_to_string(dir.path().join("a.rs")).unwrap(),
+        format!("// fixture\n  {signature}\n    revised_action();\n}}\n")
+      );
+    }
+  }
+
+  #[test]
+  fn a_shared_prefix_does_not_claim_the_requested_first_line_exists() {
+    let original = concat!(
+      "fn recover_delivery_receipt_with_other_arguments() {\n",
+      "  current_action();\n}\n"
+    );
+    let dir = fixture(original);
+    let outcome = edit(
+      &dir,
+      json!({
+        "path": "a.rs",
+        "find": "fn recover_delivery_receipt_with_expected_arguments() {",
+        "replace": "replacement"
+      }),
+    );
+    assert!(outcome.is_error);
+    assert_eq!(outcome.effect, rupi_core::ToolEffectDisposition::None);
+    assert!(!outcome.text.contains("line 1"), "{}", outcome.text);
+    assert!(
+      outcome.text.contains("re-read the file"),
+      "{}",
+      outcome.text
+    );
+    assert_eq!(
+      fs::read_to_string(dir.path().join("a.rs")).unwrap(),
+      original
+    );
+  }
+
+  #[test]
+  fn a_retry_is_refused_when_original_text_is_gone() {
+    // This replacement removes the needle, so the second invocation has no match.
     let dir = fixture("let x = 1;\n");
     let args = json!({"path": "a.rs", "find": "let x = 1;", "replace": "let x = 2;"});
     let first = edit(&dir, args.clone());

@@ -114,3 +114,51 @@ check `$LASTEXITCODE` explicitly after native programs, including `pwsh -File`. 
 native status incorrectly rejected a successful synthetic template probe. Immediate script
 status checks verified two ordered-fixture invocations with identical output. Keep these
 checks next to the command, before another operation replaces its status.
+
+## A writable Windows path may still be an invalid child working directory
+
+The completion host could create/copy a long run-derived snapshot, while Process.Start
+rejected its working directory before public checks ran. An owned short-path missing-file
+fixture returned Failed; the same long-path fixture threw "directory name is invalid".
+Select a short independent scratch root for snapshots/command artifacts while retaining
+the run-local mailbox and all evidence. Both roots must remain outside the canonical
+workspace. `bench/test-completion-feedback.ps1` reproduces the Windows baseline and checks
+short-root missing-deliverable failure, fresh repair success and canonical effect isolation.
+Keep observation Unavailable distinct from known failed checks; do not replay an uncertain
+check to hide a path-layout failure.
+
+## Cancel streaming fixtures after observing their first delta
+
+A transport fixture's150ms wall-time cancellation reached PreRequest under workspace
+test load, although the fixture required Streaming and partial output. Observe the first
+actual delta before cancelling instead of estimating HTTP/scheduler startup. Drain the
+complete fake POST, keep the connection open, and retain partial-output and no-repost
+assertions. The event-triggered fixture verifies those contracts without changing runtime.
+
+## Allow timeout fixtures enough setup time to start their command
+
+The caller fixture's13.1s total allowance left only1.1s after its12s cleanup/publication
+reserve. It returned Unavailable before the expected command artifact existed. Use18s
+with a10s simulated command so the fixture can complete snapshot/setup and then verify
+actual command timeout. Keep Unavailable and command-start assertions; do not relax
+production deadlines or retry uncertain observations.
+
+## Preserve a known missing-file failure before optional command observations
+
+The caller recorded absent required files but still launched an incomplete public suite.
+A later timeout threw and replaced that determinate failure with Unavailable. Return
+Failed after the bounded safe snapshot/preflight, explicitly saying commands were not run;
+then require full commands on a fresh request after repair. Keep genuine command/snapshot/
+deadline/protocol uncertainty Unavailable. Owned missing-init comparison verifies the old
+masking, zero new command starts and fresh full-check success. Use an explicit historical
+revision for optional comparisons; default fixtures must survive commits/squash merges.
+Long-path launch fixtures need complete workspaces to reach Process.Start after preflight.
+
+## Renewal fixtures must separate retained history from new turn controls
+
+Model requests on a fresh turn retain prior canonical runtime controls. Testing whether
+any review message exists therefore mistakes a historical review for a new trigger.
+Compare review counts against the first request of each turn, and independently assert
+new trace events and renewed observation ordinals. The final-check reservation fixture
+verifies one new review per turn, its ordering and fresh final checks without discarding
+legitimate history or changing runtime behavior to satisfy a test.

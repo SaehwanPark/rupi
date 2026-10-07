@@ -10,9 +10,68 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Added
 
+- Added optional run-only `--completion-feedback-timeout-ms` to cap each caller
+  observation at1..300,000ms while respecting remaining turn time. Default300s is
+  preserved; late replies never accept another request and timed-out work remains
+  Unavailable without replay. Case10 acceptance improvement remains unproved.
+
+- Added explicit `chat_template_enable_thinking` endpoint encoding for compatible local
+  templates. It sends the boolean `enable_thinking` key and preserves legacy/default
+  dialects. Owned Rupi and pinned Pi fake-wire fixtures verify matched requests; effective
+  backend enforcement and Case10 acceptance remain unproved.
+
+- Added an optional caller observation when timed completion review begins, so bounded
+  public feedback can reach the active model before its final answer. Review and final
+  checking share an allowance; passes do not replace review or a fresh final check.
+  Unavailable observations, cancellation and uncertain-effect barriers retain their stops.
+
+- Added optional first-request thinking selection within initial progress, renewed each
+  turn and inherited normally afterward. The endpoint owns disable encoding; requested
+  Off is not a claim about observed hidden reasoning or guaranteed backend enforcement.
+
+- Added optional initial mutating-tool string argument bounds, with request-local schema
+  constraints and pre-dispatch rejection of oversized completed calls. Unicode counting,
+  first-request capture and fresh-turn renewal are verified; later calls remain available.
+
+- Added an optional initial progress output ceiling for the first ordinary request only,
+  with smaller-change guidance, endpoint/context clamping and renewal each turn. Later
+  requests retain the endpoint ceiling. The Case10 harness can select this independently;
+  acceptance, latency and Pi control parity remain unproved.
+
+- Added explicit bounded Case10 benchmark mutation-budget selection, preserving runtime
+  defaults and total/request/time limits. Owned fixtures show mutation headroom can permit
+  later delivery/checking; acceptance improvement and native Pi control parity remain unproved.
+
+- Added optional bounded caller completion observations and a run-only private mailbox.
+  Failed public feedback can guide same-model repair; unavailable observations stop without
+  replay or failover. Core/CLI execute no checks; the caller isolates verification effects.
+  The Case10 benchmark can check copied public files during a turn while keeping independent
+  acceptance after closure. This does not certify correctness or claim Pi control parity.
+
+- Added an optional initial progress boundary for authorized implementation turns with
+  supplied context, reusing existing tool eligibility, approval and effect-safety checks.
+- Added an opt-in bounded completion review so the active model can check requested
+  deliverables and continue permitted work within existing turn budgets and safety barriers.
+  An optional remaining-time reserve triggers the same one-shot review during ongoing work.
+  The preceding model/tool cycle's observed duration anticipates spending that reserve.
+- Added an optional cooperative turn-time budget with runtime-owned remaining-time
+  guidance and an explicit exhausted status, preserving uncertain-mutation recovery.
 - Added an opt-in model progress boundary for bounded implementation turns. It can
   narrow the next request to configured mutating tools after repeated inspection-only
   tool requests while preserving normal tool lifecycle and `Unknown` semantics.
+
+### Fixed
+
+- Keep Case10 public-check snapshots under a short isolated scratch root on Windows,
+  preserving run-local mailboxes and artifacts. Long working directories can prevent
+  child startup; known missing deliverables now reach failed feedback through the caller.
+- Preserve child exit diagnostics in the CLI mailbox fixture and allow CI scheduling
+  headroom without changing production turn deadlines or repair assertions.
+
+- Resume sessions after an output-limit response containing partial text and unexecuted
+  tool calls, preserving canonical evidence without projecting or replaying the failed response.
+- Preserve useful missed-edit location hints for long first lines without applying approximate
+  replacements or changing interrupted-mutation reconciliation.
 
 ---
 

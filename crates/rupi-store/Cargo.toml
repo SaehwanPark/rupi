@@ -24,3 +24,7 @@ rustix.workspace = true
 [[bench]]
 name = "restore"
 harness = false
+
+[[bench]]
+name = "resume"
+harness = false

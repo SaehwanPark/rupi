@@ -368,6 +368,9 @@ Summary of metadata that cannot round-trip between Pi and `rupi`:
    import with explicit stderr warnings.
 10. **Provider billing metadata**: Pi's `cost` is omitted because `rupi` records token quantities,
     not billing amounts. Its input, cache-read, and cache-write counts are preserved on import.
+11. **Request failure metadata**: Native request completions may carry a typed failure category,
+    phase, replay safety and partial-output flag. Pi imports leave this absent; exports omit it.
+    Legacy native records also omit it. Absence does not certify success or known usage.
 
 ## 11. Themes and UI
 
@@ -517,6 +520,54 @@ Expected divergences include:
 - built-in failover;
 - rehydratable external context;
 - stricter tool transaction state;
+- optional cooperative turn-time limits with runtime-owned guidance and an explicit
+  exhausted status; native Pi control parity is not claimed;
+- optional initial progress boundary for explicitly selected implementation turns;
+  native Pi control parity is not claimed;
+- one bounded inspection attempt after a started known Failed selected mutation with
+  proven no effect under that opt-in boundary. Reads never satisfy Changed progress;
+  binding/policy/approval/effect/cancel barriers and existing caps retain authority.
+  Owned actual-tool and safety fixtures cover recovery; native Pi parity and acceptance
+  benefit remain unproved;
+- optional first-request output ceiling within that initial boundary; owned runtime and
+  provider-wire fixtures establish budgeting behavior, not acceptance or latency benefit;
+  native Pi selection remains null;
+- optional first-request thinking selection within initial progress; owned renewal and
+  wire fixtures verify requested levels, while backend enforcement and Pi parity are unproved;
+- optional first-request string argument limits for mutating tools, advertised through
+  request-local schemas and enforced before dispatch. Owned Unicode/schema/renewal/wire
+  fixtures cover this Rupi-specific contract; acceptance benefit and Pi parity are unproved;
+- optional bounded same-model completion review; this is runtime guidance rather than
+  certification that the user's task is correct, and native Pi parity is not claimed;
+- explicit endpoint template `enable_thinking` boolean dialect, preserving legacy/default
+  encodings; owned pinned Pi fake-wire fixtures verify matching field selection, while
+  effective backend enforcement and actual acceptance improvement remain unproved;
+- optional endpoint-native `reasoning_budget_tokens`, omitted for Off and bounded by the
+  effective output ceiling minus1,024 answer tokens. Owned fresh-turn fixtures and pinned
+  Pi0.86.1 fake requests verify matched Low2,048, exact field and small-ceiling omission.
+  This is provider request mapping; it does not add a Pi ecosystem support claim, discover
+  exposure or establish actual-case reasoning composition or acceptance improvement;
+- optional caller-delegated completion observations through an explicit run mailbox;
+  an opt-in run-only observation deadline preserves remaining-turn limits and treats
+  late/missing replies as Unavailable without replay;
+  public feedback may permit bounded same-model repair, and unavailable observations stop
+  without replay. Owned protocol/runtime/host fixtures cover this Rupi-specific behavior;
+  native Pi control parity and acceptance benefit are not claimed;
+- optional time/request completion review reserves and caller observation at reserved
+  review, sharing the one-shot review and check allowance;
+  default omission, fresh final checks and existing terminal safety semantics remain;
+- optional request-window refresh of Failed caller feedback during ongoing repair, sharing
+  the existing check allowance and preserving final checking; native Pi selection is null;
+- optional initial request window obtains the first caller observation during tool work,
+  sharing that allowance and retaining review/final checking; native Pi selection is null;
+- optional caller-check reserve activates review after fresh repairable Failed evidence,
+  reusing that check and preserving all allowances; native Pi selection is null;
+- optional final-check reservation pauses checkpoints before the last observation,
+  orders pending review first and requires fresh final checking; native Pi selection is null;
+- caller public snapshot preflight preserves missing-file failures before command execution;
+  repaired workspaces still require full public checks, with no native Pi parity claim;
+- caller public-check snapshots use a short isolated root for Windows process startup;
+  owned long-path/missing-deliverable/repair fixtures preserve observation classification;
 - potentially different internal session storage.
 
 These divergences should not unnecessarily break ecosystem-level reuse.

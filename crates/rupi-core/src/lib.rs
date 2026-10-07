@@ -63,10 +63,10 @@ pub use event::{
   AgentEvent, AssistantDelta, AttributedMessage, CheckpointCreated, ContextCompactionCompleted,
   ContextCompactionEpoch, ContextCompactionStarted, ContextReduced, Diagnostic, DiagnosticLevel,
   EventEnvelope, EventMeta, ExternalContextRetrieved, FIRST_COMPACTION_EPOCH, ModelEpochStarted,
-  ModelFailover, ModelRequestCompleted, ModelRequestStarted, ModelRetry, ReasoningDelta,
-  RuntimeControlInjected, SessionEndReason, SessionEnded, SessionStarted, ToolCompleted,
-  ToolFailed, ToolReconciliationObserved, ToolReconciliationSource, ToolRequested, ToolStarted,
-  ToolUnknown, TurnCompleted, TurnStatus, UserMessage, next_context_epoch,
+  ModelFailover, ModelRequestCompleted, ModelRequestFailure, ModelRequestStarted, ModelRetry,
+  ReasoningDelta, RuntimeControlInjected, SessionEndReason, SessionEnded, SessionStarted,
+  ToolCompleted, ToolFailed, ToolReconciliationObserved, ToolReconciliationSource, ToolRequested,
+  ToolStarted, ToolUnknown, TurnCompleted, TurnStatus, UserMessage, next_context_epoch,
 };
 pub use failure::{
   CompletionCertainty, FailurePhase, ModelFailure, ModelFailureKind, RequestReplaySafety,

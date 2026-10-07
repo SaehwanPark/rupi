@@ -1,5 +1,6 @@
 mod cli;
 mod compat;
+mod completion_feedback;
 mod export_pi;
 mod import_pi;
 mod interactive;

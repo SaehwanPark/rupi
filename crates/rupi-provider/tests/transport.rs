@@ -20,8 +20,8 @@ use std::{
 use rupi_core::{
   CancelToken, Collector, CompletionCertainty, CompletionUsage, ContentBlock, FailurePhase,
   Message, ModelCapabilities, ModelEndpoint, ModelFailure, ModelFailureKind, ModelProvider,
-  ModelRef, ModelRequest, ProviderEvent, ReasoningChunk, ReasoningExposure, ReasoningProvenance,
-  Role, ThinkingLevel, ToolSamplingConstraint, ToolSamplingStrictness,
+  ModelRef, ModelRequest, ProviderEvent, ProviderEventSink, ReasoningChunk, ReasoningExposure,
+  ReasoningProvenance, Role, ThinkingLevel, ToolSamplingConstraint, ToolSamplingStrictness,
 };
 use rupi_provider::{
   MAX_RESPONSE_FRAMES, MaxTokensField, OpenAiCompat, ProviderConfig, ThinkingInput,
@@ -897,6 +897,43 @@ fn a_quiet_stream_expires_at_the_logical_idle_timeout() {
 }
 
 #[test]
+fn an_active_partial_frame_obeys_a_child_deadline_without_reposting() {
+  let server = active_response(true);
+  let mut config = ProviderConfig::local("local-vulkan", "qwen3.8-flash", server.base_url(), 8_192);
+  config.read_timeout_ms = 500;
+  config.request_timeout_ms = Some(5_000);
+  let adapter = OpenAiCompat::new(config).expect("adapter");
+  let caller = CancelToken::new();
+  let cancel = caller.child_with_deadline(Instant::now() + Duration::from_millis(250));
+  let mut collector = Collector::default();
+  let started = Instant::now();
+  let failure = adapter
+    .stream(&request("bound active input"), &mut collector, &cancel)
+    .expect_err("active input must obey the turn deadline");
+  assert!(started.elapsed() < Duration::from_secs(2));
+  assert_eq!(failure.kind, ModelFailureKind::Cancelled);
+  assert_eq!(
+    failure.replay_safety,
+    rupi_core::RequestReplaySafety::AmbiguousPostBoundary
+  );
+  assert!(
+    collector.events().is_empty(),
+    "partial bytes are not a completion"
+  );
+  assert!(!caller.is_cancelled());
+  let refused = adapter
+    .stream(
+      &request("must not repost"),
+      &mut Collector::default(),
+      &caller,
+    )
+    .expect_err("an ambiguous request stays quarantined");
+  assert_eq!(refused.kind, ModelFailureKind::ProviderUnavailable);
+  let wire_request = server.request();
+  assert_eq!(wire_request.matches("POST ").count(), 1);
+}
+
+#[test]
 fn total_request_deadline_is_distinct_from_idle_timeout() {
   let listener = TcpListener::bind("127.0.0.1:0").expect("bind");
   let addr = listener.local_addr().expect("addr");
@@ -1023,14 +1060,25 @@ fn delayed_headers_use_the_logical_timeout_without_resubmitting_the_post() {
 
 #[test]
 fn cancel_during_a_slow_stream_stops_promptly() {
+  struct CancelAfterDelta {
+    collector: Collector,
+    cancel: CancelToken,
+  }
+  impl ProviderEventSink for CancelAfterDelta {
+    fn emit(&mut self, event: &ProviderEvent) {
+      self.collector.emit(event);
+      if matches!(event, ProviderEvent::TextDelta(_)) {
+        self.cancel.cancel();
+      }
+    }
+  }
   // The server sends one delta and then holds the connection open; the client
   // must abandon it on cancel rather than wait for a timeout.
   let listener = TcpListener::bind("127.0.0.1:0").expect("bind");
   let addr = listener.local_addr().expect("addr");
   let server = thread::spawn(move || {
     let (mut socket, _) = listener.accept().expect("accept");
-    let mut buf = [0u8; 512];
-    let _ = socket.read(&mut buf);
+    let _ = drain_request(&mut socket);
     let _ = socket.write_all(
       b"HTTP/1.1 200 OK\r\ncontent-type: text/event-stream\r\n\r\ndata: {\"choices\":[{\"delta\":{\"content\":\"first\"}}]}\n\n",
     );
@@ -1041,21 +1089,20 @@ fn cancel_during_a_slow_stream_stops_promptly() {
 
   let adapter = adapter(&format!("http://{addr}/v1"), None);
   let cancel = CancelToken::new();
-  let mut collector = Collector::default();
-  let thread_cancel = cancel.clone();
-  let killer = thread::spawn(move || {
-    thread::sleep(std::time::Duration::from_millis(150));
-    thread_cancel.cancel();
-  });
+  // A wall-time delay could cancel before the POST under CI load. Observe the
+  // actual first delta so this always tests cancellation during streaming.
+  let mut collector = CancelAfterDelta {
+    collector: Collector::default(),
+    cancel: cancel.clone(),
+  };
   let result = adapter.stream(&request("hang"), &mut collector, &cancel);
-  killer.join().expect("killer");
   let _ = server.join();
 
   let failure = result.unwrap_err();
   assert_eq!(failure.kind, ModelFailureKind::Cancelled);
   assert_eq!(failure.phase, FailurePhase::Streaming);
   assert!(failure.partial_output_emitted);
-  assert_eq!(collector.events().len(), 1);
+  assert_eq!(collector.collector.events().len(), 1);
 
   // The first POST is uncertain after cancellation. The same adapter must not
   // issue a second one; callers need a fresh provider instance or failover.
