@@ -49,3 +49,30 @@ write remain unchanged. No event or provenance change, catch/replay shortcut, ne
 budget, provider, schema or dependency. Debug behavior now follows the existing release
 behavior for valid retained/new matches. Actual turn2 causality remains unproven.
 Full workspace/debug/startup gates and source CI are pending at this commit.
+
+## Verified gates and Retry43 freeze
+
+Source297ec094775fb6914584ce93004ed9b1dbb9a73a passes full workspace fmt,
+core all-features check, all-target Clippy, tests, docs and debug build. Startup133.335ms
+cold/8.064ms warm median/8.778ms max passes existing budgets. Store/context performance,
+all13 harness guards, profile/prompt/SPEC/reference and owned four-turn protocol checks
+from unchanged c50a2d2 remain applicable; this leaf edit correction changes none of those
+interfaces or algorithms. No new inference has occurred since Retry42.
+
+The patched owned registry driver verifies retained-needle and boundary cases with one
+start observer, no panic, Succeeded/Changed and exact single-pass file bytes. SHA
+A95D6EB05D5AA2F4A7D11ADDC35E0441FD1556882F5A8D00A55B5AB1EF2ED207.
+The original driver/executable remains the before-change evidence; neither driver reads
+or edits any actual case artifact. Actual turn2 attribution remains unproven.
+
+Freeze fresh run bench-20261007-case10-editfix-retry43-rupi40-turns4-2400s with
+runtime297ec09 and callerfa6821860f6a2e94d4e5d1ecd86170e3eb00e072. Binary
+D25F0D7FF5E0CB09402E66E21130422DF5B41639E6233E93D352B76F2D6F0B04;
+harness91CED3EF27C50DDD31BA08CFBD3338E42D8B6CA319BD4CC051543835DC5F1D16,
+callerEB7829961FC2AB93AC36E8FE4971F5EA18F07C8DE6136019110373775DF1E6AC,
+helperA0BCAE689139BFD281CB91C209D5D8F6CF9EA42FD7EFF256BE02D97A871387C7.
+Same physical PID27356/direct8000/globalLow/initialOff; all42 four-turn/per-turn limits,
+shared prompt, public SPEC, acceptance, native-only Pi-null controls and public caller
+protocol remain unchanged. No helper/model restart or allowance increase.
+SourceCI37602883681 and exact freeze-head all3 CI must pass before launch. A fresh matched
+pinned Pi run remains conditional on independent rupi acceptance; no configured win yet.
