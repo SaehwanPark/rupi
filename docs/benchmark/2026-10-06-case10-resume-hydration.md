@@ -87,8 +87,8 @@ Workspace gates and existing performance budgets are still running at this commi
 Final source c50a2d2213688000f981d2281a383e16d8a5813c passes full workspace fmt,
 core all-features check, all-target Clippy, tests, docs and debug build. Rechecked final
 bench formatting/Clippy and full canonical release benchmark:89.879ms resume,
-47.761ms restore,139.456ms paired total within500ms. Startup145.967ms cold/9.299ms
-warm median/10.208ms max; five SessionLog cases95.30/619.90/2740.65/2585.00/5227.50us
+47.761ms restore,139.456ms paired total within500ms. Startup145.971ms cold/9.300ms
+warm median/10.215ms max; five SessionLog cases95.30/619.90/2740.65/2585.00/5227.50us
 and five context cases0.5/0.1/0/0/0.3us pass their existing budgets.
 
 All13 harness guards and owned four-turn recovery fixtures pass. Full selected native
