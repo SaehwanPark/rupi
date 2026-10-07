@@ -52,6 +52,7 @@ fn a_second_turn_on_one_handle_sends_the_first_turn_with_it() {
   // prompts per turn, which is the whole point of the handle.
   let args = RunArgs {
     completion_feedback_dir: None,
+    completion_feedback_timeout_ms: None,
     config,
     cwd: workspace.clone(),
     prompt: String::new(),
@@ -126,6 +127,7 @@ fn a_recoverable_fatal_error_closes_the_durable_session_before_reporting_it() {
   let config = write_config(temp.path(), &server.base_url());
   let args = RunArgs {
     completion_feedback_dir: None,
+    completion_feedback_timeout_ms: None,
     config,
     cwd: workspace.clone(),
     prompt: String::new(),
@@ -164,6 +166,7 @@ fn a_sink_error_does_not_fabricate_session_closure() {
   let config = write_config(temp.path(), &server.base_url());
   let args = RunArgs {
     completion_feedback_dir: None,
+    completion_feedback_timeout_ms: None,
     config,
     cwd: workspace.clone(),
     prompt: String::new(),
@@ -207,6 +210,7 @@ fn a_canceled_turn_ends_cancelled_and_the_same_handle_answers_again() {
   let config = write_config(temp.path(), &server.base_url());
   let args = RunArgs {
     completion_feedback_dir: None,
+    completion_feedback_timeout_ms: None,
     config,
     cwd: workspace.clone(),
     prompt: String::new(),
@@ -283,6 +287,7 @@ fn a_cancel_during_a_mutating_tool_leaves_that_call_unknown() {
   });
   let args = RunArgs {
     completion_feedback_dir: None,
+    completion_feedback_timeout_ms: None,
     config,
     cwd: workspace.clone(),
     prompt: String::new(),
@@ -782,6 +787,7 @@ fn completion_check_exhaustion_with_failed_tools_remains_resumable() {
           continue;
         }
         assert_eq!(request["ordinal"], 1);
+        assert_eq!(request["wait_timeout_ms"], 60_000);
         let reply = serde_json::json!({"version":1,"request_id":id,
           "status":"failed","feedback":"owned public check failure"});
         let temporary = host_directory.join(format!("reply-{id}.tmp"));
@@ -809,6 +815,7 @@ fn completion_check_exhaustion_with_failed_tools_remains_resumable() {
       resume,
       finalize: false,
       completion_feedback_dir: Some(mailbox.clone()),
+      completion_feedback_timeout_ms: Some(60_000),
       surface: SurfaceArgs::default(),
     })
     .expect("the CLI exhaustion boundary must permit the next owned turn");

@@ -31,7 +31,12 @@ pub fn execute(args: RunArgs) -> Result<(), String> {
     &args.surface,
     args.resume.as_deref(),
     false,
-    args.completion_feedback_dir.as_deref(),
+    (
+      args.completion_feedback_dir.as_deref(),
+      args
+        .completion_feedback_timeout_ms
+        .map(Duration::from_millis),
+    ),
     |session| {
       if args.finalize {
         match session.finalize(&args.prompt) {
@@ -111,7 +116,7 @@ pub(crate) fn open_session_with_approval(
     surface,
     resume,
     interactive_approval,
-    None,
+    (None, None),
     turns,
   )
 }
@@ -122,14 +127,16 @@ fn open_session_with_feedback(
   surface: &SurfaceArgs,
   resume: Option<&str>,
   interactive_approval: bool,
-  completion_feedback_dir: Option<&Path>,
+  completion_feedback: (Option<&Path>, Option<Duration>),
   turns: impl FnOnce(&mut SessionHandle<'_>) -> Result<(), String>,
 ) -> Result<(), String> {
   let config_text = fs::read_to_string(config)
     .map_err(|error| format!("cannot read config '{}': {error}", config.display()))?;
   let config =
     RuntimeConfig::parse(&config_text).map_err(|error| format!("invalid config: {error}"))?;
-  let completion_mailbox = CompletionMailbox::configure(completion_feedback_dir, cwd, &config)?;
+  let (feedback_directory, feedback_timeout) = completion_feedback;
+  let completion_mailbox =
+    CompletionMailbox::configure(feedback_directory, cwd, &config, feedback_timeout)?;
   // RKB normalization only enriches the cloned manager configuration with the
   // provider's read-only retrieval tool names. No MCP process is started here.
   let mcp_servers = rupi_rkb::RkbSetup::normalize_configs(&config.mcp_servers);

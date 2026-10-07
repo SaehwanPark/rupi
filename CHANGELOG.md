@@ -10,6 +10,11 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Added
 
+- Added optional run-only `--completion-feedback-timeout-ms` to cap each caller
+  observation at1..300,000ms while respecting remaining turn time. Default300s is
+  preserved; late replies never accept another request and timed-out work remains
+  Unavailable without replay. Case10 acceptance improvement remains unproved.
+
 - Added explicit `chat_template_enable_thinking` endpoint encoding for compatible local
   templates. It sends the boolean `enable_thinking` key and preserves legacy/default
   dialects. Owned Rupi and pinned Pi fake-wire fixtures verify matched requests; effective

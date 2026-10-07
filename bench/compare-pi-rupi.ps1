@@ -63,6 +63,8 @@ param(
   [string]$Case10ThinkingInput = 'reasoning_effort',
   [ValidateRange(0, 16)]
   [int]$Case10CompletionChecks = 0,
+  [ValidateSet(0, 60000)]
+  [int]$Case10CompletionFeedbackTimeoutMs = 0,
   [ValidateRange(0, 100)]
   [int]$Case10CompletionCheckInitialRequestWindow = 0,
   [ValidateRange(0, 100)]
@@ -86,6 +88,9 @@ if ($Case10NativeReasoningBudgetTokens -gt 0 -and
 }
 if ($Case10CompletionCheckReserveFinal -and $Case10CompletionChecks -lt 2) {
   throw 'Case10 final check reserve requires at least two completion checks.'
+}
+if ($Case10CompletionFeedbackTimeoutMs -gt 0 -and $Case10CompletionChecks -le 0) {
+  throw 'Case10 caller deadline requires configured completion checks.'
 }
 if ($Case10CompletionReviewCheckReserve -gt 0 -and
     (-not $Case10ReviewCompletion -or $Case10CompletionChecks -lt 2 -or
@@ -2179,6 +2184,24 @@ function Get-BenchmarkMaxOutputTokens([hashtable]$case) {
   return 16384
 }
 
+function Get-BenchmarkCompletionFeedbackTimeout([hashtable]$case, [string]$agent) {
+  if ($case.Id -ne '10-receipt-ledger' -or $agent -ne 'rupi' -or
+      $Case10CompletionFeedbackTimeoutMs -eq 0) { return $null }
+  if ($Case10CompletionFeedbackTimeoutMs -ne 60000 -or $Case10CompletionChecks -le 0) {
+    throw 'Case10 caller deadline requires the verified60000ms cap and configured checks.'
+  }
+  return $Case10CompletionFeedbackTimeoutMs
+}
+
+function Add-BenchmarkCompletionFeedbackArguments(
+  [hashtable]$case, [string]$agent, [Collections.Generic.List[string]]$arguments
+) {
+  $timeout = Get-BenchmarkCompletionFeedbackTimeout $case $agent
+  if ($null -eq $timeout) { return }
+  $arguments.Add('--completion-feedback-timeout-ms')
+  $arguments.Add([string]$timeout)
+}
+
 function Get-BenchmarkNativeReasoningBudget([hashtable]$case) {
   if ($case.Id -ne '10-receipt-ledger' -or $Case10NativeReasoningBudgetTokens -le 0) {
     return $null
@@ -2845,6 +2868,7 @@ function Invoke-AgentCase([hashtable]$case, [string]$agent, [string]$root, [stri
         $completionHost = New-CompletionFeedbackHost $workspace.project $turnRoot $python $case.Help `
           -ScratchRoot (Join-Path $repoRoot '.benchmark/completion-scratch')
         $args.Add("--completion-feedback-dir"); $args.Add($completionHost.mailbox)
+        Add-BenchmarkCompletionFeedbackArguments $case $agent $args
         $completionCallback = {
           param($processId, $remainingMs)
           Invoke-CompletionFeedbackHost $completionHost $processId $remainingMs
@@ -2900,6 +2924,8 @@ function Invoke-AgentCase([hashtable]$case, [string]$agent, [string]$root, [stri
         $Case10MaxTurnDurationMs -gt 0
       ) { $Case10MaxTurnDurationMs } else { $null }
       if ($case.Id -eq "10-receipt-ledger") {
+        $turnRecord['configured_completion_feedback_timeout_ms'] =
+          Get-BenchmarkCompletionFeedbackTimeout $case $agent
         $turnRecord['configured_provider_read_timeout_ms'] = Get-BenchmarkReadTimeout $case $agent
         $turnRecord["configured_completion_checks"] = if (
           $agent -eq "rupi" -and $Case10CompletionChecks -gt 0
@@ -3788,6 +3814,8 @@ $summary = [ordered]@{
   } else { $null }
   case10_native_reasoning_budget_tokens =
     Get-BenchmarkNativeReasoningBudget @{Id='10-receipt-ledger'}
+  case10_rupi_completion_feedback_timeout_ms =
+    Get-BenchmarkCompletionFeedbackTimeout @{Id='10-receipt-ledger'} 'rupi'
   case10_rupi_completion_check_on_review = Get-BenchmarkReviewCheck @{Id='10-receipt-ledger'} 'rupi'
   case10_rupi_completion_check_repair_request_window =
     Get-BenchmarkRepairCheckWindow @{Id='10-receipt-ledger'} 'rupi'

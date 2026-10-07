@@ -704,8 +704,12 @@ Run-only `--completion-feedback-dir` selects a caller-owned, existing absolute d
 outside the workspace. Configured allowance and disabled outside read/write/search access
 are validated before provider requests. Interactive/default paths reject configured checks
 without a handler. CLI publishes version1 UUID requests atomically and waits at most300s
-(or shorter native time) for a matching strict reply: 128KiB JSON, 16KiB feedback. Invalid,
-missing, IO-failed or timed-out replies become Unavailable, with no replay. Artifacts remain.
+(or shorter native time) for a matching strict reply: 128KiB JSON, 16KiB feedback.
+Optional run-only `--completion-feedback-timeout-ms` selects a smaller1..300,000ms
+adapter wait ceiling and advertises it through the existing wait_timeout_ms field.
+It requires the mailbox; omission preserves300s. Remaining native time still wins.
+Invalid, missing, IO-failed or timed-out replies become Unavailable, with no replay.
+Artifacts remain.
 The channel protects against model file tools; it is not an OS sandbox or arbitrary-exec
 isolation. CLI/core never choose or run verification commands.
 

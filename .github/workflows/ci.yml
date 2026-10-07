@@ -30,6 +30,10 @@ jobs:
         if: runner.os == 'Windows'
         shell: pwsh
         run: ./bench/test-native-thinking-budget.ps1
+      - name: caller observation deadline harness contracts
+        if: runner.os == 'Windows'
+        shell: pwsh
+        run: ./bench/test-completion-feedback-deadline.ps1
       - name: core contracts compile independently
         run: cargo check -p rupi-core --all-features
       - name: clippy

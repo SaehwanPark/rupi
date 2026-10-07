@@ -1845,7 +1845,11 @@ TUI rendering passed all budgets (3.31–3.90 µs/unit); checkpointed restore me
   budgets, all30 transport tests and a CLI exhaustion/resume no-replay fixture pass.
   Full local gates, exact source CI on all3 platforms and author invariant review pass;
   warm8.096ms/cold145.026ms and resume132.4132ms meet budgets. The documentation freeze
-  CI and fresh Retry46 screen remain pending. Actual failed-tool attribution,
+  CI passes; Retry46b fails all4 independent acceptance checks despite reduced live idle
+  CPU and successful later resumes. Frozen terminal audits pass:133 starts/130 usage,
+  834,122 known work, three request-usage gaps. Caller observations consume about22.5min.
+  Optional CLI caller deadline is implemented with owned slow-host/late-reply no-replay
+  guards; full delivery and the next fresh screen remain pending. Actual failed-tool attribution,
   acceptance benefit and a paired win remain unproved.
   Rupi-first screening and paired
   evidence/delivery checks remain pending. Broader project gates remain active.

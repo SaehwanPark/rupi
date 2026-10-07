@@ -46,6 +46,9 @@ pub const RUN_HELP: &str = concat!(
   "                           Caller mailbox for configured completion checks;\n",
   "                           must exist outside the workspace with outside read,\n",
   "                           write and search access disabled. Run mode only.\n",
+  "  --completion-feedback-timeout-ms <1..300000>\n",
+  "                           Cap each caller observation wait (default: 300000);\n",
+  "                           requires the mailbox. Turn time also bounds the wait.\n",
   "  --resume <id>            Continue a recorded session rather than starting a\n",
   "                           new one, so the next turn is appended to the session\n",
   "                           named. An id or a unique prefix names it, exactly as\n",
@@ -442,6 +445,7 @@ pub struct SkillsArgs {
 #[derive(Debug, Clone, PartialEq, Eq)]
 pub struct RunArgs {
   pub completion_feedback_dir: Option<PathBuf>,
+  pub completion_feedback_timeout_ms: Option<u64>,
   pub config: PathBuf,
   pub cwd: PathBuf,
   pub prompt: String,
@@ -1002,6 +1006,7 @@ fn parse_run(remaining: &[OsString]) -> Result<Command, String> {
   let mut resume: Option<String> = None;
   let mut finalize = false;
   let mut completion_feedback_dir: Option<PathBuf> = None;
+  let mut completion_feedback_timeout_ms: Option<u64> = None;
   // Held as options so two flags that decide the same thing can be reported as a
   // conflict instead of silently resolved by whichever came last.
   let mut color: Option<ColorChoice> = None;
@@ -1019,7 +1024,13 @@ fn parse_run(remaining: &[OsString]) -> Result<Command, String> {
       .ok_or_else(|| format!("run argument name is not valid UTF-8\n{RUN_HELP}"))?;
     index += 1;
     match flag {
-      "--config" | "--cwd" | "--prompt" | "--color" | "--width" | "--completion-feedback-dir" => {
+      "--config"
+      | "--cwd"
+      | "--prompt"
+      | "--color"
+      | "--width"
+      | "--completion-feedback-dir"
+      | "--completion-feedback-timeout-ms" => {
         let value = remaining
           .get(index)
           .ok_or_else(|| format!("{flag} requires a value\n{RUN_HELP}"))?
@@ -1034,6 +1045,14 @@ fn parse_run(remaining: &[OsString]) -> Result<Command, String> {
               return Err("--completion-feedback-dir must be an absolute directory path".into());
             }
             set_once(&mut completion_feedback_dir, directory, flag)?;
+          }
+          "--completion-feedback-timeout-ms" => {
+            let milliseconds = value
+              .to_str()
+              .and_then(|value| value.parse::<u64>().ok())
+              .filter(|value| (1..=300_000).contains(value))
+              .ok_or_else(|| "--completion-feedback-timeout-ms must be 1..300000".to_string())?;
+            set_once(&mut completion_feedback_timeout_ms, milliseconds, flag)?;
           }
           "--prompt" => {
             let value = value
@@ -1105,8 +1124,12 @@ fn parse_run(remaining: &[OsString]) -> Result<Command, String> {
   if finalize && completion_feedback_dir.is_some() {
     return Err("--completion-feedback-dir is unavailable in no-tool finalization".into());
   }
+  if completion_feedback_timeout_ms.is_some() && completion_feedback_dir.is_none() {
+    return Err("--completion-feedback-timeout-ms requires --completion-feedback-dir".into());
+  }
   Ok(Command::Run(RunArgs {
     completion_feedback_dir,
+    completion_feedback_timeout_ms,
     config,
     cwd,
     prompt,
@@ -1301,6 +1324,7 @@ fn inline_value(arg: &std::ffi::OsStr) -> Option<(&str, &std::ffi::OsStr)> {
       | "--prompt"
       | "--resume"
       | "--completion-feedback-dir"
+      | "--completion-feedback-timeout-ms"
       | "--color"
       | "--width"
       | "--session"
@@ -1935,6 +1959,98 @@ mod tests {
       Err(message) => message,
       Ok(_) => panic!("expected an error"),
     }
+  }
+
+  #[test]
+  fn completion_feedback_deadline_is_an_explicit_run_option() {
+    let absolute = std::env::temp_dir().join("owned-mailbox");
+    let path = absolute.to_str().unwrap();
+    assert!(
+      parse(strings(&[
+        "run",
+        "--config",
+        "owned.json",
+        "--cwd",
+        ".",
+        "--prompt",
+        "owned observation",
+        "--completion-feedback-dir",
+        path,
+        "--completion-feedback-timeout-ms",
+        "60000",
+      ]))
+      .is_ok(),
+      "caller observations must support a bounded opt-in deadline"
+    );
+    assert_eq!(run_args(&[]).completion_feedback_timeout_ms, None);
+    for milliseconds in ["1", "60000", "300000"] {
+      assert_eq!(
+        run_args(&[
+          "--completion-feedback-dir",
+          path,
+          "--completion-feedback-timeout-ms",
+          milliseconds
+        ])
+        .completion_feedback_timeout_ms,
+        Some(milliseconds.parse().unwrap()),
+      );
+    }
+    assert_eq!(
+      run_args(&[
+        "--completion-feedback-dir",
+        path,
+        "--completion-feedback-timeout-ms=60000"
+      ])
+      .completion_feedback_timeout_ms,
+      Some(60_000)
+    );
+    for value in [
+      "",
+      "0",
+      "-1",
+      "300001",
+      "18446744073709551616",
+      "unknown",
+      "1.5",
+    ] {
+      assert!(
+        run_err(&[
+          "--completion-feedback-dir",
+          path,
+          "--completion-feedback-timeout-ms",
+          value
+        ])
+        .contains("1..300000")
+      );
+    }
+    assert!(run_err(&["--completion-feedback-timeout-ms"]).contains("requires a value"));
+    assert!(
+      run_err(&["--completion-feedback-timeout-ms", "60000"])
+        .contains("requires --completion-feedback-dir")
+    );
+    assert!(
+      run_err(&[
+        "--completion-feedback-dir",
+        path,
+        "--completion-feedback-timeout-ms",
+        "1",
+        "--completion-feedback-timeout-ms",
+        "2"
+      ])
+      .contains("only once")
+    );
+    assert!(
+      parse(strings(&[
+        "interactive",
+        "--config",
+        "c",
+        "--cwd",
+        "w",
+        "--completion-feedback-timeout-ms",
+        "60000"
+      ]))
+      .is_err()
+    );
   }
 
   #[test]

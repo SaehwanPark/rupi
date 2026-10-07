@@ -21,6 +21,7 @@ const MAX_WAIT: Duration = Duration::from_secs(300);
 pub(crate) struct CompletionMailbox {
   directory: PathBuf,
   workspace: PathBuf,
+  wait_limit: Duration,
 }
 
 #[cfg(test)]
@@ -39,7 +40,7 @@ mod tests {
       "owned-state",
     );
     config.limits.max_completion_checks_per_turn = Some(2);
-    let mailbox = CompletionMailbox::configure(Some(&directory), &workspace, &config)
+    let mailbox = CompletionMailbox::configure(Some(&directory), &workspace, &config, None)
       .unwrap()
       .unwrap();
     (temp, mailbox, config)
@@ -199,34 +200,164 @@ mod tests {
   }
 
   #[test]
-  fn mailbox_requires_configured_private_absolute_directory() {
+  fn mailbox_caps_slow_observations_and_ignores_late_passed_replies() {
+    let (_temp, original, config) = fixture();
+    let mailbox = CompletionMailbox::configure(
+      Some(&original.directory),
+      &original.workspace,
+      &config,
+      Some(Duration::from_millis(30)),
+    )
+    .unwrap()
+    .unwrap();
+    let directory = mailbox.directory.clone();
+    let host = std::thread::spawn(move || {
+      let deadline = Instant::now() + Duration::from_secs(2);
+      loop {
+        if let Some(path) = fs::read_dir(&directory)
+          .unwrap()
+          .map(|entry| entry.unwrap().path())
+          .find(|path| {
+            path
+              .file_name()
+              .unwrap()
+              .to_string_lossy()
+              .starts_with("request-")
+              && path
+                .extension()
+                .is_some_and(|extension| extension == "json")
+          })
+        {
+          let request: Value = serde_json::from_slice(&fs::read(path).unwrap()).unwrap();
+          assert_eq!(request["wait_timeout_ms"], 30);
+          let id = request["request_id"].as_str().unwrap();
+          // A determinate pass arriving after the deadline cannot accept this or a later request.
+          std::thread::sleep(Duration::from_millis(80));
+          fs::write(
+            directory.join(format!("reply-{id}.json")),
+            serde_json::to_vec(&json!({"version":1,"request_id":id,
+              "status":"passed","feedback":"owned late pass"}))
+            .unwrap(),
+          )
+          .unwrap();
+          return;
+        }
+        assert!(Instant::now() < deadline, "owned request did not arrive");
+        std::thread::sleep(Duration::from_millis(1));
+      }
+    });
+    let started = Instant::now();
+    let first = mailbox.check(request(), &CancelToken::new());
+    assert_eq!(first.status, CompletionCheckStatus::Unavailable);
+    assert_eq!(first.feedback, "completion observation timed out");
+    assert!(started.elapsed() < Duration::from_secs(1));
+    host.join().unwrap();
+    let second = mailbox.check(
+      CompletionCheckRequest {
+        ordinal: 2,
+        remaining_turn_time: Some(Duration::from_millis(10)),
+      },
+      &CancelToken::new(),
+    );
+    assert_eq!(second.status, CompletionCheckStatus::Unavailable);
+    let mut requests: Vec<Value> = fs::read_dir(&mailbox.directory)
+      .unwrap()
+      .map(|entry| entry.unwrap().path())
+      .filter(|path| {
+        path
+          .file_name()
+          .unwrap()
+          .to_string_lossy()
+          .starts_with("request-")
+          && path
+            .extension()
+            .is_some_and(|extension| extension == "json")
+      })
+      .map(|path| serde_json::from_slice(&fs::read(path).unwrap()).unwrap())
+      .collect();
+    requests.sort_by_key(|request| request["ordinal"].as_u64().unwrap());
+    assert_eq!(
+      requests.len(),
+      2,
+      "a timed-out observation must never be replayed"
+    );
+    assert_eq!(
+      requests[1]["wait_timeout_ms"], 10,
+      "remaining turn time stays authoritative"
+    );
+    assert_ne!(requests[0]["request_id"], requests[1]["request_id"]);
+  }
+
+  #[test]
+  fn mailbox_validates_deadline_before_filesystem_or_provider_work() {
     let (_temp, mailbox, mut config) = fixture();
-    assert!(CompletionMailbox::configure(None, &mailbox.workspace, &config).is_err());
+    for wait in [
+      Duration::ZERO,
+      Duration::from_nanos(1),
+      MAX_WAIT + Duration::from_millis(1),
+    ] {
+      assert!(
+        CompletionMailbox::configure(
+          Some(Path::new("nonexistent")),
+          &mailbox.workspace,
+          &config,
+          Some(wait),
+        )
+        .unwrap_err()
+        .contains("1..300000")
+      );
+    }
+    config.limits.max_completion_checks_per_turn = None;
     assert!(
-      CompletionMailbox::configure(Some(Path::new("relative")), &mailbox.workspace, &config)
-        .is_err()
+      CompletionMailbox::configure(None, Path::new("nonexistent"), &config, Some(MAX_WAIT),)
+        .unwrap_err()
+        .contains("requires a caller mailbox")
     );
     assert!(
-      CompletionMailbox::configure(Some(&mailbox.workspace), &mailbox.workspace, &config).is_err()
+      CompletionMailbox::configure(None, Path::new("nonexistent"), &config, None,)
+        .unwrap()
+        .is_none()
+    );
+  }
+
+  #[test]
+  fn mailbox_requires_configured_private_absolute_directory() {
+    let (_temp, mailbox, mut config) = fixture();
+    assert!(CompletionMailbox::configure(None, &mailbox.workspace, &config, None).is_err());
+    assert!(
+      CompletionMailbox::configure(
+        Some(Path::new("relative")),
+        &mailbox.workspace,
+        &config,
+        None
+      )
+      .is_err()
+    );
+    assert!(
+      CompletionMailbox::configure(Some(&mailbox.workspace), &mailbox.workspace, &config, None)
+        .is_err()
     );
     let nested = mailbox.workspace.join("nested");
     fs::create_dir(&nested).unwrap();
-    assert!(CompletionMailbox::configure(Some(&nested), &mailbox.workspace, &config).is_err());
+    assert!(
+      CompletionMailbox::configure(Some(&nested), &mailbox.workspace, &config, None).is_err()
+    );
     for kind in ["read", "write", "search"] {
       config.tools.allow_read_outside = kind == "read";
       config.tools.allow_write_outside = kind == "write";
       config.tools.allow_search_outside = kind == "search";
       assert!(
-        CompletionMailbox::configure(Some(&mailbox.directory), &mailbox.workspace, &config)
+        CompletionMailbox::configure(Some(&mailbox.directory), &mailbox.workspace, &config, None)
           .is_err()
       );
     }
     config.limits.max_completion_checks_per_turn = None;
     assert!(
-      CompletionMailbox::configure(Some(&mailbox.directory), &mailbox.workspace, &config).is_err()
+      CompletionMailbox::configure(Some(&mailbox.directory), &mailbox.workspace, &config, None)
+        .is_err()
     );
     assert!(
-      CompletionMailbox::configure(None, Path::new("nonexistent"), &config)
+      CompletionMailbox::configure(None, Path::new("nonexistent"), &config, None)
         .unwrap()
         .is_none()
     );
@@ -266,7 +397,15 @@ impl CompletionMailbox {
     directory: Option<&Path>,
     workspace: &Path,
     config: &RuntimeConfig,
+    wait_limit: Option<Duration>,
   ) -> Result<Option<Self>, String> {
+    if wait_limit.is_some() && directory.is_none() {
+      return Err("completion feedback timeout requires a caller mailbox".into());
+    }
+    let wait_limit = wait_limit.unwrap_or(MAX_WAIT);
+    if wait_limit.as_millis() == 0 || wait_limit > MAX_WAIT {
+      return Err("completion feedback timeout must be 1..300000 milliseconds".into());
+    }
     match (config.limits.max_completion_checks_per_turn, directory) {
       (None, None) => return Ok(None),
       (None, Some(_)) => {
@@ -302,6 +441,7 @@ impl CompletionMailbox {
     Ok(Some(Self {
       directory,
       workspace,
+      wait_limit,
     }))
   }
 
@@ -326,8 +466,8 @@ impl CompletionMailbox {
   ) -> Result<CompletionCheckResult, String> {
     let wait = request
       .remaining_turn_time
-      .unwrap_or(MAX_WAIT)
-      .min(MAX_WAIT);
+      .unwrap_or(self.wait_limit)
+      .min(self.wait_limit);
     if cancel.is_cancelled() || wait.is_zero() {
       return Err("completion observation cancelled before submission".into());
     }

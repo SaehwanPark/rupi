@@ -548,6 +548,8 @@ Expected divergences include:
   This is provider request mapping; it does not add a Pi ecosystem support claim, discover
   exposure or establish actual-case reasoning composition or acceptance improvement;
 - optional caller-delegated completion observations through an explicit run mailbox;
+  an opt-in run-only observation deadline preserves remaining-turn limits and treats
+  late/missing replies as Unavailable without replay;
   public feedback may permit bounded same-model repair, and unavailable observations stop
   without replay. Owned protocol/runtime/host fixtures cover this Rupi-specific behavior;
   native Pi control parity and acceptance benefit are not claimed;

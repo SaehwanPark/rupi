@@ -49,6 +49,12 @@ turn, without moving domain verification or command execution into core.
   IO failure or timeout is Unavailable; cancellation cooperates with the current token.
   Hard-bound reply bytes to128KiB, parsed feedback16KiB, wait to300s or the shorter
   remaining native duration. No command is chosen or executed by CLI/core.
+- Optional run-only `--completion-feedback-timeout-ms` accepts1..300,000 and requires
+  the mailbox. Each exchange advertises the lesser of this cap and remaining native
+  duration through existing wait_timeout_ms. Omission preserves300s. Timed-out work
+  remains Unavailable and stops the turn; a late Passed reply cannot accept a later
+  exchange. The CLI wait cap is cooperative information to the external host, not
+  authority to execute, kill or replay its checks.
 - Use fresh UUID correlation, create-new temporary files plus rename, and retain
   mailbox artifacts. Never consume an unrelated/stale reply. The directory is a
   trusted caller channel; it is protected from model file tools, not an OS sandbox.
@@ -57,6 +63,9 @@ turn, without moving domain verification or command execution into core.
 
 - Add Case10CompletionChecks (0/default disabled, positive1..16). Native Rupi config
   and run flag select a fresh mailbox outside project; native Pi selection is null.
+- Prospective Case10CompletionFeedbackTimeoutMs selects0/default omitted or verified
+  60,000ms for rupi with configured checks. Pi/other cases remain null, including the
+  new selected scalar metadata. Full post-turn independent acceptance stays unchanged.
 - Extend Invoke-External with an optional bounded while-running callback, preserving
   its default wait path. The Case10 host handles each valid current-process request
   once, snapshots only public project files into an owned directory outside model
