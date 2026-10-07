@@ -71,3 +71,52 @@ No runtime/source/build/harness/profile changes warrant repeating those gates.
 Parent author protocol/invariant review passes; no independent reviewer or causal claim.
 Exact new frozen-head all3 CI must pass before Retry41. Only MaxTurns4 changes;
 fresh matched Pi uses the same four-turn ceiling if rupi reaches acceptance.
+
+## Retry41 terminal audit and next failure investigation
+
+Frozen99ef89d67f03b0e8dce8b39e15b0bce5659e67ab completes its four-turn protocol with
+no independent acceptance. Total calls9,543,166ms;583,150 known work, with one missing
+usage record in EACH turn (four requests' work remains Unknown). No matched Pi or win.
+
+Turn1:2,370,071ms/native TimeBudgetExhausted/no outer timeout,2 starts/closed/1 usage,
+7,221 known work=6,225 input+996 output. One write request/no completion/one failure/
+0 Unknown, no required files/no checks/no review. Tests/help/acceptance1, no verification
+timeout. Typed cancellation after2 is streaming/committed_output/partial_output=true.
+
+Turn2:2,372,353ms/TimeBudgetExhausted/no outer timeout,31 starts/closed/30 usage,
+152,827 known=123,567 input+29,260 output. Tools35/33 complete/2 failures/0 Unknown.
+Seven Failed checks after8/11/14/17/20/23/26 at145/124/43/124/83/77050/77236ms;
+review23/5 boundaries/31 time controls. All required files; tests1/help0x4/acceptance1,
+no verification timeout. Cancellation after31 is pre_request/ambiguous_post_boundary/
+partial_output=false. Last observation remains reserved and unused.
+
+Turn3:2,400,389ms/OUTER timeout/no runtime terminal status,39 starts/38 closed/38 usage,
+204,696 known=187,660 input+17,036 output. Tools49/47 complete/2 failures/0 Unknown.
+Seven Failed checks after8/11/14/17/20/23/26 at77193/76816/76826/4245/4230/4490/4373ms;
+review23/8 boundaries/39 time controls. All required files; tests1/help0x4/acceptance1,
+no verification timeout. No typed failure fact; last request remains unclosed.
+
+Turn4:2,400,353ms/OUTER timeout/no runtime terminal status,35 starts/closed/34 usage,
+218,406 known=198,065 input+20,341 output. Tools51/48 complete/3 failures/0 Unknown.
+Failed checks after8/11/14/17 at4247/4305/4384/4264ms; Passed after20/22 at4495/4445ms.
+Review22/6 boundaries/35 time controls/0 finalizations. All required files: README2629B,
+init0B/app31881B/test-init0B/tests9142B. Post-tests0/help0x4/acceptance1/no verification
+timeout. Prior Passed observations do not certify the final workspace or private contract.
+No typed failure fact; absence does not explain or certify the last request.
+
+Known finish counts are turn1:1tool_calls, turn2:30tool_calls, turn3:38tool_calls,
+turn4:33tool_calls/1stop/1 unknown reason (value uninspected). All actual generated code,
+model outputs/traces/caller diagnostics/oracle source and diagnostics remain uninspected.
+Frozen binary/runtime/harness/caller/helper/profile/prompt/SPEC/three reference audits
+pass before changes; sourceCI37535719010/frozenCI37548175022 all3 each pass before launch.
+Slots0..3 idle, physical PID27356/listener unchanged, helper health unchanged/root policy
+hash intact. A pipeline slot read selected the array object and produced null fields;
+corrected explicit iteration proves all four idle without changing or restarting anything.
+
+RCA boundary: ordinary recovery creates public artifacts and eventually passes public
+checks, but not independent acceptance. Semantic defects remain unknown. More notably,
+turns3/4 do not record a native2370s terminal exit before outer2400s, unlike turns1/2.
+Investigate owned runtime/provider cancellation and shutdown paths, using owned stalled
+fixtures to establish a cause before a production fix. Do not widen budgets, rerun the
+same profile blindly, expose private diagnostics or reinterpret missing work as zero.
+The four-turn protocol is complete and failed; PR145 remains draft, broader gate active.
