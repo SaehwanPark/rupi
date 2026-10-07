@@ -132,3 +132,52 @@ supersedes source297/d36 entirely before inference. Same physical model, all Ret
 comparison controls and four-turn recovery protocol; no allowance increase. The exact
 new freeze-head CI must also pass all three platforms before launch. A fresh matched
 Pi0.86.1 run remains conditional on independent rupi acceptance; Case10 is still active.
+
+## Retry43 terminal evidence and next recovery slice
+
+All four recovery turns fail independent acceptance and project tests; all four help
+commands pass on every turn. Native statuses are BudgetExhausted, BudgetExhausted,
+CompletionCheckExhausted and TimeBudgetExhausted. Calls total8,699,028ms. Known work is
+1,118,758 tokens (1,043,395 uncached input +75,363 output), with156 request starts and
+closures but155 usage records. Turn4's last request has unknown work; this is not a
+fully known total. Its typed failure is Cancelled/Streaming/CommittedOutput with partial
+output after39 starts. No outer or post-run verification timeout is recorded.
+There are194 tool requests,178 completed tools,16 Failed and zero recorded Unknown.
+These counts do not identify the actual failed tool kinds or effects, and absence of an
+Unknown record is not proof of certain effects across interruptions. Failed caller checks
+run after8/11/14/17/20/23/26 starts each turn, plus a fresh final check after38 on turn3.
+Review runs after23 each turn. No acceptance improvement or configured Pi win is proved;
+no Pi run is launched for this failed screen.
+
+Terminal audits pass before any production source/build change: exact2c6153c freeze head,
+clean tracked checkout, runtime953328e and binary3805153D, unchanged caller/harness/helper,
+all saved controls, full public SPEC/shared prompt and three acceptance reference hashes.
+The physical model remains PID27356/parent33820 with qwen3.8-flash-next, health ok and
+zero busy slots. All three existing helper PIDs remain present. The user-edited root usage
+policy hash remains3CEE11E5D4D8C8CA7CCF34F87A64B18BB183D4AF9AF79AB964AE19D4EF39B496.
+An extra owned audit initially required the historical launcher parent to remain alive;
+that unsupported condition was removed, retaining the model's recorded parent identity.
+No model/helper or inference change resulted from this audit-script correction.
+
+Owned root-cause investigation demonstrates a separate recovery limitation in
+TurnLoop::progress_tool_is_exposed: an active opt-in progress boundary hides all reads
+even after a durably started selected edit fails with proven None effect. Actual registered
+EditTool confirms the owned wrong-anchor failure started and left sample.txt unchanged.
+With five request slots, an adaptive deterministic provider can neither inspect nor repair:
+four edits fail and the runtime exhausts its budget. A retained repair-before.exe fails its
+expected Completed assertion (exit101); driver SHA256
+F84C2BA0CCDAF8C3569E8E5A9C513B97A00C00F55C033C98EB690EDFBBAC8D5F.
+The frozen source/binary above are used. This proves an owned runtime limitation, not the
+semantic cause or contribution of the actual Case10 failures; actual content is uninspected.
+
+The next bounded runtime slice permits one read-only inspection attempt after a started,
+known Failed selected mutation with proven None effect, while the opt-in boundary is
+active and ordinary inspection-plus-repair capacity remains. Reads cannot satisfy Changed
+progress. Advertised bindings, registry/path policy, approval, uncertain-effect barriers,
+cancellation and every existing request/tool/mutation/check/time cap retain authority.
+Unstarted/refused/stale calls, read failures and Unknown/Possible/Unverified effects cannot
+grant inspection. Enforce consumption before validation and across a multi-read batch;
+grant only after committed batch results. Clear on Changed progress and new turn/finish.
+Default turns stay unchanged. Existing ProgressCorrection provenance carries static guidance.
+Owned repair and safety fixtures plus full local/source/freeze checks must pass before
+fresh Retry44. Case10 and the broader roadmap gate remain active.
