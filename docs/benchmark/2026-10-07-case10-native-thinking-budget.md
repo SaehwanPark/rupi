@@ -138,5 +138,33 @@ configuration, with owned fake HTTP verifying Off omission, Low2,048, effective 
 to budget476, ceiling1,025 to budget1, and ceiling1,024 omission. Default template fixtures
 also pass. No live model endpoint receives these fixture requests. A syntax error in the
 new owned PowerShell fixture is corrected before verification; no case retry is involved.
-The Windows CI job now runs the native-budget configuration guard. Full delivery checks,
-author invariant review, source/freeze CI and a fresh actual attempt remain pending.
+The Windows CI job now runs the native-budget configuration guard.
+
+## Delivery verification and fresh freeze
+
+Source `0b7221d1d9aa971a2198457acaae0f791b5c250f` passes full local formatting, core
+all-features compilation, workspace Clippy with warnings denied, normal-scheduling workspace
+tests, documentation and debug build. Three-platform source CI37650183033 passes. Parent
+author invariant review passes with no blocking findings; no independent review is claimed.
+
+Warm startup median8.97ms and fresh-inode cold median143.66ms pass the100/250ms budgets.
+Canonical400-fragment/48-call resume+restore median133.132ms passes500ms. All five Store
+restore budgets and all five context benchmark budgets pass. Rendering production is unchanged.
+The18 other-case initial/recovery prompt hashes and both owned Case10 prompt variants match
+the prior harness. Actual shared initial hash remains230589C5; the case source tree is
+unchanged and Case10 has the same three reference files. Caller/helper hashes remain frozen.
+
+One repeated owned Pi HTTP fixture reports an SDK-default connection error after earlier
+passing evidence. Its exact connection cause remains unknown. An owned diagnostic using
+explicit standard fetch passes; the fixture now restricts every request to its own server
+origin and reports underlying fetch errors. Both default and native pinned Pi wire fixtures
+pass with this change. This verifies configuration/body mapping, not Pi production transport
+reliability. No Pi source or model endpoint is changed or used by these fake HTTP checks.
+The operator prompt guard initially normalized source line endings before comparing the
+historical actual hash; checking the actual source encoding corrects that guard and passes.
+Neither fixture correction is an actual-case retry.
+
+Freeze the fresh Retry45 profile with matched native2,048 and all other Retry44 selections
+unchanged. Exact frozen-head CI must pass all three platforms before launch. The physical
+model and original helpers remain in place. Fresh independent acceptance and a paired win
+remain pending; full delivery checks and owned probes alone do not establish the goal.

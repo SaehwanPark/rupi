@@ -542,12 +542,12 @@ Expected divergences include:
 - explicit endpoint template `enable_thinking` boolean dialect, preserving legacy/default
   encodings; owned pinned Pi fake-wire fixtures verify matching field selection, while
   effective backend enforcement and actual acceptance improvement remain unproved;
-- optional caller-delegated completion observations through an explicit run mailbox;
 - optional endpoint-native `reasoning_budget_tokens`, omitted for Off and bounded by the
   effective output ceiling minus1,024 answer tokens. Owned fresh-turn fixtures and pinned
   Pi0.86.1 fake requests verify matched Low2,048, exact field and small-ceiling omission.
   This is provider request mapping; it does not add a Pi ecosystem support claim, discover
   exposure or establish actual-case reasoning composition or acceptance improvement;
+- optional caller-delegated completion observations through an explicit run mailbox;
   public feedback may permit bounded same-model repair, and unavailable observations stop
   without replay. Owned protocol/runtime/host fixtures cover this Rupi-specific behavior;
   native Pi control parity and acceptance benefit are not claimed;

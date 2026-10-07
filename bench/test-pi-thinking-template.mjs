@@ -34,6 +34,17 @@ assert(![8000, 8001, 8002, 8003, 8004].includes(address.port));
 const model = { ...template, api: provider.api, provider: 'unsloth',
   baseUrl: `http://127.0.0.1:${address.port}/v1`, input: ['text'],
   cost: { input: 0, output: 0, cacheRead: 0, cacheWrite: 0 } };
+const ownedOrigin = new URL(model.baseUrl).origin;
+const ownedFetch = async (input, init) => {
+  const url = new URL(input instanceof Request ? input.url : String(input));
+  assert.equal(url.origin, ownedOrigin, 'Fixture requests must stay on its owned server.');
+  try {
+    return await globalThis.fetch(input, init);
+  } catch (error) {
+    console.error('Owned fixture fetch failed:', error);
+    throw error;
+  }
+};
 try {
   const { streamSimple } = await import(pathToFileURL(bundle).href);
   const profiles = nativeBudget ? [
@@ -43,7 +54,7 @@ try {
   for (const [level, maxTokens] of profiles) {
     const stream = streamSimple(model, { messages: [{ role: 'user',
       content: 'owned dialect fixture', timestamp: Date.now() }] },
-    { apiKey: 'local', reasoning: level, maxTokens,
+    { apiKey: 'local', reasoning: level, maxTokens, fetch: ownedFetch,
       signal: AbortSignal.timeout(10000) });
     const result = await stream.result();
     assert.equal(result.stopReason, 'stop', result.errorMessage);
@@ -58,7 +69,7 @@ try {
     assert(!Object.hasOwn(body, 'thinking_token_budget'));
     assert.equal(body.model, template.id);
   }
-  console.log('Owned pinned Pi template wire passed: exact toggle,Off omission,native budget,answer room.');
+  console.log('Owned pinned Pi template wire passed: toggle,Off omission,native budget,answer room.');
 } finally {
   server.closeAllConnections();
   await new Promise(resolve => server.close(resolve));

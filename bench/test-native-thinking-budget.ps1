@@ -84,4 +84,4 @@ if ($PiAdapterBundle) {
     (Join-Path $piRoot 'models.json') 2048
   if ($LASTEXITCODE -ne 0) { throw 'Pinned Pi native fake wire failed.' }
 }
-Write-Output 'Owned native budget fixture passed: default,matching,direct dependency,case isolation.'
+Write-Output 'Owned native budget fixture passed: default,matching,direct dependency,isolation.'

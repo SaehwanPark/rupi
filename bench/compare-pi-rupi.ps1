@@ -2620,7 +2620,8 @@ function New-PiConfig([string]$agentRoot, [hashtable]$case) {
   if ($case.Id -eq '10-receipt-ledger' -and $Case10NativeReasoningBudgetTokens -gt 0) {
     $null = Get-BenchmarkNativeReasoningBudget $case
     $models.providers.unsloth.models[0].compat['supportsThinkingTokenBudget'] = $true
-    $models.providers.unsloth.models[0].compat['thinkingTokenBudgetField'] = 'reasoning_budget_tokens'
+    $models.providers.unsloth.models[0].compat['thinkingTokenBudgetField'] =
+      'reasoning_budget_tokens'
   }
   Write-Json (Join-Path $piConfig "models.json") $models
   $piConfig
@@ -2941,7 +2942,8 @@ function Invoke-AgentCase([hashtable]$case, [string]$agent, [string]$root, [stri
         } else { $null }
       }
       $turnRecord["configured_thinking_control"] = Get-BenchmarkThinkingControl $case $thinkingLevel
-      $turnRecord["configured_native_reasoning_budget_tokens"] = Get-BenchmarkNativeReasoningBudget $case
+      $turnRecord["configured_native_reasoning_budget_tokens"] =
+        Get-BenchmarkNativeReasoningBudget $case
       $turnRecord["configured_model_endpoint"] = Get-BenchmarkEndpoint $case
       $budget = Get-BenchmarkReasoningBudget $case
       $turnRecord["configured_reasoning_budget_tokens"] = if ($budget -gt 0) {
@@ -3784,7 +3786,8 @@ $summary = [ordered]@{
   case10_rupi_completion_checks = if ($Case10CompletionChecks -gt 0) {
     $Case10CompletionChecks
   } else { $null }
-  case10_native_reasoning_budget_tokens = Get-BenchmarkNativeReasoningBudget @{Id='10-receipt-ledger'}
+  case10_native_reasoning_budget_tokens =
+    Get-BenchmarkNativeReasoningBudget @{Id='10-receipt-ledger'}
   case10_rupi_completion_check_on_review = Get-BenchmarkReviewCheck @{Id='10-receipt-ledger'} 'rupi'
   case10_rupi_completion_check_repair_request_window =
     Get-BenchmarkRepairCheckWindow @{Id='10-receipt-ledger'} 'rupi'

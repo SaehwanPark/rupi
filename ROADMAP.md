@@ -1834,8 +1834,9 @@ TUI rendering passed all budgets (3.31–3.90 µs/unit); checkpointed restore me
   Corrected terminal idle audit passes; prior wrapped-array assertions alone do not prove
   historical idleness. An opt-in native reasoning budget is implemented with bounded
   config, effective answer-room/Off mapping, fresh-turn checks, unchanged-driver red-to-green
-  and14 owned harness guards including matched pinned Pi wire fixtures. Full delivery
-  gates and a fresh screen remain pending. Local CPU cost is not reproduced by a dense
+  and14 owned harness guards including matched pinned Pi wire fixtures. Full normal local
+  gates, three-platform source CI, author review and startup/resume/restore/context budgets
+  pass. Exact freeze CI and a fresh native2,048 screen remain pending. Local CPU cost is not reproduced by a dense
   owned resume fixture; its responsible path remains unknown. Actual failed-tool attribution,
   acceptance benefit and a paired win remain unproved.
   Rupi-first screening and paired
