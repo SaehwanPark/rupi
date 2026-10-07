@@ -168,9 +168,10 @@ impl EditTool {
     // `str::replace` is deliberately replace-all. When `replace_all` is false we
     // have already refused unless there was exactly one hit, so the same call
     // produces the intended single edit — no second code path to keep correct.
+    // Only original matches participate. Replacement text or its boundary with
+    // unmatched text may create new matches that must not be edited again.
     let updated = original.replace(find, replace);
     debug_assert!(hits == 1 || replace_all);
-    debug_assert!(!replace_all || updated.matches(find).count() == 0);
 
     if context.is_cancelled_or_expired() {
       return Ok(
@@ -353,6 +354,32 @@ mod tests {
       fs::read_to_string(dir.path().join("a.rs")).unwrap(),
       "fn a() {\n  let x = 2;\n}\n"
     );
+  }
+
+  #[test]
+  fn replace_all_keeps_new_matches_without_reprocessing_them() {
+    for (original, find, replace, expected) in [
+      (
+        "token + token\n",
+        "token",
+        "token_safe",
+        "token_safe + token_safe\n",
+      ),
+      ("aaa", "aa", "a", "aa"),
+    ] {
+      let dir = fixture(original);
+      let outcome = edit(
+        &dir,
+        json!({"path": "a.rs", "find": find, "replace": replace, "replace_all": true}),
+      );
+      assert_eq!(outcome.state, ToolExecutionState::Succeeded);
+      assert!(!outcome.is_error, "{}", outcome.text);
+      assert_eq!(outcome.effect, rupi_core::ToolEffectDisposition::Changed);
+      assert_eq!(
+        fs::read_to_string(dir.path().join("a.rs")).unwrap(),
+        expected
+      );
+    }
   }
 
   #[test]

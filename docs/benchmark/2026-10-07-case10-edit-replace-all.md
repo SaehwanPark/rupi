@@ -33,3 +33,19 @@ new binary/source and exact source/frozen-head all3 CI before another attempt. K
 next fresh four-turn profile identical to42 so the edit fix is the only new variable.
 No manual modification of generated case work or oracle visibility/acceptance changes.
 PR145 remains draft until independent acceptance and a fresh matched Pi comparison win.
+
+## Implementation and focused evidence
+
+New actual EditTool regression fails on the unchanged implementation at edit.rs:173,
+then passes after removing only that false postcondition. It covers token->token_safe
+at multiple original matches and aaa/aa->a yielding aa across an unmatched suffix.
+Both assert exact single-pass output, Succeeded and Changed. All83 tools unit tests and
+focused all-target Clippy pass, including ambiguity/refusal, cancellation, atomic-write,
+exact diagnostics and no-replay/reconciliation fixtures.
+
+Parent author invariant review: pass, no blocking findings. Original match counting,
+the valid uniqueness assertion, replacement algorithm, prewrite cancellation and atomic
+write remain unchanged. No event or provenance change, catch/replay shortcut, new model,
+budget, provider, schema or dependency. Debug behavior now follows the existing release
+behavior for valid retained/new matches. Actual turn2 causality remains unproven.
+Full workspace/debug/startup gates and source CI are pending at this commit.
