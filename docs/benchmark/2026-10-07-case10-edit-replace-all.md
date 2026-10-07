@@ -109,3 +109,26 @@ fingerprint as RequiresManualInspection while matching current identity can repo
 Unmodified without changing bytes. Architecture records the verified risk/migration
 boundary. Parent author review now passes for both execution and risk semantics; no
 independent-review claim. Source/freeze hashes above are superseded before any inference.
+
+## Final corrected-source verification and Retry43 freeze
+
+Runtime source953328e26f5a0887d6eaee26aad7f491d6418f54 passes workspace fmt,
+core all-features check, all-target Clippy, tests, docs and debug build. All85 tools unit
+tests pass, including repeated explicit calls and old-fingerprint reconciliation.
+Startup141.518ms cold/8.386ms warm median/8.643ms max passes the existing budgets.
+All13 harness guards, full selected profile/SPEC/three reference-file hash guards,
+owned four-turn recovery protocol and18 unchanged non-Case10 prompt hashes pass again.
+The current actual-registry owned driver confirms both retained/new-match cases succeed
+once with Changed, exact single-pass bytes and no panic. No actual case content was used.
+
+SourceCI37604846978 succeeds on Windows, macOS and Linux. Parent author invariant review
+passes; no independent-review claim. Store/context algorithms remain unchanged from the
+verified c50a2d2 performance evidence. Actual Retry42 turn2 causality remains unproven.
+
+Freeze Retry43 with source953328e and debug binary
+3805153DDD600CA0081E7CCCD1E6E08623524B8BB09FA547A057D4CC1EAA1E70.
+Caller, harness, helper and shared-prompt hashes above remain unchanged. This final freeze
+supersedes source297/d36 entirely before inference. Same physical model, all Retry42
+comparison controls and four-turn recovery protocol; no allowance increase. The exact
+new freeze-head CI must also pass all three platforms before launch. A fresh matched
+Pi0.86.1 run remains conditional on independent rupi acceptance; Case10 is still active.
