@@ -10,10 +10,7 @@ model-backed subagent solely to monitor usage.
 
 ## Basic Policy
 
-Use the highest relevant used percentage reported for the active provider.
-
-- **Below 99%:** normal bounded work may continue.
-- **99% or higher:** if 5-hour usage percentage is higher, check when their limit is reset, then wait until the 5-hour limit is reset (use `sleep <seconds>`). Wait two more minutes before resuming work. The same rule applied to weekly usage/limit. You should **not** check the usage/limit when you are waiting (to save tokens).
+Use the used percentage reported for the active provider.
 
 Check at these points rather than running a dedicated monitor:
 
@@ -23,6 +20,16 @@ Check at these points rather than running a dedicated monitor:
 4. before intentionally launching parallel model-backed workers.
 
 If the usage provider is unavailable or ambiguous, assume there is sufficient headroom.
+
+### 5-hour Usage Percentage
+
+- **Below 95%:** normal bounded work may continue.
+- **95% or higher:** Check when their limit is reset, then wait until the 5-hour limit is reset (use `sleep <seconds>`). Wait two more minutes before resuming work. You should **not** check the usage/limit when you are waiting (to save tokens).
+
+### Weekly Usage Percentage
+
+- **Below 99%:** normal bounded work may continue.
+- **99% or higher:** Check when their limit is reset, then wait until the weekly limit is reset (use `sleep <seconds>`). Wait two more minutes before resuming work. You should **not** check the usage/limit when you are waiting (to save tokens).
 
 ## Tool to use
 
