@@ -471,7 +471,7 @@ pub struct ToolMetadata {
 Coding workflows may configure `RuntimeLimits::max_model_requests_without_progress` and
 an optional `progress_tool_names` allowlist. After the configured number of tool-bearing
 requests without one of those tools, `TurnLoop` records a runtime-owned model-visible
-instruction, exposes only the allowlisted tools on the next request, and requests
+instruction, exposes only the allowlisted mutating tools on the next request, and requests
 `ToolChoice::Required` where supported. That provider hint is not trusted as enforcement:
 a text-only completion while the boundary remains active is retained in the canonical trace,
 excluded from model-visible history and final report text, and followed by a corrective
@@ -490,6 +490,21 @@ the effective executable mutating-tool set using the active model's tool support
 and current approval availability. An empty set emits a durable error diagnostic and fails before
 another provider request, including after a failover changes capabilities. The default is disabled
 so read-only questions and inspection workflows remain unchanged.
+
+A durably started selected mutation that ends `Failed` with proven `None` effect can
+grant one read-only inspection attempt after the committed batch. The active boundary,
+executable mutation policy, and at least two ordinary request/tool slots for inspection
+plus repair are required; the allowance expires when that capacity is spent. Registry
+and archived-payload reads retain their existing bindings, path policy and output limits.
+Consume the allowance before argument/binding validation, even if inspection fails;
+additional reads in the same batch are recorded as unstarted failures. A later eligible
+failed mutation can renew it only after its batch, never authorize an unadvertised
+same-batch read. Static guidance uses existing `ProgressCorrection` canonical/projected
+runtime provenance. Read results never satisfy Changed progress or release text completion.
+Unstarted/refused/stale calls and Unknown/Possible/Unverified effects cannot grant it;
+uncertain mutations still stop the entire remaining batch and require reconciliation.
+Changed progress and turn boundaries clear the transient allowance. No cap, approval,
+replay, durable schema or default-turn authority changes.
 
 ### Opt-in turn-time budget
 

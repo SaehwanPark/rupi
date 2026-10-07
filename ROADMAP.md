@@ -1820,6 +1820,14 @@ TUI rendering passed all budgets (3.31–3.90 µs/unit); checkpointed restore me
   Optional final-check reservation is active to retain one fresh observation for the
   final candidate while preserving all allowances; no acceptance or configured win yet.
   No semantic cause, acceptance benefit, or paired Case10 win is established.
+  Retry43 at frozen2c6153c/runtime953328e fails independent acceptance in all4 turns.
+  Calls8,699,028ms/1,118,758 known work with156 starts/155 usage records; last request work
+  remains unknown. No outer/verification timeout, full frozen audit passes/slots idle.
+  Owned actual-tool fixture proves active progress hides reads after started Failed/None
+  edit, even with inspection+repair capacity. One bounded read-only attempt is implemented
+  under opt-in progress with binding/policy/approval/effect/cancel/cap safeguards; ten
+  focused recovery tests pass. Full gates and fresh Retry44 screening remain pending.
+  Actual failed-tool attribution, acceptance benefit and a paired win remain unproved.
   Rupi-first screening and paired
   evidence/delivery checks remain pending. Broader project gates remain active.
   Preserve stable public delivery keys, distinct private fencing, lost-ack retry and

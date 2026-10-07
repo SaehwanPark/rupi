@@ -595,8 +595,16 @@ struct ToolCallAdmission {
 #[derive(Debug, Clone, Copy, Default)]
 struct ToolBatchOutcome {
   progress_succeeded: bool,
+  failed_progress_without_effect: bool,
   unresolved_mutation: bool,
   budget_exhausted: bool,
+}
+
+#[derive(Debug, Clone, Copy, Default, PartialEq, Eq)]
+enum ProgressInspectionAllowance {
+  #[default]
+  Unavailable,
+  Available,
 }
 
 struct TurnTimeBudget {
@@ -658,6 +666,7 @@ pub struct TurnLoop<'a> {
   progress_requests_without_progress: usize,
   progress_boundary_active: bool,
   progress_boundary_used: bool,
+  progress_inspection: ProgressInspectionAllowance,
   /// Model requests spent by the current turn, retries and takeovers included.
   ///
   /// Counted where requests are issued rather than where rounds are driven, so the
@@ -771,6 +780,7 @@ impl<'a> TurnLoop<'a> {
       progress_requests_without_progress: 0,
       progress_boundary_active: false,
       progress_boundary_used: false,
+      progress_inspection: ProgressInspectionAllowance::Unavailable,
       requests: AtomicUsize::new(0),
       tools_enabled: true,
       interactive_tool_approval: false,
@@ -1693,6 +1703,7 @@ impl<'a> TurnLoop<'a> {
     self.progress_requests_without_progress = 0;
     self.progress_boundary_active = false;
     self.progress_boundary_used = false;
+    self.progress_inspection = ProgressInspectionAllowance::Unavailable;
     // Recovery may rewrite only the history that predates this turn. Keep the
     // boundary local so one turn's emergency state cannot leak into the next.
     let mut turn_history_start: usize;
@@ -1786,6 +1797,11 @@ impl<'a> TurnLoop<'a> {
     while self.requests.load(Ordering::SeqCst) < normal_request_limit {
       if cancel.is_cancelled() {
         return self.finish(report, TurnStatus::Cancelled, clock, Some(turn_id.clone()));
+      }
+      if self.progress_inspection == ProgressInspectionAllowance::Available
+        && !self.inspection_has_repair_capacity(normal_request_limit)
+      {
+        self.progress_inspection = ProgressInspectionAllowance::Unavailable;
       }
       self.mutating_approval_available =
         self.interactive_tool_approval && progress.mutating_approval_available();
@@ -2137,6 +2153,9 @@ impl<'a> TurnLoop<'a> {
       if let Some(reason) = self.observe_progress(&turn_id, batch.progress_succeeded)? {
         return self.finish_unsatisfied_progress(report, reason, clock, turn_id.clone());
       }
+      if batch.failed_progress_without_effect && !cancel.is_cancelled() {
+        self.grant_progress_inspection(&turn_id, normal_request_limit)?;
+      }
     }
 
     if self.progress_required_before_completion() {
@@ -2472,6 +2491,7 @@ impl<'a> TurnLoop<'a> {
     clock: Instant,
     turn_id: Option<TurnId>,
   ) -> Result<TurnReport, TurnError> {
+    self.progress_inspection = ProgressInspectionAllowance::Unavailable;
     let expired = self.active_time_budget.take().is_some_and(|budget| {
       Instant::now() >= budget.deadline && !budget.caller_cancel.is_cancelled()
     });
@@ -3881,6 +3901,7 @@ impl<'a> TurnLoop<'a> {
     self.assemble_request_for(self.provider(), messages)
   }
 
+  #[cfg(test)]
   fn exposed_tools_for(&self, capabilities: &ModelCapabilities) -> Vec<rupi_core::ToolSpec> {
     self
       .exposed_tool_bindings_for(capabilities)
@@ -3911,7 +3932,8 @@ impl<'a> TurnLoop<'a> {
         tools.push((spec, RequestToolBinding::Registry(Box::new(binding))));
       }
     }
-    if !self.progress_boundary_active
+    if (!self.progress_boundary_active
+      || self.progress_inspection == ProgressInspectionAllowance::Available)
       && self.trace.supports_payload_read()
       && !self.available_payload_refs().is_empty()
     {
@@ -4012,9 +4034,13 @@ impl<'a> TurnLoop<'a> {
 
   fn effective_progress_tools(&self) -> Vec<String> {
     self
-      .exposed_tools_for(&self.provider().capabilities())
+      .exposed_tool_bindings_for(&self.provider().capabilities())
       .into_iter()
-      .map(|spec| spec.name)
+      .filter(|(spec, binding)| {
+        !binding.read_only()
+          && (self.progress_tool_names.is_empty() || self.progress_tool_names.contains(&spec.name))
+      })
+      .map(|(spec, _)| spec.name)
       .collect()
   }
 
@@ -4206,7 +4232,7 @@ impl<'a> TurnLoop<'a> {
       return true;
     }
     if read_only {
-      return false;
+      return self.progress_inspection == ProgressInspectionAllowance::Available;
     }
     self.progress_tool_names.is_empty()
       || self
@@ -4244,6 +4270,7 @@ impl<'a> TurnLoop<'a> {
       self.progress_requests_without_progress = 0;
       self.progress_boundary_active = false;
       self.progress_boundary_used = true;
+      self.progress_inspection = ProgressInspectionAllowance::Unavailable;
       return Ok(None);
     }
     if self.progress_boundary_used && self.progress_boundary_mode == ProgressBoundaryMode::OneShot {
@@ -4262,6 +4289,57 @@ impl<'a> TurnLoop<'a> {
       && self.progress_request_limit.is_some()
       && self.progress_boundary_mode == ProgressBoundaryMode::Recurring
       && !self.progress_boundary_used
+  }
+
+  fn inspection_has_repair_capacity(&self, ordinary_request_limit: usize) -> bool {
+    ordinary_request_limit.saturating_sub(self.requests.load(Ordering::SeqCst)) >= 2
+      && self.max_tool_calls.saturating_sub(self.tool_calls_seen) >= 2
+      && self.mutating_tool_calls_seen < self.max_mutating_tool_calls
+  }
+
+  /// A proven no-effect failure can need current state before a corrected mutation.
+  /// This grants inspection on a fresh request, never authority within the failed batch.
+  fn grant_progress_inspection(
+    &mut self,
+    turn_id: &TurnId,
+    ordinary_request_limit: usize,
+  ) -> Result<(), TurnError> {
+    if !self.progress_boundary_active
+      || !self.tools_enabled
+      || !self.inspection_has_repair_capacity(ordinary_request_limit)
+      || self.effective_progress_tools().is_empty()
+    {
+      return Ok(());
+    }
+    self.progress_inspection = ProgressInspectionAllowance::Available;
+    if !self
+      .exposed_tool_bindings_for(&self.provider().capabilities())
+      .iter()
+      .any(|(_, binding)| binding.read_only())
+    {
+      self.progress_inspection = ProgressInspectionAllowance::Unavailable;
+      return Ok(());
+    }
+    let text = concat!(
+      "Runtime progress correction: a selected mutating tool started and failed with proven ",
+      "no effect. One permitted read-only inspection attempt is now available to obtain the ",
+      "current state before a corrected mutation. A failed or rejected inspection also spends ",
+      "this allowance; additional reads in the same response will not run. Inspection does ",
+      "not satisfy progress: a successful selected mutation with confirmed Changed effect ",
+      "is still required. Existing approval, safety and turn budgets remain in force."
+    );
+    let kind = RuntimeControlKind::ProgressCorrection;
+    let message = Message::runtime_control(text, kind);
+    let envelope = self.emit_message(
+      Some(turn_id.clone()),
+      AgentEvent::RuntimeControlInjected(RuntimeControlInjected {
+        kind,
+        text: text.to_string(),
+      }),
+      &message,
+    )?;
+    self.push_message(message, envelope.meta.seq);
+    Ok(())
   }
 
   fn activate_progress_boundary(&mut self, turn_id: &TurnId) -> Result<Option<String>, TurnError> {
@@ -4331,9 +4409,13 @@ impl<'a> TurnLoop<'a> {
     } else {
       self.progress_tool_names.join(", ")
     };
-    let text = format!(
-      "Runtime progress boundary remains unsatisfied: your previous response did not make a successful progress-tool call. Call one of {tools} now; do not claim completion until the requested change has been attempted."
+    let mut text = format!(
+      "Runtime progress boundary remains unsatisfied: your previous response did not make a successful progress-tool call with confirmed Changed effect. Call one of {tools}; do not claim completion until a successful change is observed."
     );
+    if self.progress_inspection == ProgressInspectionAllowance::Available {
+      text
+        .push_str(" The previously granted single read-only inspection attempt remains available.");
+    }
     let kind = RuntimeControlKind::ProgressCorrection;
     let message = Message::runtime_control(text.clone(), kind);
     let envelope = self.emit_message(
@@ -5117,6 +5199,26 @@ impl<'a> TurnLoop<'a> {
         TurnError::Sink("tool-call budget plan does not match the assistant batch".into())
       })?;
       let read_only = admission.read_only;
+      // Spend the request's inspection authority before any validation or dispatch.
+      // Batch results can renew it only after all calls have been closed.
+      if self.progress_boundary_active && read_only && admission.denial.is_none() {
+        let permitted = self.progress_inspection == ProgressInspectionAllowance::Available;
+        self.progress_inspection = ProgressInspectionAllowance::Unavailable;
+        if !permitted {
+          self.record_unexecuted_calls(
+            turn_id.clone(),
+            std::slice::from_ref(call),
+            ToolBatchContext {
+              assistant_event_id: &assistant_event_id,
+              tool_bindings: &tool_bindings,
+            },
+            progress,
+            "not executed: the progress boundary's single inspection attempt is exhausted",
+            true,
+          )?;
+          continue;
+        }
+      }
       let definition_fingerprint = admission
         .binding
         .as_ref()
@@ -5412,6 +5514,15 @@ impl<'a> TurnLoop<'a> {
         && execution.outcome.effect == rupi_core::ToolEffectDisposition::Changed
       {
         outcome.progress_succeeded = true;
+      }
+      if self.call_makes_progress(call, &admission)
+        && execution.started
+        && started_event_id.is_some()
+        && !execution.stale_binding
+        && execution.state == ToolExecutionState::Failed
+        && execution.outcome.effect == rupi_core::ToolEffectDisposition::None
+      {
+        outcome.failed_progress_without_effect = true;
       }
       let unresolved_effect = !read_only
         && execution.started
@@ -12967,7 +13078,7 @@ mod tests {
   }
 
   #[test]
-  fn failed_progress_attempt_keeps_the_boundary_narrowed() {
+  fn failed_progress_attempt_keeps_the_boundary_active_with_one_inspection() {
     let read_seen = Arc::new(Mutex::new(Vec::new()));
     let write_seen = Arc::new(Mutex::new(Vec::new()));
     let tools = registry_with(vec![
@@ -13034,13 +13145,704 @@ mod tests {
         .iter()
         .map(|tool| tool.name.as_str())
         .collect::<Vec<_>>(),
-      vec!["write_probe"],
-      "failed progress must not restore the unrestricted tool set"
+      vec!["spy", "write_probe"],
+      "known no-effect failure permits inspection while progress remains required"
     );
     assert!(
       requests[1..]
         .iter()
         .all(|request| { request.tool_choice == ToolChoice::Required })
+    );
+  }
+
+  #[test]
+  fn progress_inspection_repairs_actual_failed_edit_and_renews_per_turn() {
+    for mode in [
+      ProgressBoundaryMode::OneShot,
+      ProgressBoundaryMode::Recurring,
+    ] {
+      let temp = rupi_store::TempDir::new("progress-inspection-repair");
+      let path = temp.path().join("sample.txt");
+      std::fs::write(&path, "actual anchor\n").unwrap();
+      let tools = ToolRegistry::new(Workspace::new(temp.path()).unwrap())
+        .with_policy(&rupi_core::ToolPolicy {
+          auto_approve_mutating: true,
+          allow: vec!["read".into(), "edit".into()],
+          ..Default::default()
+        })
+        .with_builtins();
+      let failed = || {
+        tool_call(
+          "edit",
+          json!({"path":"sample.txt", "find":"missing", "replace":"fixed"}),
+        )
+      };
+      let read = || tool_call("read", json!({"path":"sample.txt"}));
+      let mut first_batch = failed();
+      first_batch.extend(read());
+      let provider = Scripted::new(
+        "progress-inspection-repair",
+        vec![
+          first_batch,
+          read(),
+          tool_call(
+            "edit",
+            json!({
+              "path":"sample.txt", "find":"actual anchor", "replace":"repaired anchor",
+            }),
+          ),
+          text("first repaired"),
+          failed(),
+          read(),
+          tool_call(
+            "edit",
+            json!({
+              "path":"sample.txt", "find":"repaired anchor", "replace":"renewed anchor",
+            }),
+          ),
+          text("second repaired"),
+        ],
+      );
+      let policy = rupi_core::ProfilePolicy::new(
+        rupi_core::ContextProfile::Balanced,
+        provider.capabilities().context_window,
+      );
+      let mut trace = Recorder::default();
+      let mut runtime = TurnLoop::new(
+        &provider,
+        &tools,
+        &policy,
+        &mut trace,
+        SessionId::new(),
+        TraceId::new(),
+      )
+      .with_progress_boundary(Some(1), vec!["edit".into()])
+      .with_progress_boundary_mode(mode)
+      .with_initial_progress_boundary(true)
+      .with_max_requests(5);
+      for task in ["repair first", "repair next"] {
+        let report = runtime
+          .run_turn(task, &CancelToken::new(), &mut SilentProgress)
+          .unwrap();
+        assert_eq!(report.status, TurnStatus::Completed);
+        assert_eq!(report.requests, 4);
+        assert_eq!(report.tool_calls_started, 3);
+      }
+      assert_eq!(std::fs::read_to_string(path).unwrap(), "renewed anchor\n");
+      for requests in provider.requests().chunks_exact(4) {
+        let names = |request: &ModelRequest| {
+          request
+            .tools
+            .iter()
+            .map(|tool| tool.name.clone())
+            .collect::<Vec<_>>()
+        };
+        assert_eq!(names(&requests[0]), vec!["edit"]);
+        assert_eq!(names(&requests[1]), vec!["edit", "read"]);
+        assert_eq!(names(&requests[2]), vec!["edit"]);
+        assert_eq!(requests[1].tool_choice, ToolChoice::Required);
+        assert_eq!(requests[2].tool_choice, ToolChoice::Required);
+        assert_eq!(requests[3].tool_choice, ToolChoice::Auto);
+      }
+      drop(runtime);
+      assert_eq!(trace.count("tool_requested"), 7);
+      assert_eq!(trace.count("tool_started"), 6);
+      assert_eq!(trace.count("tool_failed"), 3);
+      assert_eq!(
+        trace
+          .all("runtime_control_injected")
+          .iter()
+          .filter(|control| { control["kind"] == "progress_correction" })
+          .count(),
+        2
+      );
+    }
+  }
+
+  #[test]
+  fn progress_inspection_spends_one_attempt_even_when_rejected_or_failed() {
+    for case in ["successful", "missing", "invalid", "outside"] {
+      let temp = rupi_store::TempDir::new("progress-inspection-consumption");
+      let outside = rupi_store::TempDir::new("progress-inspection-outside");
+      let outside_path = outside.path().join("protected.txt");
+      std::fs::write(&outside_path, "protected\n").unwrap();
+      let path = temp.path().join("sample.txt");
+      std::fs::write(&path, "actual\n").unwrap();
+      let tools = ToolRegistry::new(Workspace::new(temp.path()).unwrap())
+        .with_policy(&rupi_core::ToolPolicy {
+          auto_approve_mutating: true,
+          allow: vec!["read".into(), "edit".into()],
+          ..Default::default()
+        })
+        .with_builtins();
+      let arguments = match case {
+        "missing" => json!({"path":"absent.txt"}),
+        "invalid" => json!("invalid object"),
+        "outside" => json!({"path":outside_path}),
+        _ => json!({"path":"sample.txt"}),
+      };
+      let mut inspections = tool_call("read", arguments);
+      inspections.extend(tool_call("read", json!({"path":"sample.txt"})));
+      let provider = Scripted::new(
+        "progress-inspection-consumption",
+        vec![
+          tool_call(
+            "edit",
+            json!({"path":"sample.txt", "find":"missing", "replace":"fixed"}),
+          ),
+          inspections,
+          tool_call("read", json!({"path":"sample.txt"})),
+          tool_call(
+            "edit",
+            json!({"path":"sample.txt", "find":"actual", "replace":"fixed"}),
+          ),
+          text("repaired"),
+        ],
+      );
+      let policy = rupi_core::ProfilePolicy::new(
+        rupi_core::ContextProfile::Balanced,
+        provider.capabilities().context_window,
+      );
+      let mut trace = Recorder::default();
+      let report = TurnLoop::new(
+        &provider,
+        &tools,
+        &policy,
+        &mut trace,
+        SessionId::new(),
+        TraceId::new(),
+      )
+      .with_progress_boundary(Some(1), vec!["edit".into()])
+      .with_initial_progress_boundary(true)
+      .with_max_requests(6)
+      .run_turn("repair", &CancelToken::new(), &mut SilentProgress)
+      .unwrap();
+      assert_eq!(report.status, TurnStatus::Completed);
+      assert_eq!(report.requests, 5);
+      assert_eq!(
+        report.tool_calls_started,
+        if matches!(case, "invalid" | "outside") {
+          2
+        } else {
+          3
+        }
+      );
+      assert_eq!(std::fs::read_to_string(path).unwrap(), "fixed\n");
+      assert_eq!(
+        trace.count("tool_requested"),
+        5,
+        "every call has one request event"
+      );
+      assert_eq!(
+        trace
+          .all("tool_started")
+          .iter()
+          .filter(|event| event["name"] == "read")
+          .count(),
+        usize::from(!matches!(case, "invalid" | "outside"))
+      );
+      assert_eq!(
+        std::fs::read_to_string(outside_path).unwrap(),
+        "protected\n"
+      );
+      assert!(
+        provider.requests()[2]
+          .tools
+          .iter()
+          .all(|tool| tool.name == "edit")
+      );
+      assert_eq!(
+        trace
+          .all("runtime_control_injected")
+          .iter()
+          .filter(|control| { control["kind"] == "progress_correction" })
+          .count(),
+        1,
+        "a rejected/failed read never renews the allowance"
+      );
+    }
+  }
+
+  #[test]
+  fn progress_inspection_does_not_complete_progress_and_fresh_failure_can_renew() {
+    let temp = rupi_store::TempDir::new("progress-inspection-renewal");
+    let path = temp.path().join("sample.txt");
+    std::fs::write(&path, "actual\n").unwrap();
+    let tools = ToolRegistry::new(Workspace::new(temp.path()).unwrap())
+      .with_policy(&rupi_core::ToolPolicy {
+        auto_approve_mutating: true,
+        allow: vec!["read".into(), "edit".into()],
+        ..Default::default()
+      })
+      .with_builtins();
+    let failed = || {
+      tool_call(
+        "edit",
+        json!({
+          "path":"sample.txt", "find":"missing", "replace":"fixed",
+        }),
+      )
+    };
+    let read = || tool_call("read", json!({"path":"sample.txt"}));
+    let provider = Scripted::new(
+      "progress-inspection-renewal",
+      vec![
+        failed(),
+        read(),
+        text("inspection is done"),
+        failed(),
+        read(),
+        tool_call(
+          "edit",
+          json!({"path":"sample.txt", "find":"actual", "replace":"fixed"}),
+        ),
+        text("verified change"),
+      ],
+    );
+    let policy = rupi_core::ProfilePolicy::new(
+      rupi_core::ContextProfile::Balanced,
+      provider.capabilities().context_window,
+    );
+    let mut trace = Recorder::default();
+    let mut runtime = TurnLoop::new(
+      &provider,
+      &tools,
+      &policy,
+      &mut trace,
+      SessionId::new(),
+      TraceId::new(),
+    )
+    .with_progress_boundary(Some(1), vec!["edit".into()])
+    .with_initial_progress_boundary(true)
+    .with_max_requests(8);
+    let report = runtime
+      .run_turn("repair", &CancelToken::new(), &mut SilentProgress)
+      .unwrap();
+    assert_eq!(report.status, TurnStatus::Completed);
+    assert_eq!(report.requests, 7);
+    assert_eq!(report.text, "verified change");
+    assert!(
+      !runtime
+        .messages
+        .iter()
+        .any(|message| message.text() == "inspection is done")
+    );
+    assert_eq!(std::fs::read_to_string(path).unwrap(), "fixed\n");
+    let requests = provider.requests();
+    assert!(requests[2].tools.iter().all(|tool| tool.name == "edit"));
+    assert!(requests[3].tools.iter().all(|tool| tool.name == "edit"));
+    assert!(requests[4].tools.iter().any(|tool| tool.name == "read"));
+    assert_eq!(report.tool_calls_started, 5);
+  }
+
+  #[test]
+  fn progress_inspection_requires_ordinary_repair_capacity_and_permitted_reads() {
+    for case in ["requests", "total", "mutations", "no_read"] {
+      let temp = rupi_store::TempDir::new("progress-inspection-capacity");
+      std::fs::write(temp.path().join("sample.txt"), "actual\n").unwrap();
+      let tools = ToolRegistry::new(Workspace::new(temp.path()).unwrap())
+        .with_policy(&rupi_core::ToolPolicy {
+          auto_approve_mutating: true,
+          allow: if case == "no_read" {
+            vec!["edit".into()]
+          } else {
+            vec!["edit".into(), "read".into()]
+          },
+          ..Default::default()
+        })
+        .with_builtins();
+      let failed = || {
+        tool_call(
+          "edit",
+          json!({
+            "path":"sample.txt", "find":"missing", "replace":"fixed",
+          }),
+        )
+      };
+      let provider = Scripted::new(
+        "progress-inspection-capacity",
+        vec![
+          failed(),
+          tool_call("read", json!({"path":"sample.txt"})),
+          failed(),
+          text("done"),
+        ],
+      );
+      let policy = rupi_core::ProfilePolicy::new(
+        rupi_core::ContextProfile::Balanced,
+        provider.capabilities().context_window,
+      );
+      let mut trace = Recorder::default();
+      let report = TurnLoop::new(
+        &provider,
+        &tools,
+        &policy,
+        &mut trace,
+        SessionId::new(),
+        TraceId::new(),
+      )
+      .with_progress_boundary(Some(1), vec!["edit".into()])
+      .with_initial_progress_boundary(true)
+      .with_max_requests(if case == "requests" { 3 } else { 5 })
+      .with_tool_call_budgets(
+        if case == "total" { 2 } else { 64 },
+        if case == "mutations" { 1 } else { 32 },
+      )
+      .run_turn("repair", &CancelToken::new(), &mut SilentProgress)
+      .unwrap();
+      assert_eq!(
+        report.status,
+        if matches!(case, "total" | "mutations") {
+          TurnStatus::ToolBudgetExhausted
+        } else {
+          TurnStatus::BudgetExhausted
+        }
+      );
+      assert!(
+        provider
+          .requests()
+          .iter()
+          .all(|request| { request.tools.iter().all(|tool| tool.name == "edit") })
+      );
+      assert!(
+        !trace.all("runtime_control_injected").iter().any(|control| {
+          control["kind"] == "progress_correction"
+            && control["text"]
+              .as_str()
+              .unwrap()
+              .contains("One permitted read-only")
+        })
+      );
+      assert_eq!(
+        std::fs::read_to_string(temp.path().join("sample.txt")).unwrap(),
+        "actual\n"
+      );
+    }
+  }
+
+  #[test]
+  fn progress_inspection_expires_when_later_requests_spend_repair_capacity() {
+    let temp = rupi_store::TempDir::new("progress-inspection-expiry");
+    std::fs::write(temp.path().join("sample.txt"), "actual\n").unwrap();
+    let tools = ToolRegistry::new(Workspace::new(temp.path()).unwrap())
+      .with_policy(&rupi_core::ToolPolicy {
+        auto_approve_mutating: true,
+        allow: vec!["read".into(), "edit".into()],
+        ..Default::default()
+      })
+      .with_builtins();
+    let unchanged = || {
+      tool_call(
+        "edit",
+        json!({
+          "path":"sample.txt", "find":"actual", "replace":"actual",
+        }),
+      )
+    };
+    let provider = Scripted::new(
+      "progress-inspection-expiry",
+      vec![
+        tool_call(
+          "edit",
+          json!({"path":"sample.txt", "find":"missing", "replace":"fixed"}),
+        ),
+        unchanged(),
+        unchanged(),
+        tool_call("read", json!({"path":"sample.txt"})),
+      ],
+    );
+    let policy = rupi_core::ProfilePolicy::new(
+      rupi_core::ContextProfile::Balanced,
+      provider.capabilities().context_window,
+    );
+    let mut trace = Recorder::default();
+    let report = TurnLoop::new(
+      &provider,
+      &tools,
+      &policy,
+      &mut trace,
+      SessionId::new(),
+      TraceId::new(),
+    )
+    .with_progress_boundary(Some(1), vec!["edit".into()])
+    .with_initial_progress_boundary(true)
+    .with_max_requests(5)
+    .run_turn("repair", &CancelToken::new(), &mut SilentProgress)
+    .unwrap();
+    assert_eq!(report.status, TurnStatus::BudgetExhausted);
+    assert_eq!(report.requests, 4);
+    assert_eq!(report.tool_calls_started, 3);
+    let requests = provider.requests();
+    assert!(requests[1].tools.iter().any(|tool| tool.name == "read"));
+    assert!(requests[2].tools.iter().any(|tool| tool.name == "read"));
+    assert!(requests[3].tools.iter().all(|tool| tool.name == "edit"));
+    assert!(
+      !trace
+        .all("tool_started")
+        .iter()
+        .any(|event| event["name"] == "read")
+    );
+  }
+
+  #[test]
+  fn progress_inspection_never_grants_from_uncertain_or_successful_no_effect_mutations() {
+    for outcome in [
+      ToolOutcome::unknown("unknown").with_effect(rupi_core::ToolEffectDisposition::None),
+      ToolOutcome::failed("possible").with_effect(rupi_core::ToolEffectDisposition::Possible),
+      ToolOutcome::failed("unverified").with_effect(rupi_core::ToolEffectDisposition::Unverified),
+      ToolOutcome::failed("changed failure").with_effect(rupi_core::ToolEffectDisposition::Changed),
+      ToolOutcome::succeeded("unchanged").with_effect(rupi_core::ToolEffectDisposition::None),
+    ] {
+      let safe_success = outcome.state == ToolExecutionState::Succeeded;
+      let seen = Arc::new(Mutex::new(Vec::new()));
+      let tools = registry_with(vec![
+        Box::new(Spy(Arc::new(Mutex::new(Vec::new())))),
+        Box::new(MutatingSpy {
+          seen: Arc::clone(&seen),
+          outcome,
+        }),
+      ]);
+      let provider = Scripted::new(
+        "progress-inspection-no-grant",
+        vec![
+          tool_call("write_probe", json!({})),
+          text("done"),
+          text("done"),
+        ],
+      );
+      let policy = rupi_core::ProfilePolicy::new(
+        rupi_core::ContextProfile::Balanced,
+        provider.capabilities().context_window,
+      );
+      let mut trace = Recorder::default();
+      let mut runtime = TurnLoop::new(
+        &provider,
+        &tools,
+        &policy,
+        &mut trace,
+        SessionId::new(),
+        TraceId::new(),
+      )
+      .with_progress_boundary(Some(1), vec!["write_probe".into()])
+      .with_initial_progress_boundary(true)
+      .with_max_requests(4);
+      let report = runtime
+        .run_turn("repair", &CancelToken::new(), &mut SilentProgress)
+        .unwrap();
+      assert_eq!(
+        report.status,
+        if safe_success {
+          TurnStatus::BudgetExhausted
+        } else {
+          TurnStatus::NeedsReconciliation
+        }
+      );
+      if !safe_success {
+        let blocked = runtime
+          .run_turn("next", &CancelToken::new(), &mut SilentProgress)
+          .unwrap();
+        assert_eq!(blocked.status, TurnStatus::NeedsReconciliation);
+        assert_eq!(provider.requests().len(), 1);
+      }
+      assert!(
+        provider
+          .requests()
+          .iter()
+          .all(|request| { request.tools.iter().all(|tool| tool.name == "write_probe") })
+      );
+      assert_eq!(seen.lock().unwrap().len(), 1);
+    }
+  }
+
+  #[test]
+  fn progress_inspection_never_grants_from_unstarted_or_stale_calls() {
+    for case in ["preflight", "invalid", "unadvertised", "stale"] {
+      let read_seen = Arc::new(Mutex::new(Vec::new()));
+      let write_seen = Arc::new(Mutex::new(Vec::new()));
+      let tools = Arc::new(registry_with(vec![Box::new(Spy(Arc::clone(&read_seen)))]));
+      if case == "stale" {
+        tools.register_shared(Box::new(ReplaceBindingDuringPreflight {
+          registry: Arc::clone(&tools),
+          replaced: std::sync::atomic::AtomicBool::new(false),
+          stale_seen: Arc::clone(&write_seen),
+          replacement_seen: Arc::new(Mutex::new(Vec::new())),
+        }));
+      } else {
+        tools.register_shared(Box::new(PreflightMutatingSpy(Arc::clone(&write_seen))));
+      }
+      let first = match case {
+        "invalid" => tool_call("write_probe", json!("not an object")),
+        "unadvertised" => tool_call("absent", json!({})),
+        _ => tool_call("write_probe", json!({"preflight_reject":true})),
+      };
+      let provider = Scripted::new(
+        "progress-inspection-unstarted",
+        vec![first, tool_call("spy", json!({})), text("done")],
+      );
+      let policy = rupi_core::ProfilePolicy::new(
+        rupi_core::ContextProfile::Balanced,
+        provider.capabilities().context_window,
+      );
+      let mut trace = Recorder::default();
+      let report = TurnLoop::new(
+        &provider,
+        &tools,
+        &policy,
+        &mut trace,
+        SessionId::new(),
+        TraceId::new(),
+      )
+      .with_progress_boundary(Some(1), vec!["write_probe".into()])
+      .with_initial_progress_boundary(true)
+      .with_max_requests(4)
+      .run_turn("repair", &CancelToken::new(), &mut SilentProgress)
+      .unwrap();
+      assert_eq!(report.status, TurnStatus::BudgetExhausted);
+      assert_eq!(report.tool_calls_started, 0);
+      assert!(read_seen.lock().unwrap().is_empty());
+      assert!(write_seen.lock().unwrap().is_empty());
+      assert!(
+        provider
+          .requests()
+          .iter()
+          .all(|request| { request.tools.iter().all(|tool| tool.name == "write_probe") })
+      );
+      assert_eq!(trace.count("tool_started"), 0);
+    }
+  }
+
+  #[test]
+  fn progress_inspection_preserves_fresh_mutation_approval() {
+    let temp = rupi_store::TempDir::new("progress-inspection-approval");
+    let path = temp.path().join("sample.txt");
+    std::fs::write(&path, "actual\n").unwrap();
+    let tools = ToolRegistry::new(Workspace::new(temp.path()).unwrap())
+      .with_policy(&rupi_core::ToolPolicy {
+        allow: vec!["read".into(), "edit".into()],
+        ..Default::default()
+      })
+      .with_builtins();
+    let repair = || {
+      tool_call(
+        "edit",
+        json!({
+          "path":"sample.txt", "find":"actual", "replace":"fixed",
+        }),
+      )
+    };
+    let provider = Scripted::new(
+      "progress-inspection-approval",
+      vec![
+        tool_call(
+          "edit",
+          json!({"path":"sample.txt", "find":"missing", "replace":"fixed"}),
+        ),
+        repair(),
+        tool_call("read", json!({"path":"sample.txt"})),
+        repair(),
+        text("repaired"),
+      ],
+    );
+    let policy = rupi_core::ProfilePolicy::new(
+      rupi_core::ContextProfile::Balanced,
+      provider.capabilities().context_window,
+    );
+    let mut trace = Recorder::default();
+    let mut progress = ApprovalSequenceProgress {
+      decisions: vec![
+        Approval::Allow,
+        Approval::Deny("declined".into()),
+        Approval::Allow,
+      ],
+      prompts: 0,
+    };
+    let report = TurnLoop::new(
+      &provider,
+      &tools,
+      &policy,
+      &mut trace,
+      SessionId::new(),
+      TraceId::new(),
+    )
+    .with_progress_boundary(Some(1), vec!["edit".into()])
+    .with_initial_progress_boundary(true)
+    .with_interactive_tool_approval(true)
+    .with_max_requests(6)
+    .run_turn("repair", &CancelToken::new(), &mut progress)
+    .unwrap();
+    assert_eq!(report.status, TurnStatus::Completed);
+    assert_eq!(
+      progress.prompts, 3,
+      "inspection cannot grant mutation approval"
+    );
+    assert_eq!(report.tool_calls_started, 3);
+    assert_eq!(std::fs::read_to_string(path).unwrap(), "fixed\n");
+    assert_eq!(
+      trace
+        .all("runtime_control_injected")
+        .iter()
+        .filter(|control| { control["kind"] == "progress_correction" })
+        .count(),
+      1,
+      "the refused mutation does not renew inspection"
+    );
+  }
+
+  #[test]
+  fn progress_inspection_cancellation_after_failed_mutation_prevents_grant() {
+    struct CancelFailedProgress(CancelToken);
+    impl TurnProgress for CancelFailedProgress {
+      fn on_tool_finished(&mut self, _call: &ToolCallBlock, execution: &Executed) {
+        if execution.started && execution.state == ToolExecutionState::Failed {
+          self.0.cancel();
+        }
+      }
+    }
+    let writes = Arc::new(Mutex::new(Vec::new()));
+    let reads = Arc::new(Mutex::new(Vec::new()));
+    let tools = registry_with(vec![
+      Box::new(Spy(Arc::clone(&reads))),
+      Box::new(MutatingSpy {
+        seen: Arc::clone(&writes),
+        outcome: ToolOutcome::failed("no effect")
+          .with_effect(rupi_core::ToolEffectDisposition::None),
+      }),
+    ]);
+    let provider = Scripted::new(
+      "progress-inspection-cancel",
+      vec![
+        tool_call("write_probe", json!({})),
+        tool_call("spy", json!({})),
+      ],
+    );
+    let policy = rupi_core::ProfilePolicy::new(
+      rupi_core::ContextProfile::Balanced,
+      provider.capabilities().context_window,
+    );
+    let mut trace = Recorder::default();
+    let cancel = CancelToken::new();
+    let report = TurnLoop::new(
+      &provider,
+      &tools,
+      &policy,
+      &mut trace,
+      SessionId::new(),
+      TraceId::new(),
+    )
+    .with_progress_boundary(Some(1), vec!["write_probe".into()])
+    .with_initial_progress_boundary(true)
+    .with_max_requests(5)
+    .run_turn("repair", &cancel, &mut CancelFailedProgress(cancel.clone()))
+    .unwrap();
+    assert_eq!(report.status, TurnStatus::Cancelled);
+    assert_eq!(provider.requests().len(), 1);
+    assert_eq!(writes.lock().unwrap().len(), 1);
+    assert!(reads.lock().unwrap().is_empty());
+    assert!(
+      !trace
+        .all("runtime_control_injected")
+        .iter()
+        .any(|control| { control["kind"] == "progress_correction" })
     );
   }
 
@@ -14426,6 +15228,91 @@ mod tests {
       error.kind == ModelFailureKind::Protocol
         && error.message.contains("tool-argument byte limits")
     }));
+  }
+
+  #[test]
+  fn progress_inspection_cannot_bypass_a_later_uncertain_mutation() {
+    struct MutationSequence(Mutex<Vec<ToolOutcome>>);
+    impl Tool for MutationSequence {
+      fn metadata(&self) -> ToolMetadata {
+        ToolMetadata::mutating("write_probe", "scripted effect evidence", true)
+      }
+      fn arguments_schema(&self) -> serde_json::Value {
+        json!({"type":"object"})
+      }
+      fn execute(
+        &self,
+        _request: &ToolRequest,
+        _progress: &mut dyn rupi_core::ToolProgress,
+      ) -> Result<ToolOutcome, rupi_core::ToolError> {
+        Ok(self.0.lock().unwrap().remove(0))
+      }
+    }
+    for uncertain in [
+      ToolOutcome::unknown("unknown").with_effect(rupi_core::ToolEffectDisposition::None),
+      ToolOutcome::failed("possible").with_effect(rupi_core::ToolEffectDisposition::Possible),
+      ToolOutcome::failed("unverified").with_effect(rupi_core::ToolEffectDisposition::Unverified),
+    ] {
+      let reads = Arc::new(Mutex::new(Vec::new()));
+      let tools = registry_with(vec![
+        Box::new(Spy(Arc::clone(&reads))),
+        Box::new(MutationSequence(Mutex::new(vec![
+          ToolOutcome::failed("no effect").with_effect(rupi_core::ToolEffectDisposition::None),
+          uncertain,
+        ]))),
+      ]);
+      let mut uncertain_batch = tool_call("write_probe", json!({}));
+      uncertain_batch.extend(tool_call("spy", json!({})));
+      let provider = Scripted::new(
+        "progress-inspection-uncertain-tail",
+        vec![tool_call("write_probe", json!({})), uncertain_batch],
+      );
+      let policy = rupi_core::ProfilePolicy::new(
+        rupi_core::ContextProfile::Balanced,
+        provider.capabilities().context_window,
+      );
+      let mut trace = Recorder::default();
+      let mut runtime = TurnLoop::new(
+        &provider,
+        &tools,
+        &policy,
+        &mut trace,
+        SessionId::new(),
+        TraceId::new(),
+      )
+      .with_progress_boundary(Some(1), vec!["write_probe".into()])
+      .with_initial_progress_boundary(true)
+      .with_max_requests(5);
+      let report = runtime
+        .run_turn("repair", &CancelToken::new(), &mut SilentProgress)
+        .unwrap();
+      assert_eq!(report.status, TurnStatus::NeedsReconciliation);
+      assert_eq!(report.tool_calls_started, 2);
+      assert!(
+        provider.requests()[1]
+          .tools
+          .iter()
+          .any(|tool| tool.name == "spy")
+      );
+      assert!(
+        reads.lock().unwrap().is_empty(),
+        "even an advertised read tail remains blocked"
+      );
+      let blocked = runtime
+        .run_turn("continue", &CancelToken::new(), &mut SilentProgress)
+        .unwrap();
+      assert_eq!(blocked.status, TurnStatus::NeedsReconciliation);
+      assert_eq!(provider.requests().len(), 2);
+      drop(runtime);
+      assert_eq!(
+        trace
+          .all("runtime_control_injected")
+          .iter()
+          .filter(|control| { control["kind"] == "progress_correction" })
+          .count(),
+        1
+      );
+    }
   }
 
   #[test]

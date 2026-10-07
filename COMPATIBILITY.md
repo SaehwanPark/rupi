@@ -524,6 +524,11 @@ Expected divergences include:
   exhausted status; native Pi control parity is not claimed;
 - optional initial progress boundary for explicitly selected implementation turns;
   native Pi control parity is not claimed;
+- one bounded inspection attempt after a started known Failed selected mutation with
+  proven no effect under that opt-in boundary. Reads never satisfy Changed progress;
+  binding/policy/approval/effect/cancel barriers and existing caps retain authority.
+  Owned actual-tool and safety fixtures cover recovery; native Pi parity and acceptance
+  benefit remain unproved;
 - optional first-request output ceiling within that initial boundary; owned runtime and
   provider-wire fixtures establish budgeting behavior, not acceptance or latency benefit;
   native Pi selection remains null;

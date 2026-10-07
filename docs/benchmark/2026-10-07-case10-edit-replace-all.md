@@ -181,3 +181,18 @@ grant only after committed batch results. Clear on Changed progress and new turn
 Default turns stay unchanged. Existing ProgressCorrection provenance carries static guidance.
 Owned repair and safety fixtures plus full local/source/freeze checks must pass before
 fresh Retry44. Case10 and the broader roadmap gate remain active.
+
+The bounded inspection implementation now passes ten focused runtime fixtures plus the
+existing failed-progress characterization. Actual EditTool/ReadTool repair completes in
+four requests, with three starts, under both one-shot and recurring progress and on fresh
+turns. A read invented in the failing edit's original batch never starts. Two reads in
+one response execute at most one; successful, missing-file, invalid-argument and outside-
+workspace attempts all consume the allowance without releasing progress. A fresh eligible
+failure can renew it, while later requests can expire it when repair capacity is spent.
+Unknown/Possible/Unverified and failed Changed effects preserve NeedsReconciliation;
+an advertised read tail after a later uncertain mutation remains blocked. Unstarted,
+invalid, unadvertised and stale mutation calls grant nothing. Fresh approval still applies
+to every later mutation; refused calls do not renew inspection. Cancellation after the
+failed tool prevents granting. No model/harness/caller/control-cap change is made.
+Full delivery checks, standalone unchanged-driver green evidence and source/freeze CI
+remain pending; no acceptance benefit or actual failed-tool attribution is claimed.
