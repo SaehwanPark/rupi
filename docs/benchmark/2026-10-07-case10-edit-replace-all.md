@@ -100,3 +100,12 @@ identity without a schema or stable implementation-version change. Existing old 
 calls must not be silently treated as the new definition. Add actual registry coverage.
 This supersedes the prelaunch source/binary freeze above; keep the same Retry43 run id and
 all comparison controls, but require new source/frozen-head CI and fresh delivery evidence.
+
+Corrected metadata now declares mutating/non-idempotent. All85 tools tests and focused
+Clippy pass. Actual repeated-call fixture produces token_safe then token_safe_safe,
+demonstrating the false convergence claim. Committed results remain Never and Unknown
+remains ReconcileFirst. Actual registry fixture rejects the prior idempotent=true
+fingerprint as RequiresManualInspection while matching current identity can report
+Unmodified without changing bytes. Architecture records the verified risk/migration
+boundary. Parent author review now passes for both execution and risk semantics; no
+independent-review claim. Source/freeze hashes above are superseded before any inference.

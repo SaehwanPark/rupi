@@ -451,6 +451,10 @@ the complete first requested line exists after trimming surrounding whitespace, 
 diagnostic supplies a line number for a bounded re-read; a shared prefix alone does not
 justify that hint. The diagnostic never applies an approximate replacement or resolves
 an interrupted mutation. Reconciliation remains a separate operation.
+Replacement applies once to original non-overlapping matches; inserted text or an
+unmatched suffix may leave new matches. `edit` therefore declares mutating,
+non-idempotent metadata. Its durable definition fingerprint records that risk, so an
+older uncertain call with the previous idempotence claim requires manual inspection.
 
 Tool implementations should declare relevant metadata when possible:
 

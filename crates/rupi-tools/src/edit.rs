@@ -12,9 +12,9 @@
 //!   the file no longer says what the model believes it says.
 //! - **Nothing is written when the match is wrong.** The replacement is applied
 //!   in memory, verified, and only then written — atomically.
-//! - **Redelivered edits do not silently succeed.** When the original text is
-//!   gone, execution refuses the edit. Reconciliation separately examines the
-//!   original and replacement text before classifying an interrupted call.
+//! - **Repeated calls can change state again.** Replacement text may retain or
+//!   create a match. Reconciliation examines both original and replacement text
+//!   before classifying an interrupted call; uncertain edits are never replayed blindly.
 
 use std::{fs, io::Write};
 
@@ -39,13 +39,12 @@ impl EditTool {
 
 impl Tool for EditTool {
   fn metadata(&self) -> ToolMetadata {
-    // Idempotent in the sense the contract asks about: re-applying the same edit
-    // cannot move the file to a different state, because the second application
-    // finds nothing to replace and is refused.
+    // Replacements may retain or create the needle. An identical invocation can
+    // change state again, so the tool cannot promise idempotence.
     ToolMetadata::mutating(
       "edit",
       "Replace an exact string in a file. The string must appear exactly once unless replace_all is set.",
-      true,
+      false,
     )
   }
 
@@ -383,6 +382,77 @@ mod tests {
   }
 
   #[test]
+  fn retained_matches_make_edit_non_idempotent_and_require_reconciliation() {
+    let dir = fixture("token + token\n");
+    let args = json!({
+      "path": "a.rs", "find": "token", "replace": "token_safe", "replace_all": true,
+    });
+    assert_eq!(
+      edit(&dir, args.clone()).state,
+      ToolExecutionState::Succeeded
+    );
+    let first = fs::read_to_string(dir.path().join("a.rs")).unwrap();
+    assert_eq!(edit(&dir, args).state, ToolExecutionState::Succeeded);
+    let second = fs::read_to_string(dir.path().join("a.rs")).unwrap();
+    assert_eq!(first, "token_safe + token_safe\n");
+    assert_eq!(second, "token_safe_safe + token_safe_safe\n");
+
+    let metadata = EditTool::new(runtime(&dir)).metadata();
+    assert!(!metadata.read_only && !metadata.idempotent);
+    assert_eq!(
+      ToolExecutionState::Succeeded
+        .replay_decision_with_effect(&metadata, rupi_core::ToolEffectDisposition::Changed),
+      rupi_core::ReplayDecision::Never,
+    );
+    assert_eq!(
+      ToolExecutionState::Unknown
+        .replay_decision_with_effect(&metadata, rupi_core::ToolEffectDisposition::Unverified),
+      rupi_core::ReplayDecision::ReconcileFirst,
+    );
+  }
+
+  #[test]
+  fn an_old_idempotent_edit_fingerprint_cannot_reconcile_as_the_new_definition() {
+    let dir = fixture("token\n");
+    let tool = EditTool::new(runtime(&dir));
+    let identity = tool.stable_definition_identity().unwrap();
+    let current_metadata = tool.metadata();
+    let current = rupi_core::ToolDefinitionFingerprint::from_definition(
+      &identity,
+      &current_metadata,
+      &tool.arguments_schema(),
+    )
+    .unwrap();
+    let mut old_metadata = current_metadata.clone();
+    old_metadata.idempotent = true;
+    let old = rupi_core::ToolDefinitionFingerprint::from_definition(
+      &identity,
+      &old_metadata,
+      &tool.arguments_schema(),
+    )
+    .unwrap();
+    let registry =
+      crate::ToolRegistry::new(crate::Workspace::new(dir.path()).unwrap()).with_builtins();
+    let request = request(json!({"path": "a.rs", "find": "token", "replace": "token_safe"}));
+    assert!(matches!(
+      registry
+        .reconcile_with_definition(&request, Some(false), Some(&old))
+        .unwrap(),
+      ReconciliationStatus::RequiresManualInspection { .. }
+    ));
+    assert!(matches!(
+      registry
+        .reconcile_with_definition(&request, Some(false), Some(&current))
+        .unwrap(),
+      ReconciliationStatus::Unmodified { .. }
+    ));
+    assert_eq!(
+      fs::read_to_string(dir.path().join("a.rs")).unwrap(),
+      "token\n"
+    );
+  }
+
+  #[test]
   fn refuses_an_ambiguous_match_and_says_the_count() {
     let dir = fixture("dup\ndup\n");
     let outcome = edit(&dir, json!({"path": "a.rs", "find": "dup", "replace": "x"}));
@@ -498,9 +568,8 @@ mod tests {
   }
 
   #[test]
-  fn a_retry_of_a_completed_edit_cannot_double_apply() {
-    // The important safety property for redelivered calls: the second attempt is
-    // refused because the text it asked for is gone.
+  fn a_retry_is_refused_when_original_text_is_gone() {
+    // This replacement removes the needle, so the second invocation has no match.
     let dir = fixture("let x = 1;\n");
     let args = json!({"path": "a.rs", "find": "let x = 1;", "replace": "let x = 2;"});
     let first = edit(&dir, args.clone());
